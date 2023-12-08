@@ -1,4 +1,6 @@
-export const layoutOnDoubleClick = (event, node, reactFlow) => {
+import { Edge, Node } from "reactflow";
+
+export const layoutOnDoubleClick = (event, node, reactFlow): void => {
     // Need to hide other nodes. Only includes the nodes that are i. the node itself, the node's siblings (not not siblings' children), and the node's ancestors (but not the ancestors' siblings and their children).
 
     // unhidden all nodes and edges first. and change back the orientation.
@@ -11,35 +13,37 @@ export const layoutOnDoubleClick = (event, node, reactFlow) => {
     // We can hide by setting the `hidden` attribute.
 
     // get the node's siblings.
-    const getSiblings = (node) => {
-        let parent = currentEdges.find((e) => e.target === node.id);
-        let siblings = [];
+    const getSiblings = (node: Node) => {
+        let parent: Edge = currentEdges.find((e: Edge) => e.target === node.id);
+        let siblings: Edge[] = [];
         if (parent) {
-            siblings = currentEdges.filter((e) => (e.source === parent.source) && (e.target !== node.id));
+            siblings = currentEdges.filter((e: Edge) => (e.source === parent.source) && (e.target !== node.id));
         }
-        const siblingNodes = siblings.map((s) => currentNodes.find((n) => n.id === s.target));
+        const siblingNodes = siblings.map((s) => currentNodes.find((n: Node) => n.id === s.target));
         return siblingNodes;
     }
 
     // get the node's ancestors.
-    const getAncestors = (node) => {
-        let parent = currentEdges.find((e) => e.target === node.id);
-        let ancestors = [];
+    const getAncestors = (node: Node) => {
+        let parent: Edge = currentEdges.find((e: Edge) => e.target === node.id);
+        let ancestors: Edge[] = [];
         while (parent) {
             ancestors.push(parent);
-            parent = currentEdges.find((e) => e.target === parent.source);
+            parent = currentEdges.find((e: Edge) => e.target === parent.source) as typeof parent;
         }
-        const parentNodes = ancestors.map((a) => currentNodes.find((n) => n.id === a.source));
+        const parentNodes = ancestors.map((a) => currentNodes.find((n: Edge) => n.id === (a as any).source));
         return parentNodes;
     }
 
+
+
     // get my descents.
 
-    const getDescents = (node) => {
-        let children = currentEdges.filter((e) => e.source === node.id);
-        const childrenNodes = children.map((c) => currentNodes.find((n) => n.id === c.target));
-        let des = [];
-        childrenNodes.forEach((c) => {
+    const getDescents = (node: Node) => {
+        let children = currentEdges.filter((e: Edge) => e.source === node.id);
+        const childrenNodes = children.map((c: Edge) => currentNodes.find((n: Node) => n.id === c.target));
+        let des: Node[] = [];
+        childrenNodes.forEach((c: Node) => {
             des.push(c);
             des = des.concat(getDescents(c));
         });
@@ -57,7 +61,7 @@ export const layoutOnDoubleClick = (event, node, reactFlow) => {
         return !(siblings.includes(n) || ancestors.includes(n) || descents.includes(n) || n.id === node.id);
     });
 
-    nodesToHide.forEach((n) => {
+    nodesToHide.forEach((n: Node) => {
         n.hidden = true;
     });
 
@@ -69,7 +73,7 @@ export const layoutOnDoubleClick = (event, node, reactFlow) => {
         return source.hidden || target.hidden;
     });
 
-    edgesToHide.forEach((e) => {
+    edgesToHide.forEach((e: Edge) => {
         e.hidden = true;
     });
 
@@ -84,7 +88,7 @@ export const layoutOnDoubleClick = (event, node, reactFlow) => {
     // And change the edges to be straight lines.
 
     if (ancestors.length > 0) {
-        for(let i = 1; i < ancestors.length; i++) {
+        for (let i = 1; i < ancestors.length; i++) {
             const ancestor = ancestors[i];
             if (ancestor) {
                 ancestor.position.y = ancestors[0].position.y;
