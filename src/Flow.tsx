@@ -12,6 +12,8 @@ import ReactFlow, {
 import { useReactFlow, } from 'reactflow';
 import dagre from 'dagre';
 
+import Select from 'react-select';
+
 
 import 'reactflow/dist/style.css';
 
@@ -51,13 +53,13 @@ const getLayoutedElements = (nodes, edges, direction = 'TB') => {
         return node;
     });
 
+
     return { nodes, edges };
 };
 
 const Flow = (props) => {
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-    const [clickedNode, setClickedNode] = useState(null);
     const reactFlow = useReactFlow();
 
     useEffect(() => {
@@ -67,9 +69,14 @@ const Flow = (props) => {
         );
         setNodes([...layoutedNodes]);
         setEdges([...layoutedEdges]);
-
-        reactFlow.fitView();
     }, [props.initialNodes, props.initialEdges, reactFlow]);
+
+    useEffect(() => {
+        let nodes = reactFlow.getNodes();
+        if (nodes.length > 0) {
+            initLayout(event, nodes[0]);
+        }
+    }, [reactFlow.getNodes().length]); // TODO: Do we have a better way to check if a flow is loaded? There was an event called onLoad but it doesn't seem to work.
 
     const onConnect = useCallback(
         (params) =>
@@ -113,7 +120,17 @@ const Flow = (props) => {
         await selectNode(node);
         // call the function.
         layoutOnDoubleClick(event, node, reactFlow);
+        setSelectedNode(node);
     };
+
+    const initLayout = async (event, node) => {
+        await selectNode(node);
+        // call the function.
+        //layoutOnDoubleClick(event, node, reactFlow);
+        reactFlow.fitView({ nodes: [node], padding: 0.2 });
+    };
+
+    let [selectedNode, setSelectedNode] = useState<Node | null>(null);
 
     return (
         <ReactFlow
@@ -124,10 +141,25 @@ const Flow = (props) => {
             onConnect={onConnect}
             connectionLineType={ConnectionLineType.SmoothStep}
             fitView
+            fitViewOptions={{ nodes: [nodes[0]], padding: 0.2 }}
             onNodeClick={layoutOnDoubleClickHandler} // Attach the click handler to zoom in on the clicked node
             onPaneClick={restoreLayout}
         >
-            <Panel position="top-right">
+            <Panel position = "top-right">
+                <Select styles={{
+                    // Fixes the overlapping problem of the component
+                    menu: provided => ({ ...provided, zIndex: 9999999, minWidth: "100px" }),
+                }} 
+                isSearchable={true}
+                options={nodes}
+                getOptionLabel={(option: Node) => option.data.label}
+                getOptionValue={(option: Node) => option.id}
+                value={selectedNode}
+                onChange={(option: Node) => {
+                    setSelectedNode(option)
+                    layoutOnDoubleClickHandler(null, option);
+                }}
+                />
             </Panel>
         </ReactFlow>
     );

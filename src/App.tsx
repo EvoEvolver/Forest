@@ -86,63 +86,16 @@ export default function App() {
   }, [tree])
 
 
-  const [open, setOpen] = React.useState(false);
-  const handleOpen = (node) => {
-    setOpen(true);
-    setModalTitle(node.data.label);
-    setModalContent(node.data.content);
-  };
-  const handleClose = () => setOpen(false);
-
-  const [modalTitle, setModalTitle] = React.useState('');
-  const [modalContent, setModalContent] = React.useState('');
-
-  const style = {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    width: 400,
-    bgcolor: 'background.paper',
-    border: '2px solid #000',
-    boxShadow: 24,
-    p: 4,
-  };
-
-
-
   return (
-    <HelmetProvider>
-      <div>
-        <Helmet>
-          <title>Forest</title>
-        </Helmet>
-        <Box style={{ width: '100vw', height: '100vh' }}>
-          <Modal
-            open={open}
-            onClose={handleClose}
-            aria-labelledby="modal-modal-title"
-            aria-describedby="modal-modal-description"
-          >
-            <Box sx={style}>
-              <Typography id="modal-modal-title" variant="h6" component="h2">
-                {modalTitle}
-              </Typography>
-              <Typography id="modal-modal-description" sx={{ mt: 2 }}>
-                {modalContent}
-              </Typography>
-            </Box>
-          </Modal>
-          <Box style={{ position: "absolute", display: 'flex', alignItems: 'center', margin: '50px 20px', zIndex: '10000' }}>
-            <TextField id="outlined-basic" label="Knowledege" variant="outlined" style={{ flex: 1 }} value={query} onChange={(e) => setQuery(e.target.value)} />
-            <Button variant="contained" style={{ marginLeft: '10px' }} onClick={handleQuerySearch}>Search</Button>
-          </Box>
-          <ReactFlowProvider>
-            <Flow initialNodes={nodes} initialEdges={edges} handleOpen={handleOpen} />
-          </ReactFlowProvider>
-        </Box>
-
-      </div>
-    </HelmetProvider>
+    <Box style={{ width: '100vw', height: '100vh' }}>
+      {/* // Select label is the node's title. value is the node's id. */}
+      <Box style={{ position: "absolute", display: 'flex', alignItems: 'center', margin: '10px 20px', zIndex: '10000' }}>
+        <TextField id="outlined-basic" label="Knowledege" variant="outlined" style={{ flex: 1 }} value={query} onChange={(e) => setQuery(e.target.value)} />
+        <Button variant="contained" style={{ marginLeft: '10px' }} onClick={handleQuerySearch}>Search</Button>
+      </Box>
+      <ReactFlowProvider>
+        <Flow initialNodes={nodes} initialEdges={edges}/>
+      </ReactFlowProvider>
+    </Box>
   );
 }
