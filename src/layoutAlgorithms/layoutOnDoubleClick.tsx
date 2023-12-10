@@ -95,7 +95,7 @@ export const layoutOnDoubleClick = (event, node, reactFlow) => {
 
                 // get the previous ancestor's nodeWidth.
                 const nodeWidth = ancestors[i - 1].width;
-                ancestor.position.x = ancestors[0].position.x + i * nodeWidth * 1.28;
+                ancestor.position.x = ancestors[i - 1].position.x + i * nodeWidth * 1.2;
 
                 ancestor.sourcePosition = 'left';
                 ancestor.targetPosition = 'right';
