@@ -19,8 +19,14 @@ import 'reactflow/dist/style.css';
 
 import { layoutOnDoubleClick } from './layoutAlgorithms';
 
-const nodeWidth = 172;
-const nodeHeight = 36;
+import NodeWithTooltip from './Nodes/NodeWithTooltip.tsx'
+
+const nodeTypes = {
+    NodeWithTooltip: NodeWithTooltip,
+  };
+
+const nodeWidth = 200;
+const nodeHeight = 50;
 
 const getLayoutedElements = (nodes, edges, direction = 'TB') => {
     const dagreGraph = new dagre.graphlib.Graph();
@@ -144,6 +150,7 @@ const Flow = (props) => {
             fitViewOptions={{ nodes: [nodes[0]], padding: 0.2 }}
             onNodeClick={layoutOnDoubleClickHandler} // Attach the click handler to zoom in on the clicked node
             onPaneClick={restoreLayout}
+            nodeTypes={nodeTypes}
         >
             <Panel position = "top-right">
                 <Select styles={{

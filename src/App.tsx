@@ -38,7 +38,7 @@ const convertTreeToWhatWeWant = (tree: Tree) => {
     // Add the node to the list of nodes.
     // Add the edge to the list of edges.
     // If the tree has children, call dfs on each child.
-    let node: Node = { id, position, data: { label, content } };
+    let node: Node = { id, position, data: { label, content }, type: "NodeWithTooltip" };
     nodes.push(node);
     if (parent) {
       let edge: Edge = { id: `${parent}-${id}`, source: parent, target: id };
@@ -71,7 +71,7 @@ export default function App() {
       theTree = testTrees[query] as Tree;
     } else {
       // Assuming testTrees['Ganzi'] is also of type MyTreeType
-      theTree = testTrees['Ganzi'] as Tree;
+      theTree = testTrees['Places of Interests'] as Tree;
     }
 
     setTree(theTree);
