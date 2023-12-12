@@ -18,8 +18,10 @@ import Select from 'react-select';
 import 'reactflow/dist/style.css';
 
 import { layoutOnDoubleClick } from './layoutAlgorithms';
+import { onlyShowGenerations } from './layoutAlgorithms';
 
 import NodeWithTooltip from './Nodes/NodeWithTooltip.tsx'
+import { only } from 'node:test';
 
 const nodeTypes = {
     NodeWithTooltip: NodeWithTooltip,
@@ -68,21 +70,33 @@ const Flow = (props) => {
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const reactFlow = useReactFlow();
 
+    // useEffect(() => {
+    //     const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+    //         props.initialNodes,
+    //         props.initialEdges
+    //     );
+    //     setNodes([...layoutedNodes]);
+    //     setEdges([...layoutedEdges]);
+    // }, [props.initialNodes, props.initialEdges, reactFlow]);
+
     useEffect(() => {
+        // let nodes = reactFlow.getNodes();
+        // console.log(props.initialNodes.length)
+        // console.log(reactFlow.getNodes().length)
+        // if (nodes.length > 0) {
+        //     console.log(nodes)
+        //     initLayout(event, nodes[0]);
+        // }
+        console.log("estgseg")
         const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
             props.initialNodes,
             props.initialEdges
         );
         setNodes([...layoutedNodes]);
         setEdges([...layoutedEdges]);
-    }, [props.initialNodes, props.initialEdges, reactFlow]);
-
-    useEffect(() => {
-        let nodes = reactFlow.getNodes();
-        if (nodes.length > 0) {
-            initLayout(event, nodes[0]);
-        }
-    }, [reactFlow.getNodes().length]); // TODO: Do we have a better way to check if a flow is loaded? There was an event called onLoad but it doesn't seem to work.
+        console.log(layoutedNodes[0]);
+        reactFlow.fitView({ nodes: [layoutedNodes[0]], padding: 0.2 });
+    }, [props.query, reactFlow]); // TODO: Do we have a better way to check if a flow is loaded? There was an event called onLoad but it doesn't seem to work.
 
     const onConnect = useCallback(
         (params) =>
@@ -104,7 +118,6 @@ const Flow = (props) => {
         );
         setNodes([...layoutedNodes]);
         setEdges([...layoutedEdges]);
-        reactFlow.fitView();
     }
 
     const selectNode = async (node) => {
@@ -118,25 +131,39 @@ const Flow = (props) => {
             }
         });
 
+        node.selected = true;
+
         reactFlow.setNodes(currentNodes);
     }
 
-    const layoutOnDoubleClickHandler = async (event, node) => {
+    const layoutOnDoubleClickHandler = async (event, node, center=true) => {
         await restoreLayout();
         await selectNode(node);
-        // call the function.
-        layoutOnDoubleClick(event, node, reactFlow);
-        setSelectedNode(node);
-    };
+        //await onlyShowGenerations(node, reactFlow, numGenerations);
+        
+        await layoutOnDoubleClick(event, node, reactFlow, getLayoutedElements, numGenerations, center);
 
-    const initLayout = async (event, node) => {
-        await selectNode(node);
-        // call the function.
-        //layoutOnDoubleClick(event, node, reactFlow);
-        reactFlow.fitView({ nodes: [node], padding: 0.2 });
+        let theNode = reactFlow.getNodes().find((n) => n.id === node.id);
+        reactFlow.fitView({ nodes: [theNode] });
+        setSelectedNode(theNode);
     };
 
     let [selectedNode, setSelectedNode] = useState<Node | null>(null);
+
+    const [numGenerations, setNumGenerations] = useState(1);
+
+    // listen to the numGenerations change and update the layout.
+
+    const handleNumGenerationsChange = async (event) => {
+        await restoreLayout();
+        if (selectedNode) {
+            layoutOnDoubleClickHandler(event, selectedNode, false);
+        }
+    }
+    useEffect(() => {
+        handleNumGenerationsChange(null);
+    }, [numGenerations]);
+
 
     return (
         <ReactFlow
@@ -149,10 +176,18 @@ const Flow = (props) => {
             fitView
             fitViewOptions={{ nodes: [nodes[0]], padding: 0.2 }}
             onNodeClick={layoutOnDoubleClickHandler} // Attach the click handler to zoom in on the clicked node
-            onPaneClick={restoreLayout}
+            onPaneClick={async () => {
+                await restoreLayout();
+                if(selectedNode) {
+                    
+                    let theSelectedNode = reactFlow.getNodes().find((n) => n.id === selectedNode.id);
+                    reactFlow.fitView({ nodes: [theSelectedNode], padding: 0.2 });
+                }
+            }}
             nodeTypes={nodeTypes}
         >
             <Panel position = "top-right">
+                <input type="number" value={numGenerations} min={0} onChange={(event) => setNumGenerations(parseInt(event.target.value))} />
                 <Select styles={{
                     // Fixes the overlapping problem of the component
                     menu: provided => ({ ...provided, zIndex: 9999999, minWidth: "100px" }),

@@ -94,7 +94,7 @@ export default function App() {
         <Button variant="contained" style={{ marginLeft: '10px' }} onClick={handleQuerySearch}>Search</Button>
       </Box>
       <ReactFlowProvider>
-        <Flow initialNodes={nodes} initialEdges={edges}/>
+        <Flow initialNodes={nodes} initialEdges={edges} query={query}/>
       </ReactFlowProvider>
     </Box>
   );

@@ -31,7 +31,7 @@ export default memo((node: Node) => {
             <Box ref={nodeRef}>
                 {node.data.content && (
                     <NodeToolbar isVisible={toolTipVisible} position={'bottom'}>
-                        <Paper elevation={3} sx={{ p: 2 }} sx={{ maxWidth: '28rem', padding: '5px' }}>
+                        <Paper elevation={3} sx={{ maxWidth: '28rem', padding: '5px' }}>
                             {(showFullContent && node.data.content) || node.data.content.substr(0, 50)}
                         </Paper>
                     </NodeToolbar>
