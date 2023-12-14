@@ -7,6 +7,11 @@ import 'reactflow/dist/style.css';
 import { TextField, Box, Button, Typography, Modal } from '@mui/material';
 import testTrees from './testing/trees.json';
 
+import { io } from 'socket.io-client';
+
+
+const socket = io("http://127.0.0.1:5000"); // Currently running on default port locally. Need to write it into config file.
+
 interface Tree {
   title: string;
   content: string;
@@ -76,6 +81,15 @@ export default function App() {
 
     setTree(theTree);
   };
+
+  useEffect(() => {
+    socket.on("connect", () => {
+      console.log("Connected"); // x8WIv7-mJelg7on_ALbx
+    });
+    socket.on("tree", (tree) => {
+      setTree(tree);
+    });
+  });
   // On Tree Change
   useEffect(() => {
     if (tree) {

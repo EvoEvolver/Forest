@@ -87,16 +87,15 @@ const Flow = (props) => {
         //     console.log(nodes)
         //     initLayout(event, nodes[0]);
         // }
-        console.log("estgseg")
         const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
             props.initialNodes,
             props.initialEdges
         );
         setNodes([...layoutedNodes]);
         setEdges([...layoutedEdges]);
-        console.log(layoutedNodes[0]);
+        console.log(props.initialNodes[0]);
         reactFlow.fitView({ nodes: [layoutedNodes[0]], padding: 0.2 });
-    }, [props.query, reactFlow]); // TODO: Do we have a better way to check if a flow is loaded? There was an event called onLoad but it doesn't seem to work.
+    }, [props.initialNodes]); // TODO: Do we have a better way to check if a flow is loaded? There was an event called onLoad but it doesn't seem to work.
 
     const onConnect = useCallback(
         (params) =>
