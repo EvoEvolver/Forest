@@ -31,6 +31,7 @@ def broadcast_message(socketio_instance):
         else:
             index += 1
         time.sleep(1)
+        break
 
 if __name__ == '__main__':
     broadcast_thread = threading.Thread(target=broadcast_message, args=(socketio,))

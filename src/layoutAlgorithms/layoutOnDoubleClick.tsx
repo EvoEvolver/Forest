@@ -3,7 +3,7 @@ import dagre from 'dagre';
 
 
 // get the node's siblings.
-const getSiblings = (node: Node, currentNodes: Node[], currentEdges: Edge[]): Node[] => {
+export const getSiblings = (node: Node, currentNodes: Node[], currentEdges: Edge[]): Node[] => {
     let parent: Edge | undefined = currentEdges.find((e: Edge) => e.target === node.id);
     let siblings: Edge[] = [];
     if (parent) {
@@ -16,7 +16,7 @@ const getSiblings = (node: Node, currentNodes: Node[], currentEdges: Edge[]): No
 
 
 // get the node's ancestors.
-const getAncestors = (node: Node, currentNodes: Node[], currentEdges: Edge[]): Node[] => {
+export const getAncestors = (node: Node, currentNodes: Node[], currentEdges: Edge[]): Node[] => {
     let parent: Edge | undefined = currentEdges.find((e: Edge) => e.target === node.id);
     let ancestors: Edge[] = [];
     while (parent) {
@@ -30,7 +30,7 @@ const getAncestors = (node: Node, currentNodes: Node[], currentEdges: Edge[]): N
 
 // get my descents.
 
-const getDescents = (node: Node, currentNodes: Node[], currentEdges: Edge[]): Node[] => {
+export const getDescents = (node: Node, currentNodes: Node[], currentEdges: Edge[]): Node[] => {
     let children: Edge[] = currentEdges.filter((e: Edge) => e.source === node.id) as Edge[];
     if (!children) {
         return [] as Node[];
@@ -47,8 +47,22 @@ const getDescents = (node: Node, currentNodes: Node[], currentEdges: Edge[]): No
 }
 
 
+// get my children.
 
-const getQualifiedDescents = (node: Node, currentNodes: Node[], currentEdges: Edge[], numGenerations: number) => {
+export const getChildren = (node: Node, currentNodes: Node[], currentEdges: Edge[]): Node[] => {
+    let children: Edge[] = currentEdges.filter((e: Edge) => e.source === node.id) as Edge[];
+    if (!children) {
+        return [] as Node[];
+    }
+    else {
+        const childrenNodes = children.map((c: Edge) => currentNodes.find((n: Node) => n.id === c.target)) as Node[];
+        return childrenNodes;
+    }
+};
+
+
+
+export const getQualifiedDescents = (node: Node, currentNodes: Node[], currentEdges: Edge[], numGenerations: number) => {
 
     if (numGenerations === 0) {
         return [] as Node[];
