@@ -5,6 +5,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 export default memo((node: Node) => {
     const data = node.data;
+    const setShowFocusPage = data.setShowFocusPage;
 
     const sourcePosition = node.sourcePosition || Position.Bottom;
     const targetPosition = node.targetPosition || Position.Top;
@@ -28,7 +29,7 @@ export default memo((node: Node) => {
 
     return (
         <>
-            <Box ref={nodeRef}>
+            <Box ref={nodeRef} onDoubleClick={() => setShowFocusPage(node)}>
                 {node.data.content && (
                     <NodeToolbar isVisible={toolTipVisible} position={'bottom'}>
                         <Paper elevation={3} sx={{ maxWidth: '28rem', padding: '5px' }}>

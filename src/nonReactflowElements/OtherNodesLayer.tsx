@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Grid, Button, Paper, Typography } from '@mui/material';
 
 const NodeElement = (props) => {
-    const { node, changeCurrentNode } = props;
+    const { node, changeSelectedNode } = props;
 
     return (
         <Paper
@@ -16,7 +16,7 @@ const NodeElement = (props) => {
                 alignItems: 'center',
                 justifyContent: 'center',
             }}
-            onClick={() => changeCurrentNode(node)}
+            onClick={() => changeSelectedNode(node)}
         >
             <Typography>{node.id}</Typography>
         </Paper>
@@ -24,8 +24,8 @@ const NodeElement = (props) => {
 };
 
 const OtherNodesLayer = (props) => {
-    const { nodes, changeCurrentNode } = props;
-    const elementsPerPage = 1;
+    const { nodes, changeSelectedNode } = props;
+    const elementsPerPage = 5;
     const [startPoint, setStartPoint] = useState(0);
     const [animate, setAnimate] = useState(false);
 
@@ -73,7 +73,7 @@ const OtherNodesLayer = (props) => {
                             opacity: animate ? 0 : 1,
                         }}
                     >
-                        <NodeElement node={node} changeCurrentNode={changeCurrentNode} />
+                        <NodeElement node={node} changeSelectedNode={changeSelectedNode} />
                     </Grid>
                 ))}
 

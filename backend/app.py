@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit
+from flask_cors import CORS
 import threading
 import time
 
@@ -14,7 +15,7 @@ keys = list(trees.keys())
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, cors_allowed_origins="*")
-
+CORS(app)
 @socketio.on('connect')
 def handle_connect():
     emit('Connected!')

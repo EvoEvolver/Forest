@@ -25,7 +25,7 @@ import { only } from 'node:test';
 
 const nodeTypes = {
     NodeWithTooltip: NodeWithTooltip,
-  };
+};
 
 const nodeWidth = 200;
 const nodeHeight = 50;
@@ -68,25 +68,10 @@ const getLayoutedElements = (nodes, edges, direction = 'TB') => {
 const Flow = (props) => {
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+    const selectedNode = props.selectedNode;
+    const setSelectedNode = props.setSelectedNode;
     const reactFlow = useReactFlow();
-
-    // useEffect(() => {
-    //     const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
-    //         props.initialNodes,
-    //         props.initialEdges
-    //     );
-    //     setNodes([...layoutedNodes]);
-    //     setEdges([...layoutedEdges]);
-    // }, [props.initialNodes, props.initialEdges, reactFlow]);
-
     useEffect(() => {
-        // let nodes = reactFlow.getNodes();
-        // console.log(props.initialNodes.length)
-        // console.log(reactFlow.getNodes().length)
-        // if (nodes.length > 0) {
-        //     console.log(nodes)
-        //     initLayout(event, nodes[0]);
-        // }
         const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
             props.initialNodes,
             props.initialEdges
@@ -135,19 +120,17 @@ const Flow = (props) => {
         reactFlow.setNodes(currentNodes);
     }
 
-    const layoutOnDoubleClickHandler = async (event, node, center=true) => {
+    const layoutOnDoubleClickHandler = async (event, node, center = true) => {
         await restoreLayout();
         await selectNode(node);
         //await onlyShowGenerations(node, reactFlow, numGenerations);
-        
+
         await layoutOnDoubleClick(event, node, reactFlow, getLayoutedElements, numGenerations, center);
 
         let theNode = reactFlow.getNodes().find((n) => n.id === node.id);
         reactFlow.fitView({ nodes: [theNode] });
         setSelectedNode(theNode);
     };
-
-    let [selectedNode, setSelectedNode] = useState<Node | null>(null);
 
     const [numGenerations, setNumGenerations] = useState(1);
 
@@ -177,29 +160,29 @@ const Flow = (props) => {
             onNodeClick={layoutOnDoubleClickHandler} // Attach the click handler to zoom in on the clicked node
             onPaneClick={async () => {
                 await restoreLayout();
-                if(selectedNode) {
-                    
+                if (selectedNode) {
+
                     let theSelectedNode = reactFlow.getNodes().find((n) => n.id === selectedNode.id);
                     reactFlow.fitView({ nodes: [theSelectedNode], padding: 0.2 });
                 }
             }}
             nodeTypes={nodeTypes}
         >
-            <Panel position = "top-right">
+            <Panel position="top-right">
                 <input type="number" value={numGenerations} min={0} onChange={(event) => setNumGenerations(parseInt(event.target.value))} />
                 <Select styles={{
                     // Fixes the overlapping problem of the component
                     menu: provided => ({ ...provided, zIndex: 9999999, minWidth: "100px" }),
-                }} 
-                isSearchable={true}
-                options={nodes}
-                getOptionLabel={(option: Node) => option.data.label}
-                getOptionValue={(option: Node) => option.id}
-                value={selectedNode}
-                onChange={(option: Node) => {
-                    setSelectedNode(option)
-                    layoutOnDoubleClickHandler(null, option);
                 }}
+                    isSearchable={true}
+                    options={nodes}
+                    getOptionLabel={(option: Node) => option.data.label}
+                    getOptionValue={(option: Node) => option.id}
+                    value={selectedNode}
+                    onChange={(option: Node) => {
+                        setSelectedNode(option)
+                        layoutOnDoubleClickHandler(null, option);
+                    }}
                 />
             </Panel>
         </ReactFlow>

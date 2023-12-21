@@ -23,7 +23,7 @@ const NodeElement = (props) => {
     );
 }
 
-const CurrentNodeLayer = (props) => {
+const SelectedNodeLayer = (props) => {
     let node = props.node;
     let number = 3;
     const elementWidth = `${100 / number}%`;
@@ -54,4 +54,4 @@ const CurrentNodeLayer = (props) => {
     );
 };
 
-export default CurrentNodeLayer;
+export default SelectedNodeLayer;
