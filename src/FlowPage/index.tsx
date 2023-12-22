@@ -17,10 +17,9 @@ import Select from 'react-select';
 
 import 'reactflow/dist/style.css';
 
-import { layoutOnDoubleClick } from './layoutAlgorithms';
-import { onlyShowGenerations } from './layoutAlgorithms';
+import { layoutOnDoubleClick } from '../layoutAlgorithms/index.tsx';
 
-import NodeWithTooltip from './Nodes/NodeWithTooltip.tsx'
+import NodeWithTooltip from './Nodes/NodeWithTooltip.js'
 import { only } from 'node:test';
 
 const nodeTypes = {
