@@ -29,7 +29,7 @@ export default memo((node: Node) => {
 
     return (
         <>
-            <Box ref={nodeRef} onDoubleClick={() => setShowFocusPage(node)}>
+            <Box ref={nodeRef} onDoubleClick={() => setShowFocusPage(node)} style={{maxWidth: 200}}>
                 {node.data.content && (
                     <NodeToolbar isVisible={toolTipVisible} position={'bottom'}>
                         <Paper elevation={3} sx={{ maxWidth: '28rem', padding: '5px' }}>

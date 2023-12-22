@@ -8,7 +8,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import SelectedNodeLayer from './nonReactflowElements/SelectedNodeLayer.tsx';
 import OtherNodesLayer from './nonReactflowElements/OtherNodesLayer.tsx';
 
-import { getAncestors, getChildren, getQualifiedDescents, getSiblings } from '../layoutAlgorithms/layoutOnDoubleClick.tsx';
+import { getAncestors, getChildren, getQualifiedDescents, getSiblings } from '../FlowPage/Layout.tsx';
 
 
 export default function FocusPage(props) {

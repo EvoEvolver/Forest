@@ -15,6 +15,7 @@ const socket = io("http://127.0.0.1:5000", {
 }); // Currently running on default port locally. Need to write it into config file.
 
 interface Tree {
+  id?: string;
   title: string;
   content: string;
   sections?: Tree[];
@@ -37,12 +38,12 @@ export default function App() {
     // the edge should have a id, a source, and a target.
     // the position of the node should be calculated based on the level of the node.
     // the root node should be at the center of the screen.
-  
+
     const nodes: Node[] = [];
     const edges: Edge[] = [];
-  
+
     const dfs = (tree: Tree, parent: string | undefined) => {
-      const id = tree.title;
+      const id = tree.id ? tree.id: tree.title;
       // Calculate x-coordinate based on the level
       const x = 0; // Adjust the multiplier based on your preference
       // Calculate y-coordinate based on the order within the parent's sections
@@ -55,7 +56,7 @@ export default function App() {
       // Add the node to the list of nodes.
       // Add the edge to the list of edges.
       // If the tree has children, call dfs on each child.
-      let node: Node = { id, position, data: { label, content, setShowFocusPage }, type: "NodeWithTooltip"};
+      let node: Node = { id, position, data: { label, content, setShowFocusPage }, type: "NodeWithTooltip" };
       nodes.push(node);
       if (parent) {
         let edge: Edge = { id: `${parent}-${id}`, source: parent, target: id };
@@ -67,9 +68,9 @@ export default function App() {
         });
       }
     };
-  
+
     dfs(tree, undefined);
-  
+
     return { 'nodes': nodes, 'edges': edges };
   }
 
@@ -93,7 +94,6 @@ export default function App() {
       console.log("Connected");
     });
     socket.on("tree", (tree) => {
-      console.log(tree)
       setTree(tree);
     });
 
@@ -126,7 +126,7 @@ export default function App() {
         onClose={() => setShowFocusPage(false)}
         style={{ position: "absolute", display: 'flex', alignItems: 'center', margin: '10px 20px', zIndex: '100000' }}
       >
-        <FocusPage nodes={nodes} edges = {edges} selectedNode = {selectedNode} setSelectedNode={setSelectedNode} setShowFocusPage={setShowFocusPage}/>
+        <FocusPage nodes={nodes} edges={edges} selectedNode={selectedNode} setSelectedNode={setSelectedNode} setShowFocusPage={setShowFocusPage} />
       </Modal>
     </Box>
   );
