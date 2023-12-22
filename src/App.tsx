@@ -1,13 +1,12 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
-import Flow from './FlowPage';
 import { ReactFlowProvider, Node, Edge } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { TextField, Box, Button, Typography, Modal } from '@mui/material';
 import testTrees from './testing/trees.json';
-
 import { io } from 'socket.io-client';
 import FocusPage from './FocusPage';
+import Flow from './FlowPage';
 
 
 const socket = io("http://127.0.0.1:5000", {

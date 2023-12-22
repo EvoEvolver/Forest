@@ -1,29 +1,15 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
-import Flow from './FlowPage/Flow.js';
-import { ReactFlowProvider, Node, Edge } from 'reactflow';
-import { Helmet, HelmetProvider } from "react-helmet-async";
+import {Node, Edge } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { TextField, Box, Button, Typography, Modal, Grid,IconButton } from '@mui/material';
+import {Grid,IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import testTrees from '../testing/trees.json';
-
-import { io } from 'socket.io-client';
-import { CSSTransition } from 'react-transition-group';
 
 import SelectedNodeLayer from './nonReactflowElements/SelectedNodeLayer.tsx';
 import OtherNodesLayer from './nonReactflowElements/OtherNodesLayer.tsx';
 
 import { getAncestors, getChildren, getQualifiedDescents, getSiblings } from '../layoutAlgorithms/layoutOnDoubleClick.tsx';
 
-
-// const socket = io("http://127.0.0.1:5000"); // Currently running on default port locally. Need to write it into config file.
-
-interface Tree {
-  title: string;
-  content: string;
-  sections?: Tree[];
-}
 
 export default function FocusPage(props) {
   let nodes = props.nodes;
