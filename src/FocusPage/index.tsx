@@ -11,8 +11,8 @@ import testTrees from '../testing/trees.json';
 import { io } from 'socket.io-client';
 import { CSSTransition } from 'react-transition-group';
 
-import SelectedNodeLayer from '../nonReactflowElements/SelectedNodeLayer.tsx';
-import OtherNodesLayer from '../nonReactflowElements/OtherNodesLayer.js';
+import SelectedNodeLayer from './nonReactflowElements/SelectedNodeLayer.tsx';
+import OtherNodesLayer from './nonReactflowElements/OtherNodesLayer.tsx';
 
 import { getAncestors, getChildren, getQualifiedDescents, getSiblings } from '../layoutAlgorithms/layoutOnDoubleClick.tsx';
 
