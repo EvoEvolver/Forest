@@ -177,7 +177,7 @@ export default class Layout {
             this.reactFlow.setCenter(
                 theNode.position.x,
                 theNode.position.y,
-                {zoom: this.reactFlow.getZoom(), duration: 500}
+                {zoom: this.reactFlow.getZoom()}
             );
         }
 
@@ -230,5 +230,9 @@ export default class Layout {
 
     public getEdges(): Edge[] {
         return this.edges;
+    }
+
+    private checkIfNodeExists(node: Node): boolean {
+        return this.nodes.some((n) => n.id === node.id);
     }
 }

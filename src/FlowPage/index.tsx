@@ -34,12 +34,13 @@ const Flow = (props) => {
     const setSelectedNode = props.setSelectedNode;
     const reactFlow = useReactFlow();
 
-    const layout = new Layout(reactFlow, props.initialNodes, props.initialEdges);
+    let layout = new Layout(reactFlow, props.initialNodes, props.initialEdges);
 
     const [numGenerations, setNumGenerations] = useState(1);
 
     useEffect(() => {
-        if(selectedNode) {
+        layout = new Layout(reactFlow, props.initialNodes, props.initialEdges);
+        if(selectedNode && layout.checkIfNodeExists(selectedNode)) {
             layout.autolayout(selectedNode).then(() => {
                 console.log("Initial Layout.")
             });
