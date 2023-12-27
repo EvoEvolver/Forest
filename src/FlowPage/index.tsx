@@ -94,7 +94,7 @@ const Flow = (props) => {
 
     useEffect(() => {
         if(selectedNode === null) return;
-        layout.autolayout(selectedNode).then(() => {
+        layout.autolayout(selectedNode, numGenerations).then(() => {
             console.log("Layout on selectedNode change.")
         });
     }, [selectedNode]);
