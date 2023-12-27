@@ -8,7 +8,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import SelectedNodeLayer from './nonReactflowElements/SelectedNodeLayer.tsx';
 import OtherNodesLayer from './nonReactflowElements/OtherNodesLayer.tsx';
 
-import { getAncestors, getChildren, getQualifiedDescents, getSiblings } from '../FlowPage/Layout.tsx';
+import { getAncestors, getChildren, getQualifiedDescents, getSiblingsIncludeSelf } from '../FlowPage/Layout.tsx';
 
 
 export default function FocusPage(props) {
@@ -35,7 +35,7 @@ export default function FocusPage(props) {
   // when selectedNode changes, update the siblings, children, and ancestors.
   useEffect(() => {
     if (selectedNode) {
-      let siblings = getSiblings(selectedNode, nodes, edges);
+      let siblings = getSiblingsIncludeSelf(selectedNode, nodes, edges);
       setSiblingNodes(siblings);
       let children = getChildren(selectedNode, nodes, edges);
       setChildrenNodes(children);

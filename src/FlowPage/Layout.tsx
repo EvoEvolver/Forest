@@ -1,4 +1,4 @@
-import { ReactFlowInstance, Node, Edge } from 'reactflow';
+import { ReactFlowInstance, Node, Edge, Viewport  } from 'reactflow';
 import dagre from 'dagre';
 
 
@@ -6,14 +6,27 @@ const nodeWidth = 200;
 const nodeHeight = 50;
 
 
-export const getSiblings = (node: Node, currentNodes: Node[], currentEdges: Edge[]): Node[] => {
+// export const getSiblings = (node: Node, currentNodes: Node[], currentEdges: Edge[]): Node[] => {
+//     let parent: Edge | undefined = currentEdges.find((e: Edge) => e.target === node.id);
+//     let siblings: Edge[] = [];
+//     if (parent) {
+//         siblings = currentEdges.filter((e: Edge) => (e.source === parent?.source) && (e.target !== node.id));
+//     }
+//     const siblingNodes = siblings.map((s) => currentNodes.find((n: Node) => n.id === s.target)) as Node[];
+
+//     return siblingNodes;
+// }
+
+export const getSiblingsIncludeSelf = (node: Node, currentNodes: Node[], currentEdges: Edge[]): Node[] => {
     let parent: Edge | undefined = currentEdges.find((e: Edge) => e.target === node.id);
     let siblings: Edge[] = [];
     if (parent) {
-        siblings = currentEdges.filter((e: Edge) => (e.source === parent?.source) && (e.target !== node.id));
+        siblings = currentEdges.filter((e: Edge) => (e.source === parent?.source));
     }
     const siblingNodes = siblings.map((s) => currentNodes.find((n: Node) => n.id === s.target)) as Node[];
-
+    if(siblingNodes.length === 0) {
+        siblingNodes.push(node);
+    }
     return siblingNodes;
 }
 
@@ -88,7 +101,8 @@ export const getQualifiedDescents = (node: Node, currentNodes: Node[], currentEd
     }
 }
 
-const getLayoutedElements = (iNodes: Node[], iEdges: Edge[], direction = 'TB') => {
+const getLayoutedElements = (iNodes: Node[], iEdges: Edge[], oldNodes = undefined, selectedNode = undefined) => {
+    let direction = 'TB'
     let nodes = iNodes.map(e => ({ ...e }));
     let edges = iEdges.map(e => ({ ...e }));
 
@@ -96,7 +110,7 @@ const getLayoutedElements = (iNodes: Node[], iEdges: Edge[], direction = 'TB') =
     dagreGraph.setDefaultEdgeLabel(() => ({}));
     const isHorizontal = direction === 'LR';
     dagreGraph.setGraph({ rankdir: direction });
-
+    
     nodes.forEach((node) => {
         dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
     });
@@ -122,6 +136,50 @@ const getLayoutedElements = (iNodes: Node[], iEdges: Edge[], direction = 'TB') =
         return node;
     });
 
+    // if selectedNode is defined, we need to adjust the nodes' position referring to the selectedNode.
+    if(oldNodes) {
+        // first, let's try to find the selectedNode in the nodes array.
+        for(let oldNode of oldNodes) {
+            const node = nodes.find((n) => n.id === oldNode.id);
+            if(node) {
+                if(node) {
+                    const dx = oldNode.position.x - node.position.x;
+                    const dy = oldNode.position.y - node.position.y;
+                    nodes.forEach((n) => {
+                        n.position.x += dx;
+                        n.position.y += dy;
+                    });
+                } 
+                break;
+            }
+        }
+    }
+
+
+    if (selectedNode) {
+        selectedNode = nodes.find((n) => n.id === selectedNode.id);
+        let ancestors = getAncestors(selectedNode, nodes, edges);
+        // Need to move the parent to horitonzol.
+        if (ancestors.length > 0) {
+            ancestors[0].position.x = selectedNode.position.x;
+            for (let i = 1; i < ancestors.length; i++) {
+                const ancestor = ancestors[i];
+                if (ancestor) {
+                    ancestor.position.y = ancestors[0].position.y;
+    
+                    // get the previous ancestor's nodeWidth.
+                    // dynamically calculate node width.
+                    ancestor.position.x = ancestors[i - 1].position.x + i * nodeWidth;
+    
+                    ancestor.sourcePosition = 'left';
+                    ancestor.targetPosition = 'right';
+    
+                }
+            }
+    
+            ancestors[0].targetPosition = 'right';
+        }
+    }
 
     return { nodes, edges };
 };
@@ -145,16 +203,16 @@ export default class Layout {
     }
 
 
-    public async autolayout(nodeToCenter: Node = undefined, numGenerations = 1): Promise<void> {
+    public async autolayout(selectedNode: Node = undefined, numGenerations = 1, notToCenter = false): Promise<void> {
+        const oldViewport = this.reactFlow.getViewport();
         if(this.nodes.length === 0) return;
-        if (nodeToCenter) {
-            console.log(`Center on ${nodeToCenter.data.label}`)
+        if (selectedNode) {
             // need to get visible nodes and edges.
-            const siblings = getSiblings(nodeToCenter, this.nodes, this.edges);
-            const ancestors = getAncestors(nodeToCenter, this.nodes, this.edges);
-            const descents = getQualifiedDescents(nodeToCenter, this.nodes, this.edges, numGenerations);
+            const siblings = getSiblingsIncludeSelf(selectedNode, this.nodes, this.edges);
+            const ancestors = getAncestors(selectedNode, this.nodes, this.edges);
+            const descents = getQualifiedDescents(selectedNode, this.nodes, this.edges, numGenerations);
 
-            const visibleNodes = [nodeToCenter].concat(siblings).concat(ancestors).concat(descents);
+            const visibleNodes = ancestors.concat(siblings).concat(descents);
             const visibleEdges = this.edges.filter((e) => {
                 const source = visibleNodes.find((n) => n.id === e.source);
                 const target = visibleNodes.find((n) => n.id === e.target);
@@ -164,21 +222,27 @@ export default class Layout {
             });
             const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
                 visibleNodes,
-                visibleEdges
+                visibleEdges,
+                this.reactFlow.getNodes(),
+                selectedNode
             );
 
-            const theNode = this.getNodeFromLayoutElement(layoutedNodes, nodeToCenter);
+            const theNode = this.getNodeFromLayoutElement(layoutedNodes, selectedNode);
             theNode.selected = true;
 
             this.reactFlow.setNodes(layoutedNodes);
             this.reactFlow.setEdges(layoutedEdges);
             //this.reactFlow.fitView({ nodes: [theNode], padding: 0.2 });
-
-            this.reactFlow.setCenter(
-                theNode.position.x,
-                theNode.position.y,
-                {zoom: this.reactFlow.getZoom()}
-            );
+            if(!notToCenter) {
+                this.reactFlow.setCenter(
+                    theNode.position.x,
+                    theNode.position.y,
+                    {zoom: this.reactFlow.getZoom(), duration: 200}
+                );
+            }
+            else {
+                this.reactFlow.setViewport(oldViewport);
+            }
         }
 
         else {
@@ -188,34 +252,31 @@ export default class Layout {
             );
             this.reactFlow.setNodes(layoutedNodes);
             this.reactFlow.setEdges(layoutedEdges);
-            const theNode = layoutedNodes[0];
-            this.reactFlow.setCenter(
-                theNode.position.x,
-                theNode.position.y,
-                {zoom: this.reactFlow.getZoom()}
-            );
         }
     }
 
 
 
-    public async restoreLayout(nodeToCenter: Node = undefined): Promise<void> {
+    public async restoreLayout(selectedNode: Node = undefined): Promise<void> {
         //if(this.nodes.length === 0) return;
-        if (!nodeToCenter) {
-            nodeToCenter = this.nodes[0];
-        }
+        // if (!selectedNode) {
+        //     selectedNode = this.nodes[0];
+        // }
+        //const oldViewport = this.reactFlow.getViewport();
         const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
             this.nodes,
-            this.edges
+            this.edges,
+            this.reactFlow.getNodes()
         );
         this.reactFlow.setNodes(layoutedNodes);
         this.reactFlow.setEdges(layoutedEdges);
-        const theNode = this.getNodeFromLayoutElement(layoutedNodes, nodeToCenter);
-        this.reactFlow.setCenter(
-            theNode.position.x,
-            theNode.position.y,
-            {zoom: this.reactFlow.getZoom()}
-        );
+        // const theNode = this.getNodeFromLayoutElement(layoutedNodes, selectedNode);
+        // this.reactFlow.setCenter(
+        //     theNode.position.x,
+        //     theNode.position.y,
+        //     {zoom: this.reactFlow.getZoom()}
+        // );
+        //this.reactFlow.setViewport(oldViewport);
     }
 
 
@@ -232,7 +293,72 @@ export default class Layout {
         return this.edges;
     }
 
-    private checkIfNodeExists(node: Node): boolean {
+    public checkIfNodeExists(node: Node): boolean {
         return this.nodes.some((n) => n.id === node.id);
+    }
+
+    public move(direction: string): Node {
+        let nodes = this.reactFlow.getNodes();
+
+        // find the selectedNode, which is selected.
+        const selectedNode = nodes.find((n) => n.selected);
+        // if move up, get ancestors.
+        if(direction === "up") {
+            const ancestors = getAncestors(selectedNode, this.reactFlow.getNodes(), this.reactFlow.getEdges());
+            if(ancestors.length > 0) {
+                return ancestors[0];
+            }
+            else {
+                return undefined;
+            }
+        }
+        // if move down, get first descent.
+
+        if(direction === "down") {
+            const children = getChildren(selectedNode, this.reactFlow.getNodes(), this.reactFlow.getEdges());
+            
+            if(children.length > 0) {
+                return children[0];
+            }
+            else {
+                return undefined;
+            }
+        }
+        // if move left, get left sibling.
+        if(direction === "left") {
+            const siblings = getSiblingsIncludeSelf(selectedNode, this.reactFlow.getNodes(), this.reactFlow.getEdges());
+            
+            if(getSiblingsIncludeSelf.length > 0) {
+                // find the index of the selectedNode in the siblings.
+                const index = siblings.findIndex((s) => s.id === selectedNode.id);
+                if(index > 0) {
+                    return siblings[index - 1];
+                }
+                else {
+                    return undefined;
+                }
+            }
+            else {
+                return undefined;
+            }
+        }
+        // if move right, get right sibling
+        if(direction === "right") {
+            const siblings = getSiblingsIncludeSelf(selectedNode, this.reactFlow.getNodes(), this.reactFlow.getEdges());
+            
+            if(getSiblingsIncludeSelf.length > 0) {
+                // find the index of the selectedNode in the siblings.
+                const index = siblings.findIndex((s) => s.id === selectedNode.id);
+                if(index < siblings.length - 1) {
+                    return siblings[index + 1];
+                }
+                else {
+                    return undefined;
+                }
+            }
+            else {
+                return undefined;
+            }
+        }
     }
 }

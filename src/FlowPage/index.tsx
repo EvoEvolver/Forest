@@ -39,14 +39,46 @@ const Flow = (props) => {
     const [numGenerations, setNumGenerations] = useState(1);
 
     useEffect(() => {
+        const handleKeyDown = (e) => {
+            let result = undefined;
+            const key = e.key;
+            if (key === 'ArrowUp') {
+                result = layout.move("up");
+            }
+            else if(key === 'ArrowDown') {
+                result = layout.move("down");
+            }
+
+            else if(key === 'ArrowLeft') {
+                result = layout.move("left");
+            }
+
+            else if (key === 'ArrowRight') {
+                result = layout.move("right");
+            }
+
+            if(result) {
+                setSelectedNode(result);
+            }
+
+        };
+        document.addEventListener('keydown', handleKeyDown, true);
+
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+
+    }, []);
+
+    useEffect(() => {
         layout = new Layout(reactFlow, props.initialNodes, props.initialEdges);
-        if(selectedNode && layout.checkIfNodeExists(selectedNode)) {
-            layout.autolayout(selectedNode).then(() => {
-                console.log("Initial Layout.")
+        if (selectedNode && layout.checkIfNodeExists(selectedNode)) {
+            layout.autolayout(selectedNode, undefined, true).then(() => {
+                console.log("Initial Layout and center on a previous selected node.")
             });
         }
         else {
-            layout.autolayout(layout.getRootNode()).then(() => {
+            layout.autolayout().then(() => {
                 console.log("Initial Layout.")
             });
         }
@@ -55,12 +87,13 @@ const Flow = (props) => {
 
     useEffect(() => {
         layout.autolayout(selectedNode, numGenerations).then(() => {
-            
+
             console.log("Layout on numGenerations change.")
         });
     }, [numGenerations]);
 
     useEffect(() => {
+        if(selectedNode === null) return;
         layout.autolayout(selectedNode).then(() => {
             console.log("Layout on selectedNode change.")
         });
@@ -71,19 +104,22 @@ const Flow = (props) => {
         //await layout.autolayout(node);
         setSelectedNode(node);
     };
-    if(layout.getNodes().length > 0) {
+    if (layout.getNodes().length > 0) {
         return (
             <ReactFlow
                 nodes={nodes}
                 edges={edges}
                 onNodesChange={onNodesChange}
+                deleteKeyCode={null}
                 onEdgesChange={onEdgesChange}
+                nodesDraggable={false}
                 connectionLineType={ConnectionLineType.SmoothStep}
                 fitView
-                fitViewOptions={{ nodes: [nodes[0]], padding: 0.2 }}
+                fitViewOptions={{ nodes: [nodes[0]]}}
                 onNodeClick={focusOnNodeHelper} // Attach the click handler to zoom in on the clicked node
                 onPaneClick={async () => {
                     await layout.restoreLayout(selectedNode);
+                    setSelectedNode(null);
                 }}
                 nodeTypes={nodeTypes}
             >
@@ -107,7 +143,7 @@ const Flow = (props) => {
         );
     }
     else {
-        return(<div>Loading...</div>)
+        return (<div>Loading...</div>)
     }
 };
 

@@ -95,6 +95,11 @@ export default function App() {
     });
     socket.on("tree", (tree) => {
       setTree(tree);
+      // wait 3 seconds.
+      // setTimeout(() => {
+      //   tree["sections"] = []
+      //   setTree(tree);
+      // }, 3000);
     });
 
     socket.emit('requestTree', (tree) => {
@@ -103,6 +108,7 @@ export default function App() {
   }, []);
   // On Tree Change
   useEffect(() => {
+    console.log("tree changes")
     if (tree) {
       let { nodes, edges } = convertTreeToWhatWeWant(tree);
       setNodes(nodes);
