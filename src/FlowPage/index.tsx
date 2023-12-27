@@ -102,6 +102,10 @@ const Flow = (props) => {
 
     const focusOnNodeHelper = async (event, node: Node, center = true) => {
         //await layout.autolayout(node);
+        // check if the node has already been selected.
+        if (selectedNode && selectedNode.id === node.id) {
+            return;
+        }
         setSelectedNode(node);
     };
     if (layout.getNodes().length > 0) {
