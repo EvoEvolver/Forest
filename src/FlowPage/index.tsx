@@ -41,6 +41,7 @@ const Flow = (props) => {
     useEffect(() => {
         const handleKeyDown = (e) => {
             let result = undefined;
+            const oneToNineRegex = /^[1-9]$/;
             const key = e.key;
             if (key === 'ArrowUp') {
                 result = layout.move("up");
@@ -55,6 +56,11 @@ const Flow = (props) => {
 
             else if (key === 'ArrowRight') {
                 result = layout.move("right");
+            }
+
+            // if it's a number from 1 to 9.
+            else if (oneToNineRegex.test(key)) {
+                result = layout.moveToChildByIndex(parseInt(key) - 1);
             }
 
             if(result) {

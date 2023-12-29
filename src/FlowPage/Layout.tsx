@@ -361,4 +361,19 @@ export default class Layout {
             }
         }
     }
+
+    public moveToChildByIndex(index: number): Node {
+        let nodes = this.reactFlow.getNodes();
+
+        // find the selectedNode, which is selected.
+        const selectedNode = nodes.find((n) => n.selected);
+        // if move up, get ancestors.
+        const children = getChildren(selectedNode, this.reactFlow.getNodes(), this.reactFlow.getEdges());
+        if(children.length > 0 && index < children.length) {
+            return children[index];
+        }
+        else {
+            return undefined;
+        }
+    }
 }
