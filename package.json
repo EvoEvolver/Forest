@@ -17,6 +17,7 @@
     "@types/jest": "^29.5.11",
     "@types/node": "^20.10.4",
     "dagre": "^0.8.5",
+    "html-react-parser": "^5.0.11",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-helmet": "^6.1.0",
@@ -25,7 +26,8 @@
     "react-transition-group": "^4.4.5",
     "reactflow": "^11.10.1",
     "socket.io-client": "^4.7.2",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@types/react": "^18.2.42",

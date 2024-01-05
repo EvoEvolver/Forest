@@ -9,6 +9,19 @@ import FocusPage from './FocusPage';
 import Flow from './FlowPage';
 
 
+function makeid(length) {
+  let result = '';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const charactersLength = characters.length;
+  let counter = 0;
+  while (counter < length) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    counter += 1;
+  }
+  return result;
+}
+
+
 const socket = io("http://127.0.0.1:5000", {
   transports: ["websocket"],
   withCredentials: false,
@@ -43,7 +56,8 @@ export default function App() {
     const edges: Edge[] = [];
 
     const dfs = (tree: Tree, parent: string | undefined) => {
-      const id = tree.id ? tree.id: tree.title;
+      //const id = tree.id ? tree.id: tree.title;
+      const id = makeid(32);
       // Calculate x-coordinate based on the level
       const x = 0; // Adjust the multiplier based on your preference
       // Calculate y-coordinate based on the order within the parent's sections
@@ -56,7 +70,7 @@ export default function App() {
       // Add the node to the list of nodes.
       // Add the edge to the list of edges.
       // If the tree has children, call dfs on each child.
-      let node: Node = { id, position, data: { label, content, setShowFocusPage }, type: "NodeWithTooltip" };
+      let node: Node = { id, position, data: { label, content, setShowFocusPage, showFocusPage }, type: "NodeWithTooltip" };
       nodes.push(node);
       if (parent) {
         let edge: Edge = { id: `${parent}-${id}`, source: parent, target: id };
@@ -95,11 +109,6 @@ export default function App() {
     });
     socket.on("tree", (tree) => {
       setTree(tree);
-      // wait 3 seconds.
-      // setTimeout(() => {
-      //   tree["sections"] = []
-      //   setTree(tree);
-      // }, 3000);
     });
 
     socket.emit('requestTree', (tree) => {
@@ -125,14 +134,16 @@ export default function App() {
         <Button variant="contained" style={{ marginLeft: '10px' }} onClick={handleQuerySearch}>Search</Button>
       </Box>
       <ReactFlowProvider>
-        <Flow initialNodes={nodes} initialEdges={edges} query={query} selectedNode={selectedNode} setSelectedNode={setSelectedNode} />
+        <Flow initialNodes={nodes} initialEdges={edges} query={query} selectedNode={selectedNode} setSelectedNode={setSelectedNode} showFocusPage={showFocusPage} />
       </ReactFlowProvider>
       <Modal
         open={showFocusPage}
         onClose={() => setShowFocusPage(false)}
         style={{ position: "absolute", display: 'flex', alignItems: 'center', margin: '10px 20px', zIndex: '100000' }}
       >
+        <>
         <FocusPage nodes={nodes} edges={edges} selectedNode={selectedNode} setSelectedNode={setSelectedNode} setShowFocusPage={setShowFocusPage} />
+        </>
       </Modal>
     </Box>
   );

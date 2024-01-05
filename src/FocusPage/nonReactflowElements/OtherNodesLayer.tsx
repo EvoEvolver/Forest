@@ -18,7 +18,7 @@ const NodeElement = (props) => {
             }}
             onClick={() => changeSelectedNode(node)}
         >
-            <Typography>{node.id}</Typography>
+            <Typography>{props.node.data.label}</Typography>
         </Paper>
     );
 };

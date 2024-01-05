@@ -19,7 +19,7 @@ import 'reactflow/dist/style.css';
 import NodeWithTooltip from './Nodes/NodeWithTooltip.js'
 import { only } from 'node:test';
 
-import Layout from './Layout.tsx';
+import Layout from './Layout';
 
 const nodeTypes = {
     NodeWithTooltip: NodeWithTooltip,
@@ -210,7 +210,7 @@ const Flow = (props) => {
                         <Breadcrumbs aria-label="breadcrumb">
                             {
                                 layout.getNodePath(selectedNode).map((node) => {
-                                    return <Link underline="hover" color="inherit" href="#" onClick={() => {
+                                    return <Link key={selectedNode.id} underline="hover" color="inherit" href="#" onClick={() => {
                                         setSelectedNode(node);
                                     }}>{node.data.label}</Link>
                                 })
