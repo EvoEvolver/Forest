@@ -36,7 +36,7 @@ const SelectedNodeLayer = (props) => {
         setAnimate(true);
         const timeoutId = setTimeout(() => {
             setAnimate(false); 
-        }, 500);
+        }, 0);
         return () => clearTimeout(timeoutId);
     }, [node]);
 

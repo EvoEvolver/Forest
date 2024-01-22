@@ -1,4 +1,4 @@
-import { ReactFlowInstance, Node, Edge, Viewport } from 'reactflow';
+import { ReactFlowInstance, Node, Edge, Viewport, Position } from 'reactflow';
 import dagre from 'dagre';
 
 
@@ -173,7 +173,8 @@ export default class Layout {
         this.reactFlow.setEdges(layoutedEdges);
         this.reactFlow.setViewport(oldViewport);
 
-        let theNode = layoutedNodes.find((node) => node.id === selectedNode.id);;
+        let theNode = layoutedNodes.find((node) => node.id === selectedNode.id);
+        console.log(theNode);
         if (theNode) {
             theNode.selected = true;
             this.reactFlow.setCenter(
@@ -345,8 +346,8 @@ export default class Layout {
         if (selectedNode) {
             const node = nodes.find((n) => n.id === selectedNode.id);
             if (node) {
-                node.sourcePosition = 'bottom';
-                node.targetPosition = 'top';
+                node.sourcePosition = 'bottom' as Position;
+                node.targetPosition = 'top' as Position;
                 const dx = selectedNode.position.x - node.position.x;
                 const dy = selectedNode.position.y - node.position.y;
                 nodes.forEach((n) => {
@@ -372,13 +373,13 @@ export default class Layout {
                         // dynamically calculate node width.
                         ancestor.position.x = ancestors[i - 1].position.x + i * nodeWidth;
 
-                        ancestor.sourcePosition = 'left';
-                        ancestor.targetPosition = 'right';
+                        ancestor.sourcePosition = 'left' as Position;
+                        ancestor.targetPosition = 'right' as Position;
 
                     }
                 }
 
-                ancestors[0].targetPosition = 'right';
+                ancestors[0].targetPosition = 'right' as Position;
             }
         }
 

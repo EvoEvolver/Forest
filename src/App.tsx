@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { ReactFlowProvider, Node, Edge } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { TextField, Box, Button, Typography, Modal } from '@mui/material';
-import testTrees from './testing/trees.json';
+// import testTrees from './testing/trees.json';
 import { io } from 'socket.io-client';
 import FocusPage from './FocusPage';
 import Flow from './FlowPage';
@@ -89,19 +89,19 @@ export default function App() {
   }
 
 
-  const handleQuerySearch = () => {
-    let theTree: Tree | null = null; // Set the type for theTree
+  // const handleQuerySearch = () => {
+  //   let theTree: Tree | null = null; // Set the type for theTree
 
-    if (testTrees[query]) {
-      // Assuming testTrees[query] is of type MyTreeType
-      theTree = testTrees[query] as Tree;
-    } else {
-      // Assuming testTrees['Ganzi'] is also of type MyTreeType
-      theTree = testTrees['Places of Interests'] as Tree;
-    }
+  //   if (testTrees[query]) {
+  //     // Assuming testTrees[query] is of type MyTreeType
+  //     theTree = testTrees[query] as Tree;
+  //   } else {
+  //     // Assuming testTrees['Ganzi'] is also of type MyTreeType
+  //     theTree = testTrees['Places of Interests'] as Tree;
+  //   }
 
-    setTree(theTree);
-  };
+  //   setTree(theTree);
+  // };
 
   useEffect(() => {
     socket.on("connect", () => {
@@ -129,10 +129,10 @@ export default function App() {
   return (
     <Box style={{ width: '100vw', height: '100vh' }}>
       {/* // Select label is the node's title. value is the node's id. */}
-      <Box style={{ position: "absolute", display: 'flex', alignItems: 'center', margin: '10px 20px', zIndex: '10000' }}>
+      {/* <Box style={{ position: "absolute", display: 'flex', alignItems: 'center', margin: '10px 20px', zIndex: '10000' }}>
         <TextField id="outlined-basic" label="Knowledege" variant="outlined" style={{ flex: 1 }} value={query} onChange={(e) => setQuery(e.target.value)} />
         <Button variant="contained" style={{ marginLeft: '10px' }} onClick={handleQuerySearch}>Search</Button>
-      </Box>
+      </Box> */}
       <ReactFlowProvider>
         <Flow initialNodes={nodes} initialEdges={edges} query={query} selectedNode={selectedNode} setSelectedNode={setSelectedNode} showFocusPage={showFocusPage} />
       </ReactFlowProvider>

@@ -5,10 +5,10 @@ import 'reactflow/dist/style.css';
 import {Grid,IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
-import SelectedNodeLayer from './nonReactflowElements/SelectedNodeLayer.tsx';
-import OtherNodesLayer from './nonReactflowElements/OtherNodesLayer.tsx';
+import SelectedNodeLayer from './nonReactflowElements/SelectedNodeLayer';
+import OtherNodesLayer from './nonReactflowElements/OtherNodesLayer';
 
-import { getAncestors, getChildren, getQualifiedDescents, getSiblingsIncludeSelf } from '../FlowPage/Layout.tsx';
+import { getAncestors, getChildren, getQualifiedDescents, getSiblingsIncludeSelf } from '../FlowPage/Layout';
 
 
 export default function FocusPage(props) {

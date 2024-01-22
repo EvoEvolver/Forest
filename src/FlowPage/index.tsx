@@ -47,9 +47,8 @@ const Flow = (props) => {
 
     const [numGenerations, setNumGenerations] = useState(1);
 
-    useEffect(() => {
-        if (layout.getNodes().length === 0) { return };
-        const handleKeyDown = (e) => {
+    const keyPress = useCallback(
+        (e) => {
             let result = undefined;
             const oneToNineRegex = /^[1-9]$/;
             const key = e.key;
@@ -73,7 +72,7 @@ const Flow = (props) => {
             }
 
             else if (key === 'Escape') {
-                result = handleEscapeKey();
+                handleEscapeKey();
             }
             else if (key === 'r') {
                 result = layout.moveToRoot();
@@ -88,14 +87,14 @@ const Flow = (props) => {
                 setSelectedNode(result);
             }
 
-        };
-        document.addEventListener('keydown', handleKeyDown, true);
 
-        return () => {
-            document.removeEventListener('keydown', handleKeyDown);
-        };
-
-    }, [layout.getNodes()]);
+        },
+        [layout]
+      );
+      useEffect(() => {
+        document.addEventListener("keydown", keyPress);
+        return () => document.removeEventListener("keydown", keyPress);
+      }, [keyPress]);
 
     useEffect(() => {
         layout = new Layout(reactFlow, props.initialNodes, props.initialEdges);
