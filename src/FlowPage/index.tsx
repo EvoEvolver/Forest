@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import ReactFlow, {
     addEdge,
     ConnectionLineType,
@@ -9,6 +9,7 @@ import ReactFlow, {
     Edge,
     ReactFlowInstance
 } from 'reactflow';
+import { Breadcrumbs, Link, Box } from '@mui/material';
 
 import { useReactFlow, } from 'reactflow';
 
@@ -18,7 +19,7 @@ import 'reactflow/dist/style.css';
 import NodeWithTooltip from './Nodes/NodeWithTooltip.js'
 import { only } from 'node:test';
 
-import Layout from './Layout.tsx';
+import Layout from './Layout';
 
 const nodeTypes = {
     NodeWithTooltip: NodeWithTooltip,
@@ -32,25 +33,33 @@ const Flow = (props) => {
 
     const selectedNode = props.selectedNode;
     const setSelectedNode = props.setSelectedNode;
+    const showFocusPage = props.showFocusPage;
+    const showFocusPageRef = useRef(showFocusPage);
+
+    const selectedNodeRef = useRef(selectedNode);
+
+    useEffect(() => {
+        showFocusPageRef.current = showFocusPage;
+    }, [showFocusPage]);
     const reactFlow = useReactFlow();
 
     let layout = new Layout(reactFlow, props.initialNodes, props.initialEdges);
 
     const [numGenerations, setNumGenerations] = useState(1);
 
-    useEffect(() => {
-        const handleKeyDown = (e) => {
+    const keyPress = useCallback(
+        (e) => {
             let result = undefined;
             const oneToNineRegex = /^[1-9]$/;
             const key = e.key;
             if (key === 'ArrowUp') {
                 result = layout.move("up");
             }
-            else if(key === 'ArrowDown') {
+            else if (key === 'ArrowDown') {
                 result = layout.move("down");
             }
 
-            else if(key === 'ArrowLeft') {
+            else if (key === 'ArrowLeft') {
                 result = layout.move("left");
             }
 
@@ -58,51 +67,76 @@ const Flow = (props) => {
                 result = layout.move("right");
             }
 
+            else if (key === 'Enter') {
+                result = handleEnterKey();
+            }
+
+            else if (key === 'Escape') {
+                handleEscapeKey();
+            }
+            else if (key === 'r') {
+                result = layout.moveToRoot();
+            }
+
             // if it's a number from 1 to 9.
             else if (oneToNineRegex.test(key)) {
                 result = layout.moveToChildByIndex(parseInt(key) - 1);
             }
 
-            if(result) {
+            if (result) {
                 setSelectedNode(result);
             }
 
-        };
-        document.addEventListener('keydown', handleKeyDown, true);
 
-        return () => {
-            document.removeEventListener('keydown', handleKeyDown);
-        };
-
-    }, []);
+        },
+        [layout]
+      );
+      useEffect(() => {
+        document.addEventListener("keydown", keyPress);
+        return () => document.removeEventListener("keydown", keyPress);
+      }, [keyPress]);
 
     useEffect(() => {
         layout = new Layout(reactFlow, props.initialNodes, props.initialEdges);
-        if (selectedNode && layout.checkIfNodeExists(selectedNode)) {
-            layout.autolayout(selectedNode, undefined, true).then(() => {
-                console.log("Initial Layout and center on a previous selected node.")
-            });
+        if (selectedNode) {
+            if (!layout.checkIfNodeExists(selectedNode)) {
+                layout.autoLayout().then(() => {
+                    // Initial Layout, the previously selected node is gone.
+                    setSelectedNode(null);
+                });
+            }
+            else {
+                layout.autoLayout(selectedNode).then(() => {
+                    // Initial Layout and still select on the old selected node.
+                });
+            }
         }
         else {
-            layout.autolayout().then(() => {
-                console.log("Initial Layout.")
+            layout.autoLayout().then(() => {
+                // Initial Layout, no selected node.
+                setSelectedNode(null);
             });
         }
 
     }, [props.initialNodes, props.initialEdges]); // TODO: Do we have a better way to check if a flow is loaded? There was an event called onLoad but it doesn't seem to work.
 
     useEffect(() => {
-        layout.autolayout(selectedNode, numGenerations).then(() => {
+        layout.updateLayout(selectedNode, numGenerations).then(() => {
 
-            console.log("Layout on numGenerations change.")
+            // Layout on numGenerations change.
         });
     }, [numGenerations]);
 
     useEffect(() => {
-        if(selectedNode === null) return;
-        layout.autolayout(selectedNode, numGenerations).then(() => {
-            console.log("Layout on selectedNode change.")
+        selectedNodeRef.current = selectedNode;
+        if (selectedNode === null) {
+            return;
+        };
+        layout.updateLayout(selectedNode, numGenerations).then(() => {
+            // Layout on selectedNode change.
         });
+
+        console.log(layout.getNodePath(selectedNode));
     }, [selectedNode]);
 
 
@@ -114,6 +148,44 @@ const Flow = (props) => {
         }
         setSelectedNode(node);
     };
+
+    const onPaneClickHandler = () => {
+        layout.restoreLayout().then(() => {
+            setSelectedNode(null);
+        });
+    }
+
+    /**
+     * Handle when the user presses the enter key.
+     */
+    const handleEnterKey = () => {
+        let selectedNode = layout.checkIfSelectedOnNode();
+        if (selectedNode) {
+            selectedNode.data.setShowFocusPage(true);
+            return;
+
+        }
+        else {
+            // check the last of selectedNodeRef
+            return layout.moveToRoot();
+        }
+    }
+
+    /**
+    * Handle when the user presses the escape key.
+    */
+    const handleEscapeKey = () => {
+        let selectedNode = layout.checkIfSelectedOnNode();
+        if (selectedNode && !showFocusPageRef.current) {
+            onPaneClickHandler();
+
+        }
+        else if (selectedNode && showFocusPageRef.current) {
+            selectedNode.data.setShowFocusPage(false);
+        }
+    }
+
+
     if (layout.getNodes().length > 0) {
         return (
             <ReactFlow
@@ -125,17 +197,25 @@ const Flow = (props) => {
                 nodesDraggable={false}
                 connectionLineType={ConnectionLineType.SmoothStep}
                 fitView
-                fitViewOptions={{ nodes: [nodes[0]]}}
+                fitViewOptions={{ nodes: [nodes[0]] }}
                 onNodeClick={focusOnNodeHelper} // Attach the click handler to zoom in on the clicked node
-                onPaneClick={async () => {
-                    await layout.restoreLayout(selectedNode);
-                    setSelectedNode(null);
+                onPaneClick={() => {
+                    onPaneClickHandler();
                 }}
                 nodeTypes={nodeTypes}
             >
-                <Panel position="top-right">
-                    <input type="number" value={numGenerations} min={0} onChange={(event) => setNumGenerations(parseInt(event.target.value))} />
-                    <Select styles={{
+                <Panel position="top-center">
+                    <Box sx={{width: "30vw"}}>
+                        <Breadcrumbs aria-label="breadcrumb">
+                            {
+                                layout.getNodePath(selectedNode).map((node) => {
+                                    return <Link key={selectedNode.id} underline="hover" color="inherit" href="#" onClick={() => {
+                                        setSelectedNode(node);
+                                    }}>{node.data.label}</Link>
+                                })
+                            }
+                        </Breadcrumbs>
+                        <Select styles={{
                         // Fixes the overlapping problem of the component
                         menu: provided => ({ ...provided, zIndex: 9999999, minWidth: "100px" }),
                     }}
@@ -148,6 +228,11 @@ const Flow = (props) => {
                             setSelectedNode(option)
                         }}
                     />
+                    </Box>
+                    
+                </Panel>
+                <Panel position="top-right">
+                    <input type="number" value={numGenerations} min={0} onChange={(event) => setNumGenerations(parseInt(event.target.value))} />
                 </Panel>
             </ReactFlow>
         );

@@ -18,7 +18,7 @@ const NodeElement = (props) => {
             }}
             onClick={() => changeSelectedNode(node)}
         >
-            <Typography>{node.id}</Typography>
+            <Typography>{props.node.data.label}</Typography>
         </Paper>
     );
 };
@@ -33,7 +33,7 @@ const OtherNodesLayer = (props) => {
         setAnimate(true);
         const timeoutId = setTimeout(() => {
             setAnimate(false); 
-        }, 500);
+        }, 0);
         return () => clearTimeout(timeoutId);
     }, [startPoint]);
 

@@ -72,3 +72,12 @@ button:focus-visible {
   color: #f9f9f9;
   background-color: #535bf2;
 }
+
+
+.leaf {
+	width: 100px;
+	height: 100px;
+	border-radius: 0 70px;
+	background-color: #1f801f;
+	transform: rotate(0deg);
+}

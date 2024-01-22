@@ -5,10 +5,10 @@ import 'reactflow/dist/style.css';
 import {Grid,IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
-import SelectedNodeLayer from './nonReactflowElements/SelectedNodeLayer.tsx';
-import OtherNodesLayer from './nonReactflowElements/OtherNodesLayer.tsx';
+import SelectedNodeLayer from './nonReactflowElements/SelectedNodeLayer';
+import OtherNodesLayer from './nonReactflowElements/OtherNodesLayer';
 
-import { getAncestors, getChildren, getQualifiedDescents, getSiblingsIncludeSelf } from '../FlowPage/Layout.tsx';
+import { getAncestors, getChildren, getQualifiedDescents, getSiblingsIncludeSelf } from '../FlowPage/Layout';
 
 
 export default function FocusPage(props) {
@@ -57,7 +57,7 @@ export default function FocusPage(props) {
           <OtherNodesLayer nodes={ancestorsNodes} changeSelectedNode={changeSelectedNode} />
         </Grid>
         <Grid item style={{ height: siblingsLayerHeight, backgroundColor: '#A8D8B9', width: "100%", padding: "20px" }}>
-          <OtherNodesLayer nodes={siblingNodes} changeSelectedNode={changeSelectedNode} />
+          <OtherNodesLayer nodes={siblingNodes.filter((n) => n.id != selectedNode.id)} changeSelectedNode={changeSelectedNode} />
         </Grid>
 
         <Grid item style={{ height: selectedNodeLayerHeight, backgroundColor: '#EB7A77', width: "100%", padding: "20px" }}>
