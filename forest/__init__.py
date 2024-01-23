@@ -11,7 +11,8 @@ def build():
     os.system('npm install && npm run build')
 
 def lazy_build():
-    if not os.path.exists(build_dir):
+    # check if dist folder exists and the index.html file exists
+    if not os.path.exists(build_dir) or not os.path.exists(os.path.join(build_dir, 'index.html')):
         build()
 
 if __name__ == '__main__':
