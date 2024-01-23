@@ -8,7 +8,7 @@ asset_dir = os.path.join(build_dir, 'assets')  # Path to the assets directory
 
 def build():
     os.chdir(project_root)
-    os.system('npm run build')
+    os.system('npm install && npm run build')
 
 def lazy_build():
     if not os.path.exists(build_dir):
