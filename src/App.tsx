@@ -20,8 +20,7 @@ function makeid(length) {
   }
   return result;
 }
-
-const currentPort = window.location.port
+const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999": window.location.port;
 const socket = io(`http://127.0.0.1:${currentPort}`, {
   transports: ["websocket"],
   withCredentials: false,
