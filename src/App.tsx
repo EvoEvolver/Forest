@@ -21,8 +21,8 @@ function makeid(length) {
   return result;
 }
 
-
-const socket = io("http://127.0.0.1:5000", {
+const currentPort = window.location.port
+const socket = io(`http://127.0.0.1:${currentPort}`, {
   transports: ["websocket"],
   withCredentials: false,
 }); // Currently running on default port locally. Need to write it into config file.
@@ -107,10 +107,10 @@ export default function App() {
     socket.on("connect", () => {
       console.log("Connected");
     });
-    socket.on("tree", (tree) => {
+    socket.on("setTree", (tree) => {
+      console.log(tree);
       setTree(tree);
     });
-
     socket.emit('requestTree', (tree) => {
       console.log('testing');
     })
