@@ -71,7 +71,7 @@ const Flow = (props) => {
                 result = handleEnterKey();
             }
 
-            else if (key === 'Escape') {
+            else if (key === 'q') {
                 handleEscapeKey();
             }
             else if (key === 'r') {
