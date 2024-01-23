@@ -9,7 +9,7 @@ import Typography from '@mui/material/Typography';
 import Parser from 'html-react-parser';
 
 const NodeElement = (props) => {
-
+    console.log(props.node.data)
     return (
         <Card sx={{ minWidth: "100%", maxWidth: "100%", minHeight: "100%", maxHeight: "100%" }}>
             <CardContent>
@@ -18,8 +18,6 @@ const NodeElement = (props) => {
                 </Typography>
                 <Typography variant="body2">
                     {Parser(props.node.data.content)}
-                    <br></br>
-                    {props.node.data.content}
                 </Typography>
             </CardContent>
         </Card>
