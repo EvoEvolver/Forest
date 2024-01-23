@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Forest"
+description = "GUI for knowledge tree"
+version = "0.1.0"
+authors = [
+    { name = "Zijian Zhang" }
+]
+
+dependencies = [
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest"
+]
+
+[tool.setuptools]
+packages = ["forest"]
