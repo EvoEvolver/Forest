@@ -22,10 +22,10 @@ export default function FocusPage(props) {
   let [childrenNodes, setChildrenNodes] = useState<Node[]>([]);
   let [ancestorsNodes, setAncestorsNodes] = useState<Node[]>([]);
 
-  const ancestorsLayerHeight = '20%';
-  const siblingsLayerHeight = '20%';
-  const selectedNodeLayerHeight = '40%';
-  const childrenLayerHeight = '20%';
+  const ancestorsLayerHeight = '10%';
+  const siblingsLayerHeight = '10%';
+  const selectedNodeLayerHeight = '70%';
+  const childrenLayerHeight = '10%';
 
   let changeSelectedNode = (node: Node) => {
     setSelectedNode(node);
@@ -53,19 +53,19 @@ export default function FocusPage(props) {
         <IconButton aria-label="delete" size="small" style={{position: "absolute", right: "0", top: "0"}} onClick={() => setShowFocusPage(false)}>
           <CloseIcon fontSize="small" />
         </IconButton>
-        <Grid item style={{ height: ancestorsLayerHeight, backgroundColor: '#7DB9DE', width: "100%", padding: "20px" }}>
+        <Grid item style={{ height: ancestorsLayerHeight, backgroundColor: '#7DB9DE', width: "100%", padding: "10px" }}>
           <OtherNodesLayer nodes={ancestorsNodes} changeSelectedNode={changeSelectedNode} />
         </Grid>
-        <Grid item style={{ height: siblingsLayerHeight, backgroundColor: '#A8D8B9', width: "100%", padding: "20px" }}>
+        <Grid item style={{ height: siblingsLayerHeight, backgroundColor: '#A8D8B9', width: "100%", padding: "10px" }}>
           <OtherNodesLayer nodes={siblingNodes.filter((n) => n.id != selectedNode.id)} changeSelectedNode={changeSelectedNode} />
         </Grid>
 
-        <Grid item style={{ height: selectedNodeLayerHeight, backgroundColor: '#EB7A77', width: "100%", padding: "20px" }}>
+        <Grid item style={{ height: selectedNodeLayerHeight, backgroundColor: '#EB7A77', width: "100%", padding: "10px" }}>
           <SelectedNodeLayer node={selectedNode} />
         </Grid>
 
         {/* Children Layer */}
-        <Grid item style={{ height: childrenLayerHeight, backgroundColor: '#FAD689', width: "100%", padding: "20px" }}>
+        <Grid item style={{ height: childrenLayerHeight, backgroundColor: '#FAD689', width: "100%", padding: "10px" }}>
           <OtherNodesLayer nodes={childrenNodes} changeSelectedNode={changeSelectedNode} />
         </Grid>
       </Grid>
