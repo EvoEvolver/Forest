@@ -9,9 +9,8 @@ import Typography from '@mui/material/Typography';
 import Parser from 'html-react-parser';
 
 const NodeElement = (props) => {
-    console.log(props.node.data)
     return (
-        <Card sx={{ minWidth: "100%", maxWidth: "100%", minHeight: "100%", maxHeight: "100%" }}>
+        <Card sx={{ minWidth: "100%", maxWidth: "100%", minHeight: "100%", maxHeight: "100%", overflowY: 'auto', overflowX: 'hidden', wordBreak: "break-word" }}>
             <CardContent>
                 <Typography variant="h5" component="div">
                     {props.node.data.label}
@@ -44,7 +43,7 @@ const SelectedNodeLayer = (props) => {
                 Tool 1
             </Grid>
 
-            <Grid key={1} item xs style={{ width: elementWidth, height: "100%", margin: "0 20px", transition: animate ? 'opacity 0.5s ease-in' : 'none', opacity: animate ? 0 : 1,}}>
+            <Grid key={1} item xs style={{ width: elementWidth, height: "100%", margin: "0 0px", transition: animate ? 'opacity 0.5s ease-in' : 'none', opacity: animate ? 0 : 1,}}>
                 <NodeElement node={node} />
             </Grid>
 
