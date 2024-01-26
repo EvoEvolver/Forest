@@ -174,11 +174,12 @@ export default class Layout {
         this.reactFlow.setViewport(oldViewport);
 
         let theNode = layoutedNodes.find((node) => node.id === selectedNode.id);
+        console.log(this.nodes)
         if (theNode) {
             theNode.selected = true;
             this.reactFlow.setCenter(
-                theNode.position.x + theNode.width / 2,
-                theNode.position.y + theNode.height / 2,
+                theNode.position.x + 124 / 2,
+                theNode.position.y + 54 / 2, // those numbers are the div dims + parent paddings + border
                 { zoom: this.reactFlow.getZoom(), duration: 0 }
             );
         }
