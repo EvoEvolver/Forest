@@ -175,11 +175,10 @@ export default class Layout {
 
         let theNode = layoutedNodes.find((node) => node.id === selectedNode.id);
         if (theNode) {
+            console.log("centering")
             theNode.selected = true;
-            this.reactFlow.setCenter(
-                theNode.position.x,
-                theNode.position.y,
-                { zoom: this.reactFlow.getZoom(), duration: 0 }
+            this.reactFlow.fitView(
+                {nodes: [theNode]}
             );
         }
     }
