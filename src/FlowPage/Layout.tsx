@@ -1,4 +1,4 @@
-import { ReactFlowInstance, Node, Edge, Viewport, Position } from 'reactflow';
+import { ReactFlowInstance, Node, Edge, Viewport, Position, getNodesBounds } from 'reactflow';
 import dagre from 'dagre';
 
 
@@ -175,10 +175,11 @@ export default class Layout {
 
         let theNode = layoutedNodes.find((node) => node.id === selectedNode.id);
         if (theNode) {
-            console.log("centering")
             theNode.selected = true;
-            this.reactFlow.fitView(
-                {nodes: [theNode]}
+            this.reactFlow.setCenter(
+                theNode.position.x + theNode.width / 2,
+                theNode.position.y + theNode.height / 2,
+                { zoom: this.reactFlow.getZoom(), duration: 0 }
             );
         }
     }
