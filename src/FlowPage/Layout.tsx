@@ -174,7 +174,6 @@ export default class Layout {
         this.reactFlow.setViewport(oldViewport);
 
         let theNode = layoutedNodes.find((node) => node.id === selectedNode.id);
-        console.log(theNode);
         if (theNode) {
             theNode.selected = true;
             this.reactFlow.setCenter(

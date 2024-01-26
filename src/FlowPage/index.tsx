@@ -135,8 +135,6 @@ const Flow = (props) => {
         layout.updateLayout(selectedNode, numGenerations).then(() => {
             // Layout on selectedNode change.
         });
-
-        console.log(layout.getNodePath(selectedNode));
     }, [selectedNode]);
 
 

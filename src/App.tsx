@@ -107,16 +107,13 @@ export default function App() {
       console.log("Connected");
     });
     socket.on("setTree", (tree) => {
-      console.log(tree);
       setTree(tree);
     });
     socket.emit('requestTree', (tree) => {
-      console.log('testing');
     })
   }, []);
   // On Tree Change
   useEffect(() => {
-    console.log("tree changes")
     if (tree) {
       let { nodes, edges } = convertTreeToWhatWeWant(tree);
       setNodes(nodes);
