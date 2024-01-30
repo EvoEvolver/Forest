@@ -30,7 +30,8 @@ interface Tree {
   id?: string;
   title: string;
   content: string;
-  sections?: Tree[];
+  children?: Tree[];
+  tabs: {};
 }
 
 
@@ -59,24 +60,25 @@ export default function App() {
       const id = makeid(32);
       // Calculate x-coordinate based on the level
       const x = 0; // Adjust the multiplier based on your preference
-      // Calculate y-coordinate based on the order within the parent's sections
+      // Calculate y-coordinate based on the order within the parent's children
       const y = 0; // Adjust the multiplier based on your preference
       const position = { x, y };
       const label = tree.title;
       const content = tree.content;
+      const tabs = tree.tabs;
       // Initialize the node (using interface Node).
       // Initialize the edge (using interface Edge).
       // Add the node to the list of nodes.
       // Add the edge to the list of edges.
       // If the tree has children, call dfs on each child.
-      let node: Node = { id, position, data: { label, content, setShowFocusPage, showFocusPage }, type: "NodeWithTooltip" };
+      let node: Node = { id, position, data: { label, content, tabs, setShowFocusPage, showFocusPage }, type: "NodeWithTooltip" };
       nodes.push(node);
       if (parent) {
         let edge: Edge = { id: `${parent}-${id}`, source: parent, target: id };
         edges.push(edge);
       }
-      if (tree.sections) {
-        tree.sections.forEach((child, index) => {
+      if (tree.children) {
+        tree.children.forEach((child, index) => {
           dfs(child, id);
         });
       }
@@ -86,21 +88,6 @@ export default function App() {
 
     return { 'nodes': nodes, 'edges': edges };
   }
-
-
-  // const handleQuerySearch = () => {
-  //   let theTree: Tree | null = null; // Set the type for theTree
-
-  //   if (testTrees[query]) {
-  //     // Assuming testTrees[query] is of type MyTreeType
-  //     theTree = testTrees[query] as Tree;
-  //   } else {
-  //     // Assuming testTrees['Ganzi'] is also of type MyTreeType
-  //     theTree = testTrees['Places of Interests'] as Tree;
-  //   }
-
-  //   setTree(theTree);
-  // };
 
   useEffect(() => {
     socket.on("connect", () => {
@@ -114,6 +101,7 @@ export default function App() {
   }, []);
   // On Tree Change
   useEffect(() => {
+    console.log(tree)
     if (tree) {
       let { nodes, edges } = convertTreeToWhatWeWant(tree);
       setNodes(nodes);

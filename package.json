@@ -19,6 +19,7 @@
     "dagre": "^0.8.5",
     "html-react-parser": "^5.0.11",
     "react": "^18.2.0",
+    "react-code-blocks": "^0.1.6",
     "react-dom": "^18.2.0",
     "react-helmet": "^6.1.0",
     "react-helmet-async": "^2.0.3",

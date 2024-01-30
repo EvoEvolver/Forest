@@ -143,6 +143,7 @@ export default class Layout {
      * This function won't select or unselect any node.
      */
     public async autoLayout(selectedNode: Node = undefined, numGenerations: number = 1): Promise<void> {
+        const startTime = performance.now();
         if (this.nodes.length === 0) return;
         const oldViewport = this.reactFlow.getViewport();
         const { visibleNodes, visibleEdges } = this.getVisibleNodesEdges(selectedNode, numGenerations);
@@ -153,6 +154,11 @@ export default class Layout {
         this.reactFlow.setNodes(layoutedNodes);
         this.reactFlow.setEdges(layoutedEdges);
         this.reactFlow.setViewport(oldViewport);
+        const endTime = performance.now();
+
+        // Calculate and log the elapsed time
+        const elapsedTime = endTime - startTime;
+        console.log(`autoLayout took ${elapsedTime} milliseconds`);
     }
 
     /**
@@ -160,6 +166,7 @@ export default class Layout {
      * This function won't select or unselect any node.
      */
     public async updateLayout(selectedNode: Node, numGenerations: number = 1): Promise<void> {
+        const startTime = performance.now();
         if (this.nodes.length === 0) return;
         const oldViewport = this.reactFlow.getViewport();
         const { visibleNodes, visibleEdges } = this.getVisibleNodesEdges(selectedNode, numGenerations);
@@ -174,7 +181,6 @@ export default class Layout {
         this.reactFlow.setViewport(oldViewport);
 
         let theNode = layoutedNodes.find((node) => node.id === selectedNode.id);
-        console.log(this.nodes)
         if (theNode) {
             theNode.selected = true;
             this.reactFlow.setCenter(
@@ -183,6 +189,12 @@ export default class Layout {
                 { zoom: this.reactFlow.getZoom(), duration: 0 }
             );
         }
+
+        const endTime = performance.now();
+
+        // Calculate and log the elapsed time
+        const elapsedTime = endTime - startTime;
+        console.log(`updateLayout took ${elapsedTime} milliseconds`);
     }
 
 
@@ -190,6 +202,7 @@ export default class Layout {
 
     public async restoreLayout(): Promise<void> {
         // restore layout
+        const startTime = performance.now();
         if (this.nodes.length === 0) return;
         const oldViewport = this.reactFlow.getViewport();
         const { visibleNodes, visibleEdges } = this.getVisibleNodesEdges(undefined, 1);
@@ -206,6 +219,11 @@ export default class Layout {
         this.reactFlow.setNodes(layoutedNodes);
         this.reactFlow.setEdges(layoutedEdges);
         this.reactFlow.setViewport(oldViewport);
+        const endTime = performance.now();
+
+        // Calculate and log the elapsed time
+        const elapsedTime = endTime - startTime;
+        console.log(`unselect node took ${elapsedTime} milliseconds`);
     }
 
 

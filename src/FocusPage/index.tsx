@@ -57,7 +57,7 @@ export default function FocusPage(props) {
           <OtherNodesLayer nodes={ancestorsNodes} changeSelectedNode={changeSelectedNode} />
         </Grid>
         <Grid item style={{ height: siblingsLayerHeight, backgroundColor: '#A8D8B9', width: "100%", padding: "10px" }}>
-          <OtherNodesLayer nodes={siblingNodes.filter((n) => n.id != selectedNode.id)} changeSelectedNode={changeSelectedNode} />
+          <OtherNodesLayer nodes={siblingNodes} selectedNode={selectedNode} changeSelectedNode={changeSelectedNode} />
         </Grid>
 
         <Grid item style={{ height: selectedNodeLayerHeight, backgroundColor: '#EB7A77', width: "100%", padding: "10px" }}>
