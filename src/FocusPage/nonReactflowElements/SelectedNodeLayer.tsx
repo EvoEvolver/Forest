@@ -1,18 +1,24 @@
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {Grid} from '@mui/material';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import CardActions from '@mui/material/CardActions';
 import CardContent from '@mui/material/CardContent';
-import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import JsxParser from 'react-jsx-parser'
-import Select from 'react-select';
-import {CopyBlock} from 'react-code-blocks';
 import Tab from '@mui/material/Tab';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
+import SyntaxHighlighter from 'react-syntax-highlighter';
+import { a11yLight } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+
+const Code = (props) => {
+    return (
+        <SyntaxHighlighter language={props.language} style={a11yLight} showLineNumbers={true}>
+            {props.code}
+        </SyntaxHighlighter>
+    );
+}
 
 const NodeElement = (props) => {
     let tabs = Object.keys(props.node.data.tabs);
@@ -57,7 +63,7 @@ console.log(tab)
                                 return <TabPanel value={i.toString()}>
                                     {<JsxParser
                                     bindings={{props}}
-                                    components={{CopyBlock}}
+                                    components={{Code}}
                                     jsx={props.node.data.tabs[tab]}
                                 />}</TabPanel>
                             })}
