@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Grid, Button, Paper, Typography } from '@mui/material';
+import React, {useState, useEffect} from 'react';
+import {Grid, Button, Paper, Typography} from '@mui/material';
 
 const NodeElement = (props) => {
-    const { node, changeSelectedNode, selected } = props;
+    const {node, changeSelectedNode, selected} = props;
 
     return (
         <Paper
             elevation={3}
             style={{
                 height: '100%',
-                p: 1,
+                //p: 1,
                 boxSizing: 'border-box',
                 cursor: 'pointer',
                 display: 'flex',
@@ -29,7 +29,7 @@ const NodeElement = (props) => {
 };
 
 const OtherNodesLayer = (props) => {
-    const { nodes, changeSelectedNode, selectedNode } = props;
+    const {nodes, changeSelectedNode, selectedNode} = props;
     const elementsPerPage = 5;
     const [startPoint, setStartPoint] = useState(0);
     const [animate, setAnimate] = useState(false);
@@ -37,7 +37,7 @@ const OtherNodesLayer = (props) => {
     useEffect(() => {
         setAnimate(true);
         const timeoutId = setTimeout(() => {
-            setAnimate(false); 
+            setAnimate(false);
         }, 0);
         return () => clearTimeout(timeoutId);
     }, [startPoint]);
@@ -62,10 +62,9 @@ const OtherNodesLayer = (props) => {
         console.log("selected node change. check if we need to click back or next button.");
         let selectedNodeIndex = nodes.findIndex((node) => node.id === selectedNode.id);
         // check if need to click back or next button.
-        if(selectedNodeIndex < startPoint) {
+        if (selectedNodeIndex < startPoint) {
             handleBack();
-        }
-        else if(selectedNodeIndex >= startPoint + elementsPerPage) {
+        } else if (selectedNodeIndex >= startPoint + elementsPerPage) {
             handleNext();
         }
         console.log(selectedNodeIndex);
@@ -73,8 +72,8 @@ const OtherNodesLayer = (props) => {
     }, [selectedNode]);
 
     return (
-        <Grid container direction="column" alignItems="center" style={{ height: '100%' }}>
-            <Grid style={{ height: '100%', marginTop: '10px' }} container justifyContent="center" alignItems="center">
+        <Grid container direction="column" alignItems="center" style={{height: '100%'}}>
+            <Grid style={{height: '100%', marginTop: '10px'}} container justifyContent="center" alignItems="center">
                 <Grid item>
                     <Button disabled={startPoint === 0} onClick={handleBack}>
                         Back
@@ -94,7 +93,8 @@ const OtherNodesLayer = (props) => {
                             opacity: animate ? 0 : 1,
                         }}
                     >
-                        <NodeElement node={node} selected = {selectedNode !== undefined && node.id === selectedNode.id} changeSelectedNode={changeSelectedNode} />
+                        <NodeElement node={node} selected={selectedNode !== undefined && node.id === selectedNode.id}
+                                     changeSelectedNode={changeSelectedNode}/>
                     </Grid>
                 ))}
 

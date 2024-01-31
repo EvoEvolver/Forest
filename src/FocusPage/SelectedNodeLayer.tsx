@@ -9,16 +9,7 @@ import Tab from '@mui/material/Tab';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
-import SyntaxHighlighter from 'react-syntax-highlighter';
-import { a11yLight } from 'react-syntax-highlighter/dist/esm/styles/hljs';
-
-const Code = (props) => {
-    return (
-        <SyntaxHighlighter language={props.language} style={a11yLight} showLineNumbers={true}>
-            {props.code}
-        </SyntaxHighlighter>
-    );
-}
+import {Code} from "./ContentComponents";
 
 const NodeElement = (props) => {
     let tabs = Object.keys(props.node.data.tabs);
@@ -29,9 +20,9 @@ const NodeElement = (props) => {
     //const [selectedTab, setSelectedTab] = useState(options.length > 0 ? options[0] : null);
     const [value, setValue] = React.useState('0');
 
-        const handleChange = (event: React.SyntheticEvent, newValue: string) => {
+    const handleChange = (event: React.SyntheticEvent, newValue: string) => {
         setValue(newValue);
-        };
+    };
     // TODO: why is it rendered multiple times?
     return (
         <Card sx={{
@@ -50,24 +41,23 @@ const NodeElement = (props) => {
                 {tabs.length > 0 &&
                     <Box style={{overflowX: 'scroll', overflowY: 'auto', maxHeight: '100%'}}>
                         <TabContext value={value}>
-                  <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                    <TabList onChange={handleChange} aria-label="lab API tabs example">
-                        {tabs.map((tab, i) => {
-                            return <Tab label={tab} value={i.toString()} />
-                        })}
-                    </TabList>
-                  </Box>
+                            <Box sx={{borderBottom: 1, borderColor: 'divider'}}>
+                                <TabList onChange={handleChange} aria-label="lab API tabs example">
+                                    {tabs.map((tab, i) => {
+                                        return <Tab label={tab} value={i.toString()}/>
+                                    })}
+                                </TabList>
+                            </Box>
                             {tabs.map((tab, i) => {
-console.log(tab)
                                 console.log(props.node.data.tabs);
                                 return <TabPanel value={i.toString()}>
                                     {<JsxParser
-                                    bindings={{props}}
-                                    components={{Code}}
-                                    jsx={props.node.data.tabs[tab]}
-                                />}</TabPanel>
+                                        //bindings={{props}}
+                                        components={{Code}}
+                                        jsx={props.node.data.tabs[tab]}
+                                    />}</TabPanel>
                             })}
-                </TabContext>
+                        </TabContext>
                     </Box>}
             </CardContent>
         </Card>
