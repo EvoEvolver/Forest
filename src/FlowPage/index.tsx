@@ -36,7 +36,10 @@ const Flow = (props) => {
     const showFocusPage = props.showFocusPage;
     const showFocusPageRef = useRef(showFocusPage);
 
+    const selectedNodeHistoryMaxNumber  = 10;
+    const selectedNodeHistory = useRef([]);
     const selectedNodeRef = useRef(selectedNode);
+    const backRef = useRef(false);
 
     useEffect(() => {
         showFocusPageRef.current = showFocusPage;
@@ -80,6 +83,12 @@ const Flow = (props) => {
 
             else if (key === 'n') {
                 result = layout.moveToNextAvailable();
+            }
+
+            else if (key === 'b') {
+                console.log("b clicked.")
+                result = selectedNodeHistory.current.pop();
+                if(result) backRef.current = true;
             }
 
             // if it's a number from 1 to 9.
@@ -132,6 +141,15 @@ const Flow = (props) => {
     }, [numGenerations]);
 
     useEffect(() => {
+        // put the selectedNode to the history.
+        console.log(backRef.current)
+        if (selectedNodeRef.current && selectedNodeRef.current != null && selectedNodeRef.current != selectedNode && !backRef.current) {
+            selectedNodeHistory.current.push(selectedNodeRef.current);
+            if (selectedNodeHistory.current.length > selectedNodeHistoryMaxNumber) {
+                selectedNodeHistory.current.shift();
+            }
+        }
+        backRef.current = false;
         selectedNodeRef.current = selectedNode;
         if (selectedNode === null) {
             return;

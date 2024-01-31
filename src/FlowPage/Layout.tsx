@@ -455,6 +455,43 @@ export default class Layout {
     }
 
 
+        public moveToPrevAvailableOnLeftHelper(node: Node): Node {
+        // base case: the node is root.
+        // check if it is root.
+        const ancestors = getAncestors(node, this.reactFlow.getNodes(), this.reactFlow.getEdges());
+        if (ancestors.length === 0) {
+            return undefined;
+        }
+        else {
+            // get current index.
+            const siblings = getSiblingsIncludeSelf(node, this.nodes, this.edges);
+            const index = siblings.findIndex((s) => s.id === node.id);
+            if (index === 0) {
+                return this.moveToPrevAvailableOnLeftHelper(ancestors[0]);
+            }
+            else {
+                return siblings[index - 1];
+            }
+        }
+    }
+    public moveToPrevAvailable(): Node {
+        let nodes = this.reactFlow.getNodes();
+
+        // find the selectedNode, which is selected.
+        const selectedNode = nodes.find((n) => n.selected);
+        if (!selectedNode) return;
+        // find the next available node recursively.
+        // TODO: what is the time complexity of this function?
+        const children = getChildren(selectedNode, this.reactFlow.getNodes(), this.reactFlow.getEdges());
+        if (children.length > 0) {
+            return children[-1];
+        }
+        else {
+            return this.moveToPrevAvailableOnLeftHelper(selectedNode);
+        }
+    }
+
+
 
     public checkIfSelectedOnNode(): Node {
         const selectedNode = this.reactFlow.getNodes().find((n) => n.selected);
