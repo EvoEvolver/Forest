@@ -9,16 +9,23 @@ import Typography from '@mui/material/Typography';
 import JsxParser from 'react-jsx-parser'
 import Select from 'react-select';
 import {CopyBlock} from 'react-code-blocks';
-import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
+import TabContext from '@mui/lab/TabContext';
+import TabList from '@mui/lab/TabList';
+import TabPanel from '@mui/lab/TabPanel';
 
 const NodeElement = (props) => {
     let tabs = Object.keys(props.node.data.tabs);
     let options = tabs.map((tab) => {
-        return {value: tab, label: tab}
+        return tab
     });
     // assign tab state to tabs[0] if tabs has length > 0.
-    const [selectedTab, setSelectedTab] = useState(options.length > 0 ? options[0] : null);
+    //const [selectedTab, setSelectedTab] = useState(options.length > 0 ? options[0] : null);
+    const [value, setValue] = React.useState('0');
+
+        const handleChange = (event: React.SyntheticEvent, newValue: string) => {
+        setValue(newValue);
+        };
     // TODO: why is it rendered multiple times?
     return (
         <Card sx={{
@@ -36,21 +43,25 @@ const NodeElement = (props) => {
                 </Typography>
                 {tabs.length > 0 &&
                     <Box style={{overflowX: 'scroll', overflowY: 'auto', maxHeight: '100%'}}>
-                        <Select
-                            classNamePrefix="select"
-                            defaultValue={options[0]}
-                            name="tabs"
-                            value={selectedTab}
-                            options={options}
-                        />
-                        <Typography variant="body2">
-                            {props.node.data.tabs[selectedTab['value']] &&
-                                <JsxParser
+                        <TabContext value={value}>
+                  <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                    <TabList onChange={handleChange} aria-label="lab API tabs example">
+                        {tabs.map((tab, i) => {
+                            return <Tab label={tab} value={i.toString()} />
+                        })}
+                    </TabList>
+                  </Box>
+                            {tabs.map((tab, i) => {
+console.log(tab)
+                                console.log(props.node.data.tabs);
+                                return <TabPanel value={i.toString()}>
+                                    {<JsxParser
                                     bindings={{props}}
                                     components={{CopyBlock}}
-                                    jsx={props.node.data.tabs[selectedTab['value']]}
-                                />}
-                        </Typography>
+                                    jsx={props.node.data.tabs[tab]}
+                                />}</TabPanel>
+                            })}
+                </TabContext>
                     </Box>}
             </CardContent>
         </Card>
@@ -93,6 +104,7 @@ const SelectedNodeLayer = (props) => {
                 Tool 2
             </Grid>
         </Grid>
+
     );
 };
 
