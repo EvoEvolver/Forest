@@ -413,6 +413,49 @@ export default class Layout {
         return theRootNode;
     }
 
+
+    // move to the next available node on the right side of the tree.
+    public moveToNextAvailableOnRightHelper(node: Node): Node {
+        // base case: the node is root.
+        // check if it is root.
+        const ancestors = getAncestors(node, this.reactFlow.getNodes(), this.reactFlow.getEdges());
+        if (ancestors.length === 0) {
+            return undefined;
+        }
+        else {
+            // get current index.
+            const siblings = getSiblingsIncludeSelf(node, this.nodes, this.edges);
+            const index = siblings.findIndex((s) => s.id === node.id);
+            console.log(node.data.label)
+            console.log(index)
+            console.log(siblings.length)
+            if (index === siblings.length - 1) {
+                return this.moveToNextAvailableOnRightHelper(ancestors[0]);
+            }
+            else {
+                return siblings[index + 1];
+            }
+        }
+    }
+    public moveToNextAvailable(): Node {
+        let nodes = this.reactFlow.getNodes();
+
+        // find the selectedNode, which is selected.
+        const selectedNode = nodes.find((n) => n.selected);
+        if (!selectedNode) return;
+        // find the next available node recursively.
+        // TODO: what is the time complexity of this function?
+        const children = getChildren(selectedNode, this.reactFlow.getNodes(), this.reactFlow.getEdges());
+        if (children.length > 0) {
+            return children[0];
+        }
+        else {
+            return this.moveToNextAvailableOnRightHelper(selectedNode);
+        }
+    }
+
+
+
     public checkIfSelectedOnNode(): Node {
         const selectedNode = this.reactFlow.getNodes().find((n) => n.selected);
         if (selectedNode) {

@@ -78,6 +78,10 @@ const Flow = (props) => {
                 result = layout.moveToRoot();
             }
 
+            else if (key === 'n') {
+                result = layout.moveToNextAvailable();
+            }
+
             // if it's a number from 1 to 9.
             else if (oneToNineRegex.test(key)) {
                 result = layout.moveToChildByIndex(parseInt(key) - 1);
