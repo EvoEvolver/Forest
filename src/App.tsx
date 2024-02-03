@@ -47,13 +47,14 @@ export default function App() {
 
   return (
       <>
-        {selectedTreeId}
+        <div style={{position: "fixed", top: "5px", left: "5px", zIndex: 99999999}}>
           {
               // make a list of buttons for each tree ids. cliking on the button will set the selectedTreeId to the tree id.
                 Object.keys(trees).map((treeId) => {
                     return <button key={treeId} onClick={() => setSelectedTreeId(treeId)}>{treeId}</button>
                 })
           }
+          </div>
           {
               // show a list of ATrees. but only show the one that is selected.
 
