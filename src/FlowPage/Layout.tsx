@@ -180,14 +180,16 @@ export default class Layout {
         this.reactFlow.setEdges(layoutedEdges);
         this.reactFlow.setViewport(oldViewport);
 
-        let theNode = layoutedNodes.find((node) => node.id === selectedNode.id);
-        if (theNode) {
-            theNode.selected = true;
-            this.reactFlow.setCenter(
-                theNode.position.x + 124 / 2,
-                theNode.position.y + 54 / 2, // those numbers are the div dims + parent paddings + border
-                { zoom: this.reactFlow.getZoom(), duration: 0 }
-            );
+        if(selectedNode !== undefined && selectedNode !== null) {
+            let theNode = layoutedNodes.find((node) => node.id === selectedNode.id);
+            if (theNode) {
+                theNode.selected = true;
+                this.reactFlow.setCenter(
+                    theNode.position.x + 124 / 2,
+                    theNode.position.y + 54 / 2, // those numbers are the div dims + parent paddings + border
+                    {zoom: this.reactFlow.getZoom(), duration: 0}
+                );
+            }
         }
 
         const endTime = performance.now();
