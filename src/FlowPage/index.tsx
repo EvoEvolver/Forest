@@ -40,6 +40,7 @@ const Flow = (props) => {
     const selectedNodeHistory = useRef([]);
     const selectedNodeRef = useRef(selectedNode);
     const backRef = useRef(false);
+    let hidden = props.hidden;
 
     useEffect(() => {
         showFocusPageRef.current = showFocusPage;
@@ -49,8 +50,7 @@ const Flow = (props) => {
     let layout = new Layout(reactFlow, props.initialNodes, props.initialEdges);
 
     const [numGenerations, setNumGenerations] = useState(1);
-
-    const keyPress = useCallback(
+        const keyPress = useCallback(
         (e) => {
             let result = undefined;
             const oneToNineRegex = /^[1-9]$/;
@@ -104,10 +104,18 @@ const Flow = (props) => {
         },
         [layout]
       );
+
       useEffect(() => {
-        document.addEventListener("keydown", keyPress);
-        return () => document.removeEventListener("keydown", keyPress);
-      }, [keyPress]);
+
+        if (!hidden) {
+          document.addEventListener("keydown", keyPress);
+        }
+
+        return () => {
+          document.removeEventListener("keydown", keyPress);
+        };
+    }, [hidden, keyPress]);
+
 
     useEffect(() => {
         layout = new Layout(reactFlow, props.initialNodes, props.initialEdges);

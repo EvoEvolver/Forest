@@ -105,7 +105,7 @@ export default function ATree(props) {
   return (
     <Box hidden={hidden} style={{ width: '100vw', height: '100vh' }}>
       <ReactFlowProvider>
-        <Flow initialNodes={nodes} initialEdges={edges} query={query} selectedNode={selectedNode} setSelectedNode={setSelectedNode} showFocusPage={showFocusPage} />
+        <Flow initialNodes={nodes} initialEdges={edges} query={query} selectedNode={selectedNode} setSelectedNode={setSelectedNode} showFocusPage={showFocusPage} hidden={hidden}/>
       </ReactFlowProvider>
       <Modal
         open={showFocusPage}
