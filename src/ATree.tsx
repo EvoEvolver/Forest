@@ -45,6 +45,8 @@ export default function ATree(props) {
 
   let [showFocusPage, setShowFocusPage] = useState<boolean>(false);
 
+  let hidden = props.hidden;
+
 
   const convertTreeToWhatWeWant = (tree: Tree) => {
     // return a list of nodes and a list of edges. Every child node is connected to its parent node.
@@ -101,7 +103,7 @@ export default function ATree(props) {
 
 
   return (
-    <Box style={{ width: '100vw', height: '100vh' }}>
+    <Box hidden={hidden} style={{ width: '100vw', height: '100vh' }}>
       <ReactFlowProvider>
         <Flow initialNodes={nodes} initialEdges={edges} query={query} selectedNode={selectedNode} setSelectedNode={setSelectedNode} showFocusPage={showFocusPage} />
       </ReactFlowProvider>

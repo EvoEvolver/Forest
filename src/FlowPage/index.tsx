@@ -142,7 +142,6 @@ const Flow = (props) => {
 
     useEffect(() => {
         // put the selectedNode to the history.
-        console.log(backRef.current)
         if (selectedNodeRef.current && selectedNodeRef.current != null && selectedNodeRef.current != selectedNode && !backRef.current) {
             selectedNodeHistory.current.push(selectedNodeRef.current);
             if (selectedNodeHistory.current.length > selectedNodeHistoryMaxNumber) {
