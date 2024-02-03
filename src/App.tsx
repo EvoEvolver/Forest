@@ -23,12 +23,14 @@ export default function App() {
   let [trees, setTrees] = useState({});
 
   let [selectedTreeId, setSelectedTreeId] = useState(undefined);
+  let [toLoadTree, setToLoadTree] = useState([]);
 
   useEffect(() => {
     socket.on("connect", () => {
       console.log("Connected");
     });
     socket.on("setTree", (serverData) => {
+        console.log("setTree")
       let newTrees = {...trees};
 
         newTrees[serverData.tree_id] = serverData.tree;
@@ -41,9 +43,19 @@ export default function App() {
   // On Tree Change
     useEffect(() => {
         if(Object.keys(trees).length === 1 || selectedTreeId === undefined){
-            setSelectedTreeId(Object.keys(trees)[0])
+            setSelectedTreeId(Object.keys(trees)[0]);
+            // push the tree to the toLoadTree if not exist, which is an array of tree ids that we want to load.
         }
     }, [trees]);
+
+
+    useEffect(() => {
+        console.log(selectedTreeId)
+            if(!toLoadTree.includes(selectedTreeId) && selectedTreeId !== undefined){
+                setToLoadTree([...toLoadTree, selectedTreeId])
+                console.log(`set to load tree ${selectedTreeId}`)
+            }
+    }, [selectedTreeId]);
 
   return (
       <>
@@ -59,7 +71,8 @@ export default function App() {
               // show a list of ATrees. but only show the one that is selected.
 
                 Object.keys(trees).map((treeId) => {
-                        return <ATree hidden={treeId !== selectedTreeId} key={treeId} tree={trees[treeId]}/>
+                    console.log(toLoadTree)
+                        return toLoadTree.includes(treeId) && <ATree hidden={treeId !== selectedTreeId} key={treeId} tree={trees[treeId]}/>
                 })
           }
       </>
