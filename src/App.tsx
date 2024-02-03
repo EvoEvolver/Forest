@@ -32,7 +32,7 @@ export default function App() {
       let newTrees = {...trees};
 
         newTrees[serverData.tree_id] = serverData.tree;
-        newTrees[serverData.tree_id+1] = serverData.tree;
+        // newTrees[serverData.tree_id+1] = {};
         setTrees(newTrees)
     });
     socket.emit('requestTree', (tree) => {
@@ -47,18 +47,17 @@ export default function App() {
 
   return (
       <>
-          {selectedTreeId}
           {
               // make a list of buttons for each tree ids. cliking on the button will set the selectedTreeId to the tree id.
                 Object.keys(trees).map((treeId) => {
-                    return <button onClick={() => setSelectedTreeId(treeId)}>{treeId}</button>
+                    return <button key={treeId} onClick={() => setSelectedTreeId(treeId)}>{treeId}</button>
                 })
           }
           {
               // show a list of ATrees. but only show the one that is selected.
 
                 Object.keys(trees).map((treeId) => {
-                        return <ATree tree={trees[treeId]} sx={{display: treeId ===selectedTreeId? "display": "none"}}/>
+                        return treeId ===selectedTreeId && <ATree key={treeId} tree={trees[treeId]}/>
                 })
           }
       </>

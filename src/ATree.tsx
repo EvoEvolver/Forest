@@ -102,11 +102,6 @@ export default function ATree(props) {
 
   return (
     <Box style={{ width: '100vw', height: '100vh' }}>
-      {/* // Select label is the node's title. value is the node's id. */}
-      {/* <Box style={{ position: "absolute", display: 'flex', alignItems: 'center', margin: '10px 20px', zIndex: '10000' }}>
-        <TextField id="outlined-basic" label="Knowledege" variant="outlined" style={{ flex: 1 }} value={query} onChange={(e) => setQuery(e.target.value)} />
-        <Button variant="contained" style={{ marginLeft: '10px' }} onClick={handleQuerySearch}>Search</Button>
-      </Box> */}
       <ReactFlowProvider>
         <Flow initialNodes={nodes} initialEdges={edges} query={query} selectedNode={selectedNode} setSelectedNode={setSelectedNode} showFocusPage={showFocusPage} />
       </ReactFlowProvider>
