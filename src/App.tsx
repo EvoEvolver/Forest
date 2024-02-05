@@ -30,14 +30,15 @@ export default function App() {
       console.log("Connected");
     });
     socket.on("setTree", (serverData) => {
-        console.log("setTree")
-      let newTrees = {...trees};
-
+        let newTrees = {...trees};
         newTrees[serverData.tree_id] = serverData.tree;
-        newTrees[serverData.tree_id+1] = {};
         setTrees(newTrees)
     });
-    socket.emit('requestTree', (tree) => {
+
+    socket.on('requestTree', (trees) => {
+        setTrees(trees);
+    })
+    socket.emit('requestTree', () => {
     })
   }, []);
   // On Tree Change
@@ -71,7 +72,6 @@ export default function App() {
               // show a list of ATrees. but only show the one that is selected.
 
                 Object.keys(trees).map((treeId) => {
-                    console.log(toLoadTree)
                         return toLoadTree.includes(treeId) && <ATree hidden={treeId !== selectedTreeId} key={treeId} tree={trees[treeId]}/>
                 })
           }
