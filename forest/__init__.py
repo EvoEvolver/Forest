@@ -40,7 +40,6 @@ def check_if_need_rebuild() -> bool:
 
 def update_last_build_log():
     build_hash = get_git_revision_hash()
-    print("hihi")
     if build_hash:
         f = open(f'{project_root}/last_build.log', "w")
         f.write(build_hash)
