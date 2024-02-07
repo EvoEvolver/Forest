@@ -30,9 +30,19 @@ export default function App() {
       console.log("Connected");
     });
     socket.on("setTree", (serverData) => {
+        console.log("set tree")
         let newTrees = {...trees};
         newTrees[serverData.tree_id] = serverData.tree;
         setTrees(newTrees)
+
+        // wait for 5 seconds
+        setTimeout(() => {
+            // remove the tree from toLoadTree
+            let newTrees = {...trees};
+            newTrees[serverData.tree_id]['children'][0]['children'] = [];
+            setTrees(newTrees);
+            console.log("false update")
+        }, 5000)
     });
 
     socket.on('requestTree', (trees) => {

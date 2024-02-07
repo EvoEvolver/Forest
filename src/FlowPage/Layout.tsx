@@ -238,6 +238,8 @@ export default class Layout {
     }
 
     public checkIfNodeExists(node: Node): boolean {
+        console.log(this.nodes)
+        console.log(node)
         return this.nodes.some((n) => n.id === node.id);
     }
 

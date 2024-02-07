@@ -32,6 +32,7 @@ interface Tree {
   content: string;
   children?: Tree[];
   tabs: {};
+  path?: string;
 }
 
 
@@ -60,7 +61,7 @@ export default function ATree(props) {
 
     const dfs = (tree: Tree, parent: string | undefined) => {
       //const id = tree.id ? tree.id: tree.title;
-      const id = makeid(32);
+      const id = tree.path ? tree.path: makeid(32);
       // Calculate x-coordinate based on the level
       const x = 0; // Adjust the multiplier based on your preference
       // Calculate y-coordinate based on the order within the parent's children
