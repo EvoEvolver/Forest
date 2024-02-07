@@ -40,6 +40,7 @@ const Flow = (props) => {
     const selectedNodeHistory = useRef([]);
     const selectedNodeRef = useRef(selectedNode);
     const backRef = useRef(false);
+    let hidden = props.hidden;
 
     useEffect(() => {
         showFocusPageRef.current = showFocusPage;
@@ -49,8 +50,7 @@ const Flow = (props) => {
     let layout = new Layout(reactFlow, props.initialNodes, props.initialEdges);
 
     const [numGenerations, setNumGenerations] = useState(1);
-
-    const keyPress = useCallback(
+        const keyPress = useCallback(
         (e) => {
             let result = undefined;
             const oneToNineRegex = /^[1-9]$/;
@@ -104,17 +104,27 @@ const Flow = (props) => {
         },
         [layout]
       );
+
       useEffect(() => {
-        document.addEventListener("keydown", keyPress);
-        return () => document.removeEventListener("keydown", keyPress);
-      }, [keyPress]);
+
+        if (!hidden) {
+          document.addEventListener("keydown", keyPress);
+        }
+
+        return () => {
+          document.removeEventListener("keydown", keyPress);
+        };
+    }, [hidden, keyPress]);
+
 
     useEffect(() => {
         layout = new Layout(reactFlow, props.initialNodes, props.initialEdges);
         if (selectedNode) {
             if (!layout.checkIfNodeExists(selectedNode)) {
                 layout.autoLayout().then(() => {
+                    console.log(selectedNode)
                     // Initial Layout, the previously selected node is gone.
+                    console.log("!!!!!!!!!!")
                     setSelectedNode(null);
                 });
             }
@@ -127,6 +137,7 @@ const Flow = (props) => {
         else {
             layout.autoLayout().then(() => {
                 // Initial Layout, no selected node.
+                console.log("set selected node to null")
                 setSelectedNode(null);
             });
         }
@@ -142,7 +153,6 @@ const Flow = (props) => {
 
     useEffect(() => {
         // put the selectedNode to the history.
-        console.log(backRef.current)
         if (selectedNodeRef.current && selectedNodeRef.current != null && selectedNodeRef.current != selectedNode && !backRef.current) {
             selectedNodeHistory.current.push(selectedNodeRef.current);
             if (selectedNodeHistory.current.length > selectedNodeHistoryMaxNumber) {

@@ -1,25 +1,9 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
-import { ReactFlowProvider, Node, Edge } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { TextField, Box, Button, Typography, Modal } from '@mui/material';
-// import testTrees from './testing/trees.json';
 import { io } from 'socket.io-client';
-import FocusPage from './FocusPage';
-import Flow from './FlowPage';
+import ATree from './ATree';
 
-
-function makeid(length) {
-  let result = '';
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  const charactersLength = characters.length;
-  let counter = 0;
-  while (counter < length) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength));
-    counter += 1;
-  }
-  return result;
-}
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999": window.location.port;
 const socket = io(`http://127.0.0.1:${currentPort}`, {
   transports: ["websocket"],
@@ -36,99 +20,71 @@ interface Tree {
 
 
 export default function App() {
-  let [query, setQuery] = useState<string>('');
-  let [tree, setTree] = useState<Tree | null>(null);
-  let [nodes, setNodes] = useState<Node[]>([]);
-  let [edges, setEdges] = useState<Edge[]>([]);
-  let [selectedNode, setSelectedNode] = useState<Node | null>(null); // [id, position, label, content
+  let [trees, setTrees] = useState({});
 
-  let [showFocusPage, setShowFocusPage] = useState<boolean>(false);
-
-
-  const convertTreeToWhatWeWant = (tree: Tree) => {
-    // return a list of nodes and a list of edges. Every child node is connected to its parent node.
-    // the node should have a id, a position, and a label.
-    // the edge should have a id, a source, and a target.
-    // the position of the node should be calculated based on the level of the node.
-    // the root node should be at the center of the screen.
-
-    const nodes: Node[] = [];
-    const edges: Edge[] = [];
-
-    const dfs = (tree: Tree, parent: string | undefined) => {
-      //const id = tree.id ? tree.id: tree.title;
-      const id = makeid(32);
-      // Calculate x-coordinate based on the level
-      const x = 0; // Adjust the multiplier based on your preference
-      // Calculate y-coordinate based on the order within the parent's children
-      const y = 0; // Adjust the multiplier based on your preference
-      const position = { x, y };
-      const label = tree.title;
-      const content = tree.content;
-      const tabs = tree.tabs;
-      // Initialize the node (using interface Node).
-      // Initialize the edge (using interface Edge).
-      // Add the node to the list of nodes.
-      // Add the edge to the list of edges.
-      // If the tree has children, call dfs on each child.
-      let node: Node = { id, position, data: { label, content, tabs, setShowFocusPage, showFocusPage }, type: "NodeWithTooltip" };
-      nodes.push(node);
-      if (parent) {
-        let edge: Edge = { id: `${parent}-${id}`, source: parent, target: id };
-        edges.push(edge);
-      }
-      if (tree.children) {
-        tree.children.forEach((child, index) => {
-          dfs(child, id);
-        });
-      }
-    };
-
-    dfs(tree, undefined);
-
-    return { 'nodes': nodes, 'edges': edges };
-  }
+  let [selectedTreeId, setSelectedTreeId] = useState(undefined);
+  let [toLoadTree, setToLoadTree] = useState([]);
 
   useEffect(() => {
     socket.on("connect", () => {
       console.log("Connected");
     });
-    socket.on("setTree", (tree) => {
-      setTree(tree);
+    socket.on("setTree", (serverData) => {
+        console.log("set tree")
+        let newTrees = {...trees};
+        newTrees[serverData.tree_id] = serverData.tree;
+        setTrees(newTrees)
+
+        // wait for 5 seconds
+        setTimeout(() => {
+            // remove the tree from toLoadTree
+            let newTrees = {...trees};
+            newTrees[serverData.tree_id]['children'][0]['children'] = [];
+            setTrees(newTrees);
+            console.log("false update")
+        }, 5000)
     });
-    socket.emit('requestTree', (tree) => {
+
+    socket.on('requestTree', (trees) => {
+        setTrees(trees);
+    })
+    socket.emit('requestTree', () => {
     })
   }, []);
   // On Tree Change
-  useEffect(() => {
-    console.log(tree)
-    if (tree) {
-      let { nodes, edges } = convertTreeToWhatWeWant(tree);
-      setNodes(nodes);
-      setEdges(edges);
-    }
-  }, [tree])
+    useEffect(() => {
+        if(Object.keys(trees).length === 1 || selectedTreeId === undefined){
+            setSelectedTreeId(Object.keys(trees)[0]);
+            // push the tree to the toLoadTree if not exist, which is an array of tree ids that we want to load.
+        }
+    }, [trees]);
 
+
+    useEffect(() => {
+        console.log(selectedTreeId)
+            if(!toLoadTree.includes(selectedTreeId) && selectedTreeId !== undefined){
+                setToLoadTree([...toLoadTree, selectedTreeId])
+                console.log(`set to load tree ${selectedTreeId}`)
+            }
+    }, [selectedTreeId]);
 
   return (
-    <Box style={{ width: '100vw', height: '100vh' }}>
-      {/* // Select label is the node's title. value is the node's id. */}
-      {/* <Box style={{ position: "absolute", display: 'flex', alignItems: 'center', margin: '10px 20px', zIndex: '10000' }}>
-        <TextField id="outlined-basic" label="Knowledege" variant="outlined" style={{ flex: 1 }} value={query} onChange={(e) => setQuery(e.target.value)} />
-        <Button variant="contained" style={{ marginLeft: '10px' }} onClick={handleQuerySearch}>Search</Button>
-      </Box> */}
-      <ReactFlowProvider>
-        <Flow initialNodes={nodes} initialEdges={edges} query={query} selectedNode={selectedNode} setSelectedNode={setSelectedNode} showFocusPage={showFocusPage} />
-      </ReactFlowProvider>
-      <Modal
-        open={showFocusPage}
-        onClose={() => setShowFocusPage(false)}
-        style={{ position: "absolute", display: 'flex', alignItems: 'center', margin: '10px 20px', zIndex: '100000' }}
-      >
-        <>
-        <FocusPage nodes={nodes} edges={edges} selectedNode={selectedNode} setSelectedNode={setSelectedNode} setShowFocusPage={setShowFocusPage} />
-        </>
-      </Modal>
-    </Box>
+      <>
+        <div style={{position: "fixed", top: "5px", left: "5px", zIndex: 99999999}}>
+          {
+              // make a list of buttons for each tree ids. cliking on the button will set the selectedTreeId to the tree id.
+                Object.keys(trees).map((treeId) => {
+                    return <button key={treeId} onClick={() => setSelectedTreeId(treeId)}>{treeId}</button>
+                })
+          }
+          </div>
+          {
+              // show a list of ATrees. but only show the one that is selected.
+
+                Object.keys(trees).map((treeId) => {
+                        return toLoadTree.includes(treeId) && <ATree hidden={treeId !== selectedTreeId} key={treeId} tree={trees[treeId]}/>
+                })
+          }
+      </>
   );
 }
