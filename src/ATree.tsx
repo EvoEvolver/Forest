@@ -57,7 +57,7 @@ export default function ATree(props) {
         'edges': undefined
     };
 
-    let [page, setPage] = useState(1);
+    let [page, setPage] = useState(0);
 
     // let [tree, setTree] = useState(initialTree);
     function reducers(tree, action) {

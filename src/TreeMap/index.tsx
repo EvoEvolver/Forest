@@ -25,7 +25,7 @@ export default function Treemap(props) {
 
     let selectedNode = layouter.getSelectedNode(tree.nodes);
 
-    let [currentLevel, setCurrentLevel] = useState(selectedNode.id);
+    let currentLevel = selectedNode.id;
 
     useEffect(() => {
         if(layouter.rawNodes === undefined) return;
@@ -60,6 +60,7 @@ export default function Treemap(props) {
         level: currentLevel
     }];
 
+
     return (
         <Plot
             data={data}
@@ -70,17 +71,15 @@ export default function Treemap(props) {
                 }
             }}
             style={{width: '100%', height: '100%'}}
-            onClick={(data) => {
-                //
-                console.log(tree.nodes.find((node) => node.id === data.points[0].id))
-                // setCurrentLevel(data.points[0].label)
+            onAnimated={(e) => {
                 modifyTree(
                     {
                         type: 'setSelectedNode',
-                        node: tree.nodes.find((node) => node.id === data.points[0].id)
+                        node: tree.nodes.find((node) => node.id === data[0].level)
                     }
                 )
-                setCurrentLevel(data.points[0].id)
+                // setCurrentLevel(data.points[0].id)
+                console.log(data[0].level)
             }}
         />
     );
