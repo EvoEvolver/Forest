@@ -2,7 +2,7 @@ import React, {useState, useEffect} from 'react';
 import {Grid, Button, Paper, Typography} from '@mui/material';
 
 const NodeElement = (props) => {
-    const {node, changeSelectedNode, selected} = props;
+    const {node, modifyTree, selected} = props;
 
     return (
         <Paper
@@ -21,7 +21,14 @@ const NodeElement = (props) => {
                 backgroundColor: selected ? "blue" : "#FFFFFF",
                 color: selected ? "#FFFFFF" : "#000000",
             }}
-            onClick={() => changeSelectedNode(node)}
+            onClick={() =>
+            {
+                modifyTree({
+                    type: 'setSelectedNode',
+                    node: node
+                })
+            }
+            }
         >
             <Typography>{props.node.data.label}</Typography>
         </Paper>
@@ -29,7 +36,7 @@ const NodeElement = (props) => {
 };
 
 const OtherNodesLayer = (props) => {
-    const {nodes, changeSelectedNode, selectedNode} = props;
+    const {nodes, modifyTree, selectedNode} = props;
     const elementsPerPage = 5;
     const [startPoint, setStartPoint] = useState(0);
     const [animate, setAnimate] = useState(false);
@@ -59,6 +66,7 @@ const OtherNodesLayer = (props) => {
     // listen to selectedNode change.
 
     useEffect(() => {
+        console.log(selectedNode)
         console.log("selected node change. check if we need to click back or next button.");
         let selectedNodeIndex = nodes.findIndex((node) => node.id === selectedNode.id);
         // check if need to click back or next button.
@@ -94,7 +102,7 @@ const OtherNodesLayer = (props) => {
                         }}
                     >
                         <NodeElement node={node} selected={selectedNode !== undefined && node.id === selectedNode.id}
-                                     changeSelectedNode={changeSelectedNode}/>
+                                     modifyTree={modifyTree}/>
                     </Grid>
                 ))}
 
