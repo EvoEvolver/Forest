@@ -57,7 +57,7 @@ export default function ATree(props) {
         'edges': undefined
     };
 
-    let [page, setPage] = useState(0);
+    let page = props.page;
 
     // let [tree, setTree] = useState(initialTree);
     function reducers(tree, action) {
@@ -78,6 +78,7 @@ export default function ATree(props) {
 
     // On Tree Change
     useEffect(() => {
+        console.log(rawTree)
         if (rawTree) {
             let {nodes, edges} = convertTreeToWhatWeWant(rawTree);
             modifyTree({
@@ -125,6 +126,7 @@ export default function ATree(props) {
         []
     );
 
+
     useEffect(() => {
         if (layouter === undefined || !layouter.hasTree(tree)) return;
 
@@ -144,7 +146,7 @@ export default function ATree(props) {
     }, [layouter, tree]); // Adding layouter to the dependency array
 
     useEffect(() => {
-      console.log(tree)
+        console.log(hidden)
       document.removeEventListener("keydown", keyPress);
         if (!hidden) {
             document.addEventListener("keydown", keyPress);
@@ -157,14 +159,12 @@ export default function ATree(props) {
 
   useEffect(() => {
     treeRef.current = tree;
+    console.log(tree.nodes && tree.nodes.length);
+
   }, [tree]);
 
     return (
         <>
-            <div style={{position: 'fixed', zIndex: 99999999999, top: 0, left: 0}}>
-                <button onClick={() => setPage(0)}>Focus Page</button>
-                <button onClick={() => setPage(1)}>Treemap</button>
-            </div>
             <Box hidden={hidden} style={{width: '100vw', height: '100vh'}}>
                 {/*make two buttons to change between focus page and treemap. the buttons should be fixed to top left.*/}
                 {layouter.hasTree(treeRef.current) && page === 0 &&
