@@ -66,8 +66,6 @@ const OtherNodesLayer = (props) => {
     // listen to selectedNode change.
 
     useEffect(() => {
-        console.log(selectedNode)
-        console.log("selected node change. check if we need to click back or next button.");
         let selectedNodeIndex = nodes.findIndex((node) => node.id === selectedNode.id);
         // check if need to click back or next button.
         if (selectedNodeIndex < startPoint) {
@@ -75,8 +73,6 @@ const OtherNodesLayer = (props) => {
         } else if (selectedNodeIndex >= startPoint + elementsPerPage) {
             handleNext();
         }
-        console.log(selectedNodeIndex);
-        console.log(startPoint);
     }, [selectedNode]);
 
     return (

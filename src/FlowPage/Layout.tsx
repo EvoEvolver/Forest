@@ -238,8 +238,6 @@ export default class Layout {
     }
 
     public checkIfNodeExists(node: Node): boolean {
-        console.log(this.nodes)
-        console.log(node)
         return this.nodes.some((n) => n.id === node.id);
     }
 
@@ -359,7 +357,6 @@ export default class Layout {
 
 
         dagre.layout(dagreGraph);
-        console.log(nodes)
 
         nodes.forEach((node) => {
             const nodeWithPosition = dagreGraph.node(node.id);
@@ -439,9 +436,6 @@ export default class Layout {
             // get current index.
             const siblings = getSiblingsIncludeSelf(node, this.nodes, this.edges);
             const index = siblings.findIndex((s) => s.id === node.id);
-            console.log(node.data.label)
-            console.log(index)
-            console.log(siblings.length)
             if (index === siblings.length - 1) {
                 return this.moveToNextAvailableOnRightHelper(ancestors[0]);
             }

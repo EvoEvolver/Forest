@@ -10,7 +10,6 @@ interface RawTree {
 interface Node {
   id: string;
   data: { label: string, content: string, tabs: {} };
-  selected?: boolean;
 }
 
 interface Edge {

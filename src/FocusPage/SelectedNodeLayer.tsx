@@ -49,7 +49,6 @@ const NodeElement = (props) => {
                                 </TabList>
                             </Box>
                             {tabs.map((tab, i) => {
-                                console.log(props.node.data.tabs);
                                 return <TabPanel value={i.toString()}>
                                     {<JsxParser
                                         //bindings={{props}}

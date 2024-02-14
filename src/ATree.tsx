@@ -23,7 +23,7 @@ const convertTreeToWhatWeWant = (tree: RawTree) => {
         const label = tree.title;
         const content = tree.content;
         const tabs = tree.tabs;
-        let node: Node = {id, data: {label, content, tabs}, selected: false};
+        let node: Node = {id, data: {label, content, tabs}};
         nodes.push(node);
         if (parent) {
             let edge: Edge = {id: `${parent}-${id}`, source: parent, target: id};
@@ -57,7 +57,7 @@ export default function ATree(props) {
         'edges': undefined
     };
 
-    let [page, setPage] = useState(0);
+    let [page, setPage] = useState(1);
 
     // let [tree, setTree] = useState(initialTree);
     function reducers(tree, action) {
@@ -72,6 +72,7 @@ export default function ATree(props) {
     }
 
     const [tree, modifyTree] = useReducer(reducers, initialTree);
+    const [selectedNode, setSelectedNode] = useState(undefined);
 
     const treeRef = useRef(tree);
 

@@ -97,7 +97,12 @@ export default class Layouter{
    * @param setNodes: Function to update nodes state.
    * @param setEdges: Function to update edges state.
    */
+
+    public rawNodes: Node[] = [];
+    public rawEdges: Edge[] = [];
   constructor() {
+      this.rawNodes = undefined;
+        this.rawEdges = undefined;
   }
 
 
@@ -136,6 +141,12 @@ export default class Layouter{
     public updateTree(currTree, tree): void {
         let nodes = tree.nodes;
         let edges = tree.edges;
+        this.rawNodes = nodes.map((n) => {
+            let newNode = {...n};
+            delete newNode.selected;
+            return newNode;
+        });
+        this.rawEdges = edges;
         if(!this.hasTree(currTree)) {
             nodes[0].selected = true;
         }
@@ -292,8 +303,6 @@ export default class Layouter{
     }
 
     public checkIfNodeExists(tree, node: Node): boolean {
-        console.log(tree.nodes)
-        console.log(node)
         return tree.nodes.some((n) => n.id === node.id);
     }
 
@@ -401,9 +410,6 @@ export default class Layouter{
             // get current index.
             const siblings = getSiblingsIncludeSelf(node, nodes, edges);
             const index = siblings.findIndex((s) => s.id === node.id);
-            console.log(node.data.label)
-            console.log(index)
-            console.log(siblings.length)
             if (index === siblings.length - 1) {
                 return this.moveToNextAvailableOnRightHelper(tree, ancestors[0]);
             }

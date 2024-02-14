@@ -1,5 +1,5 @@
-import React from 'react';
-import {useState, useEffect} from 'react';
+import React, {useEffect} from 'react';
+import {useState} from 'react';
 import Plot from 'react-plotly.js';
 import {getQualifiedDescents} from "../Layouter";
 
@@ -17,49 +17,71 @@ let nestedTreeMap = (tree) => {
 export default function Treemap(props) {
     let layouter = props.layouter;
     let tree = props.tree;
+    let nodesWithoutSelectedInfo = tree.nodes.map((node) => {
+        let newNode = {...node};
+        delete newNode.selected;
+        return newNode;
+    });
+
+    let selectedNode = layouter.getSelectedNode(tree.nodes);
+
+    let [currentLevel, setCurrentLevel] = useState(selectedNode.id);
+
+    useEffect(() => {
+        if(layouter.rawNodes === undefined) return;
+        console.log(layouter.rawNodes.length)
+    }, [layouter.rawNodes, layouter.rawEdges]);
+
+
     let modifyTree = props.modifyTree;
     let labels = [];
     let parents = [];
     let texts = [];
     let ids = [];
-    let selectedNode = layouter.getSelectedNode(tree.nodes);
-    let descentantsOfSelectedNodes = layouter.getDescendantNodes(tree, selectedNode);
-    let descentantsOfSelectedNodesIds = descentantsOfSelectedNodes.map((node) => node.id);
-    for(let node of tree.nodes) {
-        if(node.id === selectedNode.id || descentantsOfSelectedNodesIds.includes(node.id)) {
-            labels.push(node.data.label);
-            ids.push(node.id)
-            // find its parent.
-            let parent = tree.edges.find((edge) => edge.target === node.id);
-            if (parent) {
-                parents.push(parent.source);
-            } else {
-                parents.push("");
-            }
-
-            texts.push(`${node.data.label}`);
+    for (let node of tree.nodes) {
+        labels.push(node.data.label);
+        ids.push(node.id)
+        // find its parent.
+        let parent = tree.edges.find((edge) => edge.target === node.id);
+        if (parent) {
+            parents.push(parent.source);
+        } else {
+            parents.push("");
         }
+        texts.push(`${node.data.label}`);
     }
 
-  return (
-    <div style={{ width: '100%', height: '100%' }}>
-      <Plot
-        data={[{
-  type: 'treemap',
-            ids: ids,
-  labels: labels,
-  parents: parents,
-            textinfo: "text",
-            text: texts,
-}]}
-        layout={{ autosize: true }}
-        style={{ width: '100%', height: '100%' }}
-        onClick={(data) => {modifyTree({
-                type: 'setSelectedNode',
-                node: tree.nodes.find((node) => node.id === data.points[0].id)
-            }
-        )}}
-      />
-    </div>
-  );
+
+    const data = [{
+        type: "treemap",
+        labels: labels,
+        parents: parents,
+        ids: ids,
+        level: currentLevel
+    }];
+
+    return (
+        <Plot
+            data={data}
+            layout={{
+                autosize: true,
+                pathbar: {
+                    visible: false
+                }
+            }}
+            style={{width: '100%', height: '100%'}}
+            onClick={(data) => {
+                //
+                console.log(tree.nodes.find((node) => node.id === data.points[0].id))
+                // setCurrentLevel(data.points[0].label)
+                modifyTree(
+                    {
+                        type: 'setSelectedNode',
+                        node: tree.nodes.find((node) => node.id === data.points[0].id)
+                    }
+                )
+                setCurrentLevel(data.points[0].id)
+            }}
+        />
+    );
 }
