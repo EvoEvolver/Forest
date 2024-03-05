@@ -10,6 +10,7 @@ import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
 import {Code} from "./ContentComponents";
+import Chatbot from "./Plugins/Chatbot";
 
 const NodeElement = (props) => {
     let tabs = Object.keys(props.node.data.tabs);
@@ -81,7 +82,7 @@ const SelectedNodeLayer = (props) => {
         <Grid style={{height: "100%"}} container>
             <Grid key={0} item xs
                   style={{width: '25%', border: '1px solid black', height: "100%", margin: "0 20px"}}>
-                Tool 1
+                <Chatbot/>
             </Grid>
 
             <Grid key={1} item xs style={{
