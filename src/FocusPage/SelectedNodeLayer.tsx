@@ -40,16 +40,15 @@ const NodeElement = (props) => {
                 </Typography>
                 {tabs.length > 0 &&
                     <Box style={{overflowX: 'scroll', overflowY: 'auto', maxHeight: '100%'}}>
-                        <TabContext value={value}>
+                        <TabContext value={value} key={{value}}>
                             <Box sx={{borderBottom: 1, borderColor: 'divider'}}>
                                 <TabList onChange={handleChange} aria-label="lab API tabs example">
                                     {tabs.map((tab, i) => {
-                                        return <Tab label={tab} value={i.toString()}/>
+                                        return <Tab key={i} label={tab} value={i.toString()}/>
                                     })}
                                 </TabList>
                             </Box>
                             {tabs.map((tab, i) => {
-                                console.log(props.node.data.tabs);
                                 return <TabPanel value={i.toString()}>
                                     {<JsxParser
                                         //bindings={{props}}

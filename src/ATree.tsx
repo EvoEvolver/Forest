@@ -1,55 +1,13 @@
-import React from 'react';
-import { useState, useEffect } from 'react';
-import { ReactFlowProvider, Node, Edge } from 'reactflow';
+import React, {useCallback, useEffect, useReducer, useRef, useState} from 'react';
 import 'reactflow/dist/style.css';
-import { TextField, Box, Button, Typography, Modal } from '@mui/material';
-// import testTrees from './testing/trees.json';
-import { io } from 'socket.io-client';
+import {Box} from '@mui/material';
 import FocusPage from './FocusPage';
-import Flow from './FlowPage';
+import Layouter from "./Layouter";
+import {Edge, Node, RawTree} from './entities';
+import Treemap from './TreeMap';
 
-
-function makeid(length) {
-  let result = '';
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  const charactersLength = characters.length;
-  let counter = 0;
-  while (counter < length) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength));
-    counter += 1;
-  }
-  return result;
-}
-const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999": window.location.port;
-const socket = io(`http://127.0.0.1:${currentPort}`, {
-  transports: ["websocket"],
-  withCredentials: false,
-}); // Currently running on default port locally. Need to write it into config file.
-
-interface Tree {
-  id?: string;
-  title: string;
-  content: string;
-  children?: Tree[];
-  tabs: {};
-  path?: string;
-}
-
-
-export default function ATree(props) {
-  let [query, setQuery] = useState<string>('');
-
-  let tree = props.tree;
-  let [nodes, setNodes] = useState<Node[]>([]);
-  let [edges, setEdges] = useState<Edge[]>([]);
-  let [selectedNode, setSelectedNode] = useState<Node | null>(null); // [id, position, label, content
-
-  let [showFocusPage, setShowFocusPage] = useState<boolean>(false);
-
-  let hidden = props.hidden;
-
-
-  const convertTreeToWhatWeWant = (tree: Tree) => {
+// convert the tree from backend to the compatible format for Forest.
+const convertTreeToWhatWeWant = (tree: RawTree) => {
     // return a list of nodes and a list of edges. Every child node is connected to its parent node.
     // the node should have a id, a position, and a label.
     // the edge should have a id, a source, and a target.
@@ -59,64 +17,161 @@ export default function ATree(props) {
     const nodes: Node[] = [];
     const edges: Edge[] = [];
 
-    const dfs = (tree: Tree, parent: string | undefined) => {
-      //const id = tree.id ? tree.id: tree.title;
-      const id = tree.path ? tree.path: makeid(32);
-      // Calculate x-coordinate based on the level
-      const x = 0; // Adjust the multiplier based on your preference
-      // Calculate y-coordinate based on the order within the parent's children
-      const y = 0; // Adjust the multiplier based on your preference
-      const position = { x, y };
-      const label = tree.title;
-      const content = tree.content;
-      const tabs = tree.tabs;
-      // Initialize the node (using interface Node).
-      // Initialize the edge (using interface Edge).
-      // Add the node to the list of nodes.
-      // Add the edge to the list of edges.
-      // If the tree has children, call dfs on each child.
-      let node: Node = { id, position, data: { label, content, tabs, setShowFocusPage, showFocusPage }, type: "NodeWithTooltip" };
-      nodes.push(node);
-      if (parent) {
-        let edge: Edge = { id: `${parent}-${id}`, source: parent, target: id };
-        edges.push(edge);
-      }
-      if (tree.children) {
-        tree.children.forEach((child, index) => {
-          dfs(child, id);
-        });
-      }
+    const dfs = (tree: RawTree, parent: string | undefined) => {
+        //const id = tree.id ? tree.id: tree.title;
+        const id = tree.path;
+        const label = tree.title;
+        const content = tree.content;
+        const tabs = tree.tabs;
+        let node: Node = {id, data: {label, content, tabs}};
+        nodes.push(node);
+        if (parent) {
+            let edge: Edge = {id: `${parent}-${id}`, source: parent, target: id};
+            edges.push(edge);
+        }
+        if (tree.children) {
+            tree.children.forEach((child, index) => {
+                dfs(child, id);
+            });
+        }
     };
 
     dfs(tree, undefined);
 
-    return { 'nodes': nodes, 'edges': edges };
-  }
+    return {'nodes': nodes, 'edges': edges};
+}
 
-  // On Tree Change
-  useEffect(() => {
-    if (tree) {
-      let { nodes, edges } = convertTreeToWhatWeWant(tree);
-      setNodes(nodes);
-      setEdges(edges);
+
+export default function ATree(props) {
+
+    let rawTree = props.tree as RawTree;
+
+    const selectedNodeHistoryMaxNumber = 10;
+    const selectedNodeHistory = useRef([]);
+    const selectedNodeRef = useRef(undefined); //TODO: use treeRef instead of selectedNodeRef?
+    const backRef = useRef(false);
+    let hidden = props.hidden;
+    let layouter = new Layouter();
+    const initialTree = {
+        'nodes': undefined,
+        'edges': undefined
+    };
+
+    let page = props.page;
+
+    // let [tree, setTree] = useState(initialTree);
+    function reducers(tree, action) {
+        switch (action.type) {
+            case 'updateTree':
+                return layouter.updateTree(tree, action.newTree);
+            case 'setSelectedNode':
+                return layouter.setSelectedNode(tree, action.node);
+            default:
+                return tree;
+        }
     }
-  }, [tree])
+
+    const [tree, modifyTree] = useReducer(reducers, initialTree);
+    const [selectedNode, setSelectedNode] = useState(undefined);
+
+    const treeRef = useRef(tree);
+
+    // On Tree Change
+    useEffect(() => {
+        console.log(rawTree)
+        if (rawTree) {
+            let {nodes, edges} = convertTreeToWhatWeWant(rawTree);
+            modifyTree({
+                type: 'updateTree',
+                newTree: {'nodes': nodes, 'edges': edges}
+            });
+        }
+    }, [rawTree]);
+
+    const keyPress = useCallback(
+        (e) => {
+            let result = undefined;
+            const oneToNineRegex = /^[1-9]$/;
+            const key = e.key;
+            if (key === 'ArrowUp') {
+                result = layouter.move(treeRef.current, "up");
+            } else if (key === 'ArrowDown') {
+                result = layouter.move(treeRef.current, "down");
+            } else if (key === 'ArrowLeft') {
+                result = layouter.move(treeRef.current, "left");
+            } else if (key === 'ArrowRight') {
+                result = layouter.move(treeRef.current, "right");
+            } else if (key === 'r') {
+                result = layouter.moveToRoot(treeRef.current);
+            } else if (key === 'n') {
+                result = layouter.moveToNextAvailable(treeRef.current);
+            } else if (key === 'b') {
+                console.log("b clicked.")
+                result = selectedNodeHistory.current.pop();
+                if (result) backRef.current = true;
+            }
+
+            // if it's a number from 1 to 9.
+            else if (oneToNineRegex.test(key)) {
+                result = layouter.moveToChildByIndex(treeRef.current, parseInt(key) - 1);
+            }
+
+            if (result) {
+                modifyTree({
+                    type: 'setSelectedNode',
+                    node: result
+                });
+            }
+        },
+        []
+    );
 
 
-  return (
-    <Box hidden={hidden} style={{ width: '100vw', height: '100vh' }}>
-      <ReactFlowProvider>
-        <Flow initialNodes={nodes} initialEdges={edges} query={query} selectedNode={selectedNode} setSelectedNode={setSelectedNode} showFocusPage={showFocusPage} hidden={hidden}/>
-      </ReactFlowProvider>
-      <Modal
-        open={showFocusPage}
-        onClose={() => setShowFocusPage(false)}
-        style={{ position: "absolute", display: 'flex', alignItems: 'center', margin: '10px 20px', zIndex: '100000' }}
-      >
+    useEffect(() => {
+        if (layouter === undefined || !layouter.hasTree(tree)) return;
+
+        let selectedNode = layouter.getSelectedNode(tree.nodes);
+        // put the selectedNode to the history.
+        if (selectedNodeRef.current && selectedNodeRef.current != null && selectedNodeRef.current != selectedNode && !backRef.current) {
+            selectedNodeHistory.current.push(selectedNodeRef.current);
+            if (selectedNodeHistory.current.length > selectedNodeHistoryMaxNumber) {
+                selectedNodeHistory.current.shift();
+            }
+        }
+        backRef.current = false;
+        selectedNodeRef.current = selectedNode;
+        if (selectedNode === null) {
+            return;
+        }
+    }, [layouter, tree]); // Adding layouter to the dependency array
+
+    useEffect(() => {
+        console.log(hidden)
+      document.removeEventListener("keydown", keyPress);
+        if (!hidden) {
+            document.addEventListener("keydown", keyPress);
+        }
+
+        return () => {
+            document.removeEventListener("keydown", keyPress);
+        };
+    }, [hidden, keyPress]);
+
+  useEffect(() => {
+    treeRef.current = tree;
+    console.log(tree.nodes && tree.nodes.length);
+
+  }, [tree]);
+
+    return (
         <>
-        <FocusPage nodes={nodes} edges={edges} selectedNode={selectedNode} setSelectedNode={setSelectedNode} setShowFocusPage={setShowFocusPage} />
+            <Box hidden={hidden} style={{width: '100vw', height: '100vh'}}>
+                {/*make two buttons to change between focus page and treemap. the buttons should be fixed to top left.*/}
+                {layouter.hasTree(treeRef.current) && page === 0 &&
+                    <FocusPage layouter={layouter} tree={treeRef.current} modifyTree={modifyTree}/>}
+                {layouter.hasTree(treeRef.current) && page === 1 &&
+                    <Treemap layouter={layouter} tree={treeRef.current} modifyTree={modifyTree}/>}
+            </Box>
         </>
-      </Modal>
-    </Box>
-  );
+    );
 }

@@ -1,5 +1,5 @@
-import { ReactFlowInstance, Node, Edge, Viewport, Position, getNodesBounds } from 'reactflow';
-import dagre from 'dagre';
+import React, {Component} from 'react';
+import {Tree, Node, Edge} from './entities';
 
 
 const nodeWidth = 200;
@@ -89,34 +89,99 @@ export const getQualifiedDescents = (node: Node, currentNodes: Node[], currentEd
     }
 }
 
-export default class Layout {
-    private reactFlow: ReactFlowInstance; // the object that controls the layout.
-    private nodes: Node[] = []; // the nodes in the tree. No layout information.
-    private edges: Edge[] = []; // the edges in the tree. No layout information.
+export default class Layouter{
+  /**
+   * The constructor of the Layout class.
+   * @param nodes: the nodes in the tree. No layout information.
+   * @param edges: the edges in the tree. No layout information.
+   * @param setNodes: Function to update nodes state.
+   * @param setEdges: Function to update edges state.
+   */
 
+    public rawNodes: Node[] = [];
+    public rawEdges: Edge[] = [];
+  constructor() {
+      this.rawNodes = undefined;
+        this.rawEdges = undefined;
+  }
 
-    /**
-     * The constructor of the Layout class.
-     * @param reactFlow: the reactFlowInstanceObject. 
-     * @param nodes: the nodes in the tree. No layout information. 
-     * @param edges: the edges in the tree. No layout information.
-     */
-    constructor(reactFlow: ReactFlowInstance, nodes: Node[], edges: Edge[]) {
-        this.reactFlow = reactFlow;
-        this.nodes = nodes;
-        this.edges = edges;
-    }
 
     /**
      * Get the node that's currently being selected.
      * We should get this information from the object that controls the layout which is reactFlow.
-     * @returns the selected node. undefined if no node is selected. 
+     * @returns the selected node. undefined if no node is selected.
      */
-    private getSelectedNode(): Node {
-        let nodes = this.reactFlow.getNodes();
+    public getSelectedNode(nodes): Node {
         return nodes.find((n) => n.selected);
     }
 
+    public setSelectedNode(currTree, node): void {
+        let nodes = currTree.nodes;
+        nodes.forEach((n) => {
+            n.selected = false;
+        });
+        // make the selected node selected.
+        let theNode = nodes.find((n) => n.id === node.id);
+        if(theNode) {
+            theNode.selected = true;
+        }
+        // return but update the nodes.
+        return {...currTree, nodes: nodes};
+    }
+
+    private checkIfNodeExists(node: Node): boolean {
+        // TODO
+        return false;
+    }
+
+    public hasTree(tree): boolean {
+        return tree.nodes !== undefined && tree.edges !== undefined;
+    }
+
+    public updateTree(currTree, tree): void {
+        let nodes = tree.nodes;
+        let edges = tree.edges;
+        this.rawNodes = nodes.map((n) => {
+            let newNode = {...n};
+            delete newNode.selected;
+            return newNode;
+        });
+        this.rawEdges = edges;
+        if(!this.hasTree(currTree)) {
+            nodes[0].selected = true;
+        }
+        else {
+            let selectedNode = this.getSelectedNode(currTree.nodes);
+            // TODO: cases for selectedNode not exist anymore, or there is no selected node.
+            if(selectedNode === undefined || !this.checkIfNodeExists(tree, selectedNode)) {
+                alert("not complete yet for when selected not exist anymore or there is no selected node.");
+            }
+            else {
+                // find the selectedNode in the nodes array. Update the field 'selected' to true.
+                let theNode = nodes.find((node) => node.id === selectedNode.id);
+                if(theNode) {
+                    theNode.selected = true;
+                }
+            }
+        }
+        return {...currTree, nodes: nodes, edges: edges};
+    }
+
+    public getAncestorNodes(currTree, node: Node): Node[] {
+        return getAncestors(node, currTree.nodes, currTree.edges);
+    }
+
+    public getSiblingNodes(currTree, node: Node): Node[] {
+        return getSiblingsIncludeSelf(node, currTree.nodes, currTree.edges);
+    }
+
+    public getChildrenNodes(currTree, node: Node): Node[] {
+        return getChildren(node, currTree.nodes, currTree.edges);
+    }
+
+    public getDescendantNodes(currTree, node: Node): Node[] {
+        return getDescents(node, currTree.nodes, currTree.edges);
+    }
 
     private getVisibleNodesEdges(selectedNode: Node, numGenerations: number): { visibleNodes: Node[], visibleEdges: Edge[] } {
         if (selectedNode) {
@@ -237,19 +302,20 @@ export default class Layout {
         return this.edges;
     }
 
-    public checkIfNodeExists(node: Node): boolean {
-        return this.nodes.some((n) => n.id === node.id);
+    public checkIfNodeExists(tree, node: Node): boolean {
+        return tree.nodes.some((n) => n.id === node.id);
     }
 
-    public move(direction: string): Node {
-        let nodes = this.reactFlow.getNodes();
+    public move(tree, direction): Node {
+        let nodes = tree.nodes;
+        let edges = tree.edges;
 
         // find the selectedNode, which is selected.
         const selectedNode = nodes.find((n) => n.selected);
         if (!selectedNode) return;
         // if move up, get ancestors.
         if (direction === "up") {
-            const ancestors = getAncestors(selectedNode, this.reactFlow.getNodes(), this.reactFlow.getEdges());
+            const ancestors = getAncestors(selectedNode, nodes, edges);
             if (ancestors.length > 0) {
                 return ancestors[0];
             }
@@ -260,7 +326,7 @@ export default class Layout {
         // if move down, get first descent.
 
         if (direction === "down") {
-            const children = getChildren(selectedNode, this.reactFlow.getNodes(), this.reactFlow.getEdges());
+            const children = getChildren(selectedNode, nodes, edges);
 
             if (children.length > 0) {
                 return children[0];
@@ -271,7 +337,7 @@ export default class Layout {
         }
         // if move left, get left sibling.
         if (direction === "left") {
-            const siblings = getSiblingsIncludeSelf(selectedNode, this.reactFlow.getNodes(), this.reactFlow.getEdges());
+            const siblings = getSiblingsIncludeSelf(selectedNode, nodes, edges);
 
             if (getSiblingsIncludeSelf.length > 0) {
                 // find the index of the selectedNode in the siblings.
@@ -289,7 +355,7 @@ export default class Layout {
         }
         // if move right, get right sibling
         if (direction === "right") {
-            const siblings = getSiblingsIncludeSelf(selectedNode, this.reactFlow.getNodes(), this.reactFlow.getEdges());
+            const siblings = getSiblingsIncludeSelf(selectedNode, nodes, edges);
 
             if (getSiblingsIncludeSelf.length > 0) {
                 // find the index of the selectedNode in the siblings.
@@ -307,14 +373,15 @@ export default class Layout {
         }
     }
 
-    public moveToChildByIndex(index: number): Node {
-        let nodes = this.reactFlow.getNodes();
+    public moveToChildByIndex(tree, index: number): Node {
+        let nodes = tree.nodes;
+        let edges = tree.edges;
 
         // find the selectedNode, which is selected.
         const selectedNode = nodes.find((n) => n.selected);
         if (!selectedNode) return;
         // if move up, get ancestors.
-        const children = getChildren(selectedNode, this.reactFlow.getNodes(), this.reactFlow.getEdges());
+        const children = getChildren(selectedNode, nodes, edges);
         if (children.length > 0 && index < children.length) {
             return children[index];
         }
@@ -323,141 +390,49 @@ export default class Layout {
         }
     }
 
-    private getLayoutedElements = (iNodes: Node[], iEdges: Edge[], newSelectedNode: Node = undefined) => {
-        let selectedNode = undefined;
-        if (newSelectedNode) {
-            selectedNode = newSelectedNode;
-        }
-        else {
-            selectedNode = this.getSelectedNode();
-        }
-
-        let direction = 'TB'
-        let nodes = iNodes.map(e => ({ ...e }));
-        let edges = iEdges.map(e => ({ ...e }));
-
-        let nodesCount = nodes.length;
-
-
-        const dagreGraph = new dagre.graphlib.Graph();
-        dagreGraph.setDefaultEdgeLabel(() => ({}));
-        dagreGraph.setGraph({ rankdir: direction, nodesep: 1 });
-
-        nodes.forEach((node) => {
-            let descendants = getDescents(node, nodes, edges);
-            let descendantsCount = descendants.length;
-            let nodeWidthForThisNode = nodeWidth;
-            let nodeHeightForThisNode = nodeHeight;
-            dagreGraph.setNode(node.id, { width: nodeWidthForThisNode * 1.5, height: nodeHeightForThisNode * 2 });
-        });
-
-        edges.forEach((edge) => {
-            dagreGraph.setEdge(edge.source, edge.target);
-        });
-
-
-        dagre.layout(dagreGraph);
-
-        nodes.forEach((node) => {
-            const nodeWithPosition = dagreGraph.node(node.id);
-            node.position = {
-                x: nodeWithPosition.x,
-                y: nodeWithPosition.y,
-            };
-            return node;
-        });
-
-        // Shift the nodes to restore the old position.
-        // get the offset of the selectedNode.
-
-        // first, let's try to find the selectedNode in the nodes array.
-        if (selectedNode) {
-            const node = nodes.find((n) => n.id === selectedNode.id);
-            if (node) {
-                node.sourcePosition = 'bottom' as Position;
-                node.targetPosition = 'top' as Position;
-                const dx = selectedNode.position.x - node.position.x;
-                const dy = selectedNode.position.y - node.position.y;
-                nodes.forEach((n) => {
-                    n.position.x += dx;
-                    n.position.y += dy;
-                });
-            }
-        }
-
-
-        if (selectedNode && newSelectedNode) {
-            let ancestors = getAncestors(selectedNode, nodes, edges);
-            // Need to move the parent to horitonzol.
-            if (ancestors.length > 0) {
-                // Shift the ancestors to restore the old position.
-                ancestors[0].position.x = selectedNode.position.x;
-                for (let i = 1; i < ancestors.length; i++) {
-                    const ancestor = ancestors[i];
-                    if (ancestor) {
-                        ancestor.position.y = ancestors[0].position.y;
-
-                        // get the previous ancestor's nodeWidth.
-                        // dynamically calculate node width.
-                        ancestor.position.x = ancestors[i - 1].position.x + i * nodeWidth;
-
-                        ancestor.sourcePosition = 'left' as Position;
-                        ancestor.targetPosition = 'right' as Position;
-
-                    }
-                }
-
-                ancestors[0].targetPosition = 'right' as Position;
-            }
-        }
-
-        return { nodes, edges };
-    };
-
-    public moveToRoot(): Node {
-        let root = this.nodes[0];
-        // get from this.reactflow.getNodes();
-        let theRootNode = this.reactFlow.getNodes().find((n) => n.id === root.id);
-        if (!theRootNode) return;
-        theRootNode.selected = true;
-        return theRootNode;
+    public moveToRoot(tree): Node {
+        let root = tree.nodes[0];
+        return root;
     }
 
 
     // move to the next available node on the right side of the tree.
-    public moveToNextAvailableOnRightHelper(node: Node): Node {
+    public moveToNextAvailableOnRightHelper(tree, node): Node {
+        let nodes = tree.nodes;
+        let edges = tree.edges;
         // base case: the node is root.
         // check if it is root.
-        const ancestors = getAncestors(node, this.reactFlow.getNodes(), this.reactFlow.getEdges());
+        const ancestors = getAncestors(node, nodes, edges);
         if (ancestors.length === 0) {
             return undefined;
         }
         else {
             // get current index.
-            const siblings = getSiblingsIncludeSelf(node, this.nodes, this.edges);
+            const siblings = getSiblingsIncludeSelf(node, nodes, edges);
             const index = siblings.findIndex((s) => s.id === node.id);
             if (index === siblings.length - 1) {
-                return this.moveToNextAvailableOnRightHelper(ancestors[0]);
+                return this.moveToNextAvailableOnRightHelper(tree, ancestors[0]);
             }
             else {
                 return siblings[index + 1];
             }
         }
     }
-    public moveToNextAvailable(): Node {
-        let nodes = this.reactFlow.getNodes();
+    public moveToNextAvailable(tree): Node {
+        let nodes = tree.nodes;
+        let edges = tree.edges;
 
         // find the selectedNode, which is selected.
         const selectedNode = nodes.find((n) => n.selected);
         if (!selectedNode) return;
         // find the next available node recursively.
         // TODO: what is the time complexity of this function?
-        const children = getChildren(selectedNode, this.reactFlow.getNodes(), this.reactFlow.getEdges());
+        const children = getChildren(selectedNode, nodes, edges);
         if (children.length > 0) {
             return children[0];
         }
         else {
-            return this.moveToNextAvailableOnRightHelper(selectedNode);
+            return this.moveToNextAvailableOnRightHelper(tree, selectedNode);
         }
     }
 

@@ -122,9 +122,6 @@ const Flow = (props) => {
         if (selectedNode) {
             if (!layout.checkIfNodeExists(selectedNode)) {
                 layout.autoLayout().then(() => {
-                    console.log(selectedNode)
-                    // Initial Layout, the previously selected node is gone.
-                    console.log("!!!!!!!!!!")
                     setSelectedNode(null);
                 });
             }
@@ -137,7 +134,6 @@ const Flow = (props) => {
         else {
             layout.autoLayout().then(() => {
                 // Initial Layout, no selected node.
-                console.log("set selected node to null")
                 setSelectedNode(null);
             });
         }

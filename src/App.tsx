@@ -24,6 +24,7 @@ export default function App() {
 
   let [selectedTreeId, setSelectedTreeId] = useState(undefined);
   let [toLoadTree, setToLoadTree] = useState([]);
+  let [page, setPage] = useState(0);
 
   useEffect(() => {
     socket.on("connect", () => {
@@ -33,19 +34,11 @@ export default function App() {
         console.log("set tree")
         let newTrees = {...trees};
         newTrees[serverData.tree_id] = serverData.tree;
-        setTrees(newTrees)
-
-        // wait for 5 seconds
-        setTimeout(() => {
-            // remove the tree from toLoadTree
-            let newTrees = {...trees};
-            newTrees[serverData.tree_id]['children'][0]['children'] = [];
-            setTrees(newTrees);
-            console.log("false update")
-        }, 5000)
+        setTrees(newTrees);
     });
 
     socket.on('requestTree', (trees) => {
+        console.log("request tree")
         setTrees(trees);
     })
     socket.emit('requestTree', () => {
@@ -70,19 +63,25 @@ export default function App() {
 
   return (
       <>
-        <div style={{position: "fixed", top: "5px", left: "5px", zIndex: 99999999}}>
-          {
-              // make a list of buttons for each tree ids. cliking on the button will set the selectedTreeId to the tree id.
-                Object.keys(trees).map((treeId) => {
-                })
-          }
+          <div style={{position: "fixed", top: "5px", left: "5px", zIndex: 99999999}}>
+              {
+                  // make a list of buttons for each tree ids. cliking on the button will set the selectedTreeId to the tree id.
+                  Object.keys(trees).map((treeId) => {
+                      return <button key={treeId} onClick={() => setSelectedTreeId(treeId)}>{treeId}</button>
+                  })
+              }
+          </div>
+
+          <div style={{position: 'fixed', zIndex: 99999999999, top: 0, right: 0}}>
+              <button onClick={() => setPage(0)}>FocusMap</button>
+              <button onClick={() => setPage(1)}>TreeMap</button>
           </div>
           {
               // show a list of ATrees. but only show the one that is selected.
 
-                Object.keys(trees).map((treeId) => {
-                        return toLoadTree.includes(treeId) && <ATree hidden={treeId !== selectedTreeId} key={treeId} tree={trees[treeId]}/>
-                })
+              Object.keys(trees).map((treeId) => {
+                  return <ATree hidden={treeId !== selectedTreeId} key={treeId} tree={trees[treeId]} page={page}/>
+              })
           }
       </>
   );
