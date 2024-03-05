@@ -48,7 +48,7 @@ export default function Treemap(props) {
         } else {
             parents.push("");
         }
-        texts.push(`${node.data.label}`);
+        texts.push(`${node.data.tabs['code']}`);
     }
 
 
