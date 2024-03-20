@@ -1,7 +1,7 @@
 import os
 
 current_file_directory = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.dirname(current_file_directory)
+project_root = current_file_directory
 build_dir = os.path.join(project_root, 'dist')
 asset_dir = os.path.join(build_dir, 'assets')  # Path to the assets directory
 

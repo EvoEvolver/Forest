@@ -16,7 +16,7 @@ import { useReactFlow, } from 'reactflow';
 import Select from 'react-select';
 import 'reactflow/dist/style.css';
 
-import NodeWithTooltip from './Nodes/NodeWithTooltip.js'
+import NodeWithTooltip from './Nodes/NodeWithTooltip'
 import { only } from 'node:test';
 
 import Layout from './Layout';
