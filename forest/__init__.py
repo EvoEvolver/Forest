@@ -18,7 +18,10 @@ def build():
 import subprocess
 
 def get_git_revision_hash() -> str:
-    return subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=project_root).decode('ascii').strip()
+    try:
+        return subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=project_root).decode('ascii').strip()
+    except Exception:
+        return "non-git-repo-mode"
 
 
 def lazy_build():
@@ -40,11 +43,8 @@ def check_if_need_rebuild() -> bool:
 
 def update_last_build_log():
     build_hash = get_git_revision_hash()
-    if build_hash:
-        f = open(f'{project_root}/last_build.log', "w")
-        f.write(build_hash)
-    else:
-        raise("No build hash found")
+    f = open(f'{project_root}/last_build.log', "w")
+    f.write(build_hash)
 
 if __name__ == '__main__':
     # build()
