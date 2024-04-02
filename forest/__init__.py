@@ -45,7 +45,7 @@ def get_git_revision_hash() -> str:
 
 def lazy_build():
     # check if dist folder exists and the index.html file exists
-    if check_if_need_rebuild() or True:
+    if check_if_need_rebuild():
         build()
 
 
@@ -54,7 +54,9 @@ def check_if_need_rebuild() -> bool:
     try:
         last_build_hash = get_git_revision_hash()
         if last_build_hash == "non-git-repo-mode":
-            return not os.path.exists(f'{project_root}/dist')
+            dist_exist = os.path.exists(f'{project_root}/dist')
+            if not dist_exist:
+                return True
         f = open(f'{project_root}/last_build.log', "r")
         last_build = f.read()
         if get_git_revision_hash() != last_build:
