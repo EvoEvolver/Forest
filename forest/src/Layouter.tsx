@@ -129,10 +129,10 @@ export default class Layouter{
         return {...currTree, nodes: nodes};
     }
 
-    private checkIfNodeExists(node: Node): boolean {
+    //private checkIfNodeExists(node: Node): boolean {
         // TODO
-        return false;
-    }
+    //    return false;
+    //}
 
     public hasTree(tree): boolean {
         return tree.nodes !== undefined && tree.edges !== undefined;
