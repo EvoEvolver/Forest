@@ -6,12 +6,28 @@ project_root = current_file_directory
 build_dir = os.path.join(project_root, 'dist')
 asset_dir = os.path.join(build_dir, 'assets')  # Path to the assets directory
 
+def check_nodejs_installed():
+    try:
+        print("* Checking nodejs version")
+        subprocess.run(['node', '--version'])
+    except FileNotFoundError:
+        print("Nodejs is not installed")
+        return False
+    return True
+
 
 def build():
     try:
         os.chdir(project_root)
-        subprocess.call(['npm', 'install'])
-        subprocess.call(['npm', 'run', 'build'])
+        if not check_nodejs_installed():
+            print("Nodejs is not installed.")
+            print("Solution 1: run `conda install nodejs` if you are using conda")
+            print("Solution 2: install nodejs from https://nodejs.org/en")
+            raise Exception("Nodejs is not installed")
+        print("* Installing npm packages (if slow, you might need change npm source)")
+        subprocess.run(['npm', 'install'])
+        print("* Building the project")
+        subprocess.run(['npm', 'run', 'build'])
         update_last_build_log()
     except Exception as e:
         print("Build Failed")
@@ -29,7 +45,7 @@ def get_git_revision_hash() -> str:
 
 def lazy_build():
     # check if dist folder exists and the index.html file exists
-    if check_if_need_rebuild():
+    if check_if_need_rebuild() or True:
         build()
 
 
