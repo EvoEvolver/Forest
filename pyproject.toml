@@ -10,8 +10,10 @@ authors = [
     { name = "Zijian Zhang" }
 ]
 
-dependencies = [
-]
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
 
 [project.optional-dependencies]
 dev = [
