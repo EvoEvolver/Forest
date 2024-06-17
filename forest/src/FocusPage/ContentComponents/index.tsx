@@ -9,3 +9,12 @@ export const Code = (props) => {
         </SyntaxHighlighter>
     );
 }
+
+import './katex.min.css';
+import { InlineMath } from 'react-katex';
+
+export const TeX = (props) => {
+    return (
+        <InlineMath math={props.src} />
+    );
+}

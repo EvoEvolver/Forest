@@ -9,7 +9,7 @@ import Tab from '@mui/material/Tab';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
-import {Code} from "./ContentComponents";
+import {Code, TeX} from "./ContentComponents";
 import Chatbot from "./Plugins/Chatbot";
 
 const NodeElement = (props) => {
@@ -53,7 +53,7 @@ const NodeElement = (props) => {
                                 return <TabPanel value={i.toString()}>
                                     {<JsxParser
                                         //bindings={{props}}
-                                        components={{Code}}
+                                        components={{Code, TeX}}
                                         jsx={props.node.data.tabs[tab]}
                                     />}</TabPanel>
                             })}
