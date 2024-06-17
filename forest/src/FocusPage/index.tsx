@@ -47,7 +47,7 @@ export default function FocusPage(props) {
         <Grid container height="100vh" width="100vw" flexDirection="column">
             <Grid item
                   style={{height: ancestorsLayerHeight, backgroundColor: '#7DB9DE', width: "100%", padding: "10px"}}>
-                <OtherNodesLayer nodes={layouter.getAncestorNodes(tree, layouter.getSelectedNode(tree.nodes))} selectedNode={layouter.getSelectedNode(tree.nodes)} modifyTree={modifyTree}/>
+                <OtherNodesLayer nodes={layouter.getAncestorNodes(tree, layouter.getSelectedNode(tree.nodes)).reverse()} selectedNode={layouter.getSelectedNode(tree.nodes)} modifyTree={modifyTree}/>
             </Grid>
             <Grid item
                   style={{height: siblingsLayerHeight, backgroundColor: '#A8D8B9', width: "100%", padding: "10px"}}>
