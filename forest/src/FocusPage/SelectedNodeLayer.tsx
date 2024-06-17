@@ -24,6 +24,8 @@ const NodeElement = (props) => {
     const handleChange = (event: React.SyntheticEvent, newValue: string) => {
         setValue(newValue);
     };
+
+    let modifyTree = props.modifyTree;
     // TODO: why is it rendered multiple times?
     return (
         <Card sx={{

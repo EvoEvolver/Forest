@@ -61,6 +61,13 @@ export default function ATree(props) {
 
     // let [tree, setTree] = useState(initialTree);
     function reducers(tree, action) {
+        if(action.id !== undefined) {
+            // user provides an id. so we need to get the node by id.
+            let node = tree.nodes.find((node) => node.id === action.id);
+            if(node) {
+                action.node = node;
+            }
+        }
         switch (action.type) {
             case 'updateTree':
                 return layouter.updateTree(tree, action.newTree);
