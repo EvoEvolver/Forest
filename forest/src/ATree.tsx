@@ -175,7 +175,7 @@ export default function ATree(props) {
             <Box hidden={hidden} style={{width: '100vw', height: '100vh'}}>
                 {/*make two buttons to change between focus page and treemap. the buttons should be fixed to top left.*/}
                 {layouter.hasTree(treeRef.current) && page === 0 &&
-                    <FocusPage layouter={layouter} tree={treeRef.current} modifyTree={modifyTree}/>}
+                    <FocusPage layouter={layouter} tree={treeRef.current} modifyTree={modifyTree} send_message_to_main={props.send_message_to_main}/>}
                 {layouter.hasTree(treeRef.current) && page === 1 &&
                     <Treemap layouter={layouter} tree={treeRef.current} modifyTree={modifyTree}/>}
             </Box>

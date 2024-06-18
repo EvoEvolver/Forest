@@ -10,6 +10,11 @@ const socket = io(`http://127.0.0.1:${currentPort}`, {
   withCredentials: false,
 }); // Currently running on default port locally. Need to write it into config file.
 
+
+const send_message_to_main = (message)=>{
+    socket.emit("message_to_main", message);
+}
+
 interface Tree {
   id?: string;
   title: string;
@@ -80,7 +85,7 @@ export default function App() {
               // show a list of ATrees. but only show the one that is selected.
 
               Object.keys(trees).map((treeId) => {
-                  return <ATree hidden={treeId !== selectedTreeId} key={treeId} tree={trees[treeId]} page={page}/>
+                  return <ATree hidden={treeId !== selectedTreeId} key={treeId} tree={trees[treeId]} page={page} send_message_to_main={send_message_to_main}/>
               })
           }
       </>

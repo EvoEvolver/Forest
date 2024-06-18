@@ -57,7 +57,7 @@ export default function FocusPage(props) {
 
             <Grid item
                   style={{height: selectedNodeLayerHeight, backgroundColor: '#EB7A77', width: "100%", padding: "10px"}}>
-                <SelectedNodeLayer node={layouter.getSelectedNode(tree.nodes)} modifyTree={modifyTree}/>
+                <SelectedNodeLayer node={layouter.getSelectedNode(tree.nodes)} modifyTree={modifyTree} send_message_to_main={props.send_message_to_main}/>
             </Grid>
 
             {/* Children Layer */}

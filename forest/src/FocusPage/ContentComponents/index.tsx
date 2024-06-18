@@ -18,3 +18,10 @@ export const TeX = (props) => {
         <InlineMath math={props.src} />
     );
 }
+
+
+export const SendMessage = (props) => {
+    return (
+        <button onClick={() => props.send_message_to_main({type: 'send_message', message: 'hello'})}>Send Message</button>
+    );
+}
