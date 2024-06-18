@@ -10,7 +10,7 @@ export const Code = (props) => {
     );
 }
 
-import './katex.min.css';
+
 import { InlineMath } from 'react-katex';
 
 export const TeX = (props) => {

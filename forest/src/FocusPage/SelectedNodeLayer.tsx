@@ -11,6 +11,7 @@ import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
 import {Code, TeX} from "./ContentComponents";
 import Chatbot from "./Plugins/Chatbot";
+import NodeNavigateButton from "./NodeNavigateButton";
 
 const NodeElement = (props) => {
     let tabs = Object.keys(props.node.data.tabs);
@@ -54,8 +55,8 @@ const NodeElement = (props) => {
                             {tabs.map((tab, i) => {
                                 return <TabPanel value={i.toString()}>
                                     {<JsxParser
-                                        //bindings={{props}}
-                                        components={{Code, TeX}}
+                                        bindings={{modifyTree}}
+                                        components={{Code, TeX, NodeNavigateButton}}
                                         jsx={props.node.data.tabs[tab]}
                                     />}</TabPanel>
                             })}
@@ -94,7 +95,7 @@ const SelectedNodeLayer = (props) => {
                 transition: animate ? 'opacity 0.5s ease-in' : 'none',
                 opacity: animate ? 0 : 1,
             }}>
-                <NodeElement node={node}/>
+                <NodeElement node={node} modifyTree={props.modifyTree}/>
             </Grid>
 
             <Grid key={2} item xs
