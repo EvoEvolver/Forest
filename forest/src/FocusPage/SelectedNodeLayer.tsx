@@ -69,6 +69,7 @@ const NodeElement = (props) => {
                                         bindings={{env_funcs, env_vars}}
                                         components={env_components}
                                         jsx={props.node.tabs[tab]}
+                                        renderError={error => <div style={{color: "red"}} >{error.error.toString()}</div>}
                                     />}</TabPanel>
                             })}
                         </TabContext>
