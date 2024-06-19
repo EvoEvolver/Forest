@@ -240,9 +240,11 @@ export default class Layouter{
         }
     }
     public moveToNextAvailable(tree: TreeData): Node {
+
+        console.log("moveToNextAvailable");
         let nodes = Object.values(tree.nodeDict);
         // find the selectedNode, which is selected.
-        const selectedNode = nodes.find((n) => n.selected);
+        const selectedNode = tree.nodeDict[tree.selectedNode]
         if (!selectedNode) return;
         // find the next available node recursively.
         // TODO: what is the time complexity of this function?

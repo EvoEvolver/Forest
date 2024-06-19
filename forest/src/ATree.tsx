@@ -40,10 +40,8 @@ export default function ATree(props) {
         switch (action.type) {
             case 'updateTree':
                 return layouter.updateTree(tree, action.newTree);
-            case 'setSelectedNode':{
-                console.log("setSelectedNode", action.id);
+            case 'setSelectedNode':
                 return layouter.setSelectedNode(tree, action.id);
-            }
             default:
                 return tree;
         }
@@ -95,7 +93,7 @@ export default function ATree(props) {
             if (result) {
                 modifyTree({
                     type: 'setSelectedNode',
-                    node: result
+                    id: result.id
                 });
             }
         },
@@ -123,7 +121,7 @@ export default function ATree(props) {
 
     useEffect(() => {
         console.log(hidden)
-      document.removeEventListener("keydown", keyPress);
+        document.removeEventListener("keydown", keyPress);
         if (!hidden) {
             document.addEventListener("keydown", keyPress);
         }
@@ -142,9 +140,9 @@ export default function ATree(props) {
             <Box hidden={hidden} style={{width: '100vw', height: '100vh'}}>
                 {/*make two buttons to change between focus page and treemap. the buttons should be fixed to top left.*/}
                 {layouter.hasTree(treeRef.current) && page === 0 &&
-                    <FocusPage layouter={layouter} tree={treeRef.current} modifyTree={modifyTree} send_message_to_main={props.send_message_to_main}/>}
+                    <FocusPage layouter={layouter} tree={tree} modifyTree={modifyTree} send_message_to_main={props.send_message_to_main}/>}
                 {layouter.hasTree(treeRef.current) && page === 1 &&
-                    <Treemap layouter={layouter} tree={treeRef.current} modifyTree={modifyTree}/>}
+                    <Treemap layouter={layouter} tree={tree} modifyTree={modifyTree}/>}
             </Box>
         </>
     );

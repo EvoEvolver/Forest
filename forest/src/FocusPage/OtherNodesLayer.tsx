@@ -1,9 +1,10 @@
 import React, {useState, useEffect} from 'react';
 import {Grid, Button, Paper, Typography} from '@mui/material';
+import {Node} from "../entities";
 
 const NodeElement = (props) => {
-    const {node, modifyTree, selected} = props;
-
+    const {modifyTree, selected} = props;
+    let node: Node = props.node;
     return (
         <Paper
             elevation={3}
@@ -25,18 +26,18 @@ const NodeElement = (props) => {
             {
                 modifyTree({
                     type: 'setSelectedNode',
-                    node: node
+                    id: node.id
                 })
             }
             }
         >
-            <Typography>{props.node.data.label}</Typography>
+            <Typography>{props.node.title}</Typography>
         </Paper>
     );
 };
 
-const OtherNodesLayer = (props) => {
-    const {nodes, modifyTree, selectedNode} = props;
+const OtherNodesLayer = ({nodes, modifyTree, selectedNode}) => {
+
     const elementsPerPage = 5;
     const [startPoint, setStartPoint] = useState(0);
     const [animate, setAnimate] = useState(false);

@@ -17,9 +17,11 @@ export interface TreeData {
 
 export interface Node {
   id: string;
+  title: string;
   parent: string;
   tabs: {};
   children: string[],
   selected: boolean;
+  data: {};
 }
 

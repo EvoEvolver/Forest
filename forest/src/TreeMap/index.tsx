@@ -1,5 +1,7 @@
 import React, {useEffect} from 'react';
 import Plot from 'react-plotly.js';
+import {TreeData, Node} from "../entities";
+import Layouter from "../Layouter";
 
 let nestedTreeMap = (tree) => {
     return (
@@ -13,22 +15,10 @@ let nestedTreeMap = (tree) => {
 
 // https://plotly.com/javascript/reference/treemap/
 export default function Treemap(props) {
-    let layouter = props.layouter;
-    let tree = props.tree;
-    let nodesWithoutSelectedInfo = tree.nodes.map((node) => {
-        let newNode = {...node};
-        delete newNode.selected;
-        return newNode;
-    });
-
-    let selectedNode = layouter.getSelectedNode(tree.nodes);
-
+    let layouter: Layouter = props.layouter;
+    let tree: TreeData = props.tree;
+    let selectedNode = layouter.getSelectedNode(tree);
     let currentLevel = selectedNode.id;
-
-    useEffect(() => {
-        if(layouter.rawNodes === undefined) return;
-        console.log(layouter.rawNodes.length)
-    }, [layouter.rawNodes, layouter.rawEdges]);
 
 
     let modifyTree = props.modifyTree;
@@ -36,17 +26,17 @@ export default function Treemap(props) {
     let parents = [];
     let texts = [];
     let ids = [];
-    for (let node of tree.nodes) {
-        labels.push(node.data.label);
+    for (let node of Object.values(tree.nodeDict)) {
+        labels.push(node.title);
         ids.push(node.id)
         // find its parent.
-        let parent = tree.edges.find((edge) => edge.target === node.id);
+        let parent = node.parent
         if (parent) {
-            parents.push(parent.source);
+            parents.push(parent);
         } else {
             parents.push("");
         }
-        texts.push(`${node.data.tabs['code']}`);
+        texts.push(`${node.tabs['code']}`);
     }
 
 
@@ -73,11 +63,9 @@ export default function Treemap(props) {
                 modifyTree(
                     {
                         type: 'setSelectedNode',
-                        node: tree.nodes.find((node) => node.id === data[0].level)
+                        id: data[0].level
                     }
                 )
-                // setCurrentLevel(data.points[0].id)
-                console.log(data[0].level)
             }}
         />
     );
