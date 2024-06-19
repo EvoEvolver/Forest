@@ -1,14 +1,10 @@
 import React from 'react';
-import {useState, useEffect} from 'react';
-import {Node, Edge} from 'reactflow';
 import 'reactflow/dist/style.css';
-import {Grid, IconButton} from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
+import {Grid} from '@mui/material';
 
 import SelectedNodeLayer from './SelectedNodeLayer';
 import OtherNodesLayer from './OtherNodesLayer';
 
-import {getAncestors, getChildren, getQualifiedDescents, getSiblingsIncludeSelf} from '../FlowPage/Layout';
 import {TreeData} from "../entities";
 import Layouter from "../Layouter";
 
@@ -18,27 +14,11 @@ export default function FocusPage(props) {
     let tree: TreeData = props.tree;
     let modifyTree = props.modifyTree;
 
-    // let [siblingNodes, setSiblingNodes] = useState<Node[]>([]);
-    // let [childrenNodes, setChildrenNodes] = useState<Node[]>([]);
-    // let [ancestorsNodes, setAncestorsNodes] = useState<Node[]>([]);
 
     const ancestorsLayerHeight = '10%';
     const siblingsLayerHeight = '10%';
     const selectedNodeLayerHeight = '70%';
     const childrenLayerHeight = '10%';
-
-
-    // when selectedNode changes, update the siblings, children, and ancestors.
-    // useEffect(() => {
-    //     if (selectedNode) {
-    //         let siblings = getSiblingsIncludeSelf(selectedNode, nodes, edges);
-    //         setSiblingNodes(siblings);
-    //         let children = getChildren(selectedNode, nodes, edges);
-    //         setChildrenNodes(children);
-    //         let ancestors = getAncestors(selectedNode, nodes, edges);
-    //         setAncestorsNodes(ancestors);
-    //     }
-    // }, [selectedNode]);
 
 
     if(Object.keys(tree.nodeDict).length > 0)

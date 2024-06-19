@@ -15,14 +15,6 @@ const send_message_to_main = (message) => {
     socket.emit("message_to_main", message);
 }
 
-interface Tree {
-    id?: string;
-    title: string;
-    content: string;
-    children?: Tree[];
-    tabs: {};
-}
-
 
 function patchTree(currTree: TreeData, patchTree: TreeData) {
     if(currTree === undefined) {

@@ -23,7 +23,7 @@ export const TeX = (props) => {
 export const SendMessage = (props) => {
     console.log(props.env_vars);
     return (
-        <button onClick={() => props.env_funcs.send_message_to_main({node_id: props.env_vars.node_id, message: 'hello'})}>Send Message</button>
+        <button onClick={() => props.env_funcs.send_message_to_main({node_id: props.env_vars.node_id, message: props.message || 'hello'})}>{props.title || "Send message"}</button>
     );
 }
 
