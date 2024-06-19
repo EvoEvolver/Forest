@@ -4,7 +4,8 @@ export interface RawTree {
   content: string;
   children?: RawTree[];
   tabs: {};
-  path?: string;
+  node_id?: string;
+  data: {};
 }
 
 export interface Node {

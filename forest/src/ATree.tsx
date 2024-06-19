@@ -19,7 +19,7 @@ const convertTreeToWhatWeWant = (tree: RawTree) => {
 
     const dfs = (tree: RawTree, parent: string | undefined) => {
         //const id = tree.id ? tree.id: tree.title;
-        const id = tree.path;
+        const id = tree.node_id;
         const label = tree.title;
         const content = tree.content;
         const tabs = tree.tabs;
@@ -85,7 +85,7 @@ export default function ATree(props) {
 
     // On Tree Change
     useEffect(() => {
-        console.log(rawTree)
+        console.log("tree", rawTree)
         if (rawTree) {
             let {nodes, edges} = convertTreeToWhatWeWant(rawTree);
             modifyTree({
