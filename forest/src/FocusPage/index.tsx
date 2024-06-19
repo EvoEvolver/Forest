@@ -9,11 +9,13 @@ import SelectedNodeLayer from './SelectedNodeLayer';
 import OtherNodesLayer from './OtherNodesLayer';
 
 import {getAncestors, getChildren, getQualifiedDescents, getSiblingsIncludeSelf} from '../FlowPage/Layout';
+import {TreeData} from "../entities";
+import Layouter from "../Layouter";
 
 
 export default function FocusPage(props) {
-    let layouter = props.layouter;
-    let tree = props.tree;
+    let layouter: Layouter = props.layouter;
+    let tree: TreeData = props.tree;
     let modifyTree = props.modifyTree;
 
     // let [siblingNodes, setSiblingNodes] = useState<Node[]>([]);
@@ -24,10 +26,6 @@ export default function FocusPage(props) {
     const siblingsLayerHeight = '10%';
     const selectedNodeLayerHeight = '70%';
     const childrenLayerHeight = '10%';
-
-    let changeSelectedNode = (node: Node) => {
-        layouter.setSelectedNode(node);
-    };
 
 
     // when selectedNode changes, update the siblings, children, and ancestors.
@@ -42,28 +40,30 @@ export default function FocusPage(props) {
     //     }
     // }, [selectedNode]);
 
+
+    if(Object.keys(tree.nodeDict).length > 0)
     return (
         <>
         <Grid container height="100vh" width="100vw" flexDirection="column">
             <Grid item
                   style={{height: ancestorsLayerHeight, backgroundColor: '#7DB9DE', width: "100%", padding: "10px"}}>
-                <OtherNodesLayer nodes={layouter.getAncestorNodes(tree, layouter.getSelectedNode(tree.nodes)).reverse()} selectedNode={layouter.getSelectedNode(tree.nodes)} modifyTree={modifyTree}/>
+                <OtherNodesLayer nodes={layouter.getAncestorNodes(tree, layouter.getSelectedNode(tree)).reverse()} selectedNode={layouter.getSelectedNode(tree)} modifyTree={modifyTree}/>
             </Grid>
             <Grid item
                   style={{height: siblingsLayerHeight, backgroundColor: '#A8D8B9', width: "100%", padding: "10px"}}>
-                <OtherNodesLayer nodes={layouter.getSiblingNodes(tree, layouter.getSelectedNode(tree.nodes))} selectedNode={layouter.getSelectedNode(tree.nodes)}
+                <OtherNodesLayer nodes={layouter.getSiblingNodes(tree, layouter.getSelectedNode(tree))} selectedNode={layouter.getSelectedNode(tree)}
                                  modifyTree={modifyTree}/>
             </Grid>
 
             <Grid item
                   style={{height: selectedNodeLayerHeight, backgroundColor: '#EB7A77', width: "100%", padding: "10px"}}>
-                <SelectedNodeLayer node={layouter.getSelectedNode(tree.nodes)} modifyTree={modifyTree} send_message_to_main={props.send_message_to_main}/>
+                <SelectedNodeLayer node={layouter.getSelectedNode(tree)} modifyTree={modifyTree} send_message_to_main={props.send_message_to_main}/>
             </Grid>
 
             {/* Children Layer */}
             <Grid item
                   style={{height: childrenLayerHeight, backgroundColor: '#FAD689', width: "100%", padding: "10px"}}>
-                <OtherNodesLayer nodes={layouter.getChildrenNodes(tree, layouter.getSelectedNode(tree.nodes))} selectedNode={layouter.getSelectedNode(tree.nodes)} modifyTree={modifyTree}/>
+                <OtherNodesLayer nodes={layouter.getChildrenNodes(tree, layouter.getSelectedNode(tree))} selectedNode={layouter.getSelectedNode(tree)} modifyTree={modifyTree}/>
             </Grid>
         </Grid>
         </>

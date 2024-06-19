@@ -8,14 +8,18 @@ export interface RawTree {
   data: {};
 }
 
-export interface Node {
-  id: string;
-  data: { label: string, content: string, tabs: {} };
+export type NodeDict = Record<string, Node>
+
+export interface TreeData {
+  selectedNode: string;
+  nodeDict: NodeDict;
 }
 
-export interface Edge {
+export interface Node {
   id: string;
-  source: string;
-  target: string;
+  parent: string;
+  tabs: {};
+  children: string[],
+  selected: boolean;
 }
 

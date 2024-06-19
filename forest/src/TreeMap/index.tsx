@@ -1,7 +1,5 @@
 import React, {useEffect} from 'react';
-import {useState} from 'react';
 import Plot from 'react-plotly.js';
-import {getQualifiedDescents} from "../Layouter";
 
 let nestedTreeMap = (tree) => {
     return (

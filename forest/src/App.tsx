@@ -34,6 +34,7 @@ export default function App() {
         socket.on("connect", () => {
             console.log("Connected");
         });
+
         socket.on("setTree", (serverData) => {
             console.log("set tree")
             let newTrees = {...trees};
@@ -45,6 +46,14 @@ export default function App() {
             console.log("request tree")
             setTrees(trees);
         })
+
+        socket.on('updateNodes', (node_update) => {
+            console.log("update node")
+            let newTrees = {...trees};
+            newTrees[node_update.tree_id] = node_update.nodes_data;
+            setTrees(newTrees);
+        });
+
         socket.emit('requestTree', () => {
         })
     }, []);

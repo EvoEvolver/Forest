@@ -3,48 +3,16 @@ import 'reactflow/dist/style.css';
 import {Box} from '@mui/material';
 import FocusPage from './FocusPage';
 import Layouter from "./Layouter";
-import {Edge, Node, RawTree} from './entities';
+import {Node, NodeDict, TreeData} from './entities';
 import Treemap from './TreeMap';
+import Tree from "react-d3-tree";
 
 // convert the tree from backend to the compatible format for Forest.
-const convertTreeToWhatWeWant = (tree: RawTree) => {
-    // return a list of nodes and a list of edges. Every child node is connected to its parent node.
-    // the node should have a id, a position, and a label.
-    // the edge should have a id, a source, and a target.
-    // the position of the node should be calculated based on the level of the node.
-    // the root node should be at the center of the screen.
-
-    const nodes: Node[] = [];
-    const edges: Edge[] = [];
-
-    const dfs = (tree: RawTree, parent: string | undefined) => {
-        //const id = tree.id ? tree.id: tree.title;
-        const id = tree.node_id;
-        const label = tree.title;
-        const content = tree.content;
-        const tabs = tree.tabs;
-        let node: Node = {id, data: {label, content, tabs}};
-        nodes.push(node);
-        if (parent) {
-            let edge: Edge = {id: `${parent}-${id}`, source: parent, target: id};
-            edges.push(edge);
-        }
-        if (tree.children) {
-            tree.children.forEach((child, index) => {
-                dfs(child, id);
-            });
-        }
-    };
-
-    dfs(tree, undefined);
-
-    return {'nodes': nodes, 'edges': edges};
-}
 
 
 export default function ATree(props) {
 
-    let rawTree = props.tree as RawTree;
+    let treeData = props.tree as TreeData;
 
     const selectedNodeHistoryMaxNumber = 10;
     const selectedNodeHistory = useRef([]);
@@ -52,18 +20,19 @@ export default function ATree(props) {
     const backRef = useRef(false);
     let hidden = props.hidden;
     let layouter = new Layouter();
+
     const initialTree = {
-        'nodes': undefined,
-        'edges': undefined
-    };
+        "selectedNode": undefined,
+        "nodeDict": {}
+    } as TreeData;
 
     let page = props.page;
 
     // let [tree, setTree] = useState(initialTree);
-    function reducers(tree, action) {
+    function reducers(tree: TreeData, action) {
         if(action.id !== undefined) {
             // user provides an id. so we need to get the node by id.
-            let node = tree.nodes.find((node) => node.id === action.id);
+            let node = Object.values(tree.nodeDict).find((node) => node.id === action.id);
             if(node) {
                 action.node = node;
             }
@@ -71,8 +40,10 @@ export default function ATree(props) {
         switch (action.type) {
             case 'updateTree':
                 return layouter.updateTree(tree, action.newTree);
-            case 'setSelectedNode':
-                return layouter.setSelectedNode(tree, action.node);
+            case 'setSelectedNode':{
+                console.log("setSelectedNode", action.id);
+                return layouter.setSelectedNode(tree, action.id);
+            }
             default:
                 return tree;
         }
@@ -85,15 +56,13 @@ export default function ATree(props) {
 
     // On Tree Change
     useEffect(() => {
-        console.log("tree", rawTree)
-        if (rawTree) {
-            let {nodes, edges} = convertTreeToWhatWeWant(rawTree);
+        if (treeData) {
             modifyTree({
                 type: 'updateTree',
-                newTree: {'nodes': nodes, 'edges': edges}
+                newTree: treeData
             });
         }
-    }, [rawTree]);
+    }, [treeData]);
 
     const keyPress = useCallback(
         (e) => {
@@ -137,7 +106,7 @@ export default function ATree(props) {
     useEffect(() => {
         if (layouter === undefined || !layouter.hasTree(tree)) return;
 
-        let selectedNode = layouter.getSelectedNode(tree.nodes);
+        let selectedNode = layouter.getSelectedNode(tree);
         // put the selectedNode to the history.
         if (selectedNodeRef.current && selectedNodeRef.current != null && selectedNodeRef.current != selectedNode && !backRef.current) {
             selectedNodeHistory.current.push(selectedNodeRef.current);
@@ -166,8 +135,6 @@ export default function ATree(props) {
 
     useEffect(() => {
         treeRef.current = tree;
-        console.log(tree.nodes && tree.nodes.length);
-
     }, [tree]);
 
     return (

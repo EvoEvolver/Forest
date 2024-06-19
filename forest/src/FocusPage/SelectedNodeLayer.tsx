@@ -13,7 +13,7 @@ import * as content_components from "./ContentComponents";
 import Chatbot from "./Plugins/Chatbot";
 
 const NodeElement = (props) => {
-    let tabs = Object.keys(props.node.data.tabs);
+    let tabs = Object.keys(props.node.tabs);
     let options = tabs.map((tab) => {
         return tab
     });
@@ -51,7 +51,7 @@ const NodeElement = (props) => {
         }}>
             <CardContent>
                 <Typography variant="h5" component="div">
-                    {props.node.data.label}
+                    {props.node.title}
                 </Typography>
                 {tabs.length > 0 &&
                     <Box style={{overflowX: 'scroll', overflowY: 'auto', maxHeight: '100%'}}>
@@ -68,7 +68,7 @@ const NodeElement = (props) => {
                                     {<JsxParser
                                         bindings={{env_funcs, env_vars}}
                                         components={env_components}
-                                        jsx={props.node.data.tabs[tab]}
+                                        jsx={props.node.tabs[tab]}
                                     />}</TabPanel>
                             })}
                         </TabContext>

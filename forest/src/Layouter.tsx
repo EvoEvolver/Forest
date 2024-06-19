@@ -1,17 +1,13 @@
-import React, {Component} from 'react';
-import {Tree, Node, Edge} from './entities';
+import {Node, NodeDict, TreeData} from './entities';
+import Tree from "react-d3-tree";
 
 
-const nodeWidth = 200;
-const nodeHeight = 50;
-
-export const getSiblingsIncludeSelf = (node: Node, currentNodes: Node[], currentEdges: Edge[]): Node[] => {
-    let parent: Edge | undefined = currentEdges.find((e: Edge) => e.target === node.id);
-    let siblings: Edge[] = [];
-    if (parent) {
-        siblings = currentEdges.filter((e: Edge) => (e.source === parent?.source));
+export const getSiblingsIncludeSelf = (node: Node, nodeDict: NodeDict): Node[] => {
+    let parent = nodeDict[node.parent];
+    if (!parent) {
+        return [node];
     }
-    const siblingNodes = siblings.map((s) => currentNodes.find((n: Node) => n.id === s.target)) as Node[];
+    const siblingNodes = parent.children.map((c: string) => nodeDict[c]) as Node[];
     if (siblingNodes.length === 0) {
         siblingNodes.push(node);
     }
@@ -20,31 +16,30 @@ export const getSiblingsIncludeSelf = (node: Node, currentNodes: Node[], current
 
 
 // get the node's ancestors.
-export const getAncestors = (node: Node, currentNodes: Node[], currentEdges: Edge[]): Node[] => {
-    let parent: Edge | undefined = currentEdges.find((e: Edge) => e.target === node.id);
-    let ancestors: Edge[] = [];
+export const getAncestors = (node: Node, nodeDict: NodeDict): Node[] => {
+    let parent = nodeDict[node.parent];
+    let ancestors: Node[] = [];
     while (parent) {
         ancestors.push(parent);
-        parent = currentEdges.find((e: Edge) => e.target === parent?.source);
+        parent = nodeDict[parent.parent];
     }
-    const parentNodes = ancestors.map((a: Edge) => currentNodes.find((n: Node) => n.id === a.source)) as Node[];
-    return parentNodes;
+    return ancestors;
 }
 
 
 // get my descents.
 
-export const getDescents = (node: Node, currentNodes: Node[], currentEdges: Edge[]): Node[] => {
-    let children: Edge[] = currentEdges.filter((e: Edge) => e.source === node.id) as Edge[];
+export const getDescents = (node: Node, nodeDict: NodeDict): Node[] => {
+    let children: string[] = node.children;
     if (!children) {
         return [] as Node[];
     }
     else {
-        const childrenNodes = children.map((c: Edge) => currentNodes.find((n: Node) => n.id === c.target)) as Node[];
+        const childrenNodes = children.map((c: string) => nodeDict[c]) as Node[];
         let des: Node[] = [];
         childrenNodes.forEach((c: Node) => {
             des.push(c);
-            des = des.concat(getDescents(c, currentNodes, currentEdges));
+            des = des.concat(getDescents(c, nodeDict));
         });
         return des;
     }
@@ -53,148 +48,97 @@ export const getDescents = (node: Node, currentNodes: Node[], currentEdges: Edge
 
 // get my children.
 
-export const getChildren = (node: Node, currentNodes: Node[], currentEdges: Edge[]): Node[] => {
-    let children: Edge[] = currentEdges.filter((e: Edge) => e.source === node.id) as Edge[];
+export const getChildren = (node: Node, nodeDict: NodeDict): Node[] => {
+    let children: string[] = node.children;
     if (!children) {
         return [] as Node[];
     }
     else {
-        const childrenNodes = children.map((c: Edge) => currentNodes.find((n: Node) => n.id === c.target)) as Node[];
-        return childrenNodes;
+        return children.map((c: string) => nodeDict[c]) as Node[];
     }
 };
 
-
-
-export const getQualifiedDescents = (node: Node, currentNodes: Node[], currentEdges: Edge[], numGenerations: number) => {
-
-    if (numGenerations === 0) {
-        return [] as Node[];
-    }
-
-    else {
-        let children: Edge[] = currentEdges.filter((e: Edge) => e.source === node.id) as Edge[];
-        if (!children) {
-            return [] as Node[];
-        }
-        else {
-            const childrenNodes = children.map((c: Edge) => currentNodes.find((n: Node) => n.id === c.target)) as Node[];
-            let des: Node[] = [];
-            childrenNodes.forEach((c: Node) => {
-                des.push(c);
-                des = des.concat(getQualifiedDescents(c, currentNodes, currentEdges, numGenerations - 1));
-            });
-            return des;
-        }
-    }
-}
 
 export default class Layouter{
   /**
    * The constructor of the Layout class.
    * @param nodes: the nodes in the tree. No layout information.
-   * @param edges: the edges in the tree. No layout information.
    * @param setNodes: Function to update nodes state.
-   * @param setEdges: Function to update edges state.
    */
 
     public rawNodes: Node[] = [];
-    public rawEdges: Edge[] = [];
-  constructor() {
-      this.rawNodes = undefined;
-        this.rawEdges = undefined;
-  }
+      constructor() {
+          this.rawNodes = undefined;
+      }
 
 
     /**
      * Get the node that's currently being selected.
-     * We should get this information from the object that controls the layout which is reactFlow.
      * @returns the selected node. undefined if no node is selected.
      */
-    public getSelectedNode(nodes): Node {
-        return nodes.find((n) => n.selected);
+    public getSelectedNode(treeData: TreeData): Node {
+        return treeData.nodeDict[treeData.selectedNode];
     }
 
-    public setSelectedNode(currTree, node): void {
-        let nodes = currTree.nodes;
-        nodes.forEach((n) => {
-            n.selected = false;
-        });
-        // make the selected node selected.
-        let theNode = nodes.find((n) => n.id === node.id);
-        if(theNode) {
-            theNode.selected = true;
+    public setSelectedNode(currTree: TreeData, node_id: string): TreeData {
+        let nodeDict: NodeDict = currTree.nodeDict;
+        return {
+            selectedNode: node_id,
+            nodeDict: nodeDict
         }
-        // return but update the nodes.
-        return {...currTree, nodes: nodes};
     }
 
-    //private checkIfNodeExists(node: Node): boolean {
-        // TODO
-    //    return false;
-    //}
 
-    public hasTree(tree): boolean {
-        return tree.nodes !== undefined && tree.edges !== undefined;
+    public hasTree(tree: TreeData): boolean {
+        if(!tree) return false;
+        return Object.keys(tree.nodeDict).length > 0;
     }
 
-    public updateTree(currTree, tree): void {
-        let nodes = tree.nodes;
-        let edges = tree.edges;
-        this.rawNodes = nodes.map((n) => {
-            let newNode = {...n};
-            delete newNode.selected;
-            return newNode;
-        });
-        this.rawEdges = edges;
-        if(!this.hasTree(currTree)) {
-            nodes[0].selected = true;
-        }
-        else {
-            let selectedNode = this.getSelectedNode(currTree.nodes);
-            // TODO: cases for selectedNode not exist anymore, or there is no selected node.
-            if(selectedNode === undefined || !this.checkIfNodeExists(tree, selectedNode)) {
-                alert("not complete yet for when selected not exist anymore or there is no selected node.");
-            }
-            else {
-                // find the selectedNode in the nodes array. Update the field 'selected' to true.
-                let theNode = nodes.find((node) => node.id === selectedNode.id);
-                if(theNode) {
-                    theNode.selected = true;
-                }
+    public updateTree(currTree: TreeData, tree: TreeData): TreeData {
+        let nodeDict: NodeDict = tree.nodeDict;
+        let nodes = Object.values(nodeDict);
+        let selectedNode: string
+        if(!tree.selectedNode) {
+            selectedNode = currTree.selectedNode;
+            if(!selectedNode) {
+                selectedNode = nodes[0].id;
             }
         }
-        return {...currTree, nodes: nodes, edges: edges};
+        else{
+            selectedNode = tree.selectedNode
+        }
+        return {
+            selectedNode: selectedNode,
+            nodeDict: nodeDict
+        }
     }
 
-    public getAncestorNodes(currTree, node: Node): Node[] {
-        return getAncestors(node, currTree.nodes, currTree.edges);
+    public getAncestorNodes(currTree: TreeData, node: Node): Node[] {
+        return getAncestors(node, currTree.nodeDict);
     }
 
-    public getSiblingNodes(currTree, node: Node): Node[] {
-        return getSiblingsIncludeSelf(node, currTree.nodes, currTree.edges);
+    public getSiblingNodes(currTree: TreeData, node: Node): Node[] {
+        return getSiblingsIncludeSelf(node, currTree.nodeDict);
     }
 
-    public getChildrenNodes(currTree, node: Node): Node[] {
-        return getChildren(node, currTree.nodes, currTree.edges);
+    public getChildrenNodes(currTree: TreeData, node: Node): Node[] {
+        return getChildren(node, currTree.nodeDict);
     }
 
 
-
-    public checkIfNodeExists(tree, node: Node): boolean {
-        return tree.nodes.some((n) => n.id === node.id);
+    public checkIfNodeExists(tree: TreeData, node: Node): boolean {
+        return tree.nodeDict[node.id] !== undefined;
     }
 
-    public move(tree, direction): Node {
-        let nodes = tree.nodes;
-        let edges = tree.edges;
+    public move(tree: TreeData, direction): Node {
+        let nodes = Object.values(tree.nodeDict);
 
         // find the selectedNode, which is selected.
-        const selectedNode = nodes.find((n) => n.selected);
+        const selectedNode = tree.nodeDict[tree.selectedNode]
         if (!selectedNode) return;
         // if move up, get ancestors.
         if (direction === "up") {
-            const ancestors = getAncestors(selectedNode, nodes, edges);
+            const ancestors = getAncestors(selectedNode, tree.nodeDict);
             if (ancestors.length > 0) {
                 return ancestors[0];
             }
@@ -205,7 +149,7 @@ export default class Layouter{
         // if move down, get first descent.
 
         if (direction === "down") {
-            const children = getChildren(selectedNode, nodes, edges);
+            const children = getChildren(selectedNode, tree.nodeDict);
 
             if (children.length > 0) {
                 return children[0];
@@ -216,7 +160,7 @@ export default class Layouter{
         }
         // if move left, get left sibling.
         if (direction === "left") {
-            const siblings = getSiblingsIncludeSelf(selectedNode, nodes, edges);
+            const siblings = getSiblingsIncludeSelf(selectedNode, tree.nodeDict);
 
             if (getSiblingsIncludeSelf.length > 0) {
                 // find the index of the selectedNode in the siblings.
@@ -234,7 +178,7 @@ export default class Layouter{
         }
         // if move right, get right sibling
         if (direction === "right") {
-            const siblings = getSiblingsIncludeSelf(selectedNode, nodes, edges);
+            const siblings = getSiblingsIncludeSelf(selectedNode, tree.nodeDict);
 
             if (getSiblingsIncludeSelf.length > 0) {
                 // find the index of the selectedNode in the siblings.
@@ -252,15 +196,14 @@ export default class Layouter{
         }
     }
 
-    public moveToChildByIndex(tree, index: number): Node {
-        let nodes = tree.nodes;
-        let edges = tree.edges;
+    public moveToChildByIndex(tree: TreeData, index: number): Node {
+        let nodes = Object.values(tree.nodeDict);
 
         // find the selectedNode, which is selected.
-        const selectedNode = nodes.find((n) => n.selected);
+        const selectedNode = tree.nodeDict[tree.selectedNode]
         if (!selectedNode) return;
         // if move up, get ancestors.
-        const children = getChildren(selectedNode, nodes, edges);
+        const children = getChildren(selectedNode, tree.nodeDict);
         if (children.length > 0 && index < children.length) {
             return children[index];
         }
@@ -276,18 +219,17 @@ export default class Layouter{
 
 
     // move to the next available node on the right side of the tree.
-    public moveToNextAvailableOnRightHelper(tree, node): Node {
-        let nodes = tree.nodes;
-        let edges = tree.edges;
+    public moveToNextAvailableOnRightHelper(tree: TreeData, node: Node): Node {
+        let nodes = Object.values(tree.nodeDict);
         // base case: the node is root.
         // check if it is root.
-        const ancestors = getAncestors(node, nodes, edges);
+        const ancestors = getAncestors(node, tree.nodeDict);
         if (ancestors.length === 0) {
             return undefined;
         }
         else {
             // get current index.
-            const siblings = getSiblingsIncludeSelf(node, nodes, edges);
+            const siblings = getSiblingsIncludeSelf(node, tree.nodeDict);
             const index = siblings.findIndex((s) => s.id === node.id);
             if (index === siblings.length - 1) {
                 return this.moveToNextAvailableOnRightHelper(tree, ancestors[0]);
@@ -297,16 +239,14 @@ export default class Layouter{
             }
         }
     }
-    public moveToNextAvailable(tree): Node {
-        let nodes = tree.nodes;
-        let edges = tree.edges;
-
+    public moveToNextAvailable(tree: TreeData): Node {
+        let nodes = Object.values(tree.nodeDict);
         // find the selectedNode, which is selected.
         const selectedNode = nodes.find((n) => n.selected);
         if (!selectedNode) return;
         // find the next available node recursively.
         // TODO: what is the time complexity of this function?
-        const children = getChildren(selectedNode, nodes, edges);
+        const children = getChildren(selectedNode, tree.nodeDict);
         if (children.length > 0) {
             return children[0];
         }
