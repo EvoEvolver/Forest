@@ -2,6 +2,7 @@ import React, {useEffect, useState} from 'react';
 import 'reactflow/dist/style.css';
 import {io} from 'socket.io-client';
 import ATree from './ATree';
+import {TreeData} from "./entities";
 
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
 const socket = io(`http://127.0.0.1:${currentPort}`, {
@@ -23,6 +24,29 @@ interface Tree {
 }
 
 
+function patchTree(currTree: TreeData, patchTree: TreeData) {
+    if(currTree === undefined) {
+        currTree = {
+            selectedNode: undefined,
+            nodeDict: {}
+        };
+    }
+    if (patchTree.selectedNode) {
+        currTree.selectedNode = patchTree.selectedNode;
+    }
+    for (let node_id in patchTree.nodeDict) {
+        let patch_node = patchTree.nodeDict[node_id];
+        if(patch_node === null) {
+            delete currTree.nodeDict[node_id];
+        }
+        else {
+            currTree.nodeDict[node_id] = patch_node;
+        }
+    }
+    return currTree;
+}
+
+
 export default function App() {
     let [trees, setTrees] = useState({});
 
@@ -36,9 +60,9 @@ export default function App() {
         });
 
         socket.on("setTree", (serverData) => {
-            console.log("set tree")
+            console.log("set tree", serverData.tree)
             let newTrees = {...trees};
-            newTrees[serverData.tree_id] = serverData.tree;
+            newTrees[serverData.tree_id] = patchTree(newTrees[serverData.tree_id], serverData.tree);
             setTrees(newTrees);
         });
 
@@ -47,15 +71,9 @@ export default function App() {
             setTrees(trees);
         })
 
-        socket.on('updateNodes', (node_update) => {
-            console.log("update node")
-            let newTrees = {...trees};
-            newTrees[node_update.tree_id] = node_update.nodes_data;
-            setTrees(newTrees);
-        });
-
         socket.emit('requestTree', () => {
         })
+
     }, []);
     // On Tree Change
     useEffect(() => {

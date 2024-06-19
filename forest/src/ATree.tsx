@@ -48,7 +48,6 @@ export default function ATree(props) {
     }
 
     const [tree, modifyTree] = useReducer(reducers, initialTree);
-    const [selectedNode, setSelectedNode] = useState(undefined);
 
     const treeRef = useRef(tree);
 
