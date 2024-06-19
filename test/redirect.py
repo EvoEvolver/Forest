@@ -1,8 +1,8 @@
 from fibers.tree import Node
 
 if __name__ == '__main__':
-    node = Node("root")
-    child = node.s("A")
-    child = child.s("B")
-    child.content = ("<NodeNavigateButton modifyTree={modifyTree} ")+f" nodeId='{node.node_id}' />"
-    node.display(dev_mode=True)
+    root = Node("root")
+    child = root.s("child")
+    child.content = ("<NodeNavigateButton env_funcs={env_funcs}")+f" nodeId='{root.node_id}'  text='go to root'/>"
+    root.content = ("<NodeNavigateButton env_funcs={env_funcs}")+f" nodeId='{child.node_id}'  text='go to child'/>"
+    root.display(dev_mode=True)

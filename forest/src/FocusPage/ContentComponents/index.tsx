@@ -21,7 +21,21 @@ export const TeX = (props) => {
 
 
 export const SendMessage = (props) => {
+    console.log(props.env_vars);
     return (
-        <button onClick={() => props.send_message_to_main({type: 'send_message', message: 'hello'})}>Send Message</button>
+        <button onClick={() => props.env_funcs.send_message_to_main({node_id: props.env_vars.node_id, message: 'hello'})}>Send Message</button>
+    );
+}
+
+
+export const NodeNavigateButton = (props) => {
+    let modifyTree = props.env_funcs.modifyTree;
+    let nodeId = props.nodeId;
+    // make text props.text, if it's undefined, make it 'navigate to node {nodeId}'
+    let text = props.text || `navigate to node ${nodeId}`;
+    return (
+        <>
+            <button onClick={() => modifyTree({type: 'setSelectedNode', id: nodeId})}>{text}</button>
+        </>
     );
 }

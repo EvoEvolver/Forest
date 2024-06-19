@@ -164,11 +164,11 @@ export default function ATree(props) {
         };
     }, [hidden, keyPress]);
 
-  useEffect(() => {
-    treeRef.current = tree;
-    console.log(tree.nodes && tree.nodes.length);
+    useEffect(() => {
+        treeRef.current = tree;
+        console.log(tree.nodes && tree.nodes.length);
 
-  }, [tree]);
+    }, [tree]);
 
     return (
         <>

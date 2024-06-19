@@ -1,4 +1,4 @@
-interface RawTree {
+export interface RawTree {
   id?: string;
   title: string;
   content: string;
@@ -7,13 +7,14 @@ interface RawTree {
   path?: string;
 }
 
-interface Node {
+export interface Node {
   id: string;
   data: { label: string, content: string, tabs: {} };
 }
 
-interface Edge {
+export interface Edge {
   id: string;
   source: string;
   target: string;
 }
+

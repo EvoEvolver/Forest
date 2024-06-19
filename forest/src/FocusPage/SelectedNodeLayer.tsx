@@ -9,9 +9,8 @@ import Tab from '@mui/material/Tab';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
-import {Code, TeX, SendMessage} from "./ContentComponents";
+import * as content_components from "./ContentComponents";
 import Chatbot from "./Plugins/Chatbot";
-import NodeNavigateButton from "./NodeNavigateButton";
 
 const NodeElement = (props) => {
     let tabs = Object.keys(props.node.data.tabs);
@@ -27,6 +26,18 @@ const NodeElement = (props) => {
     };
 
     let modifyTree = props.modifyTree;
+
+    const env_funcs = {
+        modifyTree: modifyTree,
+        send_message_to_main: props.send_message_to_main
+    }
+
+    const env_vars = {
+        node_id : props.node.id
+    }
+
+    const env_components = content_components
+
     // TODO: why is it rendered multiple times?
     return (
         <Card sx={{
@@ -55,8 +66,8 @@ const NodeElement = (props) => {
                             {tabs.map((tab, i) => {
                                 return <TabPanel value={i.toString()}>
                                     {<JsxParser
-                                        bindings={{modifyTree, send_message_to_main: props.send_message_to_main}}
-                                        components={{Code, TeX, NodeNavigateButton, SendMessage}}
+                                        bindings={{env_funcs, env_vars}}
+                                        components={env_components}
                                         jsx={props.node.data.tabs[tab]}
                                     />}</TabPanel>
                             })}
