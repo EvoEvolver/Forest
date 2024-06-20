@@ -11,6 +11,7 @@ import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
 import * as content_components from "./ContentComponents";
 import Chatbot from "./Plugins/Chatbot";
+import Editor from "./ContentComponents/editor";
 
 const NodeElement = (props) => {
     let tabs = Object.keys(props.node.tabs);
@@ -29,14 +30,14 @@ const NodeElement = (props) => {
 
     const env_funcs = {
         modifyTree: modifyTree,
-        send_message_to_main: props.send_message_to_main
+        send_message_to_main: (message) => {props.send_message_to_main({node_id: props.node.id, message})}
     }
 
     const env_vars = {
-        node_id : props.node.id
+        node: props.node
     }
 
-    const env_components = content_components
+    const env_components =  {Editor, ...content_components}
 
     // TODO: why is it rendered multiple times?
     return (

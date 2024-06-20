@@ -1,5 +1,4 @@
 import React, {useEffect, useState} from 'react';
-import 'reactflow/dist/style.css';
 import {io} from 'socket.io-client';
 import ATree from './ATree';
 import {TreeData} from "./entities";
@@ -16,7 +15,8 @@ const send_message_to_main = (message) => {
 }
 
 
-function patchTree(currTree: TreeData, patchTree: TreeData) {
+function applyPatchTree(currTree: TreeData, patchTree: TreeData) {
+    console.log("original tree", currTree)
     if(currTree === undefined) {
         currTree = {
             selectedNode: undefined,
@@ -35,6 +35,10 @@ function patchTree(currTree: TreeData, patchTree: TreeData) {
             currTree.nodeDict[node_id] = patch_node;
         }
     }
+    if(!currTree.selectedNode) {
+        currTree.selectedNode = Object.keys(currTree.nodeDict)[0];
+    }
+    console.log("patched tree", currTree)
     return currTree;
 }
 
@@ -51,22 +55,32 @@ export default function App() {
             console.log("Connected");
         });
 
-        socket.on("setTree", (serverData) => {
+        socket.on("patchTree", (serverData) => {
             console.log("set tree", serverData.tree)
+            setTrees((trees) => {
             let newTrees = {...trees};
-            newTrees[serverData.tree_id] = patchTree(newTrees[serverData.tree_id], serverData.tree);
-            setTrees(newTrees);
+            newTrees[serverData.tree_id] = applyPatchTree(newTrees[serverData.tree_id], serverData.tree);
+            return newTrees;
+             })
         });
 
-        socket.on('requestTree', (trees) => {
-            console.log("request tree")
-            setTrees(trees);
+        socket.on('setTrees', (trees_data: TreeData[]) => {
+
+            for (let tree of Object.values(trees_data)){
+                if(!tree.selectedNode || tree.selectedNode == "None"){
+                    tree.selectedNode = Object.keys(tree.nodeDict)[0];
+                }
+            }
+            console.log("request tree", trees_data)
+            setTrees(trees_data);
+            console.log("after set tree", Object.keys(trees))
         })
 
-        socket.emit('requestTree', () => {
+        socket.emit('requestTrees', () => {
         })
 
     }, []);
+
     // On Tree Change
     useEffect(() => {
         if (Object.keys(trees).length === 1 || selectedTreeId === undefined) {

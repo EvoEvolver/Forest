@@ -1,11 +1,9 @@
-import React, {useCallback, useEffect, useReducer, useRef, useState} from 'react';
-import 'reactflow/dist/style.css';
+import React, {useCallback, useEffect, useReducer, useRef} from 'react';
 import {Box} from '@mui/material';
 import FocusPage from './FocusPage';
 import Layouter from "./Layouter";
-import {Node, NodeDict, TreeData} from './entities';
+import {TreeData} from './entities';
 import Treemap from './TreeMap';
-import Tree from "react-d3-tree";
 
 // convert the tree from backend to the compatible format for Forest.
 
@@ -63,6 +61,8 @@ export default function ATree(props) {
 
     const keyPress = useCallback(
         (e) => {
+            if (!e.ctrlKey)
+                return;
             let result = undefined;
             const oneToNineRegex = /^[1-9]$/;
             const key = e.key;

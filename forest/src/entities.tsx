@@ -1,12 +1,3 @@
-export interface RawTree {
-  id?: string;
-  title: string;
-  content: string;
-  children?: RawTree[];
-  tabs: {};
-  node_id?: string;
-  data: {};
-}
 
 export type NodeDict = Record<string, Node>
 

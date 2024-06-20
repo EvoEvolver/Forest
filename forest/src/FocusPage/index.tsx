@@ -1,5 +1,4 @@
 import React from 'react';
-import 'reactflow/dist/style.css';
 import {Grid} from '@mui/material';
 
 import SelectedNodeLayer from './SelectedNodeLayer';
@@ -21,7 +20,6 @@ export default function FocusPage(props) {
     const childrenLayerHeight = '10%';
 
 
-    if(Object.keys(tree.nodeDict).length > 0)
     return (
         <>
         <Grid container height="100vh" width="100vw" flexDirection="column">
