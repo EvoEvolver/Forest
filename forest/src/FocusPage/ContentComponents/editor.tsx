@@ -1,4 +1,4 @@
-import {
+/*import {
   MDXEditor,
   headingsPlugin,
   markdownShortcutPlugin,
@@ -30,4 +30,4 @@ export default (props)=>{
             </>
           )
         })]} onChange={sendUpdate} />
-}
+}*/

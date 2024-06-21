@@ -54,6 +54,6 @@ class EditorAttr(Attr):
 
 if __name__ == '__main__':
     root = Node("root")
-    root.content = "123"
+    root.content = ""
     EditorAttr(root)
     root.display(dev_mode=True)
