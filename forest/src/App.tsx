@@ -56,7 +56,7 @@ export default function App() {
         });
 
         socket.on("patchTree", (serverData) => {
-            console.log("set tree", serverData.tree)
+            console.log("Received tree delta", serverData.tree)
             setTrees((trees) => {
             let newTrees = {...trees};
             newTrees[serverData.tree_id] = applyPatchTree(newTrees[serverData.tree_id], serverData.tree);
@@ -71,12 +71,12 @@ export default function App() {
                     tree.selectedNode = Object.keys(tree.nodeDict)[0];
                 }
             }
-            console.log("request tree", trees_data)
+            console.log("Received whole tree", trees_data)
             setTrees(trees_data);
-            console.log("after set tree", Object.keys(trees))
         })
 
         socket.emit('requestTrees', () => {
+            console.log("Requesting trees")
         })
 
     }, []);
@@ -91,7 +91,7 @@ export default function App() {
 
 
     useEffect(() => {
-        console.log(selectedTreeId)
+        console.log("selectedTreeId", selectedTreeId)
         if (!toLoadTree.includes(selectedTreeId) && selectedTreeId !== undefined) {
             setToLoadTree([...toLoadTree, selectedTreeId])
             console.log(`set to load tree ${selectedTreeId}`)
