@@ -44,7 +44,9 @@ jobs:
         run: cd forest; pnpm install
 
       - name: Build
-        run: cd forest; pnpm run build
+        run: |
+          cd forest; pnpm run build
+          git rev-parse HEAD > dist/version.txt
 
       - name: Compress
         uses: a7ul/tar-action@v1.2.0
