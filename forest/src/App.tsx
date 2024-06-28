@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {io} from 'socket.io-client';
 import ATree from './ATree';
 import {TreeData} from "./entities";
@@ -49,6 +49,7 @@ export default function App() {
     let [selectedTreeId, setSelectedTreeId] = useState(undefined);
     let [toLoadTree, setToLoadTree] = useState([]);
     let [page, setPage] = useState(0);
+    let firstTreeReceived = useRef(false);
 
     useEffect(() => {
         socket.on("connect", () => {
@@ -79,6 +80,17 @@ export default function App() {
             console.log("Requesting trees")
         })
 
+        // check whether trees is empty or not. If not, request the tree.
+        let requestTimer = setInterval(() => {
+            if (!firstTreeReceived.current) {
+                socket.emit('requestTrees', () => {
+                    console.log("Requesting trees")
+                })
+            }else{
+                clearInterval(requestTimer);
+            }
+        }, 500)
+
     }, []);
 
     // On Tree Change
@@ -87,6 +99,7 @@ export default function App() {
             setSelectedTreeId(Object.keys(trees)[0]);
             // push the tree to the toLoadTree if not exist, which is an array of tree ids that we want to load.
         }
+        firstTreeReceived.current = true;
     }, [trees]);
 
 

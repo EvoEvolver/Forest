@@ -59,6 +59,7 @@ jobs:
         run: |
           mkdir -p forest/dist_compressed
           mv dist.tar.gz forest/dist_compressed/dist.tar.gz
+          git rev-parse HEAD > forest/dist_compressed/version.txt
 
       - name: Push
         uses: s0/git-publish-subdir-action@develop
