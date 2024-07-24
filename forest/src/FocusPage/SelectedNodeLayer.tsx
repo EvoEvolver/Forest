@@ -29,14 +29,16 @@ const NodeElement = (props) => {
 
     const env_funcs = {
         modifyTree: modifyTree,
-        send_message_to_main: (message) => {props.send_message_to_main({node_id: props.node.id, message})}
+        send_message_to_main: (message) => {
+            props.send_message_to_main({node_id: props.node.id, message})
+        }
     }
 
     const env_vars = {
         node: props.node
     }
 
-    const env_components =  {...content_components}
+    const env_components = {...content_components}
 
     // TODO: why is it rendered multiple times?
     return (
@@ -54,6 +56,62 @@ const NodeElement = (props) => {
                     {props.node.title}
                 </Typography>
                 {tabs.length > 0 &&
+                    <Box style={{overflowX: 'scroll', overflowY: 'auto', maxHeight: '100%', margin: '30px'}}>
+                            {/*<TabPanel value={"0"}>*/}
+                                {<JsxParser
+                                    bindings={{env_funcs, env_vars}}
+                                    components={env_components}
+                                    jsx={props.node.tabs["content"]}
+                                    renderError={error => <div
+                                        style={{color: "red"}}>{error.error.toString()}</div>}
+                                />}
+                    </Box>}
+            </CardContent>
+        </Card>
+    );
+}
+
+const SummaryElement = (props) => {
+    let tabs = ['summary'];
+    let options = tabs.map((tab) => {
+        return tab
+    });
+    // assign tab state to tabs[0] if tabs has length > 0.
+    //const [selectedTab, setSelectedTab] = useState(options.length > 0 ? options[0] : null);
+    const [value, setValue] = React.useState('0');
+
+    const handleChange = (event: React.SyntheticEvent, newValue: string) => {
+        setValue(newValue);
+    };
+
+    let modifyTree = props.modifyTree;
+
+    const env_funcs = {
+        modifyTree: modifyTree,
+        send_message_to_main: (message) => {
+            props.send_message_to_main({node_id: props.node.id, message})
+        }
+    }
+
+    const env_vars = {
+        node: props.node
+    }
+
+    const env_components = {...content_components}
+
+    // TODO: why is it rendered multiple times?
+    return (
+        <Card sx={{
+            minWidth: "100%",
+            maxWidth: "100%",
+            minHeight: "100%",
+            maxHeight: "100%",
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            wordBreak: "break-word"
+        }}>
+            <CardContent>
+                {tabs.length > 0 &&
                     <Box style={{overflowX: 'scroll', overflowY: 'auto', maxHeight: '100%'}}>
                         <TabContext value={value} key={value}>
                             <Box sx={{borderBottom: 1, borderColor: 'divider'}}>
@@ -69,7 +127,75 @@ const NodeElement = (props) => {
                                         bindings={{env_funcs, env_vars}}
                                         components={env_components}
                                         jsx={props.node.tabs[tab]}
-                                        renderError={error => <div style={{color: "red"}} >{error.error.toString()}</div>}
+                                        renderError={error => <div
+                                            style={{color: "red"}}>{error.error.toString()}</div>}
+                                    />}</TabPanel>
+                            })}
+                        </TabContext>
+                    </Box>}
+            </CardContent>
+        </Card>
+    );
+}
+
+const TabElement = (props) => {
+    let tabs = Object.keys(props.node.tabs).filter(key => key !== 'content' && key !== 'summary');
+    let options = tabs.map((tab) => {
+        return tab
+    });
+    // assign tab state to tabs[0] if tabs has length > 0.
+    //const [selectedTab, setSelectedTab] = useState(options.length > 0 ? options[0] : null);
+    const [value, setValue] = React.useState('0');
+
+    const handleChange = (event: React.SyntheticEvent, newValue: string) => {
+        setValue(newValue);
+    };
+
+    let modifyTree = props.modifyTree;
+
+    const env_funcs = {
+        modifyTree: modifyTree,
+        send_message_to_main: (message) => {
+            props.send_message_to_main({node_id: props.node.id, message})
+        }
+    }
+
+    const env_vars = {
+        node: props.node
+    }
+
+    const env_components = {...content_components}
+
+    // TODO: why is it rendered multiple times?
+    return (
+        <Card sx={{
+            minWidth: "100%",
+            maxWidth: "100%",
+            minHeight: "100%",
+            maxHeight: "100%",
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            wordBreak: "break-word"
+        }}>
+            <CardContent>
+                {
+                    <Box style={{overflowX: 'scroll', overflowY: 'auto', maxHeight: '100%'}}>
+                        <TabContext value={value} key={value}>
+                            <Box sx={{borderBottom: 1, borderColor: 'divider'}}>
+                                <TabList onChange={handleChange} aria-label="lab API tabs example">
+                                    {tabs.map((tab, i) => {
+                                        return <Tab key={i} label={tab} value={i.toString()}/>
+                                    })}
+                                </TabList>
+                            </Box>
+                            {tabs.map((tab, i) => {
+                                return <TabPanel value={i.toString()}>
+                                    {<JsxParser
+                                        bindings={{env_funcs, env_vars}}
+                                        components={env_components}
+                                        jsx={props.node.tabs[tab]}
+                                        renderError={error => <div
+                                            style={{color: "red"}}>{error.error.toString()}</div>}
                                     />}</TabPanel>
                             })}
                         </TabContext>
@@ -95,25 +221,51 @@ const SelectedNodeLayer = (props) => {
 
     return (
         <Grid style={{height: "100%"}} container>
-            <Grid key={0} item xs
-                  style={{width: '25%', border: '1px solid black', height: "100%", margin: "0 20px"}}>
-                <Chatbot/>
-            </Grid>
+            {/*<Grid key={0} item xs*/}
+            {/*      style={{width: '30%', border: '1px solid black', height: "100%", margin: "0 20px", flex: "0 0 30%"}}>*/}
+            {/*    <Chatbot/>*/}
+            {/*</Grid>*/}
 
-            <Grid key={1} item xs style={{
-                width: '50%',
+            <Grid key={0} item xs style={{
+                width: '30%',
                 height: "100%",
                 margin: "0 0px",
                 transition: animate ? 'opacity 0.5s ease-in' : 'none',
                 opacity: animate ? 0 : 1,
+                flex: "0 0 30%"
             }}>
-                <NodeElement node={node} modifyTree={props.modifyTree} send_message_to_main={props.send_message_to_main}/>
+                <SummaryElement node={node} modifyTree={props.modifyTree}
+                            send_message_to_main={props.send_message_to_main}/>
             </Grid>
 
-            <Grid key={2} item xs
-                  style={{width: '25%', border: '1px solid black', height: "100%", margin: "0 20px"}}>
-                Tool 2
+            <Grid key={1} item xs style={{
+                width: '40%',
+                height: "100%",
+                margin: "0 0px",
+                transition: animate ? 'opacity 0.5s ease-in' : 'none',
+                opacity: animate ? 0 : 1,
+                flex: "0 0 40%"
+            }}>
+                <NodeElement node={node} modifyTree={props.modifyTree}
+                             send_message_to_main={props.send_message_to_main}/>
             </Grid>
+
+            <Grid key={2} item xs style={{
+                width: '30%',
+                height: "100%",
+                margin: "0 0px",
+                transition: animate ? 'opacity 0.5s ease-in' : 'none',
+                opacity: animate ? 0 : 1,
+                flex: "0 0 30%"
+            }}>
+                <TabElement node={node} modifyTree={props.modifyTree}
+                            send_message_to_main={props.send_message_to_main}/>
+            </Grid>
+
+            {/*<Grid key={2} item xs*/}
+            {/*      style={{width: '30%', border: '1px solid black', height: "100%", margin: "0 20px", flex: "0 0 30%"}}>*/}
+            {/*    Tool 2*/}
+            {/*</Grid>*/}
         </Grid>
 
     );

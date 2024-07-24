@@ -15,24 +15,23 @@ const NodeElement = (props) => {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
+                justifyContent: 'flex-start', // Change this line
                 wordBreak: "break-word",
-                padding: "10px",
+                padding: "1px",
                 overflowY: "auto",
                 backgroundColor: selected ? "blue" : "#FFFFFF",
                 color: selected ? "#FFFFFF" : "#000000",
             }}
-            onClick={() =>
-            {
+            onClick={() => {
                 modifyTree({
                     type: 'setSelectedNode',
                     id: node.id
                 })
-            }
-            }
+            }}
         >
-            <Typography>{props.node.title}</Typography>
+            <Typography style={{textAlign: 'left', marginLeft: '10px', marginRight:'5px'}}>{props.node.title}</Typography>
         </Paper>
+
     );
 };
 
@@ -77,39 +76,39 @@ const OtherNodesLayer = ({nodes, modifyTree, selectedNode}) => {
     }, [selectedNode]);
 
     return (
-        <Grid container direction="column" alignItems="center" style={{height: '100%'}}>
-            <Grid style={{height: '100%', marginTop: '10px'}} container justifyContent="center" alignItems="center">
+        <Grid container direction="column" alignItems="center" style={{height: '21vh', overflow: 'auto'}}>
+            <Grid container justifyContent="center" alignItems="center" style={{flexDirection: 'column'}}>
                 <Grid item>
-                    <Button disabled={startPoint === 0} onClick={handleBack}>
-                        Back
-                    </Button>
+                    {/*<Button disabled={startPoint === 0} onClick={handleBack}>*/}
+                    {/*    Back*/}
+                    {/*</Button>*/}
                 </Grid>
                 {nodes.slice(startPoint, startPoint + elementsPerPage).map((node, index) => (
                     <Grid
                         key={index}
                         item
-                        xs
                         style={{
-                            width: elementWidth,
-                            maxWidth: elementWidth,
-                            height: '100%',
-                            margin: `0 5px`,
+                            width: '100%',
+                            height: 'auto',
+                            margin: `1px 0`,
                             transition: animate ? 'opacity 0.5s ease-in' : 'none',
                             opacity: animate ? 0 : 1,
+                            flex: "0 0 10%"
                         }}
                     >
                         <NodeElement node={node} selected={selectedNode !== undefined && node.id === selectedNode.id}
                                      modifyTree={modifyTree}/>
                     </Grid>
                 ))}
-
                 <Grid item>
-                    <Button disabled={(startPoint + elementsPerPage) >= nodes.length} onClick={handleNext}>
-                        Next
-                    </Button>
+                    {/*<Button disabled={(startPoint + elementsPerPage) >= nodes.length} onClick={handleNext}>*/}
+                    {/*    Next*/}
+                    {/*</Button>*/}
                 </Grid>
             </Grid>
         </Grid>
+
+
     );
 };
 
