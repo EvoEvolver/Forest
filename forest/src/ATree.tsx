@@ -119,7 +119,6 @@ export default function ATree(props) {
     }, [layouter, tree]); // Adding layouter to the dependency array
 
     useEffect(() => {
-        console.log(hidden)
         document.removeEventListener("keydown", keyPress);
         if (!hidden) {
             document.addEventListener("keydown", keyPress);

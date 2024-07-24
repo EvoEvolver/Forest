@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {io} from 'socket.io-client';
 import ATree from './ATree';
 import {TreeData} from "./entities";
@@ -49,6 +49,7 @@ export default function App() {
     let [selectedTreeId, setSelectedTreeId] = useState(undefined);
     let [toLoadTree, setToLoadTree] = useState([]);
     let [page, setPage] = useState(0);
+    let firstTreeReceived = useRef(false);
 
     useEffect(() => {
         socket.on("connect", () => {
@@ -56,7 +57,7 @@ export default function App() {
         });
 
         socket.on("patchTree", (serverData) => {
-            console.log("set tree", serverData.tree)
+            console.log("Received tree delta", serverData.tree)
             setTrees((trees) => {
             let newTrees = {...trees};
             newTrees[serverData.tree_id] = applyPatchTree(newTrees[serverData.tree_id], serverData.tree);
@@ -71,13 +72,24 @@ export default function App() {
                     tree.selectedNode = Object.keys(tree.nodeDict)[0];
                 }
             }
-            console.log("request tree", trees_data)
+            console.log("Received whole tree", trees_data)
             setTrees(trees_data);
-            console.log("after set tree", Object.keys(trees))
         })
 
         socket.emit('requestTrees', () => {
+            console.log("Requesting trees")
         })
+
+        // check whether trees is empty or not. If not, request the tree.
+        let requestTimer = setInterval(() => {
+            if (!firstTreeReceived.current) {
+                socket.emit('requestTrees', () => {
+                    console.log("Requesting trees")
+                })
+            }else{
+                clearInterval(requestTimer);
+            }
+        }, 500)
 
     }, []);
 
@@ -87,11 +99,12 @@ export default function App() {
             setSelectedTreeId(Object.keys(trees)[0]);
             // push the tree to the toLoadTree if not exist, which is an array of tree ids that we want to load.
         }
+        firstTreeReceived.current = true;
     }, [trees]);
 
 
     useEffect(() => {
-        console.log(selectedTreeId)
+        console.log("selectedTreeId", selectedTreeId)
         if (!toLoadTree.includes(selectedTreeId) && selectedTreeId !== undefined) {
             setToLoadTree([...toLoadTree, selectedTreeId])
             console.log(`set to load tree ${selectedTreeId}`)
