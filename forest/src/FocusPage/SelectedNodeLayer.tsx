@@ -49,7 +49,8 @@ const NodeElement = (props) => {
             maxHeight: "100%",
             overflowY: 'auto',
             overflowX: 'hidden',
-            wordBreak: "break-word"
+            wordBreak: "break-word",
+            backgroundColor: '#f4f4f4'
         }}>
             <CardContent>
                 <Typography variant="h5" component="div">
@@ -229,10 +230,11 @@ const SelectedNodeLayer = (props) => {
             <Grid key={0} item xs style={{
                 width: '30%',
                 height: "100%",
-                margin: "0 0px",
+                paddingBottom: '10px',
+                margin: "10px",
                 transition: animate ? 'opacity 0.5s ease-in' : 'none',
                 opacity: animate ? 0 : 1,
-                flex: "0 0 30%"
+                flex: "0 1 28%",
             }}>
                 <SummaryElement node={node} modifyTree={props.modifyTree}
                             send_message_to_main={props.send_message_to_main}/>
@@ -240,11 +242,12 @@ const SelectedNodeLayer = (props) => {
 
             <Grid key={1} item xs style={{
                 width: '40%',
+                paddingBottom: '10px',
                 height: "100%",
-                margin: "0 0px",
+                margin: "10px",
                 transition: animate ? 'opacity 0.5s ease-in' : 'none',
                 opacity: animate ? 0 : 1,
-                flex: "0 0 40%"
+                flex: "1 1 35%"
             }}>
                 <NodeElement node={node} modifyTree={props.modifyTree}
                              send_message_to_main={props.send_message_to_main}/>
@@ -252,16 +255,17 @@ const SelectedNodeLayer = (props) => {
 
             <Grid key={2} item xs style={{
                 width: '30%',
-                height: "100%",
-                margin: "0 0px",
+                paddingBottom: '10px',
+                height: '100%',
+                margin: "10px",
                 transition: animate ? 'opacity 0.5s ease-in' : 'none',
                 opacity: animate ? 0 : 1,
-                flex: "0 0 30%"
+                flex: "0 1 28%"
             }}>
                 <TabElement node={node} modifyTree={props.modifyTree}
                             send_message_to_main={props.send_message_to_main}/>
             </Grid>
-
+x
             {/*<Grid key={2} item xs*/}
             {/*      style={{width: '30%', border: '1px solid black', height: "100%", margin: "0 20px", flex: "0 0 30%"}}>*/}
             {/*    Tool 2*/}

@@ -2,6 +2,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {io} from 'socket.io-client';
 import ATree from './ATree';
 import {TreeData} from "./entities";
+import {Grid} from "@mui/material";
 
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
 const socket = io(`http://127.0.0.1:${currentPort}`, {
@@ -17,7 +18,7 @@ const send_message_to_main = (message) => {
 
 function applyPatchTree(currTree: TreeData, patchTree: TreeData) {
     console.log("original tree", currTree)
-    if(currTree === undefined) {
+    if (currTree === undefined) {
         currTree = {
             selectedNode: undefined,
             nodeDict: {}
@@ -28,14 +29,13 @@ function applyPatchTree(currTree: TreeData, patchTree: TreeData) {
     }
     for (let node_id in patchTree.nodeDict) {
         let patch_node = patchTree.nodeDict[node_id];
-        if(patch_node === null) {
+        if (patch_node === null) {
             delete currTree.nodeDict[node_id];
-        }
-        else {
+        } else {
             currTree.nodeDict[node_id] = patch_node;
         }
     }
-    if(!currTree.selectedNode) {
+    if (!currTree.selectedNode) {
         currTree.selectedNode = Object.keys(currTree.nodeDict)[0];
     }
     console.log("patched tree", currTree)
@@ -59,16 +59,16 @@ export default function App() {
         socket.on("patchTree", (serverData) => {
             console.log("Received tree delta", serverData.tree)
             setTrees((trees) => {
-            let newTrees = {...trees};
-            newTrees[serverData.tree_id] = applyPatchTree(newTrees[serverData.tree_id], serverData.tree);
-            return newTrees;
-             })
+                let newTrees = {...trees};
+                newTrees[serverData.tree_id] = applyPatchTree(newTrees[serverData.tree_id], serverData.tree);
+                return newTrees;
+            })
         });
 
         socket.on('setTrees', (trees_data: TreeData[]) => {
 
-            for (let tree of Object.values(trees_data)){
-                if(!tree.selectedNode || tree.selectedNode == "None"){
+            for (let tree of Object.values(trees_data)) {
+                if (!tree.selectedNode || tree.selectedNode == "None") {
                     tree.selectedNode = Object.keys(tree.nodeDict)[0];
                 }
             }
@@ -86,7 +86,7 @@ export default function App() {
                 socket.emit('requestTrees', () => {
                     console.log("Requesting trees")
                 })
-            }else{
+            } else {
                 clearInterval(requestTimer);
             }
         }, 500)
@@ -113,27 +113,38 @@ export default function App() {
 
     return (
         <>
-            <div style={{position: "fixed", top: "5px", left: "5px", zIndex: 99999999}}>
-                {
-                    // make a list of buttons for each tree ids. cliking on the button will set the selectedTreeId to the tree id.
-                    Object.keys(trees).map((treeId, i) => {
-                        return <button key={treeId} onClick={() => setSelectedTreeId(treeId)}>{i+1}</button>
-                    })
-                }
-            </div>
+            <Grid container item style={{width: "100%", display: "flex", flexDirection: "row", flex: "1 0 100%"}}>
+                <Grid container item style={{width: "20%", display: "flex", flexDirection: "column", flex: "0 0 0%", backgroundColor: "#f4f4f4"}}>
+                    <Grid container direction="column" style={{marginBottom:'10px'}}>
+                        {Object.keys(trees).map((treeId, i) => (
+                            <Grid item key={treeId} style={{marginBottom:'3px'}}>
+                                <button style={{backgroundColor: "#00000000", color:"#626262"}} onClick={() => setSelectedTreeId(treeId)}>{i + 1}</button>
+                            </Grid>
+                        ))}
+                    </Grid>
 
-            <div style={{position: 'fixed', zIndex: 99999999999, top: 0, right: 0}}>
-                <button onClick={() => setPage(0)}>FocusMap</button>
-                <button onClick={() => setPage(1)}>TreeMap</button>
-            </div>
-            {
-                // show a list of ATrees. but only show the one that is selected.
+                    <Grid item style={{backgroundColor: "#00000000"}}>
+                        {/*style={{position: 'fixed', zIndex: 99999999999, top: 0, right: 0}}*/}
+                        <button style={{backgroundColor: "#00000000", color:"#626262"}} onClick={() => setPage(0)}>Focus</button>
 
-                Object.keys(trees).map((treeId) => {
-                    return <ATree hidden={treeId !== selectedTreeId} key={treeId} tree={trees[treeId]} page={page}
-                                  send_message_to_main={send_message_to_main}/>
-                })
-            }
+                    </Grid>
+                    <Grid item style={{marginTop:'3px'}}>
+                        <button style={{backgroundColor: "#00000000", color:"#626262"}} onClick={() => setPage(1)}>Tree</button>
+                    </Grid>
+                </Grid>
+
+                <Grid item style={{width: "90%", display: "flex", flex: "1 0 90%"}}>
+                    {
+                        Object.keys(trees).map((treeId) => {
+                            return <ATree hidden={treeId !== selectedTreeId} key={treeId} tree={trees[treeId]}
+                                          page={page}
+                                          send_message_to_main={send_message_to_main}/>
+                        })
+                    }
+                </Grid>
+
+
+            </Grid>
         </>
     );
 }

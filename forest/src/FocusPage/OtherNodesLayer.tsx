@@ -19,8 +19,8 @@ const NodeElement = (props) => {
                 wordBreak: "break-word",
                 padding: "1px",
                 overflowY: "auto",
-                backgroundColor: selected ? "blue" : "#FFFFFF",
-                color: selected ? "#FFFFFF" : "#000000",
+                backgroundColor: selected ? "#ece7f2" : "#FFFFFF",
+                color: selected ? "#000000" : "#000000",
             }}
             onClick={() => {
                 modifyTree({
@@ -37,7 +37,7 @@ const NodeElement = (props) => {
 
 const OtherNodesLayer = ({nodes, modifyTree, selectedNode}) => {
 
-    const elementsPerPage = 5;
+    const elementsPerPage = 100;
     const [startPoint, setStartPoint] = useState(0);
     const [animate, setAnimate] = useState(false);
 
@@ -76,13 +76,8 @@ const OtherNodesLayer = ({nodes, modifyTree, selectedNode}) => {
     }, [selectedNode]);
 
     return (
-        <Grid container direction="column" alignItems="center" style={{height: '21vh', overflow: 'auto'}}>
-            <Grid container justifyContent="center" alignItems="center" style={{flexDirection: 'column'}}>
-                <Grid item>
-                    {/*<Button disabled={startPoint === 0} onClick={handleBack}>*/}
-                    {/*    Back*/}
-                    {/*</Button>*/}
-                </Grid>
+        <Grid container alignItems="center" style={{height: '21vh'}}>
+            <Grid container justifyContent="center" direction='column' alignItems="center" style={{overflowY: "auto", margin: '5px',paddingBottom:'10px'}}>
                 {nodes.slice(startPoint, startPoint + elementsPerPage).map((node, index) => (
                     <Grid
                         key={index}
@@ -93,18 +88,13 @@ const OtherNodesLayer = ({nodes, modifyTree, selectedNode}) => {
                             margin: `1px 0`,
                             transition: animate ? 'opacity 0.5s ease-in' : 'none',
                             opacity: animate ? 0 : 1,
-                            flex: "0 0 10%"
+                            flex: "0 0 10%",
                         }}
                     >
                         <NodeElement node={node} selected={selectedNode !== undefined && node.id === selectedNode.id}
                                      modifyTree={modifyTree}/>
                     </Grid>
                 ))}
-                <Grid item>
-                    {/*<Button disabled={(startPoint + elementsPerPage) >= nodes.length} onClick={handleNext}>*/}
-                    {/*    Next*/}
-                    {/*</Button>*/}
-                </Grid>
             </Grid>
         </Grid>
 

@@ -39,9 +39,8 @@ export default function FocusPage(props) {
 
                     <Grid item
                           style={{
-                              border: '1px solid black',
                               height: selectedNodeLayerHeight,
-                              backgroundColor: '#EB7A77',
+                              backgroundColor: '#ffffff',
                               width: "100%",
                               padding: "10px",
                               flex: "0 0 75%"
@@ -68,29 +67,5 @@ export default function FocusPage(props) {
                                          selectedNode={layouter.getSelectedNode(tree)} modifyTree={modifyTree}/>
                 </Grid>
         </>
-        // <>
-        // <Grid container height="100vh" width="100vw" flexDirection="column">
-        //     <Grid item
-        //           style={{border: '1px solid black', height: ancestorsLayerHeight, backgroundColor: '#7DB9DE', width: "100%", padding: "10px"}}>
-        //         <OtherNodesLayer nodes={layouter.getAncestorNodes(tree, layouter.getSelectedNode(tree)).reverse()} selectedNode={layouter.getSelectedNode(tree)} modifyTree={modifyTree}/>
-        //     </Grid>
-        //     <Grid item
-        //           style={{border: '1px solid black',height: siblingsLayerHeight, backgroundColor: '#A8D8B9', width: "100%", padding: "10px"}}>
-        //         <OtherNodesLayer nodes={layouter.getSiblingNodes(tree, layouter.getSelectedNode(tree))} selectedNode={layouter.getSelectedNode(tree)}
-        //                          modifyTree={modifyTree}/>
-        //     </Grid>
-        //
-        //     <Grid item
-        //           style={{border: '1px solid black',height: selectedNodeLayerHeight, backgroundColor: '#EB7A77', width: "100%", padding: "10px"}}>
-        //         <SelectedNodeLayer node={layouter.getSelectedNode(tree)} modifyTree={modifyTree} send_message_to_main={props.send_message_to_main}/>
-        //     </Grid>
-        //
-        //     {/* Children Layer */}
-        //     <Grid item
-        //           style={{border: '1px solid black',height: childrenLayerHeight, backgroundColor: '#FAD689', width: "100%", padding: "10px"}}>
-        //         <OtherNodesLayer nodes={layouter.getChildrenNodes(tree, layouter.getSelectedNode(tree))} selectedNode={layouter.getSelectedNode(tree)} modifyTree={modifyTree}/>
-        //     </Grid>
-        // </Grid>
-        // </>
     );
 }
