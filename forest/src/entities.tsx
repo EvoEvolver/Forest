@@ -14,5 +14,6 @@ export interface Node {
   children: string[],
   selected: boolean;
   data: {};
+  tools: [{}]
 }
 

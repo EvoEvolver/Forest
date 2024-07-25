@@ -10,6 +10,7 @@ import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
 import * as content_components from "./ContentComponents";
+import {Node} from "../entities";
 
 
 const NodeContentTabs = ({tab_dict, env_funcs, env_vars, env_components, title}) => {
@@ -34,33 +35,34 @@ const NodeContentTabs = ({tab_dict, env_funcs, env_vars, env_components, title})
                     {title}
                 </Typography>}
                 {tab_keys.length > 0 &&
-                    <Box style={{overflowX: 'scroll', overflowY: 'auto', maxHeight: '100%'}}>
-                        <TabContext value={value} key={value}>
-                            <Box sx={{borderBottom: 1, borderColor: 'divider'}}>
-                                <TabList onChange={handleChange} aria-label="lab API tabs example">
-                                    {tab_keys.map((tab, i) => {
-                                        return <Tab key={i} label={tab} value={i.toString()}/>
-                                    })}
-                                </TabList>
-                            </Box>
-                            {tab_keys.map((tab, i) => {
-                                return <TabPanel value={i.toString()}>
-                                    {<JsxParser
-                                        bindings={{env_funcs, env_vars}}
-                                        components={env_components}
-                                        jsx={tab_dict[tab]}
-                                        renderError={error => <div
-                                            style={{color: "red"}}>{error.error.toString()}</div>}
-                                    />}</TabPanel>
-                            })}
-                        </TabContext>
-                    </Box>}
+                    <TabContext value={value} key={value}>
+                        <Box sx={{borderBottom: 1, borderColor: 'divider'}}>
+                            <TabList onChange={handleChange} aria-label="lab API tabs example">
+                                {tab_keys.map((tab, i) => {
+                                    return <Tab key={i} label={tab} value={i.toString()}/>
+                                })}
+                            </TabList>
+                        </Box>
+                        {tab_keys.map((tab, i) => {
+                            return <TabPanel value={i.toString()}>
+                                <Box sx={{overflowX: "auto"}}>
+                                {<JsxParser
+                                    bindings={{env_funcs, env_vars}}
+                                    components={env_components}
+                                    jsx={tab_dict[tab]}
+                                    renderError={error => <div
+                                        style={{color: "red"}}>{error.error.toString()}</div>}
+                                />}</Box>
+                            </TabPanel>
+                        })}
+                    </TabContext>
+                }
             </CardContent>
         </Card>
 }
 
 const SelectedNodeLayer = (props) => {
-    let node = props.node;
+    let node: Node = props.node;
     let number = 3;
     //const elementWidth = `${100 / number}%`;
     const [animate, setAnimate] = useState(false);
@@ -88,52 +90,37 @@ const SelectedNodeLayer = (props) => {
     const env_components = {...content_components, 'TabPanel': TabPanel}
 
     return (
-        <Grid style={{height: "100%"}} container>
-            {/*<Grid key={0} item xs*/}
-            {/*      style={{width: '30%', border: '1px solid black', height: "100%", margin: "0 20px", flex: "0 0 30%"}}>*/}
-            {/*    <Chatbot/>*/}
-            {/*</Grid>*/}
+        <Grid style={{height: "100%"}} container spacing={2}>
 
-            <Grid key={0} item xs style={{
+            <Grid key={0} item xs={4} style={{
                 width: '30%',
                 height: "100%",
                 paddingBottom: '10px',
-                margin: "10px",
                 transition: animate ? 'opacity 0.5s ease-in' : 'none',
                 opacity: animate ? 0 : 1,
-                flex: "0 1 28%",
             }}>
                 <NodeContentTabs tab_dict={node.tools[0]} env_funcs={env_funcs} env_vars={env_vars} env_components={env_components} title=""/>
             </Grid>
 
-            <Grid key={1} item xs style={{
+            <Grid key={1} item xs={4} style={{
                 width: '40%',
                 paddingBottom: '10px',
                 height: "100%",
-                margin: "10px",
                 transition: animate ? 'opacity 0.5s ease-in' : 'none',
                 opacity: animate ? 0 : 1,
-                flex: "1 1 35%"
             }}>
                 <NodeContentTabs tab_dict={node.tabs} env_funcs={env_funcs} env_vars={env_vars} env_components={env_components} title={node.title}/>
             </Grid>
 
-            <Grid key={2} item xs style={{
+            <Grid key={2} item xs={4} style={{
                 width: '30%',
                 paddingBottom: '10px',
                 height: '100%',
-                margin: "10px",
                 transition: animate ? 'opacity 0.5s ease-in' : 'none',
                 opacity: animate ? 0 : 1,
-                flex: "0 1 28%"
             }}>
                 <NodeContentTabs tab_dict={node.tools[1]} env_funcs={env_funcs} env_vars={env_vars} env_components={env_components} title=""/>
             </Grid>
-x
-            {/*<Grid key={2} item xs*/}
-            {/*      style={{width: '30%', border: '1px solid black', height: "100%", margin: "0 20px", flex: "0 0 30%"}}>*/}
-            {/*    Tool 2*/}
-            {/*</Grid>*/}
         </Grid>
 
     );

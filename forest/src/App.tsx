@@ -3,6 +3,9 @@ import {io} from 'socket.io-client';
 import ATree from './ATree';
 import {TreeData} from "./entities";
 import {Grid} from "@mui/material";
+import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import IconButton from '@mui/material/IconButton';
 
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
 const socket = io(`http://127.0.0.1:${currentPort}`, {
@@ -115,21 +118,21 @@ export default function App() {
         <>
             <Grid container item style={{width: "100%", display: "flex", flexDirection: "row", flex: "1 0 100%"}}>
                 <Grid container item style={{width: "20%", display: "flex", flexDirection: "column", flex: "0 0 0%", backgroundColor: "#f4f4f4"}}>
-                    <Grid container direction="column" style={{marginBottom:'10px'}}>
+                    {Object.keys(trees).length > 1 && <Grid container direction="column" style={{marginBottom: '10px'}}>
                         {Object.keys(trees).map((treeId, i) => (
-                            <Grid item key={treeId} style={{marginBottom:'3px'}}>
-                                <button style={{backgroundColor: "#00000000", color:"#626262"}} onClick={() => setSelectedTreeId(treeId)}>{i + 1}</button>
+                            <Grid item key={treeId} style={{marginBottom: '3px'}}>
+                                <button style={{backgroundColor: "#00000000", color: "#626262"}}
+                                        onClick={() => setSelectedTreeId(treeId)}>{i + 1}</button>
                             </Grid>
                         ))}
-                    </Grid>
+                    </Grid>}
 
                     <Grid item style={{backgroundColor: "#00000000"}}>
-                        {/*style={{position: 'fixed', zIndex: 99999999999, top: 0, right: 0}}*/}
-                        <button style={{backgroundColor: "#00000000", color:"#626262"}} onClick={() => setPage(0)}>Focus</button>
+                        <IconButton style={{backgroundColor: "#00000000", color:"#626262"}} onClick={() => setPage(0)}><CenterFocusStrongIcon/></IconButton>
 
                     </Grid>
                     <Grid item style={{marginTop:'3px'}}>
-                        <button style={{backgroundColor: "#00000000", color:"#626262"}} onClick={() => setPage(1)}>Tree</button>
+                        <IconButton style={{backgroundColor: "#00000000", color:"#626262"}} onClick={() => setPage(1)}><AccountTreeIcon/></IconButton>
                     </Grid>
                 </Grid>
 
