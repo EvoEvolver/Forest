@@ -10,99 +10,17 @@ import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
 import * as content_components from "./ContentComponents";
-import Chatbot from "./Plugins/Chatbot";
 
-const NodeElement = (props) => {
-    let tabs = Object.keys(props.node.tabs);
-    let options = tabs.map((tab) => {
-        return tab
-    });
-    // assign tab state to tabs[0] if tabs has length > 0.
-    //const [selectedTab, setSelectedTab] = useState(options.length > 0 ? options[0] : null);
+
+const NodeContentTabs = ({tab_dict, env_funcs, env_vars, env_components, title}) => {
+    const tab_keys = Object.keys(tab_dict);
     const [value, setValue] = React.useState('0');
 
     const handleChange = (event: React.SyntheticEvent, newValue: string) => {
         setValue(newValue);
     };
 
-    let modifyTree = props.modifyTree;
-
-    const env_funcs = {
-        modifyTree: modifyTree,
-        send_message_to_main: (message) => {
-            props.send_message_to_main({node_id: props.node.id, message})
-        }
-    }
-
-    const env_vars = {
-        node: props.node
-    }
-
-    const env_components = {...content_components}
-
-    // TODO: why is it rendered multiple times?
-    return (
-        <Card sx={{
-            minWidth: "100%",
-            maxWidth: "100%",
-            minHeight: "100%",
-            maxHeight: "100%",
-            overflowY: 'auto',
-            overflowX: 'hidden',
-            wordBreak: "break-word",
-            backgroundColor: '#f4f4f4'
-        }}>
-            <CardContent>
-                <Typography variant="h5" component="div">
-                    {props.node.title}
-                </Typography>
-                {tabs.length > 0 &&
-                    <Box style={{overflowX: 'scroll', overflowY: 'auto', maxHeight: '100%', margin: '30px'}}>
-                            {/*<TabPanel value={"0"}>*/}
-                                {<JsxParser
-                                    bindings={{env_funcs, env_vars}}
-                                    components={env_components}
-                                    jsx={props.node.tabs["content"]}
-                                    renderError={error => <div
-                                        style={{color: "red"}}>{error.error.toString()}</div>}
-                                />}
-                    </Box>}
-            </CardContent>
-        </Card>
-    );
-}
-
-const SummaryElement = (props) => {
-    let tabs = ['summary'];
-    let options = tabs.map((tab) => {
-        return tab
-    });
-    // assign tab state to tabs[0] if tabs has length > 0.
-    //const [selectedTab, setSelectedTab] = useState(options.length > 0 ? options[0] : null);
-    const [value, setValue] = React.useState('0');
-
-    const handleChange = (event: React.SyntheticEvent, newValue: string) => {
-        setValue(newValue);
-    };
-
-    let modifyTree = props.modifyTree;
-
-    const env_funcs = {
-        modifyTree: modifyTree,
-        send_message_to_main: (message) => {
-            props.send_message_to_main({node_id: props.node.id, message})
-        }
-    }
-
-    const env_vars = {
-        node: props.node
-    }
-
-    const env_components = {...content_components}
-
-    // TODO: why is it rendered multiple times?
-    return (
-        <Card sx={{
+    return <Card sx={{
             minWidth: "100%",
             maxWidth: "100%",
             minHeight: "100%",
@@ -112,22 +30,25 @@ const SummaryElement = (props) => {
             wordBreak: "break-word"
         }}>
             <CardContent>
-                {tabs.length > 0 &&
+                {title && <Typography variant="h5" component="div">
+                    {title}
+                </Typography>}
+                {tab_keys.length > 0 &&
                     <Box style={{overflowX: 'scroll', overflowY: 'auto', maxHeight: '100%'}}>
                         <TabContext value={value} key={value}>
                             <Box sx={{borderBottom: 1, borderColor: 'divider'}}>
                                 <TabList onChange={handleChange} aria-label="lab API tabs example">
-                                    {tabs.map((tab, i) => {
+                                    {tab_keys.map((tab, i) => {
                                         return <Tab key={i} label={tab} value={i.toString()}/>
                                     })}
                                 </TabList>
                             </Box>
-                            {tabs.map((tab, i) => {
+                            {tab_keys.map((tab, i) => {
                                 return <TabPanel value={i.toString()}>
                                     {<JsxParser
                                         bindings={{env_funcs, env_vars}}
                                         components={env_components}
-                                        jsx={props.node.tabs[tab]}
+                                        jsx={tab_dict[tab]}
                                         renderError={error => <div
                                             style={{color: "red"}}>{error.error.toString()}</div>}
                                     />}</TabPanel>
@@ -136,74 +57,6 @@ const SummaryElement = (props) => {
                     </Box>}
             </CardContent>
         </Card>
-    );
-}
-
-const TabElement = (props) => {
-    let tabs = Object.keys(props.node.tabs).filter(key => key !== 'content' && key !== 'summary');
-    let options = tabs.map((tab) => {
-        return tab
-    });
-    // assign tab state to tabs[0] if tabs has length > 0.
-    //const [selectedTab, setSelectedTab] = useState(options.length > 0 ? options[0] : null);
-    const [value, setValue] = React.useState('0');
-
-    const handleChange = (event: React.SyntheticEvent, newValue: string) => {
-        setValue(newValue);
-    };
-
-    let modifyTree = props.modifyTree;
-
-    const env_funcs = {
-        modifyTree: modifyTree,
-        send_message_to_main: (message) => {
-            props.send_message_to_main({node_id: props.node.id, message})
-        }
-    }
-
-    const env_vars = {
-        node: props.node
-    }
-
-    const env_components = {...content_components}
-
-    // TODO: why is it rendered multiple times?
-    return (
-        <Card sx={{
-            minWidth: "100%",
-            maxWidth: "100%",
-            minHeight: "100%",
-            maxHeight: "100%",
-            overflowY: 'auto',
-            overflowX: 'hidden',
-            wordBreak: "break-word"
-        }}>
-            <CardContent>
-                {
-                    <Box style={{overflowX: 'scroll', overflowY: 'auto', maxHeight: '100%'}}>
-                        <TabContext value={value} key={value}>
-                            <Box sx={{borderBottom: 1, borderColor: 'divider'}}>
-                                <TabList onChange={handleChange} aria-label="lab API tabs example">
-                                    {tabs.map((tab, i) => {
-                                        return <Tab key={i} label={tab} value={i.toString()}/>
-                                    })}
-                                </TabList>
-                            </Box>
-                            {tabs.map((tab, i) => {
-                                return <TabPanel value={i.toString()}>
-                                    {<JsxParser
-                                        bindings={{env_funcs, env_vars}}
-                                        components={env_components}
-                                        jsx={props.node.tabs[tab]}
-                                        renderError={error => <div
-                                            style={{color: "red"}}>{error.error.toString()}</div>}
-                                    />}</TabPanel>
-                            })}
-                        </TabContext>
-                    </Box>}
-            </CardContent>
-        </Card>
-    );
 }
 
 const SelectedNodeLayer = (props) => {
@@ -219,6 +72,20 @@ const SelectedNodeLayer = (props) => {
         }, 0);
         return () => clearTimeout(timeoutId);
     }, [node]);
+
+
+    const env_funcs = {
+        modifyTree: props.modifyTree,
+        send_message_to_main: (message) => {
+            props.send_message_to_main({node_id: props.node.id, message})
+        }
+    }
+
+    const env_vars = {
+        node: props.node
+    }
+
+    const env_components = {...content_components, 'TabPanel': TabPanel}
 
     return (
         <Grid style={{height: "100%"}} container>
@@ -236,8 +103,7 @@ const SelectedNodeLayer = (props) => {
                 opacity: animate ? 0 : 1,
                 flex: "0 1 28%",
             }}>
-                <SummaryElement node={node} modifyTree={props.modifyTree}
-                            send_message_to_main={props.send_message_to_main}/>
+                <NodeContentTabs tab_dict={node.tools[0]} env_funcs={env_funcs} env_vars={env_vars} env_components={env_components} title=""/>
             </Grid>
 
             <Grid key={1} item xs style={{
@@ -249,8 +115,7 @@ const SelectedNodeLayer = (props) => {
                 opacity: animate ? 0 : 1,
                 flex: "1 1 35%"
             }}>
-                <NodeElement node={node} modifyTree={props.modifyTree}
-                             send_message_to_main={props.send_message_to_main}/>
+                <NodeContentTabs tab_dict={node.tabs} env_funcs={env_funcs} env_vars={env_vars} env_components={env_components} title={node.title}/>
             </Grid>
 
             <Grid key={2} item xs style={{
@@ -262,8 +127,7 @@ const SelectedNodeLayer = (props) => {
                 opacity: animate ? 0 : 1,
                 flex: "0 1 28%"
             }}>
-                <TabElement node={node} modifyTree={props.modifyTree}
-                            send_message_to_main={props.send_message_to_main}/>
+                <NodeContentTabs tab_dict={node.tools[1]} env_funcs={env_funcs} env_vars={env_vars} env_components={env_components} title=""/>
             </Grid>
 x
             {/*<Grid key={2} item xs*/}
