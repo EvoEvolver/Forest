@@ -137,7 +137,7 @@ export default class Layouter{
         const selectedNode = tree.nodeDict[tree.selectedNode]
         if (!selectedNode) return;
         // if move up, get ancestors.
-        if (direction === "up") {
+        if (direction === "parent") {
             const ancestors = getAncestors(selectedNode, tree.nodeDict);
             if (ancestors.length > 0) {
                 return ancestors[0];
@@ -148,7 +148,7 @@ export default class Layouter{
         }
         // if move down, get first descent.
 
-        if (direction === "down") {
+        if (direction === "child") {
             const children = getChildren(selectedNode, tree.nodeDict);
 
             if (children.length > 0) {
@@ -159,7 +159,7 @@ export default class Layouter{
             }
         }
         // if move left, get left sibling.
-        if (direction === "left") {
+        if (direction === "left_sib") {
             const siblings = getSiblingsIncludeSelf(selectedNode, tree.nodeDict);
 
             if (getSiblingsIncludeSelf.length > 0) {
@@ -177,7 +177,7 @@ export default class Layouter{
             }
         }
         // if move right, get right sibling
-        if (direction === "right") {
+        if (direction === "right_sib") {
             const siblings = getSiblingsIncludeSelf(selectedNode, tree.nodeDict);
 
             if (getSiblingsIncludeSelf.length > 0) {

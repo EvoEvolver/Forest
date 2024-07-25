@@ -61,25 +61,24 @@ export default function ATree(props) {
 
     const keyPress = useCallback(
         (e) => {
-            if (!e.ctrlKey)
+            if (!e.shiftKey)
                 return;
             let result = undefined;
             const oneToNineRegex = /^[1-9]$/;
             const key = e.key;
             if (key === 'ArrowUp') {
-                result = layouter.move(treeRef.current, "up");
+                result = layouter.move(treeRef.current, "left_sib");
             } else if (key === 'ArrowDown') {
-                result = layouter.move(treeRef.current, "down");
+                result = layouter.move(treeRef.current, "right_sib");
             } else if (key === 'ArrowLeft') {
-                result = layouter.move(treeRef.current, "left");
+                result = layouter.move(treeRef.current, "parent");
             } else if (key === 'ArrowRight') {
-                result = layouter.move(treeRef.current, "right");
+                result = layouter.move(treeRef.current, "child");
             } else if (key === 'r') {
                 result = layouter.moveToRoot(treeRef.current);
             } else if (key === 'n') {
                 result = layouter.moveToNextAvailable(treeRef.current);
             } else if (key === 'b') {
-                console.log("b clicked.")
                 result = selectedNodeHistory.current.pop();
                 if (result) backRef.current = true;
             }
