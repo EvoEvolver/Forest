@@ -11,13 +11,15 @@ dist_url = "https://github.com/EvoEvolver/Forest/raw/build/dist.tar.gz"
 
 
 def download_new_dist():
+    # remove the build directory
+    os.system(f"rm -rf {build_dir}")
     print("Forest: Downloading new dist...")
-    wget.download(dist_url, 'dist.tar.gz')
+    wget.download(dist_url, build_dir + '.tar.gz')
     # Extract the tar file
-    with tarfile.open('dist.tar.gz') as f:
-        f.extractall()
+    with tarfile.open(build_dir + '.tar.gz') as f:
+        f.extractall(project_root)
     # Remove the tar file
-    os.remove('dist.tar.gz')
+    os.remove(build_dir + '.tar.gz')
     print("Forest: New dist downloaded!")
     update_check_date()
 
