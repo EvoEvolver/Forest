@@ -25,17 +25,7 @@ export default function FocusPage(props) {
     return (
         <>
                 <Grid container item style={{height: "100%", display: "flex", flexDirection: "column", flex: "1 0 0%"}}>
-                    {/*<Grid item style={{*/}
-                    {/*    border: '1px solid black',*/}
-                    {/*    height: siblingsLayerHeight,*/}
-                    {/*    backgroundColor: '#A8D8B9',*/}
-                    {/*    width: "100%",*/}
-                    {/*    padding: "10px"*/}
-                    {/*}}>*/}
-                    {/*    <OtherNodesLayer nodes={layouter.getSiblingNodes(tree, layouter.getSelectedNode(tree))}*/}
-                    {/*                     selectedNode={layouter.getSelectedNode(tree)}*/}
-                    {/*                     modifyTree={modifyTree}/>*/}
-                    {/*</Grid>*/}
+
 
                     <Grid item
                           style={{
@@ -48,20 +38,6 @@ export default function FocusPage(props) {
                         <SelectedNodeLayer node={layouter.getSelectedNode(tree)} modifyTree={modifyTree}
                                            send_message_to_main={props.send_message_to_main}/>
                     </Grid>
-
-                    {/*/!* Children Layer *!/*/}
-                    {/*<Grid item*/}
-                    {/*      style={{*/}
-                    {/*          border: '1px solid black',*/}
-                    {/*          height: childrenLayerHeight,*/}
-                    {/*          backgroundColor: '#FAD689',*/}
-                    {/*          width: "100%",*/}
-                    {/*          padding: "10px"*/}
-                    {/*      }}>*/}
-                    {/*    <OtherNodesLayer nodes={layouter.getChildrenNodes(tree, layouter.getSelectedNode(tree))}*/}
-                    {/*                     selectedNode={layouter.getSelectedNode(tree)} modifyTree={modifyTree}/>*/}
-                    {/*</Grid>*/}
-
 
                     <NavigatorLayer props={props}
                                          selectedNode={layouter.getSelectedNode(tree)} modifyTree={modifyTree}/>

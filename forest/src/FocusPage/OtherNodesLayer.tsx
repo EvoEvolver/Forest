@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {Grid, Button, Paper, Typography} from '@mui/material';
 import {Node} from "../entities";
 
@@ -29,8 +29,12 @@ const NodeElement = (props) => {
                 })
             }}
         >
+            {
+                props.refProps && <span ref={props.refProps}/>
+            }
             <Typography style={{textAlign: 'left', marginLeft: '10px', marginRight:'5px'}}>{props.node.title}</Typography>
         </Paper>
+
 
     );
 };
@@ -40,6 +44,9 @@ const OtherNodesLayer = ({nodes, modifyTree, selectedNode}) => {
     const elementsPerPage = 100;
     const [startPoint, setStartPoint] = useState(0);
     const [animate, setAnimate] = useState(false);
+
+    const selectedNodeRef = useRef(null)
+    const nodeContainerRef = useRef(null)
 
     useEffect(() => {
         setAnimate(true);
@@ -73,11 +80,13 @@ const OtherNodesLayer = ({nodes, modifyTree, selectedNode}) => {
         } else if (selectedNodeIndex >= startPoint + elementsPerPage) {
             handleNext();
         }
+        if (selectedNodeRef.current)
+            selectedNodeRef.current.scrollIntoView({behavior: "instant", block: "center"});
     }, [selectedNode]);
 
     return (
         <Grid container alignItems="center" style={{height: '21vh'}}>
-            <Grid container justifyContent="center" direction='column' alignItems="center" style={{overflowY: "auto", margin: '5px',paddingBottom:'10px'}}>
+            <Grid container justifyContent="center" direction='column' alignItems="center" style={{overflowY: "auto", margin: '5px',paddingBottom:'10px'}} ref={nodeContainerRef}>
                 {nodes.slice(startPoint, startPoint + elementsPerPage).map((node, index) => (
                     <Grid
                         key={index}
@@ -91,8 +100,14 @@ const OtherNodesLayer = ({nodes, modifyTree, selectedNode}) => {
                             flex: "0 0 10%",
                         }}
                     >
-                        <NodeElement node={node} selected={selectedNode !== undefined && node.id === selectedNode.id}
-                                     modifyTree={modifyTree}/>
+                        {(selectedNode !== undefined && node.id === selectedNode.id) &&
+                            <NodeElement node={node} selected={true}
+                                                     modifyTree={modifyTree}
+                                                     refProps={selectedNodeRef}/>
+                        }
+                        {(selectedNode !== undefined && node.id !== selectedNode.id) &&
+                        <NodeElement node={node} selected={false}
+                                     modifyTree={modifyTree}/>}
                     </Grid>
                 ))}
             </Grid>
