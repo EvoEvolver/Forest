@@ -5,11 +5,45 @@ import Card from "@mui/material/Card";
 
 
 const NavigatorLayer = ({props, modifyTree, selectedNode}) => {
-    console.log("num of sibling:", props.layouter.getSiblingNodes(props.tree, props.layouter.getSelectedNode(props.tree)).length)
+    let rect1, rect2, rect3;
+    try {
+        rect1 = document.querySelector('#ancestor_card').getBoundingClientRect();
+
+        rect2 = document.querySelector('#sibling_card').getBoundingClientRect();
+
+        rect3 = document.querySelector('#children_card').getBoundingClientRect();
+    } catch (e) {
+        // Set default values for the rect object
+        rect1 = rect2 = rect3  = {
+            top: 0,
+            left: 0,
+            width: 100,
+            height: 100
+        };
+    }
+
+
     return (
         <>
             <Grid container item style={{height: "25%", display: "flex", flexDirection: "row", flex: "0 1 25%"}}>
+                <Card style={{
+                    width: '50px',
+                    height: '15px',
+                    backgroundColor: '#f4f4f4',
+                    position: 'absolute',
+                    top: `${rect1.top-7}px`,
+                    left: `${rect1.left+35}px`,
+                    fontSize: '10px',
+                    textAlign: 'center',
+                    transform: 'translateX(-50%)',
+                    overflow: 'hidden',
+                    boxShadow: 'none',
+                    zIndex: 10
+                }}>
+                    Ancestor
+                </Card>
                 <Grid item
+                      id="ancestor_card"
                       style={{
                           height: '100%',
                           backgroundColor: '#ffffff',
@@ -18,7 +52,7 @@ const NavigatorLayer = ({props, modifyTree, selectedNode}) => {
                           flex: "1 0 33%",
                           overflowY: "auto"
                       }}>
-                     <Card sx={{
+                    <Card sx={{
                         minWidth: "100%",
                         maxWidth: "100%",
                         minHeight: "100%",
@@ -28,14 +62,30 @@ const NavigatorLayer = ({props, modifyTree, selectedNode}) => {
                         wordBreak: "break-word",
                         backgroundColor: '#f4f4f4'
                     }}>
-                    <OtherNodesLayer
-                        nodes={props.layouter.getAncestorNodes(props.tree, props.layouter.getSelectedNode(props.tree)).reverse()}
-                        modifyTree={modifyTree} selectedNode={selectedNode}/>
-                     </Card>
+                        <OtherNodesLayer
+                            nodes={props.layouter.getAncestorNodes(props.tree, props.layouter.getSelectedNode(props.tree)).reverse()}
+                            modifyTree={modifyTree} selectedNode={selectedNode}/>
+                    </Card>
                 </Grid>
 
-
+                <Card style={{
+                    width: '50px',
+                    height: '15px',
+                    backgroundColor: '#f4f4f4',
+                    position: 'absolute',
+                    top: `${rect2.top-7}px`,
+                    left: `${rect2.left+35}px`,
+                    fontSize: '10px',
+                    textAlign: 'center',
+                    transform: 'translateX(-50%)',
+                    overflow: 'hidden',
+                    boxShadow: 'none',
+                    zIndex: 10
+                }}>
+                    Sibling
+                </Card>
                 <Grid item
+                      id="sibling_card"
                       style={{
                           height: '100%',
                           backgroundColor: '#ffffff',
@@ -56,13 +106,30 @@ const NavigatorLayer = ({props, modifyTree, selectedNode}) => {
                     }}>
                         <OtherNodesLayer
 
-                        nodes={props.layouter.getSiblingNodes(props.tree, props.layouter.getSelectedNode(props.tree))}
+                            nodes={props.layouter.getSiblingNodes(props.tree, props.layouter.getSelectedNode(props.tree))}
 
-                        modifyTree={modifyTree} selectedNode={selectedNode}/>
+                            modifyTree={modifyTree} selectedNode={selectedNode}/>
                     </Card>
 
                 </Grid>
+                <Card style={{
+                   width: '50px',
+                    height: '15px',
+                    backgroundColor: '#f4f4f4',
+                    position: 'absolute',
+                    top: `${rect3.top-7}px`,
+                    left: `${rect3.left+35}px`,
+                    fontSize: '10px',
+                    textAlign: 'center',
+                    transform: 'translateX(-50%)',
+                    overflow: 'hidden',
+                    boxShadow: 'none',
+                    zIndex: 10
+                }}>
+                    Children
+                </Card>
                 <Grid item
+                      id="children_card"
                       style={{
                           height: '100%',
                           backgroundColor: '#ffffff',
@@ -71,7 +138,7 @@ const NavigatorLayer = ({props, modifyTree, selectedNode}) => {
                           flex: "0 1 33%",
                           overflowY: "auto"
                       }}>
-                     <Card sx={{
+                    <Card sx={{
                         minWidth: "100%",
                         maxWidth: "100%",
                         minHeight: "100%",
@@ -81,10 +148,10 @@ const NavigatorLayer = ({props, modifyTree, selectedNode}) => {
                         wordBreak: "break-word",
                         backgroundColor: '#f4f4f4'
                     }}>
-                    <OtherNodesLayer
-                        nodes={props.layouter.getChildrenNodes(props.tree, props.layouter.getSelectedNode(props.tree))}
-                        modifyTree={modifyTree} selectedNode={selectedNode}/>
-                     </Card>
+                        <OtherNodesLayer
+                            nodes={props.layouter.getChildrenNodes(props.tree, props.layouter.getSelectedNode(props.tree))}
+                            modifyTree={modifyTree} selectedNode={selectedNode}/>
+                    </Card>
                 </Grid>
             </Grid>
         </>
