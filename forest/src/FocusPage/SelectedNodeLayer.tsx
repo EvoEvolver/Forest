@@ -14,7 +14,7 @@ import {Node} from "../entities";
 
 
 const NodeContentTabs = ({tab_dict, env_funcs, env_vars, env_components, title}) => {
-    const tab_keys = Object.keys(tab_dict);
+    const tab_keys = Object.keys(tab_dict).filter(key => key !== "relevant");
     const [value, setValue] = React.useState('0');
 
     const handleChange = (event: React.SyntheticEvent, newValue: string) => {
