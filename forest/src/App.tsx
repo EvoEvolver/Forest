@@ -169,13 +169,13 @@ export default function App() {
                     </Grid>}
 
                     <Grid item style={{}}>
-                        <Tooltip title={page === 0 ? "Focus View (Shift+T)" : "Tree Map (Shift+T)"}>
+                        <Tooltip title={page === 1 ? "Focus View (Shift+T)" : "Tree Map (Shift+T)"}>
                             <ToggleButton
                                 value={page}
                                 selected
                                 onChange={handleToggle}
                             >
-                                {page === 0 ? <CenterFocusStrongIcon/> : <AccountTreeIcon/>}
+                                {page === 1 ? <CenterFocusStrongIcon/> : <AccountTreeIcon/>}
                             </ToggleButton>
                         </Tooltip>
                     </Grid>
