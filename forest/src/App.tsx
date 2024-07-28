@@ -55,7 +55,7 @@ export default function App() {
     let [page, setPage] = useState(0);
     let firstTreeReceived = useRef(false);
 
-    let [currPage, setCurrPage] = useState(1);
+    let [currPage, setCurrPage] = useState(0);
 
     const keyPress = useCallback(
         (e) => {
@@ -168,13 +168,13 @@ const handleToggle = () => {
                     </Grid>}
 
                     <Grid item style={{}}>
-                        <Tooltip title={currPage === 0 ? "Focus View (Shift+T)" : "Tree Map (Shift+T)"}>
+                        <Tooltip title={currPage === 1 ? "Focus View (Shift+T)" : "Tree Map (Shift+T)"}>
                             <ToggleButton
                                 value={currPage}
                                 selected
                                 onChange={handleToggle}
                             >
-                                {currPage === 0 ? <CenterFocusStrongIcon/> : <AccountTreeIcon/>}
+                                {currPage === 1 ? <CenterFocusStrongIcon/> : <AccountTreeIcon/>}
                             </ToggleButton>
                         </Tooltip>
                     </Grid>
