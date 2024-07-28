@@ -170,7 +170,7 @@ export default function App() {
                     <Grid item style={{}}>
                         <Tooltip title={currPage === 0 ? "Focus View (Shift+T)" : "Tree Map (Shift+T)"}>
                             <ToggleButton
-                                value={page}
+                                value={currPage}
                                 selected
                                 onChange={handleToggle}
                             >
