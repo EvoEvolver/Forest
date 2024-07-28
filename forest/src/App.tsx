@@ -2,10 +2,11 @@ import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {io} from 'socket.io-client';
 import ATree from './ATree';
 import {TreeData} from "./entities";
-import {Grid} from "@mui/material";
+import {Grid, Tooltip} from "@mui/material";
 import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import IconButton from '@mui/material/IconButton';
+import {ToggleButton, ToggleButtonGroup} from "@mui/lab";
 
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
 const socket = io(`http://127.0.0.1:${currentPort}`, {
@@ -62,10 +63,10 @@ export default function App() {
                 return;
             const key = e.key;
             if (key === 'T') {
-                if(currPage === 1){
+                if (currPage === 1) {
                     setPage(0);
                     currPage = 0;
-                }else{
+                } else {
                     setPage(1);
                     currPage = 1;
                 }
@@ -142,6 +143,13 @@ export default function App() {
         }
     }, [selectedTreeId]);
 
+    const handlePageChange = (event, newPage) => {
+        if (newPage !== null) {
+            setPage(newPage);
+            currPage = newPage;
+        }
+    };
+
     return (
         <>
             <Grid container item style={{width: "100%", display: "flex", flexDirection: "row", flex: "1 0 100%"}}>
@@ -161,12 +169,37 @@ export default function App() {
                         ))}
                     </Grid>}
 
-                    <Grid item style={{backgroundColor: "#00000000"}}>
-                        <IconButton style={{backgroundColor: "#00000000", color: "#626262"}} onClick={() => {setPage(0);currPage=0;}}><CenterFocusStrongIcon/></IconButton>
+                    {/*<Grid item style={{backgroundColor: "#00000000"}}>*/}
+                    {/*    <IconButton style={{backgroundColor: "#00000000", color: "#626262"}} onClick={() => {*/}
+                    {/*        setPage(0);*/}
+                    {/*        currPage = 0;*/}
+                    {/*    }}><CenterFocusStrongIcon/></IconButton>*/}
 
-                    </Grid>
-                    <Grid item style={{marginTop: '3px'}}>
-                        <IconButton style={{backgroundColor: "#00000000", color: "#626262"}} onClick={() => {setPage(1);currPage=1;}}><AccountTreeIcon/></IconButton>
+                    {/*</Grid>*/}
+                    {/*<Grid item style={{marginTop: '3px'}}>*/}
+                    {/*    <IconButton style={{backgroundColor: "#00000000", color: "#626262"}} onClick={() => {*/}
+                    {/*        setPage(1);*/}
+                    {/*        currPage = 1;*/}
+                    {/*    }}><AccountTreeIcon/></IconButton>*/}
+                    {/*</Grid>*/}
+
+                    <Grid item style={{}}>
+                        <ToggleButtonGroup
+                            value={page}
+                            exclusive
+                            onChange={handlePageChange}
+                        >
+                            <Tooltip title="Focus View">
+                                <ToggleButton value={0}>
+                                    <CenterFocusStrongIcon/>
+                                </ToggleButton>
+                            </Tooltip>
+                            <Tooltip title="Tree Map">
+                                <ToggleButton value={1}>
+                                    <AccountTreeIcon/>
+                                </ToggleButton>
+                            </Tooltip>
+                        </ToggleButtonGroup>
                     </Grid>
                 </Grid>
 
