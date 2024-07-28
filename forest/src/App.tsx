@@ -67,7 +67,7 @@ export default function App() {
                 setCurrPage(currPage === 0 ? 1 : 0);
             }
         },
-        [currPage]
+        []
     );
     useEffect(() => {
         document.removeEventListener("keydown", keyPress);
@@ -77,6 +77,11 @@ export default function App() {
             document.removeEventListener("keydown", keyPress);
         };
     }, [keyPress]);
+
+    useEffect(() => {
+
+    }, [currPage]);
+
 
     useEffect(() => {
         socket.on("connect", () => {
