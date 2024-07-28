@@ -144,7 +144,7 @@ export default function App() {
     }, [selectedTreeId]);
 
 const handleToggle = () => {
-        setPage(currPage === 0 ? 1 : 0);
+        setPage(page === 0 ? 1 : 0);
         setCurrPage(currPage === 0 ? 1 : 0);
     };
 
