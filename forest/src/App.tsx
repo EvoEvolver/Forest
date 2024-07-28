@@ -55,7 +55,7 @@ export default function App() {
     let [page, setPage] = useState(0);
     let firstTreeReceived = useRef(false);
 
-    var currPage = 1;
+    let [currPage, setCurrPage] = useState(1);
 
     const keyPress = useCallback(
         (e) => {
@@ -72,7 +72,7 @@ export default function App() {
                 }
             }
         },
-        []
+        [currPage]
     );
     useEffect(() => {
         document.removeEventListener("keydown", keyPress);
@@ -143,9 +143,9 @@ export default function App() {
         }
     }, [selectedTreeId]);
 
-    const handleToggle = () => {
+const handleToggle = () => {
         setPage(currPage === 0 ? 1 : 0);
-        currPage = currPage === 0 ? 1 : 0;
+        setCurrPage(currPage === 0 ? 1 : 0);
     };
 
     return (
