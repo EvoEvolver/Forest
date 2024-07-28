@@ -63,13 +63,8 @@ export default function App() {
                 return;
             const key = e.key;
             if (key === 'T') {
-                if (currPage === 1) {
-                    setPage(0);
-                    currPage = 0;
-                } else {
-                    setPage(1);
-                    currPage = 1;
-                }
+                setPage(page === 0 ? 1 : 0);
+                setCurrPage(currPage === 0 ? 1 : 0);
             }
         },
         [currPage]
@@ -143,7 +138,7 @@ export default function App() {
         }
     }, [selectedTreeId]);
 
-const handleToggle = () => {
+    const handleToggle = () => {
         setPage(page === 0 ? 1 : 0);
         setCurrPage(currPage === 0 ? 1 : 0);
     };
