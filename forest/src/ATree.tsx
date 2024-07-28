@@ -74,11 +74,11 @@ export default function ATree(props) {
                 result = layouter.move(treeRef.current, "parent");
             } else if (key === 'ArrowRight') {
                 result = layouter.move(treeRef.current, "child");
-            } else if (key === 'r') {
+            } else if (key === 'R') {
                 result = layouter.moveToRoot(treeRef.current);
-            } else if (key === 'n') {
+            } else if (key === 'N') {
                 result = layouter.moveToNextAvailable(treeRef.current);
-            } else if (key === 'b') {
+            } else if (key === 'B') {
                 result = selectedNodeHistory.current.pop();
                 if (result) backRef.current = true;
             }

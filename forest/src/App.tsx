@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {io} from 'socket.io-client';
 import ATree from './ATree';
 import {TreeData} from "./entities";
@@ -53,6 +53,34 @@ export default function App() {
     let [toLoadTree, setToLoadTree] = useState([]);
     let [page, setPage] = useState(0);
     let firstTreeReceived = useRef(false);
+
+    var currPage = 1;
+
+    const keyPress = useCallback(
+        (e) => {
+            if (!e.shiftKey)
+                return;
+            const key = e.key;
+            if (key === 'T') {
+                if(currPage === 1){
+                    setPage(0);
+                    currPage = 0;
+                }else{
+                    setPage(1);
+                    currPage = 1;
+                }
+            }
+        },
+        []
+    );
+    useEffect(() => {
+        document.removeEventListener("keydown", keyPress);
+        document.addEventListener("keydown", keyPress);
+
+        return () => {
+            document.removeEventListener("keydown", keyPress);
+        };
+    }, [keyPress]);
 
     useEffect(() => {
         socket.on("connect", () => {
@@ -117,7 +145,13 @@ export default function App() {
     return (
         <>
             <Grid container item style={{width: "100%", display: "flex", flexDirection: "row", flex: "1 0 100%"}}>
-                <Grid container item style={{width: "20%", display: "flex", flexDirection: "column", flex: "0 0 0%", backgroundColor: "#f4f4f4"}}>
+                <Grid container item style={{
+                    width: "20%",
+                    display: "flex",
+                    flexDirection: "column",
+                    flex: "0 0 0%",
+                    backgroundColor: "#f4f4f4"
+                }}>
                     {Object.keys(trees).length > 1 && <Grid container direction="column" style={{marginBottom: '10px'}}>
                         {Object.keys(trees).map((treeId, i) => (
                             <Grid item key={treeId} style={{marginBottom: '3px'}}>
@@ -128,11 +162,11 @@ export default function App() {
                     </Grid>}
 
                     <Grid item style={{backgroundColor: "#00000000"}}>
-                        <IconButton style={{backgroundColor: "#00000000", color:"#626262"}} onClick={() => setPage(0)}><CenterFocusStrongIcon/></IconButton>
+                        <IconButton style={{backgroundColor: "#00000000", color: "#626262"}} onClick={() => {setPage(0);currPage=0;}}><CenterFocusStrongIcon/></IconButton>
 
                     </Grid>
-                    <Grid item style={{marginTop:'3px'}}>
-                        <IconButton style={{backgroundColor: "#00000000", color:"#626262"}} onClick={() => setPage(1)}><AccountTreeIcon/></IconButton>
+                    <Grid item style={{marginTop: '3px'}}>
+                        <IconButton style={{backgroundColor: "#00000000", color: "#626262"}} onClick={() => {setPage(1);currPage=1;}}><AccountTreeIcon/></IconButton>
                     </Grid>
                 </Grid>
 
