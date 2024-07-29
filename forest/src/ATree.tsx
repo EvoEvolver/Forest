@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useReducer, useRef} from 'react';
+import React, {useCallback, useEffect, useReducer, useRef, useState} from 'react';
 import {Box} from '@mui/material';
 import FocusPage from './FocusPage';
 import Layouter from "./Layouter";
@@ -19,12 +19,14 @@ export default function ATree(props) {
     let hidden = props.hidden;
     let layouter = new Layouter();
 
+
     const initialTree = {
         "selectedNode": undefined,
         "nodeDict": {}
     } as TreeData;
 
     let page = props.page;
+
 
     // let [tree, setTree] = useState(initialTree);
     function reducers(tree: TreeData, action) {
@@ -81,9 +83,15 @@ export default function ATree(props) {
             } else if (key === 'B') {
                 result = selectedNodeHistory.current.pop();
                 if (result) backRef.current = true;
+            } else if (key === 'T') {
+                props.setPage(page === 0 ? 1 : 0);
+                props.setCurrPage(page === 0 ? 1 : 0)
+                // props.handleSwitchPage();
+                // setRefresh((prev) => prev + 1);
+                page = page === 0 ? 1 : 0
             }
 
-            // if it's a number from 1 to 9.
+            // if it's a number from 1 to 9.TT
             else if (oneToNineRegex.test(key)) {
                 result = layouter.moveToChildByIndex(treeRef.current, parseInt(key) - 1);
             }
@@ -95,7 +103,7 @@ export default function ATree(props) {
                 });
             }
         },
-        []
+        [props.page]
     );
 
 

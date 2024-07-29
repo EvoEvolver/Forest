@@ -52,31 +52,31 @@ export default function App() {
 
     let [selectedTreeId, setSelectedTreeId] = useState(undefined);
     let [toLoadTree, setToLoadTree] = useState([]);
-    let [page, setPage] = useState(0);
+    const [page, setPage] = useState(0);
     let firstTreeReceived = useRef(false);
 
-    let [currPage, setCurrPage] = useState(0);
+    const [currPage, setCurrPage] = useState(0);
 
-    const keyPressApp = useCallback(
-        (e) => {
-            if (!e.shiftKey)
-                return;
-            const key = e.key;
-            if (key === 'T') {
-                handleToggle();
-                // console.log("ctrl T detected");
-                // setPage(page === 0 ? 1 : 0);
-                // setCurrPage(currPage === 0 ? 1 : 0);
-            }
-        },
-        []
-    );
-    useEffect(() => {
-        document.addEventListener("keydown", keyPressApp);
-        return () => {
-            document.removeEventListener("keydown", keyPressApp);
-        };
-    }, []);
+    // const keyPressApp = useCallback(
+    //     (e) => {
+    //         if (!e.shiftKey)
+    //             return;
+    //         const key = e.key;
+    //         if (key === 'T') {
+    //             handleToggle();
+    //             // console.log("ctrl T detected");
+    //             // setPage(page === 0 ? 1 : 0);
+    //             // setCurrPage(currPage === 0 ? 1 : 0);
+    //         }
+    //     },
+    //     []
+    // );
+    // useEffect(() => {
+    //     document.addEventListener("keydown", keyPressApp);
+    //     return () => {
+    //         document.removeEventListener("keydown", keyPressApp);
+    //     };
+    // }, []);
 
 
     useEffect(() => {
@@ -140,8 +140,12 @@ export default function App() {
     }, [selectedTreeId]);
 
     const handleToggle = () => {
-        setPage(page === 0 ? 1 : 0);
+        console.log("call handle", currPage);
         setCurrPage(currPage === 0 ? 1 : 0);
+        setPage(page === 0 ? 1 : 0);
+
+        console.log("new curr:", currPage)
+
     };
 
     return (
@@ -181,6 +185,8 @@ export default function App() {
                         Object.keys(trees).map((treeId) => {
                             return <ATree hidden={treeId !== selectedTreeId} key={treeId} tree={trees[treeId]}
                                           page={page}
+                                          setPage={setPage}
+                                          setCurrPage={setCurrPage}
                                           send_message_to_main={send_message_to_main}/>
                         })
                     }
