@@ -57,26 +57,26 @@ export default function App() {
 
     let [currPage, setCurrPage] = useState(0);
 
-    const keyPress = useCallback(
+    const keyPressApp = useCallback(
         (e) => {
             if (!e.shiftKey)
                 return;
             const key = e.key;
             if (key === 'T') {
-                setPage(page === 0 ? 1 : 0);
-                setCurrPage(currPage === 0 ? 1 : 0);
+                handleToggle();
+                // console.log("ctrl T detected");
+                // setPage(page === 0 ? 1 : 0);
+                // setCurrPage(currPage === 0 ? 1 : 0);
             }
         },
         []
     );
     useEffect(() => {
-        document.removeEventListener("keydown", keyPress);
-        document.addEventListener("keydown", keyPress);
-
+        document.addEventListener("keydown", keyPressApp);
         return () => {
-            document.removeEventListener("keydown", keyPress);
+            document.removeEventListener("keydown", keyPressApp);
         };
-    }, [keyPress, currPage]);
+    }, []);
 
 
     useEffect(() => {

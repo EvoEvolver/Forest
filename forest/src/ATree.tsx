@@ -28,10 +28,10 @@ export default function ATree(props) {
 
     // let [tree, setTree] = useState(initialTree);
     function reducers(tree: TreeData, action) {
-        if(action.id !== undefined) {
+        if (action.id !== undefined) {
             // user provides an id. so we need to get the node by id.
             let node = Object.values(tree.nodeDict).find((node) => node.id === action.id);
-            if(node) {
+            if (node) {
                 action.node = node;
             }
         }
@@ -117,16 +117,25 @@ export default function ATree(props) {
         }
     }, [layouter, tree]); // Adding layouter to the dependency array
 
+    // useEffect(() => {
+    //     document.removeEventListener("keydown", keyPress);
+    //     if (!hidden) {
+    //         document.addEventListener("keydown", keyPress);
+    //     }
+    //
+    //     return () => {
+    //         document.removeEventListener("keydown", keyPress);
+    //     };
+    // }, [hidden, keyPress]);
+
     useEffect(() => {
-        document.removeEventListener("keydown", keyPress);
-        if (!hidden) {
-            document.addEventListener("keydown", keyPress);
-        }
+        document.addEventListener("keydown", keyPress);
+
 
         return () => {
             document.removeEventListener("keydown", keyPress);
         };
-    }, [hidden, keyPress]);
+    }, []);
 
     useEffect(() => {
         treeRef.current = tree;
@@ -137,7 +146,8 @@ export default function ATree(props) {
             <Box hidden={hidden} style={{width: '100vw', height: '100vh'}}>
                 {/*make two buttons to change between focus page and treemap. the buttons should be fixed to top left.*/}
                 {layouter.hasTree(treeRef.current) && page === 0 &&
-                    <FocusPage layouter={layouter} tree={tree} modifyTree={modifyTree} send_message_to_main={props.send_message_to_main}/>}
+                    <FocusPage layouter={layouter} tree={tree} modifyTree={modifyTree}
+                               send_message_to_main={props.send_message_to_main}/>}
                 {layouter.hasTree(treeRef.current) && page === 1 &&
                     <Treemap layouter={layouter} tree={tree} modifyTree={modifyTree}/>}
             </Box>
