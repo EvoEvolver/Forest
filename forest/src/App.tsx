@@ -76,11 +76,7 @@ export default function App() {
         return () => {
             document.removeEventListener("keydown", keyPress);
         };
-    }, [keyPress]);
-
-    useEffect(() => {
-
-    }, [currPage]);
+    }, [keyPress, currPage]);
 
 
     useEffect(() => {
