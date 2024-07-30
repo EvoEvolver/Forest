@@ -6,10 +6,19 @@ import {TreeData} from './entities';
 import Treemap from './TreeMap';
 import SearchIcon from '@mui/icons-material/Search';
 import sanitizeHtml from 'sanitize-html';
+import {border} from "@mui/system";
 // convert the tree from backend to the compatible format for Forest.
 
 
 const CentralSearchBox = ({props, modifyTree}) => {
+    const textFieldRef = useRef(null);
+
+    useEffect(() => {
+        if (textFieldRef.current) {
+            textFieldRef.current.focus(); // Focus the TextField when the component mounts
+            setSearchTerm('')
+        }
+    }, []);
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const handleKeyPress = (event) => {
@@ -22,10 +31,11 @@ const CentralSearchBox = ({props, modifyTree}) => {
                         allowedTags: [],
                         allowedAttributes: {}
                     });
-                    let index = plainText.indexOf(searchTerm);
+                    let index = plainText.toLowerCase().indexOf(searchTerm.toLowerCase());
                     if (index !== -1) { // when found the search term
 
                         const result = {
+                            keyword: searchTerm,
                             key: key,
                             content: '...' + plainText.substring(index - 50 < 0 ? 0 : index - 50, index + 50 >= plainText.length ? plainText.length : index + 50) + '...'
                         };
@@ -44,10 +54,20 @@ const CentralSearchBox = ({props, modifyTree}) => {
     const handleClick = (key) => {
         console.log(key);
         modifyTree({
-                    type: 'setSelectedNode',
-                    id: key
-                });
+            type: 'setSelectedNode',
+            id: key
+        });
     };
+
+    const emphasizeText = (text, keyword) => {
+        if (!keyword) return text;
+        const parts = text.split(new RegExp(`(${keyword})`, 'gi'));
+        return parts.map((part, i) =>
+            part.toLowerCase() === keyword.toLowerCase() ? <span key={i} style={{color: 'red'}}>{part}</span> : part
+        );
+    };
+
+
     return (
         <Box
             sx={{
@@ -68,6 +88,7 @@ const CentralSearchBox = ({props, modifyTree}) => {
         >
             <TextField
                 value={searchTerm}
+                inputRef={textFieldRef} // Attach the ref to the TextField
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyPress={handleKeyPress}  // 添加按键监听器
                 fullWidth
@@ -116,8 +137,10 @@ const CentralSearchBox = ({props, modifyTree}) => {
                     }}
                 >
                     {searchResults.map((result, index) => (
-                        <ListItem button key={index} onClick={() => handleClick(result.key)}>
-                            <ListItemText primary={result.key} secondary={result.content}/>
+                        <ListItem style={{border: '0.1px solid gray'}} button key={index}
+                                  onClick={() => handleClick(result.key)}>
+                            <ListItemText primary={result.key}
+                                          secondary={<span>{emphasizeText(result.content, result.keyword)}</span>}/>
                         </ListItem>
                     ))}
                 </List>
@@ -184,6 +207,11 @@ export default function ATree(props) {
 
     const keyPress = useCallback(
         (e) => {
+            if (e.shiftKey && e.ctrlKey && e.key === 'F') {
+                switchSearchPanel(!showSearchPanel);
+                showSearchPanel = !showSearchPanel;
+                return;
+            }
             if (!e.shiftKey)
                 return;
             let result = undefined;
@@ -198,26 +226,20 @@ export default function ATree(props) {
             } else if (key === 'ArrowRight') {
                 result = layouter.move(treeRef.current, "child");
             } else if (key === 'R') {
-                result = layouter.moveToRoot(treeRef.current);
+                // result = layouter.moveToRoot(treeRef.current);
             } else if (key === 'N') {
-                result = layouter.moveToNextAvailable(treeRef.current);
+                //result = layouter.moveToNextAvailable(treeRef.current);
             } else if (key === 'B') {
-                result = selectedNodeHistory.current.pop();
-                if (result) backRef.current = true;
+                // result = selectedNodeHistory.current.pop();
+                // if (result) backRef.current = true;
             } else if (key === 'T') {
                 props.setPage(page === 0 ? 1 : 0);
                 props.setCurrPage(page === 0 ? 1 : 0)
-                // props.handleSwitchPage();
-                // setRefresh((prev) => prev + 1);
                 page = page === 0 ? 1 : 0
-            } else if (key === 'F') {
-                switchSearchPanel(!showSearchPanel)
-                showSearchPanel = !showSearchPanel
             }
-
             // if it's a number from 1 to 9.TT
             else if (oneToNineRegex.test(key)) {
-                result = layouter.moveToChildByIndex(treeRef.current, parseInt(key) - 1);
+                //result = layouter.moveToChildByIndex(treeRef.current, parseInt(key) - 1);
             }
 
             if (result) {
