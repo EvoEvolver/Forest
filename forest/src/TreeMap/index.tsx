@@ -58,7 +58,7 @@ export default function Treemap(props) {
                     visible: false
                 }
             }}
-            style={{width: '100%', height: '100%'}}
+            style={{width: '100vw', height: '95vh'}}
             onAnimated={(e) => {
                 modifyTree(
                     {

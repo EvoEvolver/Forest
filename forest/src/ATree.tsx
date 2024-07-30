@@ -1,110 +1,186 @@
-import React, {useCallback, useEffect, useReducer, useRef, useState} from 'react';
-import {Box, TextField, InputAdornment, List, ListItem, ListItemText} from '@mui/material';
+import React, {useCallback, useEffect, useReducer, useRef, useState, useImperativeHandle, forwardRef} from 'react';
+import {
+    Box,
+    TextField,
+    InputAdornment,
+    List,
+    ListItem,
+    ListItemText,
+    IconButton,
+    ToggleButton,
+    Typography
+} from '@mui/material';
 import FocusPage from './FocusPage';
 import Layouter from "./Layouter";
 import {TreeData} from './entities';
 import Treemap from './TreeMap';
 import SearchIcon from '@mui/icons-material/Search';
 import sanitizeHtml from 'sanitize-html';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import CloseIcon from '@mui/icons-material/Close';
 import {border} from "@mui/system";
 // convert the tree from backend to the compatible format for Forest.
 
 
-const CentralSearchBox = ({props, modifyTree, switchSearchPanel, showSearchPanel}) => {
+const CentralSearchBox = forwardRef(({onSearch, props, modifyTree}, ref) => {
+
     const textFieldRef = useRef(null);
 
 
     useEffect(() => {
         if (textFieldRef.current) {
-            textFieldRef.current.focus(); // Focus the TextField when the component mounts
-            setSearchTerm('')
+            textFieldRef.current.focus(); // Focus the TextField when th!e component mounts
+            // 定时1秒（1000毫秒）后执行
+            setTimeout(() => {
+                setSearchTerm('');
+            }, 50);
+
+
         }
-    }, []);
+    }, [onSearch]);
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState([]);
+
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [wholeWord, setWholeWord] = useState(false);
+
+    const search = (w) => {
+        if (searchTerm.length === 0) return;
+        setCurrentIndex(0)
+        let results = [];
+        Object.entries(props.tree['nodeDict']).forEach(([key, value]) => {
+            if ('tabs' in value && 'content' in value['tabs']) {
+                const plainText = sanitizeHtml(String(value['tabs']['content']), {
+                    allowedTags: [],
+                    allowedAttributes: {}
+                });
+                let index = plainText.toLowerCase().indexOf(searchTerm.toLowerCase());
+                if (w) {
+                    if ((index - 1 > 0 && plainText[index - 1] !== ' ') || (index + searchTerm.length < plainText.length && plainText[index + searchTerm.length] !== ' ')) {
+                        index = -1
+                    }
+                }
+                if (index !== -1) { // when found the search term
+                    const result = {
+                        keyword: searchTerm,
+                        key: key,
+                        content: '...' + plainText.substring(index - 30 < 0 ? 0 : index - 30, index + 30 >= plainText.length ? plainText.length : index + 30) + '...'
+                    };
+
+                    results.push(result);
+                }
+
+            }
+        });
+        if (results.length === 0) {
+            setSearchTerm('');
+        }
+        setSearchResults(results);
+    }
     const handleKeyPress = (event) => {
         if (event.key === 'Enter') {
-            let results = [];
-            console.log(props.tree)
-            Object.entries(props.tree['nodeDict']).forEach(([key, value]) => {
-                if ('tabs' in value && 'content' in value['tabs']) {
-                    const plainText = sanitizeHtml(String(value['tabs']['content']), {
-                        allowedTags: [],
-                        allowedAttributes: {}
-                    });
-                    let index = plainText.toLowerCase().indexOf(searchTerm.toLowerCase());
-                    if (index !== -1) { // when found the search term
-
-                        const result = {
-                            keyword: searchTerm,
-                            key: key,
-                            content: '...' + plainText.substring(index - 50 < 0 ? 0 : index - 50, index + 50 >= plainText.length ? plainText.length : index + 50) + '...'
-                        };
-
-                        results.push(result);
-                    }
-
-                }
-            });
-            if (results.length === 0) results.push({
-                keyword: searchTerm,
-                key: props.tree['selectedNode'],
-                content: "No result!"
-            })
-            setSearchResults(results);
-            console.log(results)
-            setSearchTerm('');
+            search(wholeWord);
         }
     };
 
-    const handleClick = (key) => {
+    const handleClick = (key, index) => {
         console.log(key);
+        setCurrentIndex(index);
         modifyTree({
             type: 'setSelectedNode',
             id: key
         });
     };
+    const handleArrowUp = () => {
+        setCurrentIndex((prevIndex) => (prevIndex > 0 ? prevIndex - 1 : 0));
+        modifyTree({
+            type: 'setSelectedNode',
+            id: searchResults[currentIndex > 0 ? currentIndex - 1 : 0].key
+        });
+    };
+
+    const handleArrowDown = () => {
+        setCurrentIndex((prevIndex) => (prevIndex < searchResults.length - 1 ? prevIndex + 1 : searchResults.length - 1));
+        modifyTree({
+            type: 'setSelectedNode',
+            id: searchResults[currentIndex < searchResults.length - 1 ? currentIndex + 1 : currentIndex].key
+        });
+    };
+    const localRef = useRef();
+    useImperativeHandle(ref, () => ({
+        focus: () => {
+            localRef.current.focus();
+        },
+        clear: () => {
+            handleClose();
+        },
+        up: () => {
+            handleArrowUp();
+        },
+        down: () => {
+            handleArrowDown();
+        }
+    }));
 
     const emphasizeText = (text, keyword) => {
         if (!keyword) return text;
-        const parts = text.split(new RegExp(`(${keyword})`, 'gi'));
+        const parts = wholeWord ? text.split(new RegExp(`(\\b${keyword}\\b)`, 'gi')) : text.split(new RegExp(`(${keyword})`, 'gi'));
         return parts.map((part, i) =>
             part.toLowerCase() === keyword.toLowerCase() ? <span key={i} style={{color: 'red'}}>{part}</span> : part
         );
     };
 
+    const handleClose = () => {
+        setSearchTerm('');
+        setSearchResults([]);
+        setCurrentIndex(0);
+    };
+    const toggleWholeWord = () => {
+        setWholeWord(!wholeWord);
+        search(!wholeWord)
+    };
+    useEffect(() => {
+        if (searchResults.length > 0 && listRef.current && currentIndex >= 0) {
+            const list = listRef.current;
+            const activeItem = list.children[currentIndex];
+            const offsetHeight = list.clientHeight / 2 - activeItem.clientHeight / 2;
+            list.scrollTop = activeItem.offsetTop - offsetHeight;
+        }
+    }, [currentIndex, searchResults]);
 
+    const listRef = useRef(null);
     return (
         <Box
             sx={{
                 position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
+                top: '0vh',
+                right: '-10vw',
+                transform: 'translate(-50%, 0%)',
                 zIndex: 9999,
-                width: '80%',
-                maxWidth: 600,
+                width: '20vw',
+                height: '4.5vh',
                 display: 'flex',
                 alignItems: 'center',
-                backgroundColor: '#2b2b2b',
-                borderRadius: 1,
-                boxShadow: 3,
-                p: 2,
+                backgroundColor: '#2b2b2b10',
+                borderRadius: 0,
+                boxShadow: 0,
+                p: 0,
             }}
-
         >
             <TextField
                 value={searchTerm}
                 inputRef={textFieldRef} // Attach the ref to the TextField
                 onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyPress={handleKeyPress}  // 添加按键监听器
+                onKeyPress={handleKeyPress} // 添加按键监听器
                 fullWidth
+                style={{width: '12.5vw'}}
                 variant="outlined"
                 placeholder="Search..."
                 InputProps={{
                     startAdornment: (
                         <InputAdornment position="start">
-                            <SearchIcon style={{color: '#aaa'}}/>
+                            <SearchIcon/>
                         </InputAdornment>
                     ),
                     style: {color: '#fff'}
@@ -112,41 +188,73 @@ const CentralSearchBox = ({props, modifyTree, switchSearchPanel, showSearchPanel
                 sx={{
                     '& .MuiOutlinedInput-root': {
                         '& fieldset': {
-                            borderColor: '#555',
+                            borderColor: '#777',
                         },
                         '&:hover fieldset': {
                             borderColor: '#777',
                         },
                         '&.Mui-focused fieldset': {
-                            borderColor: '#999',
+                            borderColor: '#777',
                         },
-                        backgroundColor: '#2b2b2b',
+                        backgroundColor: '#f4f4f400',
                     },
                     input: {
-                        color: '#fff',
+                        color: '#000000',
                     },
                 }}
             />
+            <Box sx={{display: 'flex', alignItems: 'center', ml: 1}}>
+                <Box sx={{color: '#000000', mr: 1}} style={{width: '2vw'}}>
+                    {`${searchResults.length > 0 ? (currentIndex + 1) : 0}/${searchResults.length}`}
+                </Box>
+                <ToggleButton
+                    value="wholeWord"
+                    selected={wholeWord}
+
+                    onChange={toggleWholeWord}
+                    sx={{
+                        color: wholeWord ? '#fff' : '#999',
+                        backgroundColor: wholeWord ? '#1976d2' : 'transparent',
+                        width: '1vw',
+                        height: '1vw',
+                        p: 0.5
+                    }}
+                >
+                    <Typography>W</Typography>
+                </ToggleButton>
+                <IconButton style={{width: '1.5vw'}} size="small" onClick={handleArrowUp}>
+                    <ArrowUpwardIcon/>
+                </IconButton>
+                <IconButton style={{width: '1.5vw'}} size="small" onClick={handleArrowDown}>
+                    <ArrowDownwardIcon/>
+                </IconButton>
+                <IconButton style={{width: '1.5vw'}} size="small" onClick={handleClose}>
+                    <CloseIcon/>
+                </IconButton>
+            </Box>
             {searchResults.length > 0 && (
                 <List
                     sx={{
-                        width: '100%',
-                        maxWidth: 600,
-                        bgcolor: 'background.paper',
+                        width: '20vw',
+                        bgcolor: '#ffffff80',
                         position: 'absolute',
-                        top: '80%',
-                        left: '50%',
-                        maxHeight: 300,
+                        top: '4.5vh',
+                        maxHeight: "20vh",
+                        right: '-10vw',
                         overflowY: 'auto',
-                        transform: 'translateX(-50%)',
+                        transform: 'translate(-50%, 0%)',
                         borderRadius: 1,
-                        boxShadow: 3,
+                        boxShadow: 0,
                     }}
+                    ref={listRef}
                 >
                     {searchResults.map((result, index) => (
-                        <ListItem style={{border: '0.1px solid gray'}} button key={index}
-                                  onClick={() => handleClick(result.key)}>
-                            <ListItemText primary={result.key}
+                        <ListItem button key={index}
+                                  onClick={() => handleClick(result.key, index)}
+                                  sx={{
+                                      backgroundColor: currentIndex === index ? '#e0e0e0' : 'transparent',
+                                  }}>
+                            <ListItemText primary={""}
                                           secondary={<span>{emphasizeText(result.content, result.keyword)}</span>}/>
                         </ListItem>
                     ))}
@@ -154,7 +262,8 @@ const CentralSearchBox = ({props, modifyTree, switchSearchPanel, showSearchPanel
             )}
         </Box>
     );
-};
+
+});
 
 export default function ATree(props) {
 
@@ -210,11 +319,23 @@ export default function ATree(props) {
             });
         }
     }, [treeData]);
+    const innerRef = useRef();
 
     const keyPress = useCallback(
         (e) => {
-            if (!e.shiftKey && !e.ctrlKey)
+            if (!e.shiftKey) {
+                if (e.key === 'Escape') {
+                    console.log("esc");
+                    // innerRef.current.focus();
+                    innerRef.current.clear();
+                } else if (e.key === 'ArrowUp') {
+                    innerRef.current.up();
+                } else if (e.key === 'ArrowDown') {
+                    innerRef.current.down();
+                }
                 return;
+            }
+
             let result = undefined;
             const oneToNineRegex = /^[1-9]$/;
             const key = e.key;
@@ -290,8 +411,8 @@ export default function ATree(props) {
 
     return (
         <>
-            <Box hidden={hidden} style={{width: '100vw', height: '100vh'}}>
-                {searchPanel && <CentralSearchBox props={props} modifyTree={modifyTree}/>}
+            <Box hidden={hidden} style={{width: "100vw", height: "95vh", flexGrow: 1}}>
+                {<CentralSearchBox onSearch={searchPanel} props={props} modifyTree={modifyTree} ref={innerRef}/>}
                 {/*make two buttons to change between focus page and treemap. the buttons should be fixed to top left.*/}
                 {layouter.hasTree(treeRef.current) && page === 0 &&
                     <FocusPage layouter={layouter} tree={tree} modifyTree={modifyTree}

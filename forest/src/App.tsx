@@ -150,15 +150,14 @@ export default function App() {
 
     return (
         <>
-            <Grid container item style={{width: "100%", display: "flex", flexDirection: "row", flex: "1 0 100%"}}>
+            <Grid container item
+                  style={{width: "100%", height: "100%", display: "flex", flexDirection: "column", flex: "1 1 100%"}}>
                 <Grid container item style={{
-                    width: "20%",
-                    display: "flex",
-                    flexDirection: "column",
-                    flex: "0 0 0%",
+                    height: "4.5vh",
+                    alignItems: "center",
                     backgroundColor: "#f4f4f4"
                 }}>
-                    {Object.keys(trees).length > 1 && <Grid container direction="column" style={{marginBottom: '10px'}}>
+                    {Object.keys(trees).length > 1 && <Grid container direction="row" style={{marginBottom: '10px'}}>
                         {Object.keys(trees).map((treeId, i) => (
                             <Grid item key={treeId} style={{marginBottom: '3px'}}>
                                 <button style={{backgroundColor: "#00000000", color: "#626262"}}
@@ -167,11 +166,15 @@ export default function App() {
                         ))}
                     </Grid>}
 
-                    <Grid item style={{}}>
+                    <Grid item style={{marginLeft: "5px"}}>
                         <Tooltip title={currPage === 1 ? "Focus View (Shift+T)" : "Tree Map (Shift+T)"}>
                             <ToggleButton
                                 value={currPage}
                                 selected
+                                style={{
+                                    height: "4.5vh",
+                                    width: "4.5vh",
+                                }}
                                 onChange={handleToggle}
                             >
                                 {currPage === 1 ? <CenterFocusStrongIcon/> : <AccountTreeIcon/>}
@@ -180,7 +183,7 @@ export default function App() {
                     </Grid>
                 </Grid>
 
-                <Grid item style={{width: "90%", display: "flex", flex: "1 0 90%"}}>
+                <Grid item style={{height: "95.5vh"}}>
                     {
                         Object.keys(trees).map((treeId) => {
                             return <ATree hidden={treeId !== selectedTreeId} key={treeId} tree={trees[treeId]}
