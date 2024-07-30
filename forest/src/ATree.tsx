@@ -10,8 +10,9 @@ import {border} from "@mui/system";
 // convert the tree from backend to the compatible format for Forest.
 
 
-const CentralSearchBox = ({props, modifyTree}) => {
+const CentralSearchBox = ({props, modifyTree, switchSearchPanel, showSearchPanel}) => {
     const textFieldRef = useRef(null);
+
 
     useEffect(() => {
         if (textFieldRef.current) {
@@ -24,7 +25,7 @@ const CentralSearchBox = ({props, modifyTree}) => {
     const handleKeyPress = (event) => {
         if (event.key === 'Enter') {
             let results = [];
-            console.log(searchTerm)
+            console.log(props.tree)
             Object.entries(props.tree['nodeDict']).forEach(([key, value]) => {
                 if ('tabs' in value && 'content' in value['tabs']) {
                     const plainText = sanitizeHtml(String(value['tabs']['content']), {
@@ -45,6 +46,11 @@ const CentralSearchBox = ({props, modifyTree}) => {
 
                 }
             });
+            if (results.length === 0) results.push({
+                keyword: searchTerm,
+                key: props.tree['selectedNode'],
+                content: "No result!"
+            })
             setSearchResults(results);
             console.log(results)
             setSearchTerm('');
@@ -85,6 +91,7 @@ const CentralSearchBox = ({props, modifyTree}) => {
                 boxShadow: 3,
                 p: 2,
             }}
+
         >
             <TextField
                 value={searchTerm}
@@ -160,7 +167,6 @@ export default function ATree(props) {
     let hidden = props.hidden;
     let layouter = new Layouter();
 
-
     const initialTree = {
         "selectedNode": undefined,
         "nodeDict": {}
@@ -207,12 +213,7 @@ export default function ATree(props) {
 
     const keyPress = useCallback(
         (e) => {
-            if (e.shiftKey && e.ctrlKey && e.key === 'F') {
-                switchSearchPanel(!showSearchPanel);
-                showSearchPanel = !showSearchPanel;
-                return;
-            }
-            if (!e.shiftKey)
+            if (!e.shiftKey || !e.ctrlKey)
                 return;
             let result = undefined;
             const oneToNineRegex = /^[1-9]$/;
@@ -226,20 +227,23 @@ export default function ATree(props) {
             } else if (key === 'ArrowRight') {
                 result = layouter.move(treeRef.current, "child");
             } else if (key === 'R') {
-                // result = layouter.moveToRoot(treeRef.current);
+                result = layouter.moveToRoot(treeRef.current);
             } else if (key === 'N') {
-                //result = layouter.moveToNextAvailable(treeRef.current);
+                result = layouter.moveToNextAvailable(treeRef.current);
             } else if (key === 'B') {
-                // result = selectedNodeHistory.current.pop();
-                // if (result) backRef.current = true;
+                result = selectedNodeHistory.current.pop();
+                if (result) backRef.current = true;
             } else if (key === 'T') {
                 props.setPage(page === 0 ? 1 : 0);
                 props.setCurrPage(page === 0 ? 1 : 0)
                 page = page === 0 ? 1 : 0
+            } else if (key === 'F') {
+                switchSearchPanel(!showSearchPanel);
+                showSearchPanel = !showSearchPanel;
             }
             // if it's a number from 1 to 9.TT
             else if (oneToNineRegex.test(key)) {
-                //result = layouter.moveToChildByIndex(treeRef.current, parseInt(key) - 1);
+                result = layouter.moveToChildByIndex(treeRef.current, parseInt(key) - 1);
             }
 
             if (result) {
@@ -251,7 +255,6 @@ export default function ATree(props) {
         },
         [props.page]
     );
-
 
     useEffect(() => {
         if (layouter === undefined || !layouter.hasTree(tree)) return;
@@ -271,16 +274,6 @@ export default function ATree(props) {
         }
     }, [layouter, tree]); // Adding layouter to the dependency array
 
-    // useEffect(() => {
-    //     document.removeEventListener("keydown", keyPress);
-    //     if (!hidden) {
-    //         document.addEventListener("keydown", keyPress);
-    //     }
-    //
-    //     return () => {
-    //         document.removeEventListener("keydown", keyPress);
-    //     };
-    // }, [hidden, keyPress]);
 
     useEffect(() => {
         document.addEventListener("keydown", keyPress);
