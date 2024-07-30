@@ -213,7 +213,7 @@ export default function ATree(props) {
 
     const keyPress = useCallback(
         (e) => {
-            if (!e.shiftKey || !e.ctrlKey)
+            if (!e.shiftKey && !e.ctrlKey)
                 return;
             let result = undefined;
             const oneToNineRegex = /^[1-9]$/;
