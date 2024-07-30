@@ -1,12 +1,130 @@
 import React, {useCallback, useEffect, useReducer, useRef, useState} from 'react';
-import {Box} from '@mui/material';
+import {Box, TextField, InputAdornment, List, ListItem, ListItemText} from '@mui/material';
 import FocusPage from './FocusPage';
 import Layouter from "./Layouter";
 import {TreeData} from './entities';
 import Treemap from './TreeMap';
-
+import SearchIcon from '@mui/icons-material/Search';
+import sanitizeHtml from 'sanitize-html';
 // convert the tree from backend to the compatible format for Forest.
 
+
+const CentralSearchBox = ({props, modifyTree}) => {
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const handleKeyPress = (event) => {
+        if (event.key === 'Enter') {
+            let results = [];
+            console.log(searchTerm)
+            Object.entries(props.tree['nodeDict']).forEach(([key, value]) => {
+                if ('tabs' in value && 'content' in value['tabs']) {
+                    const plainText = sanitizeHtml(String(value['tabs']['content']), {
+                        allowedTags: [],
+                        allowedAttributes: {}
+                    });
+                    let index = plainText.indexOf(searchTerm);
+                    if (index !== -1) { // when found the search term
+
+                        const result = {
+                            key: key,
+                            content: '...' + plainText.substring(index - 50 < 0 ? 0 : index - 50, index + 50 >= plainText.length ? plainText.length : index + 50) + '...'
+                        };
+
+                        results.push(result);
+                    }
+
+                }
+            });
+            setSearchResults(results);
+            console.log(results)
+            setSearchTerm('');
+        }
+    };
+
+    const handleClick = (key) => {
+        console.log(key);
+        modifyTree({
+                    type: 'setSelectedNode',
+                    id: key
+                });
+    };
+    return (
+        <Box
+            sx={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                zIndex: 9999,
+                width: '80%',
+                maxWidth: 600,
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: '#2b2b2b',
+                borderRadius: 1,
+                boxShadow: 3,
+                p: 2,
+            }}
+        >
+            <TextField
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyPress={handleKeyPress}  // 添加按键监听器
+                fullWidth
+                variant="outlined"
+                placeholder="Search..."
+                InputProps={{
+                    startAdornment: (
+                        <InputAdornment position="start">
+                            <SearchIcon style={{color: '#aaa'}}/>
+                        </InputAdornment>
+                    ),
+                    style: {color: '#fff'}
+                }}
+                sx={{
+                    '& .MuiOutlinedInput-root': {
+                        '& fieldset': {
+                            borderColor: '#555',
+                        },
+                        '&:hover fieldset': {
+                            borderColor: '#777',
+                        },
+                        '&.Mui-focused fieldset': {
+                            borderColor: '#999',
+                        },
+                        backgroundColor: '#2b2b2b',
+                    },
+                    input: {
+                        color: '#fff',
+                    },
+                }}
+            />
+            {searchResults.length > 0 && (
+                <List
+                    sx={{
+                        width: '100%',
+                        maxWidth: 600,
+                        bgcolor: 'background.paper',
+                        position: 'absolute',
+                        top: '80%',
+                        left: '50%',
+                        maxHeight: 300,
+                        overflowY: 'auto',
+                        transform: 'translateX(-50%)',
+                        borderRadius: 1,
+                        boxShadow: 3,
+                    }}
+                >
+                    {searchResults.map((result, index) => (
+                        <ListItem button key={index} onClick={() => handleClick(result.key)}>
+                            <ListItemText primary={result.key} secondary={result.content}/>
+                        </ListItem>
+                    ))}
+                </List>
+            )}
+        </Box>
+    );
+};
 
 export default function ATree(props) {
 
@@ -26,6 +144,7 @@ export default function ATree(props) {
     } as TreeData;
 
     let page = props.page;
+    const [searchPanel, switchSearchPanel] = useState(false);
 
 
     // let [tree, setTree] = useState(initialTree);
@@ -46,6 +165,8 @@ export default function ATree(props) {
                 return tree;
         }
     }
+
+    let showSearchPanel = false;
 
     const [tree, modifyTree] = useReducer(reducers, initialTree);
 
@@ -89,6 +210,9 @@ export default function ATree(props) {
                 // props.handleSwitchPage();
                 // setRefresh((prev) => prev + 1);
                 page = page === 0 ? 1 : 0
+            } else if (key === 'F') {
+                switchSearchPanel(!showSearchPanel)
+                showSearchPanel = !showSearchPanel
             }
 
             // if it's a number from 1 to 9.TT
@@ -152,6 +276,7 @@ export default function ATree(props) {
     return (
         <>
             <Box hidden={hidden} style={{width: '100vw', height: '100vh'}}>
+                {searchPanel && <CentralSearchBox props={props} modifyTree={modifyTree}/>}
                 {/*make two buttons to change between focus page and treemap. the buttons should be fixed to top left.*/}
                 {layouter.hasTree(treeRef.current) && page === 0 &&
                     <FocusPage layouter={layouter} tree={tree} modifyTree={modifyTree}

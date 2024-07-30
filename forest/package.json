@@ -32,6 +32,7 @@
     "react-select": "^5.8.0",
     "react-syntax-highlighter": "^15.5.0",
     "react-transition-group": "^4.4.5",
+    "sanitize-html": "^2.8.1",
     "socket.io-client": "^4.7.2",
     "typescript": "^5.3.3",
     "uuid": "^9.0.1"
@@ -39,6 +40,7 @@
   "devDependencies": {
     "@types/react": "^18.2.42",
     "@types/react-dom": "^18.2.17",
+    "@types/sanitize-html": "^2.11.0",
     "@vitejs/plugin-react": "^4.2.0",
     "eslint": "^8.53.0",
     "eslint-plugin-react": "^7.33.2",
