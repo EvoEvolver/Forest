@@ -32,7 +32,7 @@ export default function FocusPage(props) {
                               height: selectedNodeLayerHeight,
                               backgroundColor: '#ffffff',
                               width: "100%",
-                              padding: "10px",
+                              paddingTop: "10px",
                               flex: "0 0 75%"
                           }}>
                         <SelectedNodeLayer node={layouter.getSelectedNode(tree)} modifyTree={modifyTree}

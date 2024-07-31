@@ -156,25 +156,23 @@ const CentralSearchBox = forwardRef(({onSearch, props, modifyTree}, ref) => {
                 position: 'absolute',
                 top: '0vh',
                 right: '-10vw',
-                transform: 'translate(-50%, 0%)',
+                transform: 'translate(-53%, 0%)',
                 zIndex: 9999,
                 width: '20vw',
                 height: '4.5vh',
                 display: 'flex',
+                boxSizing: "border-box",
                 alignItems: 'center',
                 backgroundColor: '#2b2b2b10',
-                borderRadius: 0,
-                boxShadow: 0,
-                p: 0,
             }}
         >
             <TextField
                 value={searchTerm}
                 inputRef={textFieldRef} // Attach the ref to the TextField
                 onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyPress={handleKeyPress} // 添加按键监听器
+                onKeyPress={handleKeyPress}
                 fullWidth
-                style={{width: '12.5vw'}}
+                style={{width: '11.5vw'}}
                 variant="outlined"
                 placeholder="Search..."
                 InputProps={{
@@ -188,13 +186,13 @@ const CentralSearchBox = forwardRef(({onSearch, props, modifyTree}, ref) => {
                 sx={{
                     '& .MuiOutlinedInput-root': {
                         '& fieldset': {
-                            borderColor: '#777',
+                            borderColor: '#00000000',
                         },
                         '&:hover fieldset': {
-                            borderColor: '#777',
+                            borderColor: '#00000000',
                         },
                         '&.Mui-focused fieldset': {
-                            borderColor: '#777',
+                            borderColor: '#00000000',
                         },
                         backgroundColor: '#f4f4f400',
                     },
@@ -204,7 +202,7 @@ const CentralSearchBox = forwardRef(({onSearch, props, modifyTree}, ref) => {
                 }}
             />
             <Box sx={{display: 'flex', alignItems: 'center', ml: 1}}>
-                <Box sx={{color: '#000000', mr: 1}} style={{width: '2vw'}}>
+                <Box sx={{color: '#000000', mr: 1}} style={{width: '3vw'}}>
                     {`${searchResults.length > 0 ? (currentIndex + 1) : 0}/${searchResults.length}`}
                 </Box>
                 <ToggleButton
@@ -411,7 +409,7 @@ export default function ATree(props) {
 
     return (
         <>
-            <Box hidden={hidden} style={{width: "100vw", height: "95vh", flexGrow: 1}}>
+            <Box hidden={hidden} style={{width: "100vw", height: "95vh", flexGrow: 1, boxSizing: "border-box"}}>
                 {<CentralSearchBox onSearch={searchPanel} props={props} modifyTree={modifyTree} ref={innerRef}/>}
                 {/*make two buttons to change between focus page and treemap. the buttons should be fixed to top left.*/}
                 {layouter.hasTree(treeRef.current) && page === 0 &&

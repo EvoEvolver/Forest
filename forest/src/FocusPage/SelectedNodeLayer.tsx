@@ -36,7 +36,7 @@ const NodeContentTabs = ({tab_dict, env_funcs, env_vars, env_components, title})
                 </Typography>}
                 {tab_keys.length > 0 &&
                     <TabContext value={value} key={value}>
-                        <Box sx={{borderBottom: 1, borderColor: 'divider'}}>
+                        <Box sx={{borderBottom: 0, borderColor: 'divider'}}>
                             <TabList onChange={handleChange} aria-label="lab API tabs example">
                                 {tab_keys.map((tab, i) => {
                                     return <Tab key={i} label={tab} value={i.toString()}/>
@@ -44,7 +44,7 @@ const NodeContentTabs = ({tab_dict, env_funcs, env_vars, env_components, title})
                             </TabList>
                         </Box>
                         {tab_keys.map((tab, i) => {
-                            return <TabPanel value={i.toString()}>
+                            return <TabPanel style={{paddingRight: "10px",paddingLeft: "10px",paddingTop: "5px"}} value={i.toString()}>
                                 <Box sx={{overflowX: "auto"}}>
                                 {<JsxParser
                                     bindings={{env_funcs, env_vars}}
@@ -90,12 +90,10 @@ const SelectedNodeLayer = (props) => {
     const env_components = {...content_components, 'TabPanel': TabPanel}
 
     return (
-        <Grid style={{height: "100%"}} container spacing={2}>
-
+        <Grid style={{height: "100%"}} container spacing={1}>
             <Grid key={0} item xs={4} style={{
                 width: '30%',
                 height: "100%",
-                paddingBottom: '10px',
                 transition: animate ? 'opacity 0.5s ease-in' : 'none',
                 opacity: animate ? 0 : 1,
             }}>
@@ -104,7 +102,6 @@ const SelectedNodeLayer = (props) => {
 
             <Grid key={1} item xs={4} style={{
                 width: '40%',
-                paddingBottom: '10px',
                 height: "100%",
                 transition: animate ? 'opacity 0.5s ease-in' : 'none',
                 opacity: animate ? 0 : 1,
@@ -114,7 +111,6 @@ const SelectedNodeLayer = (props) => {
 
             <Grid key={2} item xs={4} style={{
                 width: '30%',
-                paddingBottom: '10px',
                 height: '100%',
                 transition: animate ? 'opacity 0.5s ease-in' : 'none',
                 opacity: animate ? 0 : 1,

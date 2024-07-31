@@ -151,11 +151,12 @@ export default function App() {
     return (
         <>
             <Grid container item
-                  style={{width: "100%", height: "100%", display: "flex", flexDirection: "column", flex: "1 1 100%"}}>
+                  style={{width: "100%", height: "100vh", display: "flex", flexDirection: "column", flex: "1 1 100%", boxSizing: "border-box"}}>
                 <Grid container item style={{
-                    height: "4.5vh",
+                    height: "4.5%",
                     alignItems: "center",
-                    backgroundColor: "#f4f4f4"
+                    backgroundColor: "#f4f4f4",
+                    boxSizing: "border-box"
                 }}>
                     {Object.keys(trees).length > 1 && <Grid container direction="row" style={{marginBottom: '10px'}}>
                         {Object.keys(trees).map((treeId, i) => (
@@ -183,7 +184,7 @@ export default function App() {
                     </Grid>
                 </Grid>
 
-                <Grid item style={{height: "95.5vh"}}>
+                <Grid item style={{height: "95.5%", boxSizing: "border-box"}}>
                     {
                         Object.keys(trees).map((treeId) => {
                             return <ATree hidden={treeId !== selectedTreeId} key={treeId} tree={trees[treeId]}
