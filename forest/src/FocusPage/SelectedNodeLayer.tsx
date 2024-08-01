@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, forwardRef, useRef, useImperativeHandle} from 'react';
 import {Grid} from '@mui/material';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -13,15 +13,31 @@ import * as content_components from "./ContentComponents";
 import {Node} from "../entities";
 
 
-const NodeContentTabs = ({tab_dict, env_funcs, env_vars, env_components, title}) => {
+const NodeContentTabs = forwardRef(({tab_dict, env_funcs, env_vars, env_components, title}, ref) => {
     const tab_keys = Object.keys(tab_dict).filter(key => key !== "relevant");
     const [value, setValue] = React.useState('0');
+    const [emphasize, setEmphasize] = React.useState({'enable': true, 'keyword': 'the', 'wholeWord': false})
 
     const handleChange = (event: React.SyntheticEvent, newValue: string) => {
         setValue(newValue);
     };
 
-    return <Card sx={{
+    useImperativeHandle(ref, () => ({
+        setEmphasize: (em) => {
+            setEmphasize(em);
+        }
+    }));
+
+    const emphasizeText = (text, keyword, wholeWord) => {
+        if (!keyword || (keyword.length<3 && !wholeWord)) return text;
+        let regex = wholeWord ? new RegExp(`(?<!<[^>]*)\\b${keyword}\\b(?![^<]*>)`, 'g') : new RegExp(`(?<!<[^>]*)${keyword}(?![^<]*>)`, 'g');
+        let result = text.replace(regex, '<span key={i} style={{color: \'#d2691e\'}}>$&</span>');
+        console.log(result);
+        return result;
+    };
+
+    return (
+        <Card sx={{
             minWidth: "100%",
             maxWidth: "100%",
             minHeight: "100%",
@@ -44,22 +60,24 @@ const NodeContentTabs = ({tab_dict, env_funcs, env_vars, env_components, title})
                             </TabList>
                         </Box>
                         {tab_keys.map((tab, i) => {
-                            return <TabPanel style={{paddingRight: "10px",paddingLeft: "10px",paddingTop: "5px"}} value={i.toString()}>
+                            return <TabPanel style={{paddingRight: "10px", paddingLeft: "10px", paddingTop: "5px"}}
+                                             value={i.toString()}>
                                 <Box sx={{overflowX: "auto"}}>
-                                {<JsxParser
-                                    bindings={{env_funcs, env_vars}}
-                                    components={env_components}
-                                    jsx={tab_dict[tab]}
-                                    renderError={error => <div
-                                        style={{color: "red"}}>{error.error.toString()}</div>}
-                                />}</Box>
+                                    {<JsxParser
+                                        bindings={{env_funcs, env_vars}}
+                                        components={env_components}
+                                        jsx={((tab !== 'content' && tab !== 'code') || !emphasize['enable']) ? tab_dict[tab] : emphasizeText(tab_dict[tab], emphasize['keyword'], emphasize['wholeWord'])}
+                                        renderError={error => <div
+                                            style={{color: "red"}}>{error.error.toString()}</div>}
+                                    />}</Box>
                             </TabPanel>
                         })}
                     </TabContext>
                 }
             </CardContent>
         </Card>
-}
+    );
+})
 
 const SelectedNodeLayer = (props) => {
     let node: Node = props.node;
@@ -89,6 +107,7 @@ const SelectedNodeLayer = (props) => {
 
     const env_components = {...content_components, 'TabPanel': TabPanel}
 
+
     return (
         <Grid style={{height: "100%"}} container spacing={1}>
             <Grid key={0} item xs={4} style={{
@@ -97,7 +116,8 @@ const SelectedNodeLayer = (props) => {
                 transition: animate ? 'opacity 0.5s ease-in' : 'none',
                 opacity: animate ? 0 : 1,
             }}>
-                <NodeContentTabs tab_dict={node.tools[0]} env_funcs={env_funcs} env_vars={env_vars} env_components={env_components} title=""/>
+                <NodeContentTabs tab_dict={node.tools[0]} env_funcs={env_funcs} env_vars={env_vars}
+                                 env_components={env_components} title=""/>
             </Grid>
 
             <Grid key={1} item xs={4} style={{
@@ -106,7 +126,8 @@ const SelectedNodeLayer = (props) => {
                 transition: animate ? 'opacity 0.5s ease-in' : 'none',
                 opacity: animate ? 0 : 1,
             }}>
-                <NodeContentTabs tab_dict={node.tabs} env_funcs={env_funcs} env_vars={env_vars} env_components={env_components} title={node.title}/>
+                <NodeContentTabs tab_dict={node.tabs} env_funcs={env_funcs} env_vars={env_vars}
+                                 env_components={env_components} title={node.title} ref={props.contentRef}/>
             </Grid>
 
             <Grid key={2} item xs={4} style={{
@@ -115,7 +136,8 @@ const SelectedNodeLayer = (props) => {
                 transition: animate ? 'opacity 0.5s ease-in' : 'none',
                 opacity: animate ? 0 : 1,
             }}>
-                <NodeContentTabs tab_dict={node.tools[1]} env_funcs={env_funcs} env_vars={env_vars} env_components={env_components} title=""/>
+                <NodeContentTabs tab_dict={node.tools[1]} env_funcs={env_funcs} env_vars={env_vars}
+                                 env_components={env_components} title=""/>
             </Grid>
         </Grid>
 

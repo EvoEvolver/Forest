@@ -36,7 +36,7 @@ export default function FocusPage(props) {
                               flex: "0 0 75%"
                           }}>
                         <SelectedNodeLayer node={layouter.getSelectedNode(tree)} modifyTree={modifyTree}
-                                           send_message_to_main={props.send_message_to_main}/>
+                                           send_message_to_main={props.send_message_to_main} contentRef={props.contentRef}/>
                     </Grid>
 
                     <NavigatorLayer props={props}

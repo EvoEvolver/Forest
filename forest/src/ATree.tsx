@@ -23,7 +23,7 @@ import {border} from "@mui/system";
 // convert the tree from backend to the compatible format for Forest.
 
 
-const CentralSearchBox = forwardRef(({onSearch, props, modifyTree}, ref) => {
+const CentralSearchBox = forwardRef(({onSearch, props, modifyTree, contentRef}, ref) => {
 
     const textFieldRef = useRef(null);
 
@@ -43,7 +43,7 @@ const CentralSearchBox = forwardRef(({onSearch, props, modifyTree}, ref) => {
     const [searchResults, setSearchResults] = useState([]);
 
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [wholeWord, setWholeWord] = useState(false);
+    const [wholeWord, setWholeWord] = useState(true);
 
     const search = (w) => {
         if (searchTerm.length === 0) return;
@@ -73,8 +73,12 @@ const CentralSearchBox = forwardRef(({onSearch, props, modifyTree}, ref) => {
 
             }
         });
+
         if (results.length === 0) {
             setSearchTerm('');
+            contentRef.current.setEmphasize({'enable': false, 'keyword': searchTerm, 'wholeWord': w})
+        } else {
+            contentRef.current.setEmphasize({'enable': true, 'keyword': searchTerm, 'wholeWord': w})
         }
         setSearchResults(results);
     }
@@ -135,6 +139,7 @@ const CentralSearchBox = forwardRef(({onSearch, props, modifyTree}, ref) => {
         setSearchTerm('');
         setSearchResults([]);
         setCurrentIndex(0);
+        contentRef.current.setEmphasize({'enable': false, 'keyword': searchTerm, 'wholeWord': wholeWord})
     };
     const toggleWholeWord = () => {
         setWholeWord(!wholeWord);
@@ -319,6 +324,8 @@ export default function ATree(props) {
     }, [treeData]);
     const innerRef = useRef();
 
+    const contentRef = useRef();
+
     const keyPress = useCallback(
         (e) => {
             if (!e.shiftKey) {
@@ -410,11 +417,12 @@ export default function ATree(props) {
     return (
         <>
             <Box hidden={hidden} style={{width: "100vw", height: "95vh", flexGrow: 1, boxSizing: "border-box"}}>
-                {<CentralSearchBox onSearch={searchPanel} props={props} modifyTree={modifyTree} ref={innerRef}/>}
+                {<CentralSearchBox onSearch={searchPanel} props={props} modifyTree={modifyTree} contentRef={contentRef}
+                                   ref={innerRef}/>}
                 {/*make two buttons to change between focus page and treemap. the buttons should be fixed to top left.*/}
                 {layouter.hasTree(treeRef.current) && page === 0 &&
                     <FocusPage layouter={layouter} tree={tree} modifyTree={modifyTree}
-                               send_message_to_main={props.send_message_to_main}/>}
+                               send_message_to_main={props.send_message_to_main} contentRef={contentRef}/>}
                 {layouter.hasTree(treeRef.current) && page === 1 &&
                     <Treemap layouter={layouter} tree={tree} modifyTree={modifyTree}/>}
             </Box>
