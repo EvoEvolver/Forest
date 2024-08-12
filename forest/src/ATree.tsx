@@ -31,7 +31,6 @@ const CentralSearchBox = forwardRef(({onSearch, props, modifyTree, contentRef}, 
     useEffect(() => {
         if (textFieldRef.current) {
             textFieldRef.current.focus(); // Focus the TextField when th!e component mounts
-            // 定时1秒（1000毫秒）后执行
             setTimeout(() => {
                 setSearchTerm('');
             }, 50);
@@ -49,6 +48,15 @@ const CentralSearchBox = forwardRef(({onSearch, props, modifyTree, contentRef}, 
         if (searchTerm.length === 0) return;
         setCurrentIndex(0)
         let results = [];
+
+        function isLetter(char) {
+            if (char.length !== 1) {
+                return false;
+            }
+            const code = char.charCodeAt(0);
+            return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
+        }
+
         Object.entries(props.tree['nodeDict']).forEach(([key, value]) => {
             if ('tabs' in value && 'content' in value['tabs']) {
                 const plainText = sanitizeHtml(String(value['tabs']['content']), {
@@ -56,8 +64,9 @@ const CentralSearchBox = forwardRef(({onSearch, props, modifyTree, contentRef}, 
                     allowedAttributes: {}
                 });
                 let index = plainText.toLowerCase().indexOf(searchTerm.toLowerCase());
-                if (w) {
-                    if ((index - 1 > 0 && plainText[index - 1] !== ' ') || (index + searchTerm.length < plainText.length && plainText[index + searchTerm.length] !== ' ')) {
+                console.log(index);
+                if (w && index !== -1) {
+                    if (((index - 1) > 0 && isLetter(plainText[index -1])) || ((index + searchTerm.length < plainText.length) && isLetter(plainText[index + searchTerm.length] ))) {
                         index = -1
                     }
                 }

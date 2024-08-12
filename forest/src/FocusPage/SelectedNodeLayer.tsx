@@ -16,7 +16,7 @@ import {Node} from "../entities";
 const NodeContentTabs = forwardRef(({tab_dict, env_funcs, env_vars, env_components, title}, ref) => {
     const tab_keys = Object.keys(tab_dict).filter(key => key !== "relevant");
     const [value, setValue] = React.useState('0');
-    const [emphasize, setEmphasize] = React.useState({'enable': true, 'keyword': 'the', 'wholeWord': false})
+    const [emphasize, setEmphasize] = React.useState({'enable': false, 'keyword': '', 'wholeWord': false})
 
     const handleChange = (event: React.SyntheticEvent, newValue: string) => {
         setValue(newValue);
@@ -30,7 +30,7 @@ const NodeContentTabs = forwardRef(({tab_dict, env_funcs, env_vars, env_componen
 
     const emphasizeText = (text, keyword, wholeWord) => {
         if (!keyword || (keyword.length<3 && !wholeWord)) return text;
-        let regex = wholeWord ? new RegExp(`(?<!<[^>]*)\\b${keyword}\\b(?![^<]*>)`, 'g') : new RegExp(`(?<!<[^>]*)${keyword}(?![^<]*>)`, 'g');
+        let regex = wholeWord ? new RegExp(`(?<!<[^>]*)\\b${keyword}\\b(?![^<]*>)`, 'gi') : new RegExp(`(?<!<[^>]*)${keyword}(?![^<]*>)`, 'g');
         let result = text.replace(regex, '<span key={i} style={{color: \'#d2691e\'}}>$&</span>');
         console.log(result);
         return result;
