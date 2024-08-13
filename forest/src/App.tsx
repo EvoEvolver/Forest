@@ -7,9 +7,9 @@ import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import IconButton from '@mui/material/IconButton';
 import {ToggleButton, ToggleButtonGroup} from "@mui/lab";
-
+const DEFAULT_HOST = "172.20.10.2"
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
-const socket = io(`http://127.0.0.1:${currentPort}`, {
+const socket = io(`http://${DEFAULT_HOST}:${currentPort}`, {
     transports: ["websocket"],
     withCredentials: false,
 }); // Currently running on default port locally. Need to write it into config file.
