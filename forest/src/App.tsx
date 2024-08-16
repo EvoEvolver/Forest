@@ -7,9 +7,8 @@ import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import IconButton from '@mui/material/IconButton';
 import {ToggleButton, ToggleButtonGroup} from "@mui/lab";
-const DEFAULT_HOST = "localhost"
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
-const socket = io(`http://${DEFAULT_HOST}:${currentPort}`, {
+const socket = io(`http://${location.hostname}:${currentPort}`, {
     transports: ["websocket"],
     withCredentials: false,
 }); // Currently running on default port locally. Need to write it into config file.
@@ -77,6 +76,7 @@ export default function App() {
     //         document.removeEventListener("keydown", keyPressApp);
     //     };
     // }, []);
+
 
 
     useEffect(() => {
