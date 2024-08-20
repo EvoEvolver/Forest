@@ -19,8 +19,8 @@ const NodeElement = (props) => {
                 wordBreak: "break-word",
                 padding: "1px",
                 overflowY: "auto",
-                backgroundColor: selected ? "#ece7f2" : "#FFFFFF",
-                color: selected ? "#000000" : "#000000",
+                backgroundColor: props.dark?(selected ? "#343540" : "#5b5c5d"):(selected ? "#ece7f2" : "#FFFFFF"),
+                color: props.dark ? "white" : "#000000",
             }}
             onClick={() => {
                 modifyTree({
@@ -39,7 +39,7 @@ const NodeElement = (props) => {
     );
 };
 
-const OtherNodesLayer = ({nodes, modifyTree, selectedNode}) => {
+const OtherNodesLayer = ({nodes, modifyTree, selectedNode, dark}) => {
 
     const elementsPerPage = 100;
     const [startPoint, setStartPoint] = useState(0);
@@ -103,11 +103,11 @@ const OtherNodesLayer = ({nodes, modifyTree, selectedNode}) => {
                         {(selectedNode !== undefined && node.id === selectedNode.id) &&
                             <NodeElement node={node} selected={true}
                                                      modifyTree={modifyTree}
-                                                     refProps={selectedNodeRef}/>
+                                                     refProps={selectedNodeRef} dark={dark}/>
                         }
                         {(selectedNode !== undefined && node.id !== selectedNode.id) &&
                         <NodeElement node={node} selected={false}
-                                     modifyTree={modifyTree}/>}
+                                     modifyTree={modifyTree} dark={dark}/>}
                     </Grid>
                 ))}
             </Grid>

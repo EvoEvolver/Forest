@@ -56,6 +56,10 @@ export default function App() {
 
     const [currPage, setCurrPage] = useState(0);
 
+    const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    console.log("preferenceMode is:",dark)
+
+
     // const keyPressApp = useCallback(
     //     (e) => {
     //         if (!e.shiftKey)
@@ -155,13 +159,13 @@ export default function App() {
                 <Grid container item style={{
                     height: "4.5%",
                     alignItems: "center",
-                    backgroundColor: "#f4f4f4",
+                    backgroundColor: dark?"#2c2c2c":"#f4f4f4",
                     boxSizing: "border-box"
                 }}>
                     {Object.keys(trees).length > 1 && <Grid container direction="row" style={{marginBottom: '10px'}}>
                         {Object.keys(trees).map((treeId, i) => (
                             <Grid item key={treeId} style={{marginBottom: '3px'}}>
-                                <button style={{backgroundColor: "#00000000", color: "#626262"}}
+                                <button style={{backgroundColor: "#00000000", color: dark?"#ffffff":"#626262"}}
                                         onClick={() => setSelectedTreeId(treeId)}>{i + 1}</button>
                             </Grid>
                         ))}
@@ -178,7 +182,7 @@ export default function App() {
                                 }}
                                 onChange={handleToggle}
                             >
-                                {currPage === 1 ? <CenterFocusStrongIcon/> : <AccountTreeIcon/>}
+                                {currPage === 1 ? <CenterFocusStrongIcon style={{color: dark ? 'white' : ''}}/> : <AccountTreeIcon style={{color: dark ? 'white' : ''}}/>}
                             </ToggleButton>
                         </Tooltip>
                     </Grid>
@@ -190,6 +194,7 @@ export default function App() {
                             return <ATree hidden={treeId !== selectedTreeId} key={treeId} tree={trees[treeId]}
                                           page={page}
                                           setPage={setPage}
+                                          dark={dark}
                                           setCurrPage={setCurrPage}
                                           send_message_to_main={send_message_to_main}/>
                         })

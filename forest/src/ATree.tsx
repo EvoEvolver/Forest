@@ -66,7 +66,7 @@ const CentralSearchBox = forwardRef(({onSearch, props, modifyTree, contentRef}, 
                 let index = plainText.toLowerCase().indexOf(searchTerm.toLowerCase());
                 console.log(index);
                 if (w && index !== -1) {
-                    if (((index - 1) > 0 && isLetter(plainText[index -1])) || ((index + searchTerm.length < plainText.length) && isLetter(plainText[index + searchTerm.length] ))) {
+                    if (((index - 1) > 0 && isLetter(plainText[index - 1])) || ((index + searchTerm.length < plainText.length) && isLetter(plainText[index + searchTerm.length]))) {
                         index = -1
                     }
                 }
@@ -192,7 +192,7 @@ const CentralSearchBox = forwardRef(({onSearch, props, modifyTree, contentRef}, 
                 InputProps={{
                     startAdornment: (
                         <InputAdornment position="start">
-                            <SearchIcon/>
+                            <SearchIcon style={{color: props.dark ? 'white' : ''}}/>
                         </InputAdornment>
                     ),
                     style: {color: '#fff'}
@@ -211,12 +211,12 @@ const CentralSearchBox = forwardRef(({onSearch, props, modifyTree, contentRef}, 
                         backgroundColor: '#f4f4f400',
                     },
                     input: {
-                        color: '#000000',
+                        color: props.dark ? 'white' : '#000000',
                     },
                 }}
             />
             <Box sx={{display: 'flex', alignItems: 'center', ml: 1}}>
-                <Box sx={{color: '#000000', mr: 1}} style={{width: '3vw'}}>
+                <Box sx={{color: '#000000', mr: 1}} style={{width: '3vw', color: props.dark ? 'white' : ''}}>
                     {`${searchResults.length > 0 ? (currentIndex + 1) : 0}/${searchResults.length}`}
                 </Box>
                 <ToggleButton
@@ -225,22 +225,23 @@ const CentralSearchBox = forwardRef(({onSearch, props, modifyTree, contentRef}, 
 
                     onChange={toggleWholeWord}
                     sx={{
-                        color: wholeWord ? '#fff' : '#999',
-                        backgroundColor: wholeWord ? '#1976d2' : 'transparent',
                         width: '1vw',
                         height: '1vw',
                         p: 0.5
                     }}
                 >
-                    <Typography>W</Typography>
+                    <Typography style={{color: props.dark?(wholeWord?'#3874cb':'white'):(wholeWord?'#3874cb':'black')}}>W</Typography>
                 </ToggleButton>
-                <IconButton style={{width: '1.5vw'}} size="small" onClick={handleArrowUp}>
+                <IconButton style={{width: '1.5vw', color: props.dark ? 'white' : ''}} size="small"
+                            onClick={handleArrowUp}>
                     <ArrowUpwardIcon/>
                 </IconButton>
-                <IconButton style={{width: '1.5vw'}} size="small" onClick={handleArrowDown}>
+                <IconButton style={{width: '1.5vw', color: props.dark ? 'white' : ''}} size="small"
+                            onClick={handleArrowDown}>
                     <ArrowDownwardIcon/>
                 </IconButton>
-                <IconButton style={{width: '1.5vw'}} size="small" onClick={handleClose}>
+                <IconButton style={{width: '1.5vw', color: props.dark ? 'white' : ''}} size="small"
+                            onClick={handleClose}>
                     <CloseIcon/>
                 </IconButton>
             </Box>
@@ -427,13 +428,14 @@ export default function ATree(props) {
         <>
             <Box hidden={hidden} style={{width: "100vw", height: "95vh", flexGrow: 1, boxSizing: "border-box"}}>
                 {<CentralSearchBox onSearch={searchPanel} props={props} modifyTree={modifyTree} contentRef={contentRef}
-                                   ref={innerRef}/>}
+                                   ref={innerRef} dark={props.dark}/>}
                 {/*make two buttons to change between focus page and treemap. the buttons should be fixed to top left.*/}
                 {layouter.hasTree(treeRef.current) && page === 0 &&
                     <FocusPage layouter={layouter} tree={tree} modifyTree={modifyTree}
-                               send_message_to_main={props.send_message_to_main} contentRef={contentRef}/>}
+                               send_message_to_main={props.send_message_to_main} contentRef={contentRef}
+                               dark={props.dark}/>}
                 {layouter.hasTree(treeRef.current) && page === 1 &&
-                    <Treemap layouter={layouter} tree={tree} modifyTree={modifyTree}/>}
+                    <Treemap layouter={layouter} tree={tree} modifyTree={modifyTree} dark={props.dark}/>}
             </Box>
         </>
     );

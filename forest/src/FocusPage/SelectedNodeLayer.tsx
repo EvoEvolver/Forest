@@ -13,7 +13,7 @@ import * as content_components from "./ContentComponents";
 import {Node} from "../entities";
 
 
-const NodeContentTabs = forwardRef(({tab_dict, env_funcs, env_vars, env_components, title}, ref) => {
+const NodeContentTabs = forwardRef(({tab_dict, env_funcs, env_vars, env_components, title, dark}, ref) => {
     const tab_keys = Object.keys(tab_dict).filter(key => key !== "relevant");
     const [value, setValue] = React.useState('0');
     const [emphasize, setEmphasize] = React.useState({'enable': false, 'keyword': '', 'wholeWord': false})
@@ -29,7 +29,7 @@ const NodeContentTabs = forwardRef(({tab_dict, env_funcs, env_vars, env_componen
     }));
 
     const emphasizeText = (text, keyword, wholeWord) => {
-        if (!keyword || (keyword.length<3 && !wholeWord)) return text;
+        if (!keyword || (keyword.length < 3 && !wholeWord)) return text;
         let regex = wholeWord ? new RegExp(`(?<!<[^>]*)\\b${keyword}\\b(?![^<]*>)`, 'gi') : new RegExp(`(?<!<[^>]*)${keyword}(?![^<]*>)`, 'g');
         let result = text.replace(regex, '<span key={i} style={{color: \'#d2691e\'}}>$&</span>');
         console.log(result);
@@ -44,10 +44,11 @@ const NodeContentTabs = forwardRef(({tab_dict, env_funcs, env_vars, env_componen
             maxHeight: "100%",
             overflowY: 'auto',
             overflowX: 'hidden',
-            wordBreak: "break-word"
+            wordBreak: "break-word",
+            backgroundColor: dark?'#3b3d3e':'#f4f4f4'
         }}>
             <CardContent>
-                {title && <Typography variant="h5" component="div">
+                {title && <Typography variant="h5" component="div" style={{color: dark?'white':'black'}}>
                     {title}
                 </Typography>}
                 {tab_keys.length > 0 &&
@@ -55,7 +56,7 @@ const NodeContentTabs = forwardRef(({tab_dict, env_funcs, env_vars, env_componen
                         <Box sx={{borderBottom: 0, borderColor: 'divider'}}>
                             <TabList onChange={handleChange} aria-label="lab API tabs example">
                                 {tab_keys.map((tab, i) => {
-                                    return <Tab key={i} label={tab} value={i.toString()}/>
+                                    return <Tab style={{color: dark?'white':''}} key={i} label={tab} value={i.toString()}/>
                                 })}
                             </TabList>
                         </Box>
@@ -66,7 +67,7 @@ const NodeContentTabs = forwardRef(({tab_dict, env_funcs, env_vars, env_componen
                                     {<JsxParser
                                         bindings={{env_funcs, env_vars}}
                                         components={env_components}
-                                        jsx={((tab !== 'content' && tab !== 'code') || !emphasize['enable']) ? tab_dict[tab] : emphasizeText(tab_dict[tab], emphasize['keyword'], emphasize['wholeWord'])}
+                                        jsx={((tab !== 'content' && tab !== 'code') || !emphasize['enable']) ? (dark?'<div style={{ color: \'white\' }}>'+tab_dict[tab]+'</div>':tab_dict[tab]) : (dark?'<div style={{ color: \'white\' }}>'+emphasizeText(tab_dict[tab], emphasize['keyword'], emphasize['wholeWord'])+'</div>':emphasizeText(tab_dict[tab], emphasize['keyword'], emphasize['wholeWord']))}
                                         renderError={error => <div
                                             style={{color: "red"}}>{error.error.toString()}</div>}
                                     />}</Box>
@@ -117,7 +118,7 @@ const SelectedNodeLayer = (props) => {
                 opacity: animate ? 0 : 1,
             }}>
                 <NodeContentTabs tab_dict={node.tools[0]} env_funcs={env_funcs} env_vars={env_vars}
-                                 env_components={env_components} title=""/>
+                                 env_components={env_components} title="" dark={props.dark}/>
             </Grid>
 
             <Grid key={1} item xs={4} style={{
@@ -127,7 +128,8 @@ const SelectedNodeLayer = (props) => {
                 opacity: animate ? 0 : 1,
             }}>
                 <NodeContentTabs tab_dict={node.tabs} env_funcs={env_funcs} env_vars={env_vars}
-                                 env_components={env_components} title={node.title} ref={props.contentRef}/>
+                                 env_components={env_components} title={node.title} ref={props.contentRef}
+                                 dark={props.dark}/>
             </Grid>
 
             <Grid key={2} item xs={4} style={{
@@ -137,7 +139,7 @@ const SelectedNodeLayer = (props) => {
                 opacity: animate ? 0 : 1,
             }}>
                 <NodeContentTabs tab_dict={node.tools[1]} env_funcs={env_funcs} env_vars={env_vars}
-                                 env_components={env_components} title=""/>
+                                 env_components={env_components} title="" dark={props.dark}/>
             </Grid>
         </Grid>
 

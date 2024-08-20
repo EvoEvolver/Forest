@@ -30,17 +30,17 @@ export default function FocusPage(props) {
                     <Grid item
                           style={{
                               height: selectedNodeLayerHeight,
-                              backgroundColor: '#ffffff',
+                              backgroundColor: props.dark?"#2c2c2c":'#ffffff',
                               width: "100%",
                               paddingTop: "10px",
                               flex: "0 0 75%"
                           }}>
                         <SelectedNodeLayer node={layouter.getSelectedNode(tree)} modifyTree={modifyTree}
-                                           send_message_to_main={props.send_message_to_main} contentRef={props.contentRef}/>
+                                           send_message_to_main={props.send_message_to_main} contentRef={props.contentRef} dark={props.dark}/>
                     </Grid>
 
                     <NavigatorLayer props={props}
-                                         selectedNode={layouter.getSelectedNode(tree)} modifyTree={modifyTree}/>
+                                         selectedNode={layouter.getSelectedNode(tree)} modifyTree={modifyTree}  dark={props.dark}/>
                 </Grid>
         </>
     );
