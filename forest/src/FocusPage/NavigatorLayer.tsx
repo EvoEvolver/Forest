@@ -5,40 +5,21 @@ import Card from "@mui/material/Card";
 
 
 const NavigatorLayer = ({props, modifyTree, selectedNode}) => {
-    let rect1, rect2, rect3;
-    try {
-        rect1 = document.querySelector('#ancestor_card').getBoundingClientRect();
-
-        rect2 = document.querySelector('#sibling_card').getBoundingClientRect();
-
-        rect3 = document.querySelector('#children_card').getBoundingClientRect();
-    } catch (e) {
-        // Set default values for the rect object
-        rect1 = rect2 = rect3 = {
-            top: 0,
-            left: 0,
-            width: 100,
-            height: 100
-        };
-    }
-
-
     return (
         <>
-            <Grid container item style={{height: "25%", display: "flex", flexDirection: "row", flex: "0 1 25%"}}>
+            <Grid container item style={{ display: "flex", flexDirection: "row", flex: "0 1 30%"}}>
                 <Grid item
                       id="ancestor_card"
                       style={{
                           height: '100%',
-                          backgroundColor: props.dark?'#2c2c2c':'#ffffff',
-                          width: "33%",
-                          flex: "1 0 33%",
+                          backgroundColor: props.dark ? '#2c2c2c' : '#ffffff',
+                          flex: "1 0 20%",
                       }}>
                     <Card style={{
                         width: '50px',
                         height: '15px',
-                        backgroundColor: props.dark?'#3b3d3e':'#f4f4f4',
-                        color: props.dark?'white':'',
+                        backgroundColor: props.dark ? '#3b3d3e' : '#f4f4f4',
+                        color: props.dark ? 'white' : '',
                         fontSize: '10px',
                         textAlign: 'center',
                         transform: 'translateX(0%)',
@@ -56,12 +37,12 @@ const NavigatorLayer = ({props, modifyTree, selectedNode}) => {
                         overflowY: 'auto',
                         overflowX: 'hidden',
                         wordBreak: "break-word",
-                        backgroundColor: props.dark?'#3b3d3e':'#f4f4f4'
+                        backgroundColor: props.dark ? '#3b3d3e' : '#f4f4f4'
                     }}>
 
                         <OtherNodesLayer
                             nodes={props.layouter.getAncestorNodes(props.tree, props.layouter.getSelectedNode(props.tree)).reverse()}
-                            modifyTree={modifyTree} selectedNode={selectedNode} dark={props.dark}/>
+                            modifyTree={modifyTree} selectedNode={selectedNode} dark={props.dark} level={0}/>
                     </Card>
                 </Grid>
 
@@ -69,16 +50,15 @@ const NavigatorLayer = ({props, modifyTree, selectedNode}) => {
                       id="sibling_card"
                       style={{
                           height: '100%',
-                          backgroundColor: props.dark?'#2c2c2c':'#ffffff',
-                          width: "33%",
+                          backgroundColor: props.dark ? '#2c2c2c' : '#ffffff',
                           paddingLeft: "3px",
-                          flex: "0 1 33%",
+                          flex: "0 1 50%",
                       }}>
                     <Card style={{
                         width: '50px',
                         height: '15px',
-                        backgroundColor: props.dark?'#3b3d3e':'#f4f4f4',
-                        color: props.dark?'white':'',
+                        backgroundColor: props.dark ? '#3b3d3e' : '#f4f4f4',
+                        color: props.dark ? 'white' : '',
                         fontSize: '10px',
                         textAlign: 'center',
                         transform: 'translateX(0%)',
@@ -96,12 +76,12 @@ const NavigatorLayer = ({props, modifyTree, selectedNode}) => {
                         overflowY: 'auto',
                         overflowX: 'hidden',
                         wordBreak: "break-word",
-                        backgroundColor: props.dark?'#3b3d3e':'#f4f4f4'
+                        backgroundColor: props.dark ? '#3b3d3e' : '#f4f4f4'
                     }}>
 
                         <OtherNodesLayer
                             nodes={props.layouter.getSiblingNodes(props.tree, props.layouter.getSelectedNode(props.tree))}
-                            modifyTree={modifyTree} selectedNode={selectedNode} dark={props.dark}/>
+                            modifyTree={modifyTree} selectedNode={selectedNode} dark={props.dark} level={1}/>
                     </Card>
 
                 </Grid>
@@ -109,16 +89,15 @@ const NavigatorLayer = ({props, modifyTree, selectedNode}) => {
                       id="children_card"
                       style={{
                           height: '100%',
-                          backgroundColor: props.dark?'#2c2c2c':'#ffffff',
-                          width: "33%",
+                          backgroundColor: props.dark ? '#2c2c2c' : '#ffffff',
                           paddingLeft: "3px",
-                          flex: "0 1 33%",
+                          flex: "0 1 30%",
                       }}>
                     <Card style={{
                         width: '50px',
                         height: '15px',
-                        backgroundColor: props.dark?'#3b3d3e':'#f4f4f4',
-                        color: props.dark?'white':'',
+                        backgroundColor: props.dark ? '#3b3d3e' : '#f4f4f4',
+                        color: props.dark ? 'white' : '',
                         fontSize: '10px',
                         textAlign: 'center',
                         transform: 'translateX(0%)',
@@ -136,11 +115,11 @@ const NavigatorLayer = ({props, modifyTree, selectedNode}) => {
                         overflowY: 'auto',
                         overflowX: 'hidden',
                         wordBreak: "break-word",
-                        backgroundColor: props.dark?'#3b3d3e':'#f4f4f4'
+                        backgroundColor: props.dark ? '#3b3d3e' : '#f4f4f4'
                     }}>
                         <OtherNodesLayer
                             nodes={props.layouter.getChildrenNodes(props.tree, props.layouter.getSelectedNode(props.tree))}
-                            modifyTree={modifyTree} selectedNode={selectedNode} dark={props.dark}/>
+                            modifyTree={modifyTree} selectedNode={selectedNode} dark={props.dark} level={2}/>
                     </Card>
                 </Grid>
             </Grid>

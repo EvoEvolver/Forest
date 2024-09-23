@@ -5,6 +5,11 @@ import {Node} from "../entities";
 const NodeElement = (props) => {
     const {modifyTree, selected} = props;
     let node: Node = props.node;
+    let summary;
+    if('short_summary' in node.data){
+        summary = node.data['short_summary'];
+        console.log(node)
+    }
     return (
         <Paper
             elevation={3}
@@ -32,14 +37,19 @@ const NodeElement = (props) => {
             {
                 props.refProps && <span ref={props.refProps}/>
             }
-            <Typography style={{textAlign: 'left', marginLeft: '10px', marginRight:'5px'}}>{props.node.title}</Typography>
+            <Typography style={{textAlign: 'left', marginLeft: '10px', marginRight:'5px'}}>{(node.title+((props.detail&&summary)?"<newline>"+summary:"")).split('<newline>').map((line, index) => (
+        <React.Fragment key={index}>
+          {line}
+          <br />
+        </React.Fragment>
+      ))}</Typography>
         </Paper>
 
 
     );
 };
 
-const OtherNodesLayer = ({nodes, modifyTree, selectedNode, dark}) => {
+const OtherNodesLayer = ({nodes, modifyTree, selectedNode, dark, level}) => { //level={0: Ancestor,1: Sibling, 2: Children}
 
     const elementsPerPage = 100;
     const [startPoint, setStartPoint] = useState(0);
@@ -103,11 +113,11 @@ const OtherNodesLayer = ({nodes, modifyTree, selectedNode, dark}) => {
                         {(selectedNode !== undefined && node.id === selectedNode.id) &&
                             <NodeElement node={node} selected={true}
                                                      modifyTree={modifyTree}
-                                                     refProps={selectedNodeRef} dark={dark}/>
+                                                     refProps={selectedNodeRef} dark={dark} detail={level === 1}/>
                         }
                         {(selectedNode !== undefined && node.id !== selectedNode.id) &&
                         <NodeElement node={node} selected={false}
-                                     modifyTree={modifyTree} dark={dark}/>}
+                                     modifyTree={modifyTree} dark={dark} detail={level === 1}/>}
                     </Grid>
                 ))}
             </Grid>

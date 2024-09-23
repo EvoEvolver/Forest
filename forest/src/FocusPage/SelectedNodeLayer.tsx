@@ -14,6 +14,7 @@ import {Node} from "../entities";
 
 
 const NodeContentTabs = forwardRef(({tab_dict, env_funcs, env_vars, env_components, title, dark}, ref) => {
+    // Remove hidden tabs from the Tabs
     const tab_keys = Object.keys(tab_dict).filter(key => key !== "relevant");
     const [value, setValue] = React.useState('0');
     const [emphasize, setEmphasize] = React.useState({'enable': false, 'keyword': '', 'wholeWord': false})
@@ -45,10 +46,10 @@ const NodeContentTabs = forwardRef(({tab_dict, env_funcs, env_vars, env_componen
             overflowY: 'auto',
             overflowX: 'hidden',
             wordBreak: "break-word",
-            backgroundColor: dark?'#3b3d3e':'#f4f4f4'
+            backgroundColor: dark ? '#3b3d3e' : '#f4f4f4'
         }}>
             <CardContent>
-                {title && <Typography variant="h5" component="div" style={{color: dark?'white':'black'}}>
+                {title && <Typography variant="h5" component="div" style={{color: dark ? 'white' : 'black'}}>
                     {title}
                 </Typography>}
                 {tab_keys.length > 0 &&
@@ -56,18 +57,19 @@ const NodeContentTabs = forwardRef(({tab_dict, env_funcs, env_vars, env_componen
                         <Box sx={{borderBottom: 0, borderColor: 'divider'}}>
                             <TabList onChange={handleChange} aria-label="lab API tabs example">
                                 {tab_keys.map((tab, i) => {
-                                    return <Tab style={{color: dark?'white':''}} key={i} label={tab} value={i.toString()}/>
+                                    return <Tab style={{color: dark ? 'white' : ''}} key={i} label={tab}
+                                                value={i.toString()}/>
                                 })}
                             </TabList>
                         </Box>
                         {tab_keys.map((tab, i) => {
                             return <TabPanel style={{paddingRight: "10px", paddingLeft: "10px", paddingTop: "5px"}}
                                              value={i.toString()}>
-                                <Box sx={{overflowX: "auto"}}>
+                                <Box sx={{overflowX: "auto", fontFamily: 'Verdana, sans-serif'}}>
                                     {<JsxParser
                                         bindings={{env_funcs, env_vars}}
                                         components={env_components}
-                                        jsx={((tab !== 'content' && tab !== 'code') || !emphasize['enable']) ? (dark?'<div style={{ color: \'white\' }}>'+tab_dict[tab]+'</div>':tab_dict[tab]) : (dark?'<div style={{ color: \'white\' }}>'+emphasizeText(tab_dict[tab], emphasize['keyword'], emphasize['wholeWord'])+'</div>':emphasizeText(tab_dict[tab], emphasize['keyword'], emphasize['wholeWord']))}
+                                        jsx={((tab !== 'content' && tab !== 'code') || !emphasize['enable']) ? (dark ? '<div style={{ color: \'white\' }}>' + tab_dict[tab] + '</div>' : tab_dict[tab]) : (dark ? '<div style={{ color: \'white\' }}>' + emphasizeText(tab_dict[tab], emphasize['keyword'], emphasize['wholeWord']) + '</div>' : emphasizeText(tab_dict[tab], emphasize['keyword'], emphasize['wholeWord']))}
                                         renderError={error => <div
                                             style={{color: "red"}}>{error.error.toString()}</div>}
                                     />}</Box>

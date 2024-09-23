@@ -33,7 +33,7 @@ export default function FocusPage(props) {
                               backgroundColor: props.dark?"#2c2c2c":'#ffffff',
                               width: "100%",
                               paddingTop: "10px",
-                              flex: "0 0 75%"
+                              flex: "0 0 70%"
                           }}>
                         <SelectedNodeLayer node={layouter.getSelectedNode(tree)} modifyTree={modifyTree}
                                            send_message_to_main={props.send_message_to_main} contentRef={props.contentRef} dark={props.dark}/>
