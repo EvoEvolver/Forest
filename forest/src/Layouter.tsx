@@ -212,10 +212,39 @@ export default class Layouter{
         }
     }
 
-    public moveToRoot(tree): Node {
-        let root = tree.nodes[0];
+    public moveToRoot(tree: TreeData): Node {
+        let root = Object.values(tree.nodeDict)[0];
+        while(root.parent){
+            root = tree.nodeDict[root.parent]
+        }
         return root;
     }
+
+public getAllLeaves(tree: TreeData): Node[] {
+    const root = this.moveToRoot(tree);
+    const leaves: Node[] = [];
+
+    // Helper function to recursively collect leaf nodes
+    const collectLeaves = (nodeId: string) => {
+        const node = tree.nodeDict[nodeId];
+
+        // If the node has no children, it's a leaf node
+        if (!node || !node.children || node.children.length === 0) {
+            leaves.push(node);
+            return;
+        }
+
+        // Otherwise, recursively process each child from left to right
+        for (const childId of node.children) {
+            collectLeaves(childId);
+        }
+    };
+
+    // Start collecting leaves from the root node
+    collectLeaves(root.id);
+
+    return leaves;
+}
 
 
     // move to the next available node on the right side of the tree.

@@ -13,12 +13,21 @@ import * as content_components from "./ContentComponents";
 import {Node} from "../entities";
 
 
-const NodeContentTabs = forwardRef(({tab_dict, env_funcs, env_vars, env_components, title, dark}, ref) => {
+const NodeContentTabs = forwardRef(({
+                                        is_content_view,
+                                        tab_dict,
+                                        env_funcs,
+                                        env_vars,
+                                        env_components,
+                                        title,
+                                        dark
+                                    }, ref) => {
     // Remove hidden tabs from the Tabs
     const tab_keys = Object.keys(tab_dict).filter(key => key !== "relevant");
     const [value, setValue] = React.useState('0');
     const [emphasize, setEmphasize] = React.useState({'enable': false, 'keyword': '', 'wholeWord': false})
-
+    const [visibleContent, setVisibleContent] = useState('');
+    const contentRefs = useRef([]);
     const handleChange = (event: React.SyntheticEvent, newValue: string) => {
         setValue(newValue);
     };
@@ -28,6 +37,7 @@ const NodeContentTabs = forwardRef(({tab_dict, env_funcs, env_vars, env_componen
             setEmphasize(em);
         }
     }));
+
 
     const emphasizeText = (text, keyword, wholeWord) => {
         if (!keyword || (keyword.length < 3 && !wholeWord)) return text;
@@ -84,9 +94,83 @@ const NodeContentTabs = forwardRef(({tab_dict, env_funcs, env_vars, env_componen
 
 const SelectedNodeLayer = (props) => {
     let node: Node = props.node;
-    let number = 3;
-    //const elementWidth = `${100 / number}%`;
+    let treeData = props.treeData;
+    let layouter = props.layouter;
     const [animate, setAnimate] = useState(false);
+    const [currTabs, setCurrTabs] = useState({'content': 'hello'});
+    useEffect(() => {
+
+        console.log("selected node layer");
+        let leaves = layouter.getAllLeaves(treeData);
+        // for (const leaf of leaves) {
+        //     console.log(leaf);
+        // }
+        console.log("whole html:");
+        let i = 0;
+        let wholeHtmlCode = '';
+
+        for (const node of leaves) {
+            if (node.tabs && node.tabs['content']) {
+                wholeHtmlCode += `<div 
+                            data-ref="content-${i}"
+                            data-index="${node.id}"
+                            style="margin-bottom: 10px;"
+                        >`;
+                wholeHtmlCode += node.tabs['content'];
+                wholeHtmlCode += "</div>";
+                i++;
+            }
+        }
+
+        setCurrTabs({'content': wholeHtmlCode});
+
+        const intervalId = setInterval(() => {
+            const targets = document.querySelectorAll('[data-ref]');
+            let left = 0;
+            let right = targets.length - 1;
+            let closestIndex = -1;
+            let minDistance = Infinity;
+
+            // Define a helper function to get the distance of an element's rect.y from 0
+            const getDistance = (target) => {
+                const rect = target.getBoundingClientRect();
+                return Math.abs(rect.y-300);
+            };
+
+            // Binary search for the minimum absolute rect.y
+            while (left <= right) {
+                const mid = Math.floor((left + right) / 2);
+                const distance = getDistance(targets[mid]);
+
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestIndex = mid;
+                }
+
+                const rect = targets[mid].getBoundingClientRect();
+
+                if (rect.y < 0) {
+                    left = mid + 1;
+                } else {
+                    right = mid - 1;
+                }
+            }
+            if (closestIndex !== -1) {
+                const nodeId = targets[closestIndex].getAttribute('data-index');
+                if(nodeId!==node.id){
+                    props.modifyTree({
+                    type: 'setSelectedNode',
+                    id: targets[closestIndex].getAttribute('data-index')
+                });
+                }
+
+            }
+        }, 100);
+
+        return () => {
+            clearInterval(intervalId);
+        };
+    }, []);
 
     useEffect(() => {
         setAnimate(true);
@@ -119,7 +203,8 @@ const SelectedNodeLayer = (props) => {
                 transition: animate ? 'opacity 0.5s ease-in' : 'none',
                 opacity: animate ? 0 : 1,
             }}>
-                <NodeContentTabs tab_dict={node.tools[0]} env_funcs={env_funcs} env_vars={env_vars}
+                <NodeContentTabs is_content_view={false} tab_dict={node.tools[0]} env_funcs={env_funcs}
+                                 env_vars={env_vars}
                                  env_components={env_components} title="" dark={props.dark}/>
             </Grid>
 
@@ -129,7 +214,7 @@ const SelectedNodeLayer = (props) => {
                 transition: animate ? 'opacity 0.5s ease-in' : 'none',
                 opacity: animate ? 0 : 1,
             }}>
-                <NodeContentTabs tab_dict={node.tabs} env_funcs={env_funcs} env_vars={env_vars}
+                <NodeContentTabs is_content_view={true} tab_dict={currTabs} env_funcs={env_funcs} env_vars={env_vars}
                                  env_components={env_components} title={node.title} ref={props.contentRef}
                                  dark={props.dark}/>
             </Grid>
@@ -140,7 +225,8 @@ const SelectedNodeLayer = (props) => {
                 transition: animate ? 'opacity 0.5s ease-in' : 'none',
                 opacity: animate ? 0 : 1,
             }}>
-                <NodeContentTabs tab_dict={node.tools[1]} env_funcs={env_funcs} env_vars={env_vars}
+                <NodeContentTabs is_content_view={false} tab_dict={node.tools[1]} env_funcs={env_funcs}
+                                 env_vars={env_vars}
                                  env_components={env_components} title="" dark={props.dark}/>
             </Grid>
         </Grid>

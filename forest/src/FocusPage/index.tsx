@@ -15,7 +15,6 @@ export default function FocusPage(props) {
     let tree: TreeData = props.tree;
     let modifyTree = props.modifyTree;
 
-
     const ancestorsLayerHeight = '10%';
     const siblingsLayerHeight = '10%';
     const selectedNodeLayerHeight = '70%';
@@ -35,7 +34,7 @@ export default function FocusPage(props) {
                               paddingTop: "10px",
                               flex: "0 0 70%"
                           }}>
-                        <SelectedNodeLayer node={layouter.getSelectedNode(tree)} modifyTree={modifyTree}
+                        <SelectedNodeLayer layouter={layouter} treeData={props.treeData} node={layouter.getSelectedNode(tree)} modifyTree={modifyTree}
                                            send_message_to_main={props.send_message_to_main} contentRef={props.contentRef} dark={props.dark}/>
                     </Grid>
 

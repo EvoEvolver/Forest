@@ -8,7 +8,6 @@ const NodeElement = (props) => {
     let summary;
     if('short_summary' in node.data){
         summary = node.data['short_summary'];
-        console.log(node)
     }
     return (
         <Paper

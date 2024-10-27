@@ -431,7 +431,7 @@ export default function ATree(props) {
                                    ref={innerRef} dark={props.dark}/>}
                 {/*make two buttons to change between focus page and treemap. the buttons should be fixed to top left.*/}
                 {layouter.hasTree(treeRef.current) && page === 0 &&
-                    <FocusPage layouter={layouter} tree={tree} modifyTree={modifyTree}
+                    <FocusPage layouter={layouter} treeData={treeData} tree={tree} modifyTree={modifyTree}
                                send_message_to_main={props.send_message_to_main} contentRef={contentRef}
                                dark={props.dark}/>}
                 {layouter.hasTree(treeRef.current) && page === 1 &&
