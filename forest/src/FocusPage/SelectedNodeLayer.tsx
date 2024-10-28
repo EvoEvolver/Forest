@@ -26,8 +26,6 @@ const NodeContentTabs = forwardRef(({
     const tab_keys = Object.keys(tab_dict).filter(key => key !== "relevant");
     const [value, setValue] = React.useState('0');
     const [emphasize, setEmphasize] = React.useState({'enable': false, 'keyword': '', 'wholeWord': false})
-    const [visibleContent, setVisibleContent] = useState('');
-    const contentRefs = useRef([]);
     const handleChange = (event: React.SyntheticEvent, newValue: string) => {
         setValue(newValue);
     };
@@ -97,34 +95,45 @@ const NodeContentTabs = forwardRef(({
                         {
                             leaves.map((leaf, index) => (
                                 <>
-                                    <Typography variant="h6" component="div"
-                                                style={{color: dark ? 'white' : 'black'}}>
-                                        {leaf.title}
-                                    </Typography>
-                                    <TabContext value={value} key={value}>
-                                        <Box sx={{borderBottom: 0, borderColor: 'divider'}}>
-                                            <TabList onChange={handleChange} aria-label="lab API tabs example">
-                                                {Object.keys(leaf.tabs).map((tab, i) => {
-                                                    return <Tab style={{color: dark ? 'white' : ''}} key={i} label={tab}
-                                                                value={i.toString()}/>
-                                                })}
-                                            </TabList>
-                                        </Box>
-                                        {(Object.keys(leaf.tabs)).map((tab, i) => {
-                                            return <TabPanel
-                                                style={{paddingRight: "10px", paddingLeft: "10px", paddingTop: "5px"}}
-                                                value={i.toString()}>
-                                                <Box sx={{overflowX: "auto", fontFamily: 'Verdana, sans-serif'}}>
-                                                    {<JsxParser
-                                                        bindings={{env_funcs, env_vars}}
-                                                        components={env_components}
-                                                        jsx={((tab !== 'content' && tab !== 'code') || !emphasize['enable']) ? (dark ? '<div style={{ color: \'white\' }}>' + leaf.tabs[tab] + '</div>' : leaf.tabs[tab]) : (dark ? '<div style={{ color: \'white\' }}>' + emphasizeText(leaf.tabs[tab], emphasize['keyword'], emphasize['wholeWord']) + '</div>' : emphasizeText(leaf.tabs[tab], emphasize['keyword'], emphasize['wholeWord']))}
-                                                        renderError={error => <div
-                                                            style={{color: "red"}}>{error.error.toString()}</div>}
-                                                    />}</Box>
-                                            </TabPanel>
-                                        })}
-                                    </TabContext>
+                                    <div
+                                        data-ref={`content-${index}`}
+                                        data-index={`${leaf.id}`}
+                                        style={{marginBottom: '10px'}}
+                                    >
+                                        <Typography variant="h6" component="div"
+                                                    style={{color: dark ? 'white' : 'black'}}>
+                                            {leaf.title}
+                                        </Typography>
+                                        <TabContext value={value} key={value}>
+                                            <Box sx={{borderBottom: 0, borderColor: 'divider'}}>
+                                                <TabList onChange={handleChange} aria-label="lab API tabs example">
+                                                    {Object.keys(leaf.tabs).map((tab, i) => {
+                                                        return <Tab style={{color: dark ? 'white' : ''}} key={i}
+                                                                    label={tab}
+                                                                    value={i.toString()}/>
+                                                    })}
+                                                </TabList>
+                                            </Box>
+                                            {(Object.keys(leaf.tabs)).map((tab, i) => {
+                                                return <TabPanel
+                                                    style={{
+                                                        paddingRight: "10px",
+                                                        paddingLeft: "10px",
+                                                        paddingTop: "5px"
+                                                    }}
+                                                    value={i.toString()}>
+                                                    <Box sx={{overflowX: "auto", fontFamily: 'Verdana, sans-serif'}}>
+                                                        {<JsxParser
+                                                            bindings={{env_funcs, env_vars}}
+                                                            components={env_components}
+                                                            jsx={((tab !== 'content' && tab !== 'code') || !emphasize['enable']) ? (dark ? '<div style={{ color: \'white\' }}>' + leaf.tabs[tab] + '</div>' : leaf.tabs[tab]) : (dark ? '<div style={{ color: \'white\' }}>' + emphasizeText(leaf.tabs[tab], emphasize['keyword'], emphasize['wholeWord']) + '</div>' : emphasizeText(leaf.tabs[tab], emphasize['keyword'], emphasize['wholeWord']))}
+                                                            renderError={error => <div
+                                                                style={{color: "red"}}>{error.error.toString()}</div>}
+                                                        />}</Box>
+                                                </TabPanel>
+                                            })}
+                                        </TabContext>
+                                    </div>
                                 </>
 
                             ))
@@ -136,13 +145,14 @@ const NodeContentTabs = forwardRef(({
         </Card>
     );
 })
-
+let lastScroll = 0;
 const SelectedNodeLayer = (props) => {
     let node: Node = props.node;
     let treeData = props.treeData;
     let layouter = props.layouter;
     const [animate, setAnimate] = useState(false);
-    const [leaves, setLeaves] = useState(layouter.getAllLeaves(treeData));
+    const [leaves, setLeaves] = useState(layouter.getSiblingsLeaves(treeData, node));
+    let currParents = node.parent;
 
     useEffect(() => {
 
@@ -186,7 +196,7 @@ const SelectedNodeLayer = (props) => {
                     });
                 }
             }
-
+            lastScroll = new Date().getTime();
         };
         window.addEventListener('wheel', handleWheel);
 
@@ -197,31 +207,22 @@ const SelectedNodeLayer = (props) => {
     }, []);
 
     const scrollToTarget = (id) => {
+        let currTime = new Date().getTime();
+        if(currTime-lastScroll < 300) return;
         const targetElement = document.querySelector(`[data-index="${id}"]`);
         if (targetElement) {
             const rect = targetElement.getBoundingClientRect();
-            if(((rect.y+rect.height/2) > window.innerHeight*0.7) || ((rect.y+rect.height/2)<0) ) {
-                console.log(rect.y+rect.height/2, window.innerHeight*0.7)
-                targetElement.scrollIntoView({behavior: 'auto', block: 'center'});
-            }
+           // if (((rect.y + rect.height / 2) > window.innerHeight * 0.7) || ((rect.y + rect.height / 2) < 0)) {
+                console.log(rect.y + rect.height / 2, window.innerHeight * 0.7)
+                targetElement.scrollIntoView({behavior: 'auto', block: 'start'});
+           // }
         }
     };
-    useEffect(() => {
-        let i = 0;
-        for (const node of leaves) {
-            if (node.tabs && node.tabs['content']) {
-                node.tabs['content'] = `<div 
-                            data-ref="content-${i}"
-                            data-index="${node.id}"
-                            style="margin-bottom: 10px;"
-                        >` + node.tabs['content'] + "</div>";
-                i++;
-            }
-        }
 
-    }, []);
 
     useEffect(() => {
+        setLeaves(layouter.getSiblingsLeaves(treeData, node));
+
         setAnimate(true);
         scrollToTarget(node.id);
         const timeoutId = setTimeout(() => {

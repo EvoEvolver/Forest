@@ -33,8 +33,7 @@ export const getDescents = (node: Node, nodeDict: NodeDict): Node[] => {
     let children: string[] = node.children;
     if (!children) {
         return [] as Node[];
-    }
-    else {
+    } else {
         const childrenNodes = children.map((c: string) => nodeDict[c]) as Node[];
         let des: Node[] = [];
         childrenNodes.forEach((c: Node) => {
@@ -52,24 +51,24 @@ export const getChildren = (node: Node, nodeDict: NodeDict): Node[] => {
     let children: string[] = node.children;
     if (!children) {
         return [] as Node[];
-    }
-    else {
+    } else {
         return children.map((c: string) => nodeDict[c]) as Node[];
     }
 };
 
 
-export default class Layouter{
-  /**
-   * The constructor of the Layout class.
-   * @param nodes: the nodes in the tree. No layout information.
-   * @param setNodes: Function to update nodes state.
-   */
+export default class Layouter {
+    /**
+     * The constructor of the Layout class.
+     * @param nodes: the nodes in the tree. No layout information.
+     * @param setNodes: Function to update nodes state.
+     */
 
     public rawNodes: Node[] = [];
-      constructor() {
-          this.rawNodes = undefined;
-      }
+
+    constructor() {
+        this.rawNodes = undefined;
+    }
 
 
     /**
@@ -90,7 +89,7 @@ export default class Layouter{
 
 
     public hasTree(tree: TreeData): boolean {
-        if(!tree) return false;
+        if (!tree) return false;
         return Object.keys(tree.nodeDict).length > 0;
     }
 
@@ -98,13 +97,12 @@ export default class Layouter{
         let nodeDict: NodeDict = tree.nodeDict;
         let nodes = Object.values(nodeDict);
         let selectedNode: string
-        if(!tree.selectedNode) {
+        if (!tree.selectedNode) {
             selectedNode = currTree.selectedNode;
-            if(!selectedNode) {
+            if (!selectedNode) {
                 selectedNode = nodes[0].id;
             }
-        }
-        else{
+        } else {
             selectedNode = tree.selectedNode
         }
         return {
@@ -141,8 +139,7 @@ export default class Layouter{
             const ancestors = getAncestors(selectedNode, tree.nodeDict);
             if (ancestors.length > 0) {
                 return ancestors[0];
-            }
-            else {
+            } else {
                 return undefined;
             }
         }
@@ -153,8 +150,7 @@ export default class Layouter{
 
             if (children.length > 0) {
                 return children[0];
-            }
-            else {
+            } else {
                 return undefined;
             }
         }
@@ -167,12 +163,10 @@ export default class Layouter{
                 const index = siblings.findIndex((s) => s.id === selectedNode.id);
                 if (index > 0) {
                     return siblings[index - 1];
-                }
-                else {
+                } else {
                     return undefined;
                 }
-            }
-            else {
+            } else {
                 return undefined;
             }
         }
@@ -185,12 +179,10 @@ export default class Layouter{
                 const index = siblings.findIndex((s) => s.id === selectedNode.id);
                 if (index < siblings.length - 1) {
                     return siblings[index + 1];
-                }
-                else {
+                } else {
                     return undefined;
                 }
-            }
-            else {
+            } else {
                 return undefined;
             }
         }
@@ -206,45 +198,63 @@ export default class Layouter{
         const children = getChildren(selectedNode, tree.nodeDict);
         if (children.length > 0 && index < children.length) {
             return children[index];
-        }
-        else {
+        } else {
             return undefined;
         }
     }
 
     public moveToRoot(tree: TreeData): Node {
         let root = Object.values(tree.nodeDict)[0];
-        while(root.parent){
+        while (root.parent) {
             root = tree.nodeDict[root.parent]
         }
         return root;
     }
 
-public getAllLeaves(tree: TreeData): Node[] {
-    const root = this.moveToRoot(tree);
-    const leaves: Node[] = [];
+    public getAllLeaves(tree: TreeData): Node[] {
+        const root = this.moveToRoot(tree);
+        const leaves: Node[] = [];
 
-    // Helper function to recursively collect leaf nodes
-    const collectLeaves = (nodeId: string) => {
-        const node = tree.nodeDict[nodeId];
+        // Helper function to recursively collect leaf nodes
+        const collectLeaves = (nodeId: string) => {
+            const node = tree.nodeDict[nodeId];
 
-        // If the node has no children, it's a leaf node
-        if (!node || !node.children || node.children.length === 0) {
-            leaves.push(node);
-            return;
+            // If the node has no children, it's a leaf node
+            if (!node || !node.children || node.children.length === 0) {
+                leaves.push(node);
+                return;
+            }
+
+            // Otherwise, recursively process each child from left to right
+            for (const childId of node.children) {
+                collectLeaves(childId);
+            }
+        };
+
+        // Start collecting leaves from the root node
+        collectLeaves(root.id);
+
+        return leaves;
+    }
+
+    public getSiblingsLeaves(tree: TreeData, node: Node): Node[] {
+        const leaves: Node[] = [];
+        // Find the parent of the given node
+        const parentNode = tree.nodeDict[node.parent];
+        if (!parentNode || !parentNode.children.length === 0) {
+            return []; // If there's no parent or no siblings, return an empty array
         }
 
-        // Otherwise, recursively process each child from left to right
-        for (const childId of node.children) {
-            collectLeaves(childId);
+        // Collect leaves among all siblings (children of the same parent)
+        for (const siblingId of parentNode.children) {
+            if(tree.nodeDict[siblingId].children.length === 0){
+                leaves.push(tree.nodeDict[siblingId]);
+            }else{
+                console.log(tree.nodeDict[siblingId])
+            }
         }
-    };
-
-    // Start collecting leaves from the root node
-    collectLeaves(root.id);
-
-    return leaves;
-}
+        return leaves;
+    }
 
 
     // move to the next available node on the right side of the tree.
@@ -255,19 +265,18 @@ public getAllLeaves(tree: TreeData): Node[] {
         const ancestors = getAncestors(node, tree.nodeDict);
         if (ancestors.length === 0) {
             return undefined;
-        }
-        else {
+        } else {
             // get current index.
             const siblings = getSiblingsIncludeSelf(node, tree.nodeDict);
             const index = siblings.findIndex((s) => s.id === node.id);
             if (index === siblings.length - 1) {
                 return this.moveToNextAvailableOnRightHelper(tree, ancestors[0]);
-            }
-            else {
+            } else {
                 return siblings[index + 1];
             }
         }
     }
+
     public moveToNextAvailable(tree: TreeData): Node {
 
         console.log("moveToNextAvailable");
@@ -280,8 +289,7 @@ public getAllLeaves(tree: TreeData): Node[] {
         const children = getChildren(selectedNode, tree.nodeDict);
         if (children.length > 0) {
             return children[0];
-        }
-        else {
+        } else {
             return this.moveToNextAvailableOnRightHelper(tree, selectedNode);
         }
     }
