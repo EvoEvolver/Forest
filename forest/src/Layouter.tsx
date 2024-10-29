@@ -247,11 +247,7 @@ export default class Layouter {
 
         // Collect leaves among all siblings (children of the same parent)
         for (const siblingId of parentNode.children) {
-            if(tree.nodeDict[siblingId].children.length === 0){
-                leaves.push(tree.nodeDict[siblingId]);
-            }else{
-                console.log(tree.nodeDict[siblingId])
-            }
+            leaves.push(tree.nodeDict[siblingId]);
         }
         return leaves;
     }
