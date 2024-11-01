@@ -242,7 +242,7 @@ export default class Layouter {
         // Find the parent of the given node
         const parentNode = tree.nodeDict[node.parent];
         if (!parentNode || !parentNode.children.length === 0) {
-            return []; // If there's no parent or no siblings, return an empty array
+            return [node]; // If there's no parent or no siblings, return an empty array
         }
 
         // Collect leaves among all siblings (children of the same parent)
