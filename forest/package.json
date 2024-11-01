@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "vite --port=39999",
     "product": "vite --host 172.20.10.2 --port 39999",
-
     "build": "vite build",
     "preview": "vite preview"
   },
