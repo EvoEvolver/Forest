@@ -1,0 +1,25 @@
+/* Default (un-hover) state */
+.hover-button {
+    height: 80%;
+    width: 20%;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1;
+    color: rgba(0, 0, 0, 0); /* Fully transparent text */
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    outline: none; /* Prevents the focus ring on click */
+}
+
+/* Hover state */
+.hover-button:hover {
+    color: rgba(0, 0, 0, 0.9); /* Semi-transparent black text */
+    background-color: rgba(0, 122, 255, 0.2); /* Semi-transparent blue background */
+}
+
+/* Focus state (to further ensure outline is removed) */
+.hover-button:focus {
+    outline: none;
+}
