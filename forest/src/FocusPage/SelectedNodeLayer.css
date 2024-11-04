@@ -1,15 +1,15 @@
 /* Default (un-hover) state */
 .hover-button {
-    height: 95%;
+    height: 2rem;
     width: 47%;
-    top: 2%;
     z-index: 1;
-    color: rgba(0,0,0,0.5);
-    background-color: rgb(115, 177, 232, 0.2);
+    color: rgba(0,0,0,0.4);
+    background-color: rgb(115, 177, 232, 0.15);
     border: none;
     cursor: pointer;
     outline: none; /* Prevents the focus ring on click */
-    padding: 0;
+    padding: 1px;
+    margin: 1px;
 }
 
 /* Hover state */
