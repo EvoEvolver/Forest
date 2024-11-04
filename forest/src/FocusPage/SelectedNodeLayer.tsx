@@ -100,30 +100,27 @@ const NodeContentTabs = forwardRef(({
                             data-index={leaf.id}
                             style={{marginBottom: '10px', position: 'relative'}}
                         >
+                            <Typography variant="h6" style={{color: dark ? 'white' : 'black'}}>
+                                {leaf.title}
+                            </Typography>
+                            {renderTabs(leaf.tabs, dark)}
                             {leaf.children.length>0 && <Button
                                 class="hover-button"
                                 onClick={() => onRightBtn(leaf.id)}
                                 style={{
-                                    right: '-30px', // Adjust as needed
+                                    float: 'right',
+                                    right: '-10px', // Adjust as needed
                                 }}
-                            >
-                                To<br/>
-                                Child
+                            >→
                             </Button>}
                             {leaf.parent && <Button
                                 class="hover-button"
                                 onClick={() => onLeftBtn(leaf.id)}
                                 style={{
-                                    left: '-30px', // Adjust as needed
+                                    left: '-10px', // Adjust as needed
                                 }}
-                            >
-                                To<br/>
-                                Parent
+                            >←
                             </Button>}
-                            <Typography variant="h6" style={{color: dark ? 'white' : 'black'}}>
-                                {leaf.title}
-                            </Typography>
-                            {renderTabs(leaf.tabs, dark)}
                         </div>
                     ))
                 )}

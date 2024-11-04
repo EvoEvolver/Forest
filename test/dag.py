@@ -8,4 +8,4 @@ if __name__ == '__main__':
     child1.add_child(child3)
     for node in root.iter_subtree_with_bfs():
         print(node.content)
-    root.display(dev_mode=False)
+    root.display(dev_mode=True)
