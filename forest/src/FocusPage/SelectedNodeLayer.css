@@ -3,7 +3,7 @@
     height: 2rem;
     width: 47%;
     z-index: 1;
-    color: rgba(0,0,0,0.4);
+    color: rgba(0,0,0,1);
     background-color: rgb(115, 177, 232, 0.15);
     border: none;
     cursor: pointer;
