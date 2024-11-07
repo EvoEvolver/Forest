@@ -15,6 +15,7 @@ import './SelectedNodeLayer.css';
 
 const NodeContentTabs = forwardRef(({
                                         leaves,
+                                        currNodeId,
                                         tab_dict,
                                         env_funcs,
                                         env_vars,
@@ -94,43 +95,46 @@ const NodeContentTabs = forwardRef(({
                     tabKeys.length > 0 && renderTabs(tab_dict, dark)
                 ) : (
                     leaves.map((leaf, index) => (
-                        <div
-                            key={index}
-                            data-ref={`content-${index}`}
-                            data-index={leaf.id}
-                            style={{marginBottom: '10px', position: 'relative'}}
-                        >
-                            <Typography variant="h6" style={{color: dark ? 'white' : 'black'}}>
-                                {leaf.title}
-                            </Typography>
-                            {renderTabs(leaf.tabs, dark)}
+                        <>
                             <div
-                                style={{
-                                    height: '2rem',
-                                }}
+                                key={index}
+                                data-ref={`content-${index}`}
+                                data-index={leaf.id}
+                                style={{paddingLeft: '10px',paddingRight: '10px',paddingBottom: '5px',marginBottom: '10px', position: 'relative', ...(leaf.id === currNodeId ? { boxShadow: '0 0 15px 4px lightblue' } : {})}}
                             >
-                            {leaf.parent && <Button
-                                class="hover-button"
-                                onClick={() => onLeftBtn(leaf.id)}
-                                style={{
-                                    // align left
-                                    position: 'absolute',
-                                    left: '0',
-                                }}
-                            >←
-                            </Button>}
-                                {leaf.children.length>0 && <Button
-                                class="hover-button"
-                                onClick={() => onRightBtn(leaf.id)}
-                                style={{
-                                    // align right
-                                    position: 'absolute',
-                                    right: '0',
-                                }}
-                            >→
-                            </Button>}
+                                <Typography variant="h6" style={{color: dark ? 'white' : 'black'}}>
+                                    {leaf.title}
+                                </Typography>
+                                {renderTabs(leaf.tabs, dark)}
+                                <div
+                                    style={{
+                                        height: '2rem',
+                                    }}
+                                >
+                                    {leaf.parent && <Button
+                                        class="hover-button"
+                                        onClick={() => onLeftBtn(leaf.id)}
+                                        style={{
+                                            // align left
+                                            position: 'absolute',
+                                            left: '0',
+                                        }}
+                                    >←
+                                    </Button>}
+                                    {leaf.children.length > 0 && <Button
+                                        class="hover-button"
+                                        onClick={() => onRightBtn(leaf.id)}
+                                        style={{
+                                            // align right
+                                            position: 'absolute',
+                                            right: '0',
+                                        }}
+                                    >→
+                                    </Button>}
+                                </div>
                             </div>
-                        </div>
+                        </>
+
                     ))
                 )}
             </CardContent>
@@ -288,7 +292,8 @@ const SelectedNodeLayer = (props) => {
                 transition: animate ? 'opacity 0.5s ease-in' : 'none',
                 opacity: animate ? 0 : 1,
             }}>
-                <NodeContentTabs onLeftBtn={onLeftButtonClick} onRightBtn={onRightButtonClick} leaves={leaves}
+                <NodeContentTabs currNodeId={node.id} onLeftBtn={onLeftButtonClick} onRightBtn={onRightButtonClick}
+                                 leaves={leaves}
                                  tab_dict={node.tools[0]} env_funcs={env_funcs} env_vars={env_vars}
                                  env_components={env_components} title={node.title} ref={props.contentRef}
                                  dark={props.dark}/>
