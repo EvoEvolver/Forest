@@ -100,7 +100,7 @@ const NodeContentTabs = forwardRef(({
                                 key={index}
                                 data-ref={`content-${index}`}
                                 data-index={leaf.id}
-                                style={{paddingLeft: '10px',paddingRight: '10px',paddingBottom: '5px',marginBottom: '10px', position: 'relative', ...(leaf.id === currNodeId ? { boxShadow: '0 0 15px 4px lightblue' } : {})}}
+                                style={{paddingLeft: '10px',paddingRight: '10px',paddingBottom: '5px',marginBottom: '10px', position: 'relative', ...(leaf.id === currNodeId ? { boxShadow: '0 0 1px 2px rgba(0,0,0,0.1)' } : {})}}
                             >
                                 <Typography variant="h6" style={{color: dark ? 'white' : 'black'}}>
                                     {leaf.title}
