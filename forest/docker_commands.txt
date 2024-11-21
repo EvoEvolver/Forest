@@ -1,0 +1,12 @@
+
+sudo docker build -t forest ./
+
+sudo docker run -v $(pwd):/app -p 39999:39999 forest
+
+ctrl+P ctrl+Q 挂起
+
+sudo docker ps
+
+sudo docker stop
+
+sudo docker attach

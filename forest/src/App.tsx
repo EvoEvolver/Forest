@@ -57,7 +57,6 @@ export default function App() {
     const [currPage, setCurrPage] = useState(0);
 
     const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    console.log("preferenceMode is:",dark)
 
 
     // const keyPressApp = useCallback(

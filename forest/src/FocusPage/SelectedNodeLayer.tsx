@@ -15,6 +15,7 @@ import './SelectedNodeLayer.css';
 
 const NodeContentTabs = forwardRef(({
                                         leaves,
+                                        onNodeClick,
                                         currNodeId,
                                         tab_dict,
                                         env_funcs,
@@ -100,7 +101,14 @@ const NodeContentTabs = forwardRef(({
                                 key={index}
                                 data-ref={`content-${index}`}
                                 data-index={leaf.id}
-                                style={{paddingLeft: '10px',paddingRight: '10px',paddingBottom: '5px',marginBottom: '10px', position: 'relative', ...(leaf.id === currNodeId ? { boxShadow: '0 0 1px 2px rgba(0,0,0,0.1)' } : {})}}
+                                onClick={() => onNodeClick(leaf.id)}
+                                style={{
+                                    paddingLeft: '10px',
+                                    paddingRight: '10px',
+                                    paddingBottom: '5px',
+                                    marginBottom: '10px',
+                                    position: 'relative', ...(leaf.id === currNodeId ? {boxShadow: '0 0 1px 2px rgba(0,0,0,0.1)'} : {})
+                                }}
                             >
                                 <Typography variant="h6" style={{color: dark ? 'white' : 'black'}}>
                                     {leaf.title}
@@ -151,36 +159,23 @@ const SelectedNodeLayer = (props) => {
     let currParents = node.parent;
 
     useEffect(() => {
-
         const handleWheel = () => {
             const targets = document.querySelectorAll('[data-ref]');
-            let left = 0;
-            let right = targets.length - 1;
             let closestIndex = -1;
             let minDistance = Infinity;
 
             // Define a helper function to get the distance of an element's rect.y from 0
             const getDistance = (target) => {
                 const rect = target.getBoundingClientRect();
-                return Math.abs(rect.y - window.innerHeight * 0.2);
+                return Math.abs(rect.y + rect.height / 2 - window.innerHeight * 0.3);
             };
 
             // Binary search for the minimum absolute rect.y
-            while (left <= right) {
-                const mid = Math.floor((left + right) / 2);
-                const distance = getDistance(targets[mid]);
-
+            for (let i = 0; i < targets.length; i++) {
+                const distance = getDistance(targets[i]);
                 if (distance < minDistance) {
                     minDistance = distance;
-                    closestIndex = mid;
-                }
-
-                const rect = targets[mid].getBoundingClientRect();
-
-                if (rect.y < 0) {
-                    left = mid + 1;
-                } else {
-                    right = mid - 1;
+                    closestIndex = i;
                 }
             }
             if (closestIndex !== -1) {
@@ -225,6 +220,16 @@ const SelectedNodeLayer = (props) => {
         }
     }
 
+    const handleClick = (id) => {
+        console.log("Clicked", id);
+        lastScroll = new Date().getTime();
+        props.modifyTree({
+            type: 'setSelectedNode',
+            id: id
+        });
+
+    }
+
     const scrollToTarget = (id) => {
         let currTime = new Date().getTime();
         if (currTime - lastScroll < 300) return;
@@ -232,7 +237,6 @@ const SelectedNodeLayer = (props) => {
         if (targetElement) {
             const rect = targetElement.getBoundingClientRect();
             // if (((rect.y + rect.height / 2) > window.innerHeight * 0.7) || ((rect.y + rect.height / 2) < 0)) {
-            console.log(rect.y + rect.height / 2, window.innerHeight * 0.7)
             targetElement.scrollIntoView({behavior: 'auto', block: 'start'});
             // }
         }
@@ -292,7 +296,7 @@ const SelectedNodeLayer = (props) => {
                 transition: animate ? 'opacity 0.5s ease-in' : 'none',
                 opacity: animate ? 0 : 1,
             }}>
-                <NodeContentTabs currNodeId={node.id} onLeftBtn={onLeftButtonClick} onRightBtn={onRightButtonClick}
+                <NodeContentTabs onNodeClick={handleClick} currNodeId={node.id} onLeftBtn={onLeftButtonClick} onRightBtn={onRightButtonClick}
                                  leaves={leaves}
                                  tab_dict={node.tools[0]} env_funcs={env_funcs} env_vars={env_vars}
                                  env_components={env_components} title={node.title} ref={props.contentRef}
