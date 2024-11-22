@@ -101,19 +101,22 @@ const NodeContentTabs = forwardRef(({
                                 key={index}
                                 data-ref={`content-${index}`}
                                 data-index={leaf.id}
-                                onClick={() => onNodeClick(leaf.id)}
+
                                 style={{
                                     paddingLeft: '10px',
                                     paddingRight: '10px',
                                     paddingBottom: '5px',
                                     marginBottom: '10px',
-                                    position: 'relative', ...(leaf.id === currNodeId ? {boxShadow: '0 0 1px 2px rgba(0,0,0,0.1)'} : {})
+                                    position: 'relative'
                                 }}
                             >
-                                <Typography variant="h6" style={{color: dark ? 'white' : 'black'}}>
-                                    {leaf.title}
-                                </Typography>
-                                {renderTabs(leaf.tabs, dark)}
+                                <div onClick={() => onNodeClick(leaf.id)}
+                                style={{...(leaf.id === currNodeId ? {boxShadow: '0 0 1px 2px rgba(0,0,0,0.1)'} : {})}}>
+                                    <Typography variant="h6" style={{color: dark ? 'white' : 'black'}}>
+                                        {leaf.title}
+                                    </Typography>
+                                    {renderTabs(leaf.tabs, dark)}
+                                </div>
                                 <div
                                     style={{
                                         height: '2rem',
@@ -296,7 +299,8 @@ const SelectedNodeLayer = (props) => {
                 transition: animate ? 'opacity 0.5s ease-in' : 'none',
                 opacity: animate ? 0 : 1,
             }}>
-                <NodeContentTabs onNodeClick={handleClick} currNodeId={node.id} onLeftBtn={onLeftButtonClick} onRightBtn={onRightButtonClick}
+                <NodeContentTabs onNodeClick={handleClick} currNodeId={node.id} onLeftBtn={onLeftButtonClick}
+                                 onRightBtn={onRightButtonClick}
                                  leaves={leaves}
                                  tab_dict={node.tools[0]} env_funcs={env_funcs} env_vars={env_vars}
                                  env_components={env_components} title={node.title} ref={props.contentRef}
