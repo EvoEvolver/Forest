@@ -1,4 +1,4 @@
-import React, {useEffect, useState, forwardRef, useRef, useImperativeHandle} from 'react';
+import React, {useEffect, useState, forwardRef, useRef, useImperativeHandle, createContext} from 'react';
 import {Button, Grid} from '@mui/material';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -12,6 +12,8 @@ import TabPanel from '@mui/lab/TabPanel';
 import * as content_components from "./ContentComponents";
 import {Node} from "../entities";
 import './SelectedNodeLayer.css';
+import { EnvFuncsContext } from './NodeContext';
+import {c} from "vite/dist/node/types.d-aGj9QkWt";
 
 const NodeContentTabs = forwardRef(({
                                         leaves,
@@ -110,12 +112,13 @@ const NodeContentTabs = forwardRef(({
                                     position: 'relative'
                                 }}
                             >
-                                <div onClick={() => onNodeClick(leaf.id)}
-                                style={{...(leaf.id === currNodeId ? {boxShadow: '0 0 1px 2px rgba(0,0,0,0.1)'} : {})}}>
+                                <div onClick={(event) => onNodeClick(event, leaf.id)}
+                                     style={{...(leaf.id === currNodeId ? {boxShadow: '0 0 1px 2px rgba(0,0,0,0.1)'} : {})}}>
                                     <Typography variant="h6" style={{color: dark ? 'white' : 'black'}}>
                                         {leaf.title}
                                     </Typography>
                                     {renderTabs(leaf.tabs, dark)}
+
                                 </div>
                                 <div
                                     style={{
@@ -153,6 +156,11 @@ const NodeContentTabs = forwardRef(({
     );
 });
 let lastScroll = 0;
+
+
+//const EnvVarsContext = createContext(null);
+//const CurrentNodeContext = createContext(null);
+
 const SelectedNodeLayer = (props) => {
     let node: Node = props.node;
     let treeData = props.treeData;
@@ -223,7 +231,8 @@ const SelectedNodeLayer = (props) => {
         }
     }
 
-    const handleClick = (id) => {
+    const handleClick = (event, id) => {
+        if (node.id === id) return;
         console.log("Clicked", id);
         lastScroll = new Date().getTime();
         props.modifyTree({
@@ -282,6 +291,7 @@ const SelectedNodeLayer = (props) => {
 
 
     return (
+        <EnvFuncsContext.Provider value={env_funcs}>
         <Grid style={{height: "100%"}} container spacing={1}>
             <Grid key={0} item xs={3.5} style={{
                 height: "100%",
@@ -318,6 +328,7 @@ const SelectedNodeLayer = (props) => {
                                  env_components={env_components} title="" dark={props.dark}/>
             </Grid>
         </Grid>
+        </EnvFuncsContext.Provider>
     );
 };
 

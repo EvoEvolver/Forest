@@ -8,8 +8,8 @@
     border: none;
     cursor: pointer;
     outline: none; /* Prevents the focus ring on click */
-    padding: 1px;
-    margin: 1px;
+    padding: 0.5rem;
+    margin: 0.5rem;
 }
 
 /* Hover state */

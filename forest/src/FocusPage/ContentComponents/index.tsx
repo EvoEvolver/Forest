@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useContext} from "react";
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import { a11yLight } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 
@@ -12,6 +12,7 @@ export const Code = (props) => {
 
 
 import { InlineMath } from 'react-katex';
+import {EnvFuncsContext} from "../NodeContext";
 
 export const TeX = (props) => {
     return (
@@ -27,8 +28,10 @@ export const SendMessage = (props) => {
 }
 
 
+
 export const NodeNavigateButton = (props) => {
-    let modifyTree = props.env_funcs.modifyTree;
+    const env_funcs = useContext(EnvFuncsContext)
+    let modifyTree = env_funcs.modifyTree;
     let nodeId = props.nodeId;
     // make text props.text, if it's undefined, make it 'navigate to node {nodeId}'
     let text = props.text || `navigate to node ${nodeId}`;
