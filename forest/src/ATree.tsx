@@ -290,7 +290,8 @@ export default function ATree(props) {
     let layouter = new Layouter();
 
     const initialTree = {
-        "selectedNode": undefined,
+        "selectedParent": null,
+        "selectedNode": null,
         "nodeDict": {}
     } as TreeData;
 
@@ -302,7 +303,7 @@ export default function ATree(props) {
     function reducers(tree: TreeData, action) {
         if (action.id !== undefined) {
             // user provides an id. so we need to get the node by id.
-            let node = Object.values(tree.nodeDict).find((node) => node.id === action.id);
+            let node = tree.nodeDict[action.id]
             if (node) {
                 action.node = node;
             }

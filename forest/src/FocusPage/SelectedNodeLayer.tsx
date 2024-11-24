@@ -12,16 +12,14 @@ import TabPanel from '@mui/lab/TabPanel';
 import * as content_components from "./ContentComponents";
 import {Node} from "../entities";
 import './SelectedNodeLayer.css';
-import { EnvFuncsContext } from './NodeContext';
+import { EnvFuncsContext, EnvVarsContext } from './NodeContext';
 import {c} from "vite/dist/node/types.d-aGj9QkWt";
 
 const NodeContentTabs = forwardRef(({
+                                        currNode,
                                         leaves,
                                         onNodeClick,
-                                        currNodeId,
                                         tab_dict,
-                                        env_funcs,
-                                        env_vars,
                                         env_components,
                                         title,
                                         dark,
@@ -32,6 +30,9 @@ const NodeContentTabs = forwardRef(({
     const tabKeys = Object.keys(tab_dict).filter(key => key !== "relevant");
     const [value, setValue] = React.useState('0');
     const [emphasize, setEmphasize] = React.useState({enable: false, keyword: '', wholeWord: false});
+
+    const env_vars = React.useContext(EnvVarsContext);
+    let currNodeId = currNode.id
 
     useImperativeHandle(ref, () => ({
         setEmphasize: (em) => setEmphasize(em)
@@ -49,7 +50,7 @@ const NodeContentTabs = forwardRef(({
 
     const renderContent = (content, isDark, applyEmphasis) => (
         <JsxParser
-            bindings={{env_funcs, env_vars}}
+            bindings={{env_vars}}
             components={env_components}
             jsx={
                 isDark
@@ -284,7 +285,6 @@ const SelectedNodeLayer = (props) => {
     }
 
     const env_vars = {
-        node: props.node
     }
 
     const env_components = {...content_components, 'TabPanel': TabPanel}
@@ -292,13 +292,14 @@ const SelectedNodeLayer = (props) => {
 
     return (
         <EnvFuncsContext.Provider value={env_funcs}>
+            <EnvVarsContext.Provider value={env_vars}>
         <Grid style={{height: "100%"}} container spacing={1}>
             <Grid key={0} item xs={3.5} style={{
                 height: "100%",
                 transition: animate ? 'opacity 0.5s ease-in' : 'none',
                 opacity: animate ? 0 : 1,
             }}>
-                <NodeContentTabs leaves={null} tab_dict={node.tools[0]} env_funcs={env_funcs}
+                <NodeContentTabs currNode={node} leaves={null} tab_dict={node.tools[0]}
                                  env_vars={env_vars}
                                  env_components={env_components} title="" dark={props.dark}/>
             </Grid>
@@ -309,10 +310,12 @@ const SelectedNodeLayer = (props) => {
                 transition: animate ? 'opacity 0.5s ease-in' : 'none',
                 opacity: animate ? 0 : 1,
             }}>
-                <NodeContentTabs onNodeClick={handleClick} currNodeId={node.id} onLeftBtn={onLeftButtonClick}
+                <NodeContentTabs
+                    currNode={node}
+                    onNodeClick={handleClick} onLeftBtn={onLeftButtonClick}
                                  onRightBtn={onRightButtonClick}
                                  leaves={leaves}
-                                 tab_dict={node.tools[0]} env_funcs={env_funcs} env_vars={env_vars}
+                                 tab_dict={node.tools[0]} env_vars={env_vars}
                                  env_components={env_components} title={node.title} ref={props.contentRef}
                                  dark={props.dark}/>
 
@@ -323,11 +326,12 @@ const SelectedNodeLayer = (props) => {
                 transition: animate ? 'opacity 0.5s ease-in' : 'none',
                 opacity: animate ? 0 : 1,
             }}>
-                <NodeContentTabs leaves={null} tab_dict={node.tools[1]} env_funcs={env_funcs}
+                <NodeContentTabs currNode={node} leaves={null} tab_dict={node.tools[1]}
                                  env_vars={env_vars}
                                  env_components={env_components} title="" dark={props.dark}/>
             </Grid>
         </Grid>
+         </EnvVarsContext.Provider>
         </EnvFuncsContext.Provider>
     );
 };

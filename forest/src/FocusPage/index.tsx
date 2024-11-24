@@ -34,7 +34,7 @@ export default function FocusPage(props) {
                               paddingTop: "10px",
                               flex: "0 0 70%"
                           }}>
-                        <SelectedNodeLayer layouter={layouter} treeData={props.treeData} node={layouter.getSelectedNode(tree)} modifyTree={modifyTree}
+                        <SelectedNodeLayer layouter={layouter} treeData={props.tree} node={layouter.getSelectedNode(tree)} modifyTree={modifyTree}
                                            send_message_to_main={props.send_message_to_main} contentRef={props.contentRef} dark={props.dark}/>
                     </Grid>
 

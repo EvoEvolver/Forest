@@ -23,13 +23,18 @@ function applyPatchTree(currTree: TreeData, patchTree: TreeData) {
     console.log("original tree", currTree)
     if (currTree === undefined) {
         currTree = {
-            selectedNode: undefined,
+            selectedNode: null,
+            selectedParent: null,
             nodeDict: {}
         };
     }
     if (patchTree.selectedNode) {
         currTree.selectedNode = patchTree.selectedNode;
     }
+    if (patchTree.selectedParent) {
+        currTree.selectedParent = patchTree.selectedParent;
+    }
+
     for (let node_id in patchTree.nodeDict) {
         let patch_node = patchTree.nodeDict[node_id];
         if (patch_node === null) {
@@ -57,29 +62,6 @@ export default function App() {
     const [currPage, setCurrPage] = useState(0);
 
     const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-
-    // const keyPressApp = useCallback(
-    //     (e) => {
-    //         if (!e.shiftKey)
-    //             return;
-    //         const key = e.key;
-    //         if (key === 'T') {
-    //             handleToggle();
-    //             // console.log("ctrl T detected");
-    //             // setPage(page === 0 ? 1 : 0);
-    //             // setCurrPage(currPage === 0 ? 1 : 0);
-    //         }
-    //     },
-    //     []
-    // );
-    // useEffect(() => {
-    //     document.addEventListener("keydown", keyPressApp);
-    //     return () => {
-    //         document.removeEventListener("keydown", keyPressApp);
-    //     };
-    // }, []);
-
 
 
     useEffect(() => {

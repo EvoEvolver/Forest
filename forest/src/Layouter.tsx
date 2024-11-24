@@ -1,5 +1,4 @@
 import {Node, NodeDict, TreeData} from './entities';
-import Tree from "react-d3-tree";
 
 
 export const getSiblingsIncludeSelf = (node: Node, nodeDict: NodeDict): Node[] => {
@@ -80,11 +79,39 @@ export default class Layouter {
     }
 
     public setSelectedNode(currTree: TreeData, node_id: string): TreeData {
-        let nodeDict: NodeDict = currTree.nodeDict;
-        return {
-            selectedNode: node_id,
-            nodeDict: nodeDict
+        let current_selected = currTree.nodeDict[currTree.selectedNode]
+        // check whether node_id is in current_selected.children
+        let in_children = current_selected.children.indexOf(node_id) > -1;
+        let new_node = currTree.nodeDict[node_id];
+        if (in_children) {
+            return {
+                selectedParent: current_selected.id,
+                selectedNode: node_id,
+                nodeDict: currTree.nodeDict
+            }
         }
+
+        let keep_parent = false;
+        for (let other_parent of new_node.other_parents) {
+            if (other_parent === currTree.selectedParent) {
+                keep_parent = true;
+                break;
+            }
+        }
+        if(keep_parent){
+            return {
+                selectedParent: currTree.selectedParent,
+                selectedNode: node_id,
+                nodeDict: currTree.nodeDict
+            }
+        }
+
+        return {
+            selectedParent: new_node.parent,
+            selectedNode: node_id,
+            nodeDict: currTree.nodeDict
+        }
+
     }
 
 
@@ -106,6 +133,7 @@ export default class Layouter {
             selectedNode = tree.selectedNode
         }
         return {
+            selectedParent: tree.selectedParent,
             selectedNode: selectedNode,
             nodeDict: nodeDict
         }
@@ -238,18 +266,38 @@ export default class Layouter {
     }
 
     public getSiblingsLeaves(tree: TreeData, node: Node): Node[] {
-        const leaves: Node[] = [];
-        // Find the parent of the given node
         const parentNode = tree.nodeDict[node.parent];
+
         if (!parentNode || !parentNode.children.length === 0) {
             return [node]; // If there's no parent or no siblings, return an empty array
         }
 
-        // Collect leaves among all siblings (children of the same parent)
-        for (const siblingId of parentNode.children) {
-            leaves.push(tree.nodeDict[siblingId]);
+        // Find the parent of the given node
+        let selectedParentNode
+        if (node.parent === tree.selectedParent){
+            selectedParentNode = parentNode;
         }
-        return leaves;
+        else{
+            // check whether the selectedParent is the other parent of the node
+            for (const otherParentId of node.other_parents) {
+                if (otherParentId === tree.selectedParent) {
+                    selectedParentNode = tree.nodeDict[otherParentId];
+                    break;
+                }
+            }
+        }
+        if (!selectedParentNode) {
+            selectedParentNode = parentNode;
+        }
+
+        const leave_id: string[] = [];
+
+        // Collect leaves among all siblings (children of the same parent)
+        for (const siblingId of selectedParentNode.children) {
+            leave_id.push(siblingId);
+        }
+
+        return leave_id.map((id) => tree.nodeDict[id]);
     }
 
 
