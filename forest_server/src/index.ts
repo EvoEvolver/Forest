@@ -4,6 +4,9 @@ import minimist from 'minimist'
 import http from 'http';
 import { Server as SocketIoServer } from 'socket.io'
 import cors from 'cors';
+const WebSocket = require('ws')
+const setupWSConnection = require('./y-websocket/utils.cjs').setupWSConnection
+import * as Y from 'yjs'
 
 class TreeData {
     selectedNode: string | null;
@@ -53,7 +56,8 @@ function patchTree(currTree: TreeData | null, patchTree: TreeData): TreeData {
 function main(port: number, host: string, frontendRoot: string | null): void {
     const app = express();
     const server = http.createServer(app);
-
+    const wss = new WebSocket.Server({ noServer: true })
+    wss.on('connection', setupWSConnection)
 
     app.use(cors());
     app.use(express.json());
@@ -84,6 +88,12 @@ function main(port: number, host: string, frontendRoot: string | null): void {
 
     server.listen(port, host, () => {
         console.log(`Server running at http://${host}:${port}/`);
+    });
+
+    server.on('upgrade', (request, socket, head) => {
+        wss.handleUpgrade(request, socket, head, (ws: any) => {
+            wss.emit('connection', ws, request)
+        });
     });
 }
 
