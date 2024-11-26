@@ -8,6 +8,8 @@ import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import IconButton from '@mui/material/IconButton';
 import {ToggleButton, ToggleButtonGroup} from "@mui/lab";
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
+import axios from "axios";
+
 const socket = io(`http://${location.hostname}:${currentPort}`, {
     transports: ["websocket"],
     withCredentials: false,
@@ -63,47 +65,20 @@ export default function App() {
 
     const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
+    async function requestTrees() {
+        const res = await axios.get(`http://${location.hostname}:${currentPort}/getTrees`);
+        let trees_data: TreeData[] = res.data;
+        for (let tree of Object.values(trees_data)) {
+            if (!tree.selectedNode || tree.selectedNode == "None") {
+                tree.selectedNode = Object.keys(tree.nodeDict)[0];
+            }
+        }
+        console.log("Received whole tree", trees_data)
+        setTrees(res.data);
+    }
 
     useEffect(() => {
-        socket.on("connect", () => {
-            console.log("Connected");
-        });
-
-        socket.on("patchTree", (serverData) => {
-            console.log("Received tree delta", serverData.tree)
-            setTrees((trees) => {
-                let newTrees = {...trees};
-                newTrees[serverData.tree_id] = applyPatchTree(newTrees[serverData.tree_id], serverData.tree);
-                return newTrees;
-            })
-        });
-
-        socket.on('setTrees', (trees_data: TreeData[]) => {
-
-            for (let tree of Object.values(trees_data)) {
-                if (!tree.selectedNode || tree.selectedNode == "None") {
-                    tree.selectedNode = Object.keys(tree.nodeDict)[0];
-                }
-            }
-            console.log("Received whole tree", trees_data)
-            setTrees(trees_data);
-        })
-
-        socket.emit('requestTrees', () => {
-            console.log("Requesting trees")
-        })
-
-        // check whether trees is empty or not. If not, request the tree.
-        let requestTimer = setInterval(() => {
-            if (!firstTreeReceived.current) {
-                socket.emit('requestTrees', () => {
-                    console.log("Requesting trees")
-                })
-            } else {
-                clearInterval(requestTimer);
-            }
-        }, 500)
-
+        requestTrees()
     }, []);
 
     // On Tree Change

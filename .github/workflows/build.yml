@@ -5,7 +5,8 @@ on:
     branches:
       - main
     paths:
-      - forest/**
+      - forest_client/**
+      - forest_server/**
       - .github/workflows/build.yml
 
 jobs:
@@ -40,12 +41,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
-      - name: Install dependencies
-        run: cd forest; pnpm install
+      - name: Install dependencies for client
+        run: cd forest_client; pnpm install
+
+      - name: Install dependencies for server
+        run: cd forest_server; pnpm install
 
       - name: Build
         run: |
-          cd forest; pnpm run build
+          ./build.sh
           git rev-parse HEAD > dist/version.txt
 
       - name: Compress

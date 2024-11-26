@@ -6,7 +6,7 @@ import tarfile
 current_file_directory = os.path.dirname(os.path.abspath(__file__))
 project_root = current_file_directory
 build_dir = os.path.join(project_root, 'dist')
-asset_dir = os.path.join(build_dir, 'assets')  # Path to the assets directory
+server_dir = os.path.join(build_dir, 'index.js')
 dist_url = "https://github.com/EvoEvolver/Forest/raw/build/dist.tar.gz"
 
 
