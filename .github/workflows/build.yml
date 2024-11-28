@@ -5,6 +5,7 @@ on:
     branches:
       - main
     paths:
+      - build.sh
       - forest_client/**
       - forest_server/**
       - .github/workflows/build.yml
