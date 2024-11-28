@@ -53,7 +53,7 @@ function Chatbot() {
                 return response.json();
             })
             .then(data => {
-                if(data['status'] === 400) {
+                if (data['status'] === 400) {
                     throw new Error('Chatbot is busy.');
                 }
                 setMessages([...safeLatestMessages, {"content": data['message'], "who": "chatbot"}]);

@@ -1,17 +1,15 @@
 import React, {useEffect, useState} from 'react';
 import {Button, Card, Grid} from '@mui/material';
-import TabPanel from '@mui/lab/TabPanel';
-import * as content_components from "./ContentComponents";
 import {Node} from "../entities";
 import './SelectedNodeLayer.css';
-import {useAtom, useAtomValue, useSetAtom} from "jotai";
+import {useAtomValue, useSetAtom} from "jotai";
 import {
     darkModeAtom,
     listOfNodesForViewAtom,
     selectedNodeAtom,
     setToCurrNodeChildrenAtom,
     setToCurrNodeParentAtom
-} from "../Layouter";
+} from "../TreeState";
 import {NodeContentTabs} from "./NodeContentTab";
 import CardContent from "@mui/material/CardContent";
 
@@ -135,7 +133,7 @@ const SelectedNodeLayer = (props) => {
         setAnimate(true);
         // Make sure we scroll to target after the page was fully loaded.
         const scrollTimeoutId = setTimeout(() => {
-            if(node)
+            if (node)
                 scrollToTarget(node.id);
         }, 30); // Delay scrollToTarget by 50ms
 
@@ -151,7 +149,6 @@ const SelectedNodeLayer = (props) => {
     }, [node]);
 
 
-
     const gridStyle = {
         height: "100%",
         transition: animate ? 'opacity 0.5s ease-in' : 'none',
@@ -163,14 +160,14 @@ const SelectedNodeLayer = (props) => {
         return <></>
     }
     return (
-        <Grid style={{height: "100%", width:"100%"}} container spacing={1}>
+        <Grid style={{height: "100%", width: "100%"}} container spacing={1}>
             <NodeContentFrame gridStyle={gridStyle} xs={3.5}>
                 <NodeContentTabs node={node} tabDict={node.tools[0]} title=""/>
             </NodeContentFrame>
 
             <NodeContentFrame gridStyle={gridStyle} xs={5}>
 
-                {leaves.map((n,index)=>
+                {leaves.map((n, index) =>
                     <MiddleContents node={n} selected={n.id === node.id} key={index}/>)}
             </NodeContentFrame>
 
@@ -182,13 +179,13 @@ const SelectedNodeLayer = (props) => {
 };
 
 
-const MiddleContents = ({node, selected}: {node: Node, selected: boolean}) => {
+const MiddleContents = ({node, selected}: { node: Node, selected: boolean }) => {
 
     let setSelectedNode = useSetAtom(selectedNodeAtom)
 
     return <div
         style={{
-            boxShadow: selected ? '0 0 1px 2px rgba(0,0,0,0.1)': null,
+            boxShadow: selected ? '0 0 1px 2px rgba(0,0,0,0.1)' : null,
             padding: "2px",
             paddingLeft: '10px',
             paddingRight: '10px',
@@ -196,14 +193,16 @@ const MiddleContents = ({node, selected}: {node: Node, selected: boolean}) => {
 
     >
         <div
-        onClick={()=>{setSelectedNode(node.id)}}
+            onClick={() => {
+                setSelectedNode(node.id)
+            }}
         >
-        <NodeContentTabs
-            node={node}
-            tabDict={node.tabs}
-            title={node.title}
-            //ref={props.contentRef}
-        />
+            <NodeContentTabs
+                node={node}
+                tabDict={node.tabs}
+                title={node.title}
+                //ref={props.contentRef}
+            />
         </div>
         <NodeNaviButton node={node}/>
     </div>
@@ -215,12 +214,12 @@ const NodeContentFrame = ({children, gridStyle, xs}) => {
     return <>
         <Grid key={0} item xs={xs} style={gridStyle}>
             <Card sx={{
-            width: "100%",
-            height: "100%",
-            overflowY: 'auto',
-            overflowX: 'hidden',
-            wordBreak: "break-word",
-            backgroundColor: dark ? '#3b3d3e' : '#f4f4f4'
+                width: "100%",
+                height: "100%",
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                wordBreak: "break-word",
+                backgroundColor: dark ? '#3b3d3e' : '#f4f4f4'
             }}>
                 <CardContent>
                     {children}

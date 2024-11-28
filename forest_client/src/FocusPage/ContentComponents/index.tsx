@@ -1,6 +1,8 @@
 import React, {useContext} from "react";
 import SyntaxHighlighter from 'react-syntax-highlighter';
-import { a11yLight } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import {a11yLight} from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import {InlineMath} from 'react-katex';
+import {EnvFuncsContext} from "../NodeContext";
 
 export const Code = (props) => {
     return (
@@ -11,22 +13,19 @@ export const Code = (props) => {
 }
 
 
-import { InlineMath } from 'react-katex';
-import {EnvFuncsContext} from "../NodeContext";
-
 export const TeX = (props) => {
     return (
-        <InlineMath math={props.src} />
+        <InlineMath math={props.src}/>
     );
 }
 
 
 export const SendMessage = (props) => {
     return (
-        <button onClick={() => props.env_funcs.send_message_to_main(props.message || 'hello')}>{props.title || "Send message"}</button>
+        <button
+            onClick={() => props.env_funcs.send_message_to_main(props.message || 'hello')}>{props.title || "Send message"}</button>
     );
 }
-
 
 
 export const NodeNavigateButton = (props) => {

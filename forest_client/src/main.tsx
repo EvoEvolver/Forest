@@ -7,12 +7,12 @@ import {Provider} from "jotai";
 const rootElement = document.getElementById('root');
 
 if (rootElement) {
-  ReactDOM.createRoot(rootElement).render(
-      <Provider>
-    <React.StrictMode>
-      <App />
-    </React.StrictMode></Provider>,
-  );
+    ReactDOM.createRoot(rootElement).render(
+        <Provider>
+            <React.StrictMode>
+                <App/>
+            </React.StrictMode></Provider>,
+    );
 } else {
-  console.error('Root element not found in the document');
+    console.error('Root element not found in the document');
 }

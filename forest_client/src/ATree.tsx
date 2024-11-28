@@ -1,10 +1,9 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {Box} from '@mui/material';
 import FocusPage from './FocusPage';
-import {selectedTreeAtom, Layouter} from "./Layouter";
+import {selectedTreeAtom} from "./TreeState";
 import Treemap from './TreeMap';
 import {useAtomValue} from "jotai";
-import {CentralSearchBox} from "./SearchBox";
 // convert the tree from backend to the compatible format for Forest.
 
 
@@ -16,7 +15,7 @@ export default function ATree(props) {
     const contentRef = useRef();
     const tree = useAtomValue(selectedTreeAtom)
     //{<CentralSearchBox onSearch={searchPanel} props={props} contentRef={contentRef}
-     //                              ref={innerRef} dark={props.dark}/>}
+    //                              ref={innerRef} dark={props.dark}/>}
     useEffect(() => {
         console.log("currTree", tree)
     }, [tree]);

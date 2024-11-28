@@ -8,7 +8,7 @@ import TabPanel from "@mui/lab/TabPanel";
 import Typography from "@mui/material/Typography";
 import * as content_components from "./ContentComponents";
 import {atom, useAtomValue} from "jotai";
-import {darkModeAtom} from "../Layouter";
+import {darkModeAtom} from "../TreeState";
 
 const envComponentAtom = atom({...content_components, 'TabPanel': TabPanel})
 

@@ -1,13 +1,11 @@
-import React, {useEffect} from 'react';
+import React from 'react';
 import Plot from 'react-plotly.js';
-import {TreeData, Node} from "../entities";
-import {Layouter, selectedNodeAtom, selectedTreeAtom} from "../Layouter";
-import {useAtom, useAtomValue} from "jotai";
-import {atom} from "jotai";
+import {selectedNodeAtom, selectedTreeAtom} from "../TreeState";
+import {atom, useAtom, useAtomValue} from "jotai";
 
 
-const treeMapData = atom((get)=>{
-    if(!get(selectedNodeAtom))
+const treeMapData = atom((get) => {
+    if (!get(selectedNodeAtom))
         return null
     let labels = [];
     let parents = [];
@@ -39,8 +37,8 @@ const treeMapData = atom((get)=>{
 // https://plotly.com/javascript/reference/treemap/
 export default function Treemap(props) {
     let [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom)
-    let data= useAtomValue(treeMapData)
-    if (!data){
+    let data = useAtomValue(treeMapData)
+    if (!data) {
         return <div>loading...</div>
     }
     return (

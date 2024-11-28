@@ -3,7 +3,7 @@ import {Grid} from '@mui/material';
 import OtherNodesLayer from './OtherNodesLayer';
 import Card from "@mui/material/Card";
 import {useAtomValue} from "jotai/index";
-import {currNodeAncestorsAtom, currNodeChildrenAtom, darkModeAtom, listOfNodesForViewAtom} from "../Layouter";
+import {currNodeAncestorsAtom, currNodeChildrenAtom, darkModeAtom, listOfNodesForViewAtom} from "../TreeState";
 
 
 const NavigatorLayer = () => {
@@ -14,7 +14,7 @@ const NavigatorLayer = () => {
 
     return (
         <>
-            <Grid container item style={{width:"100%", height:"30%"}} spacing={1}>
+            <Grid container item style={{width: "100%", height: "30%"}} spacing={1}>
                 <Grid item
                       id="ancestor_card"
                       style={{
@@ -59,7 +59,7 @@ const NavigatorLayer = () => {
                           backgroundColor: dark ? '#2c2c2c' : '#ffffff',
                           paddingLeft: "3px",
                       }}
-                xs={5}>
+                      xs={5}>
                     <Card style={{
                         width: '50px',
                         height: '15px',
@@ -96,7 +96,7 @@ const NavigatorLayer = () => {
                           backgroundColor: dark ? '#2c2c2c' : '#ffffff',
                           paddingLeft: "3px",
                       }}
-                xs={3.5}>
+                      xs={3.5}>
                     <Card style={{
                         width: '50px',
                         height: '15px',

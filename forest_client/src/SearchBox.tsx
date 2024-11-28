@@ -1,6 +1,6 @@
 import React, {forwardRef, useEffect, useImperativeHandle, useRef, useState} from "react";
 import {useAtom} from "jotai/index";
-import {selectedNodeAtom} from "./Layouter";
+import {selectedNodeAtom} from "./TreeState";
 import sanitizeHtml from "sanitize-html";
 import {
     Box,

@@ -1,14 +1,14 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Grid, Paper, Typography} from '@mui/material';
 import {useAtom, useAtomValue} from "jotai";
-import {darkModeAtom, listOfNodesForViewAtom, selectedNodeAtom} from "../Layouter";
+import {darkModeAtom, selectedNodeAtom} from "../TreeState";
 
 const NodeElement = ({node, refProps, dark, detail}) => {
     const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom)
 
     let selected = selectedNode.id === node.id
     let summary;
-    if('short_summary' in node.data){
+    if ('short_summary' in node.data) {
         summary = node.data['short_summary'];
     }
     return (
@@ -25,7 +25,7 @@ const NodeElement = ({node, refProps, dark, detail}) => {
                 wordBreak: "break-word",
                 padding: "1px",
                 overflowY: "auto",
-                backgroundColor: dark?(selected ? "#343540" : "#5b5c5d"):(selected ? "#ece7f2" : "#FFFFFF"),
+                backgroundColor: dark ? (selected ? "#343540" : "#5b5c5d") : (selected ? "#ece7f2" : "#FFFFFF"),
                 color: dark ? "white" : "#000000",
             }}
             onClick={() => {
@@ -35,12 +35,16 @@ const NodeElement = ({node, refProps, dark, detail}) => {
             {
                 refProps && <span ref={refProps}/>
             }
-            <Typography style={{textAlign: 'left', marginLeft: '10px', marginRight:'5px'}}>{(node.title+((detail&&summary)?"<newline>"+summary:"")).split('<newline>').map((line, index) => (
-        <React.Fragment key={index}>
-          {line}
-          <br />
-        </React.Fragment>
-      ))}</Typography>
+            <Typography style={{
+                textAlign: 'left',
+                marginLeft: '10px',
+                marginRight: '5px'
+            }}>{(node.title + ((detail && summary) ? "<newline>" + summary : "")).split('<newline>').map((line, index) => (
+                <React.Fragment key={index}>
+                    {line}
+                    <br/>
+                </React.Fragment>
+            ))}</Typography>
         </Paper>
 
 
@@ -95,7 +99,8 @@ const OtherNodesLayer = ({nodes, level}) => { //level={0: Ancestor,1: Sibling, 2
 
     return (
         <Grid container alignItems="center" style={{}}>
-            <Grid container justifyContent="center" direction='column' alignItems="center" style={{overflowY: "auto", margin: '5px',paddingBottom:'10px'}} ref={nodeContainerRef}>
+            <Grid container justifyContent="center" direction='column' alignItems="center"
+                  style={{overflowY: "auto", margin: '5px', paddingBottom: '10px'}} ref={nodeContainerRef}>
                 {nodes.slice(startPoint, startPoint + elementsPerPage).map((node, index) => (
                     <Grid
                         key={index}
@@ -111,10 +116,10 @@ const OtherNodesLayer = ({nodes, level}) => { //level={0: Ancestor,1: Sibling, 2
                     >
                         {(selectedNode !== undefined && node.id === selectedNode.id) &&
                             <NodeElement node={node}
-                                                     refProps={selectedNodeRef} dark={dark} detail={level === 1}/>
+                                         refProps={selectedNodeRef} dark={dark} detail={level === 1}/>
                         }
                         {(selectedNode !== undefined && node.id !== selectedNode.id) &&
-                        <NodeElement node={node} refProps={null} dark={dark} detail={level === 1}/>}
+                            <NodeElement node={node} refProps={null} dark={dark} detail={level === 1}/>}
                     </Grid>
                 ))}
             </Grid>
