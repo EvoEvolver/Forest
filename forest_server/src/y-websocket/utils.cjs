@@ -223,9 +223,9 @@ const closeConn = (doc, conn) => {
     if (doc.conns.size === 0 && persistence !== null) {
       // if persisted, we store state and destroy ydocument
       persistence.writeState(doc.name, doc).then(() => {
-        doc.destroy()
+        //doc.destroy()
       })
-      docs.delete(doc.name)
+      //docs.delete(doc.name)
     }
   }
   conn.close()
@@ -254,7 +254,9 @@ const pingTimeout = 30000
  * @param {import('http').IncomingMessage} req
  * @param {any} opts
  */
-exports.setupWSConnection = (conn, req, { docName = (req.url || '').slice(1).split('?')[0], gc = true } = {}) => {
+exports.setupWSConnection = (conn, req, { docName = '', gc = true } = {}) => {
+  // Zijian: i modified the docName so that it is always the same
+  // docName = (req.url || '').slice(1).split('?')[0]
   conn.binaryType = 'arraybuffer'
   // get doc, initialize if it does not exist yet
   const doc = getYDoc(docName, gc)
