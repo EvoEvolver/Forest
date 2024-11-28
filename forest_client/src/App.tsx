@@ -2,7 +2,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {Box, Grid, Tooltip} from "@mui/material";
 import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
-import {ToggleButton} from "@mui/lab";
+import {ToggleButton} from '@mui/material'
 import axios from "axios";
 import {useAtom} from "jotai";
 import {darkModeAtom, selectedNodeIdAtom, selectedTreeAtom, selectedTreeIdAtom, treesMapAtom} from "./TreeState";

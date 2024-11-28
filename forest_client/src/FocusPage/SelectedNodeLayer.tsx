@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {Button, Card, Grid} from '@mui/material';
 import {Node} from "../entities";
 import './SelectedNodeLayer.css';
-import {useAtomValue, useSetAtom} from "jotai";
+import {atom, useAtom, useAtomValue, useSetAtom} from "jotai";
 import {
     darkModeAtom,
     listOfNodesForViewAtom,
@@ -13,7 +13,9 @@ import {
 import {NodeContentTabs} from "./NodeContentTab";
 import CardContent from "@mui/material/CardContent";
 
-let lastScroll = 0;
+
+const currNodeInViewMiddleAtom = atom<string>("")
+
 
 const NodeNaviButton = ({node}) => {
 
@@ -65,10 +67,11 @@ const SelectedNodeLayer = (props) => {
     const node: Node = useAtomValue(selectedNodeAtom)
     const [animate, setAnimate] = useState(false);
     const leaves = useAtomValue(listOfNodesForViewAtom)
-
-
+    const setSelectedNode = useSetAtom(selectedNodeAtom)
+    const [currNodeInViewMiddle, setCurrNodeInViewMiddle] = useAtom(currNodeInViewMiddleAtom)
     useEffect(() => {
         const handleWheel = () => {
+            console.log("scroll")
             const targets = document.querySelectorAll('[data-ref]');
             let closestIndex = -1;
             let minDistance = Infinity;
@@ -90,13 +93,12 @@ const SelectedNodeLayer = (props) => {
             if (closestIndex !== -1) {
                 const nodeId = targets[closestIndex].getAttribute('data-index');
                 if (nodeId !== node.id) {
-                    props.modifyTree({
-                        type: 'setSelectedNode',
-                        id: targets[closestIndex].getAttribute('data-index')
+                    setCurrNodeInViewMiddle((prev)=> {
+                        return nodeId
                     });
+                    setSelectedNode(nodeId);
                 }
             }
-            lastScroll = new Date().getTime();
         };
         window.addEventListener('wheel', handleWheel);
         return () => {
@@ -105,20 +107,11 @@ const SelectedNodeLayer = (props) => {
     }, []);
 
 
-    const handleClick = (event, id) => {
-        if (node.id === id) return;
-        console.log("Clicked", id);
-        lastScroll = new Date().getTime();
-        props.modifyTree({
-            type: 'setSelectedNode',
-            id: id
-        });
-
-    }
 
     const scrollToTarget = (id) => {
-        let currTime = new Date().getTime();
-        if (currTime - lastScroll < 300) return;
+        if (currNodeInViewMiddle === id) {
+            return;
+        }
         const targetElement = document.querySelector(`[data-index="${id}"]`);
         if (targetElement) {
             const rect = targetElement.getBoundingClientRect();
@@ -168,7 +161,7 @@ const SelectedNodeLayer = (props) => {
             <NodeContentFrame gridStyle={gridStyle} xs={5}>
 
                 {leaves.map((n, index) =>
-                    <MiddleContents node={n} selected={n.id === node.id} key={index}/>)}
+                    <MiddleContents node={n} selected={n.id === node.id} key={index} index={index}/>)}
             </NodeContentFrame>
 
             <NodeContentFrame gridStyle={gridStyle} xs={3.5}>
@@ -179,7 +172,7 @@ const SelectedNodeLayer = (props) => {
 };
 
 
-const MiddleContents = ({node, selected}: { node: Node, selected: boolean }) => {
+const MiddleContents = ({node, selected, index}: { node: Node, selected: boolean, index: number }) => {
 
     let setSelectedNode = useSetAtom(selectedNodeAtom)
 
@@ -196,6 +189,8 @@ const MiddleContents = ({node, selected}: { node: Node, selected: boolean }) => 
             onClick={() => {
                 setSelectedNode(node.id)
             }}
+            data-ref={`content-${index}`}
+            data-index={node.id}
         >
             <NodeContentTabs
                 node={node}

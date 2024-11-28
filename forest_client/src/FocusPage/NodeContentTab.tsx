@@ -10,7 +10,7 @@ import * as content_components from "./ContentComponents";
 import {atom, useAtomValue} from "jotai";
 import {darkModeAtom} from "../TreeState";
 
-const envComponentAtom = atom({...content_components, 'TabPanel': TabPanel})
+const envComponentAtom = atom(content_components)
 
 const renderTabs = (tabs) => {
     const [value, setValue] = React.useState('0');
@@ -29,9 +29,11 @@ const renderTabs = (tabs) => {
     //useImperativeHandle(ref, () => ({
     //    setEmphasize: (em) => setEmphasize(em)
     // }));
+    const envComponent = useAtomValue(envComponentAtom)
 
     const renderContent = (content, applyEmphasis) => (
         <JsxParser
+            components={envComponent}
             jsx={dark ? `<div style="color: white;">${applyEmphasis ? emphasizeText(content, emphasize.keyword, emphasize.wholeWord) : content}</div>`
                 : (applyEmphasis ? emphasizeText(content, emphasize.keyword, emphasize.wholeWord) : content)
             }
@@ -72,32 +74,3 @@ export const NodeContentTabs = ({node, tabDict, title}) => {
         </>
     );
 }
-
-
-/*
-                {nodes.map((leaf, index) => (
-                        <>
-                            <div
-                                key={index}
-                                data-ref={`content-${index}`}
-                                data-index={leaf.id}
-                                style={{
-                                    paddingLeft: '10px',
-                                    paddingRight: '10px',
-                                    paddingBottom: '5px',
-                                    marginBottom: '10px',
-                                    position: 'relative'
-                                }}
-                            >
-                                <div onClick={(event) => onNodeClick(event, leaf.id)}
-                                     style={{...(leaf.id === selectedNode.id ? {boxShadow: '0 0 1px 2px rgba(0,0,0,0.1)'} : {})}}>
-                                    <Typography variant="h6" style={{color: dark ? 'white' : 'black'}}>
-                                        {leaf.title}
-                                    </Typography>
-                                    {renderTabs(leaf.tabs, dark)}
-                                </div>
-                            </div>
-                        </>
-                    )
-                )}
- */
