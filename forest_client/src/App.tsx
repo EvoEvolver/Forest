@@ -1,12 +1,14 @@
-import React, {useEffect, useState} from 'react';
-import ATree from './ATree';
-import {Grid, Tooltip} from "@mui/material";
+import React, {useEffect, useRef, useState} from 'react';
+import {Box, Grid, Tooltip} from "@mui/material";
 import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import {ToggleButton} from "@mui/lab";
 import axios from "axios";
 import {useAtom} from "jotai";
-import {darkModeAtom, selectedNodeIdAtom, selectedTreeIdAtom, treesMapAtom} from "./TreeState";
+import {darkModeAtom, selectedNodeIdAtom, selectedTreeAtom, selectedTreeIdAtom, treesMapAtom} from "./TreeState";
+import FocusPage from "./FocusPage";
+import Treemap from "./TreeMap";
+import {useAtomValue} from "jotai/index";
 
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
 
@@ -21,6 +23,8 @@ export default function App() {
     const [treesMap, setTreesMap] = useAtom(treesMapAtom);
     const [currTreeId, setCurrTreeId] = useAtom(selectedTreeIdAtom)
     const [selectedNodeId, setSelectedNodeId] = useAtom(selectedNodeIdAtom)
+    const contentRef = useRef();
+    const tree = useAtomValue(selectedTreeAtom)
 
     async function requestTrees() {
         const res = await axios.get(`http://${location.hostname}:${currentPort}/getTrees`);
@@ -53,7 +57,7 @@ export default function App() {
 
     return (
         <>
-            <Grid container item
+            <Grid container
                   style={{
                       width: "100%",
                       height: "100vh",
@@ -67,7 +71,8 @@ export default function App() {
                     alignItems: "center",
                     backgroundColor: dark ? "#2c2c2c" : "#f4f4f4",
                     boxSizing: "border-box"
-                }}>
+                }}
+                >
                     {Object.keys(treesMap).length > 1 && <Grid container direction="row" style={{marginBottom: '10px'}}>
                         {Object.keys(treesMap).map((treeId, i) => (
                             <Grid item key={treeId} style={{marginBottom: '3px'}}>
@@ -96,10 +101,13 @@ export default function App() {
                 </Grid>
 
                 <Grid item style={{height: "95.5%", boxSizing: "border-box"}}>
-                    <ATree page={page}
-                           setPage={setPage}
-                           setCurrPage={setCurrPage}
-                    />
+                    <Box style={{width: "100vw", height: "95vh", flexGrow: 1, boxSizing: "border-box"}}>
+                        {/*make two buttons to change between focus page and treemap. the buttons should be fixed to top left.*/}
+                        {tree && page === 0 &&
+                            <FocusPage contentRef={contentRef}/>}
+                        {tree && page === 1 &&
+                            <Treemap/>}
+                    </Box>
                 </Grid>
 
 
