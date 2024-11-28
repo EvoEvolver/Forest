@@ -7,14 +7,39 @@ import cors from 'cors';
 const WebSocket = require('ws')
 const setupWSConnection = require('./y-websocket/utils.cjs').setupWSConnection
 import * as Y from 'yjs'
+//import { TreeData } from '../../forest_client/src/entities'
+
 
 class TreeData {
     selectedNode: string | null;
     nodeDict: { [key: string]: any };
     constructor() {
-        this.selectedNode = null;
-        this.nodeDict = {};
+        this.selectedNode = null
+        this.nodeDict = {}
     }
+}
+
+
+class TreeDoc {
+    ydoc: Y.Doc
+    nodeDict: Y.Map<string | null>
+    constructor() {
+        this.ydoc = new Y.Doc()
+        this.nodeDict = this.ydoc.getMap("nodeDict")
+        this.nodeDict.set("_selectedNode", null)
+    }
+    getSelectedNode(){
+        return this.nodeDict.get("_selectedNode")
+    }
+
+    setSelectedNode(node_id: string) {
+        this.nodeDict.set("_selectedNode", node_id)
+    }
+
+    removeNode(node_id: string){
+        this.nodeDict.delete(node_id)
+    }
+
 }
 
 class ServerData{
@@ -60,7 +85,9 @@ function main(port: number, host: string, frontendRoot: string | null): void {
     wss.on('connection', setupWSConnection)
 
     app.use(cors());
-    app.use(express.json());
+    //app.use(express.json());
+    app.use(express.json({limit: '50mb'}));
+    app.use(express.urlencoded({limit: '50mb'}));
 
     const data: ServerData = new ServerData();
 
@@ -100,9 +127,12 @@ function main(port: number, host: string, frontendRoot: string | null): void {
 
 const args = minimist(process.argv.slice(2));
 // Access the port argument
-const frontendRoot = args.FrontendRoot || "./public/index.html"
+let frontendRoot = args.FrontendRoot || "./public/index.html"
 const backendPort = args.BackendPort || 29999
 const host = args.Host || "127.0.0.1"
+const noFrontend = args.NoFrontend || false
+if(noFrontend)
+    frontendRoot = null
 
 console.log(__dirname)
 

@@ -1,32 +1,20 @@
 import React, {useEffect} from 'react';
 import Plot from 'react-plotly.js';
 import {TreeData, Node} from "../entities";
-import Layouter from "../Layouter";
-
-let nestedTreeMap = (tree) => {
-    return (
-        // for my own. and display my id to the top left.
-        <div style={{width: '100%', height: '100%'}}>
-
-        </div>
-    )
-};
+import {Layouter, selectedNodeAtom, selectedTreeAtom} from "../Layouter";
+import {useAtom, useAtomValue} from "jotai";
+import {atom} from "jotai";
 
 
-// https://plotly.com/javascript/reference/treemap/
-export default function Treemap(props) {
-    let layouter: Layouter = props.layouter;
-    let tree: TreeData = props.tree;
-    let selectedNode = layouter.getSelectedNode(tree);
-    let currentLevel = selectedNode.id;
-
-
-    let modifyTree = props.modifyTree;
+const treeMapData = atom((get)=>{
+    if(!get(selectedNodeAtom))
+        return null
     let labels = [];
     let parents = [];
     let texts = [];
     let ids = [];
-    for (let node of Object.values(tree.nodeDict)) {
+    let currentLevel = get(selectedNodeAtom).id
+    for (let node of Object.values(get(selectedTreeAtom).nodeDict)) {
         labels.push(node.title);
         ids.push(node.id)
         // find its parent.
@@ -36,19 +24,25 @@ export default function Treemap(props) {
         } else {
             parents.push("");
         }
-        texts.push(`${node.tabs['code']}`);
     }
 
-
-    const data = [{
+    return [{
         type: "treemap",
         labels: labels,
         parents: parents,
         ids: ids,
         level: currentLevel
-    }];
+    }]
+})
 
 
+// https://plotly.com/javascript/reference/treemap/
+export default function Treemap(props) {
+    let [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom)
+    let data= useAtomValue(treeMapData)
+    if (!data){
+        return <div>loading...</div>
+    }
     return (
         <Plot
             data={data}
@@ -60,12 +54,7 @@ export default function Treemap(props) {
             }}
             style={{width: '100vw', height: '95vh'}}
             onAnimated={(e) => {
-                modifyTree(
-                    {
-                        type: 'setSelectedNode',
-                        id: data[0].level
-                    }
-                )
+                setSelectedNode(data[0].level)
             }}
         />
     );

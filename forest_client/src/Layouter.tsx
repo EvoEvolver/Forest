@@ -1,340 +1,138 @@
 import {Node, NodeDict, TreeData} from './entities';
+import {atom} from 'jotai'
 
+export const selectedTreeIdAtom= atom<string>("")
+export const treesMapAtom = atom<Record<string, TreeData>>({})
 
-export const getSiblingsIncludeSelf = (node: Node, nodeDict: NodeDict): Node[] => {
-    let parent = nodeDict[node.parent];
-    if (!parent) {
-        return [node];
+export const selectedTreeAtom = atom((get)=>{
+    const treeId = get(selectedTreeIdAtom)
+    if(!treeId){
+        if(Object.keys(get(treesMapAtom)).length === 0)
+            return null
+        return get(treesMapAtom)[Object.keys(get(treesMapAtom))[0]]
     }
-    const siblingNodes = parent.children.map((c: string) => nodeDict[c]) as Node[];
-    if (siblingNodes.length === 0) {
-        siblingNodes.push(node);
+    return get(treesMapAtom)[treeId]
+    }, (get, set, newTreeId: string)=>{
+        set(selectedTreeIdAtom, newTreeId)
     }
-    return siblingNodes;
-}
+)
 
+export const selectedNodeIdAtom = atom("")
 
-// get the node's ancestors.
-export const getAncestors = (node: Node, nodeDict: NodeDict): Node[] => {
-    let parent = nodeDict[node.parent];
-    let ancestors: Node[] = [];
-    while (parent) {
-        ancestors.push(parent);
-        parent = nodeDict[parent.parent];
-    }
-    return ancestors;
-}
+export const selectedNodeAtom = atom(
+    (get) => {
+        const currTree = get(selectedTreeAtom)
+        if(!currTree)
+            return null
+        const selectedNodeId = get(selectedNodeIdAtom)
+        if (!selectedNodeId)
+            return Object.values(currTree.nodeDict)[0]
+        return currTree.nodeDict[selectedNodeId]
+    },
+    (get, set, newSelectedNodeId: string) => {
+        const currTree = get(selectedTreeAtom)
+        const currentSelected = currTree.nodeDict[get(selectedNodeIdAtom)]
+        const inChildren = currentSelected.children.indexOf(newSelectedNodeId) > -1;
+        const newNode = currTree.nodeDict[newSelectedNodeId];
+        const lastSelectedParent = get(lastSelectedParentAtom)
 
+        set(selectedNodeIdAtom, newSelectedNodeId)
 
-// get my descents.
-
-export const getDescents = (node: Node, nodeDict: NodeDict): Node[] => {
-    let children: string[] = node.children;
-    if (!children) {
-        return [] as Node[];
-    } else {
-        const childrenNodes = children.map((c: string) => nodeDict[c]) as Node[];
-        let des: Node[] = [];
-        childrenNodes.forEach((c: Node) => {
-            des.push(c);
-            des = des.concat(getDescents(c, nodeDict));
-        });
-        return des;
-    }
-}
-
-
-// get my children.
-
-export const getChildren = (node: Node, nodeDict: NodeDict): Node[] => {
-    let children: string[] = node.children;
-    if (!children) {
-        return [] as Node[];
-    } else {
-        return children.map((c: string) => nodeDict[c]) as Node[];
-    }
-};
-
-
-export default class Layouter {
-    /**
-     * The constructor of the Layout class.
-     * @param nodes: the nodes in the tree. No layout information.
-     * @param setNodes: Function to update nodes state.
-     */
-
-    public rawNodes: Node[] = [];
-
-    constructor() {
-        this.rawNodes = undefined;
-    }
-
-
-    /**
-     * Get the node that's currently being selected.
-     * @returns the selected node. undefined if no node is selected.
-     */
-    public getSelectedNode(treeData: TreeData): Node {
-        return treeData.nodeDict[treeData.selectedNode];
-    }
-
-    public setSelectedNode(currTree: TreeData, node_id: string): TreeData {
-        let current_selected = currTree.nodeDict[currTree.selectedNode]
-        // check whether node_id is in current_selected.children
-        let in_children = current_selected.children.indexOf(node_id) > -1;
-        let new_node = currTree.nodeDict[node_id];
-        if (in_children) {
-            return {
-                selectedParent: current_selected.id,
-                selectedNode: node_id,
-                nodeDict: currTree.nodeDict
-            }
+        if (inChildren) {
+            set(lastSelectedParentAtom, currentSelected.id)
+            return
         }
 
         let keep_parent = false;
-        for (let other_parent of new_node.other_parents) {
-            if (other_parent === currTree.selectedParent) {
+        for (let other_parent of newNode.other_parents) {
+            if (other_parent === lastSelectedParent) {
                 keep_parent = true;
                 break;
             }
         }
-        if(keep_parent){
-            return {
-                selectedParent: currTree.selectedParent,
-                selectedNode: node_id,
-                nodeDict: currTree.nodeDict
-            }
-        }
-
-        return {
-            selectedParent: new_node.parent,
-            selectedNode: node_id,
-            nodeDict: currTree.nodeDict
-        }
+        if (!keep_parent)
+            set(lastSelectedParentAtom, newNode.parent)
 
     }
+)
 
+export const lastSelectedParentAtom = atom<string>("")
 
-    public hasTree(tree: TreeData): boolean {
-        if (!tree) return false;
-        return Object.keys(tree.nodeDict).length > 0;
+export const listOfNodesForViewAtom = atom<Node[]>((get)=>{
+    const node = get(selectedNodeAtom)
+    if (!node) return []
+
+    const tree = get(selectedTreeAtom)
+
+    const parentNode = tree.nodeDict[node.parent];
+
+    if (!parentNode || parentNode.children.length === 0) {
+        return [node]; // If there's no parent or no siblings, return an empty array
     }
 
-    public updateTree(currTree: TreeData, tree: TreeData): TreeData {
-        let nodeDict: NodeDict = tree.nodeDict;
-        let nodes = Object.values(nodeDict);
-        let selectedNode: string
-        if (!tree.selectedNode) {
-            selectedNode = currTree.selectedNode;
-            if (!selectedNode) {
-                selectedNode = nodes[0].id;
-            }
-        } else {
-            selectedNode = tree.selectedNode
-        }
-        return {
-            selectedParent: tree.selectedParent,
-            selectedNode: selectedNode,
-            nodeDict: nodeDict
-        }
+    const lastSelectedParent = get(lastSelectedParentAtom)
+    // Find the parent of the given node
+    let selectedParentNode
+    if (node.parent === lastSelectedParent){
+        selectedParentNode = parentNode;
     }
-
-    public getAncestorNodes(currTree: TreeData, node: Node): Node[] {
-        return getAncestors(node, currTree.nodeDict);
-    }
-
-    public getSiblingNodes(currTree: TreeData, node: Node): Node[] {
-        return getSiblingsIncludeSelf(node, currTree.nodeDict);
-    }
-
-    public getChildrenNodes(currTree: TreeData, node: Node): Node[] {
-        return getChildren(node, currTree.nodeDict);
-    }
-
-
-    public checkIfNodeExists(tree: TreeData, node: Node): boolean {
-        return tree.nodeDict[node.id] !== undefined;
-    }
-
-    public move(tree: TreeData, direction): Node {
-        let nodes = Object.values(tree.nodeDict);
-
-        // find the selectedNode, which is selected.
-        const selectedNode = tree.nodeDict[tree.selectedNode]
-        if (!selectedNode) return;
-        // if move up, get ancestors.
-        if (direction === "parent") {
-            const ancestors = getAncestors(selectedNode, tree.nodeDict);
-            if (ancestors.length > 0) {
-                return ancestors[0];
-            } else {
-                return undefined;
-            }
-        }
-        // if move down, get first descent.
-
-        if (direction === "child") {
-            const children = getChildren(selectedNode, tree.nodeDict);
-
-            if (children.length > 0) {
-                return children[0];
-            } else {
-                return undefined;
-            }
-        }
-        // if move left, get left sibling.
-        if (direction === "left_sib") {
-            const siblings = getSiblingsIncludeSelf(selectedNode, tree.nodeDict);
-
-            if (getSiblingsIncludeSelf.length > 0) {
-                // find the index of the selectedNode in the siblings.
-                const index = siblings.findIndex((s) => s.id === selectedNode.id);
-                if (index > 0) {
-                    return siblings[index - 1];
-                } else {
-                    return undefined;
-                }
-            } else {
-                return undefined;
-            }
-        }
-        // if move right, get right sibling
-        if (direction === "right_sib") {
-            const siblings = getSiblingsIncludeSelf(selectedNode, tree.nodeDict);
-
-            if (getSiblingsIncludeSelf.length > 0) {
-                // find the index of the selectedNode in the siblings.
-                const index = siblings.findIndex((s) => s.id === selectedNode.id);
-                if (index < siblings.length - 1) {
-                    return siblings[index + 1];
-                } else {
-                    return undefined;
-                }
-            } else {
-                return undefined;
+    else{
+        // check whether the selectedParent is the other parent of the node
+        for (const otherParentId of node.other_parents) {
+            if (otherParentId === lastSelectedParent) {
+                selectedParentNode = tree.nodeDict[otherParentId];
+                break;
             }
         }
     }
-
-    public moveToChildByIndex(tree: TreeData, index: number): Node {
-        let nodes = Object.values(tree.nodeDict);
-
-        // find the selectedNode, which is selected.
-        const selectedNode = tree.nodeDict[tree.selectedNode]
-        if (!selectedNode) return;
-        // if move up, get ancestors.
-        const children = getChildren(selectedNode, tree.nodeDict);
-        if (children.length > 0 && index < children.length) {
-            return children[index];
-        } else {
-            return undefined;
-        }
+    if (!selectedParentNode) {
+        selectedParentNode = parentNode;
     }
 
-    public moveToRoot(tree: TreeData): Node {
-        let root = Object.values(tree.nodeDict)[0];
-        while (root.parent) {
-            root = tree.nodeDict[root.parent]
-        }
-        return root;
+    return selectedParentNode.children.map((id) => tree.nodeDict[id]);
+})
+
+export const currNodeChildrenAtom = atom<Node[]>((get)=>{
+    const currNode = get(selectedNodeAtom)
+    if (!currNode) return []
+    const currTree = get(selectedTreeAtom)
+    return currNode.children.map((i: string) => currTree.nodeDict[i]) as Node[];
+})
+
+export const currNodeAncestorsAtom = atom<Node[]>((get)=>{
+    const currNode = get(selectedNodeAtom)
+    if (!currNode) return []
+    const currTree = get(selectedTreeAtom)
+    const ancestors = []
+    let parent = currTree.nodeDict[currNode.parent]
+    while (parent) {
+        ancestors.push(parent)
+        parent = currTree.nodeDict[parent.parent]
     }
-
-    public getAllLeaves(tree: TreeData): Node[] {
-        const root = this.moveToRoot(tree);
-        const leaves: Node[] = [];
-
-        // Helper function to recursively collect leaf nodes
-        const collectLeaves = (nodeId: string) => {
-            const node = tree.nodeDict[nodeId];
-
-            // If the node has no children, it's a leaf node
-            if (!node || !node.children || node.children.length === 0) {
-                leaves.push(node);
-                return;
-            }
-
-            // Otherwise, recursively process each child from left to right
-            for (const childId of node.children) {
-                collectLeaves(childId);
-            }
-        };
-
-        // Start collecting leaves from the root node
-        collectLeaves(root.id);
-
-        return leaves;
+    return ancestors
     }
-
-    public getSiblingsLeaves(tree: TreeData, node: Node): Node[] {
-        const parentNode = tree.nodeDict[node.parent];
-
-        if (!parentNode || !parentNode.children.length === 0) {
-            return [node]; // If there's no parent or no siblings, return an empty array
-        }
-
-        // Find the parent of the given node
-        let selectedParentNode
-        if (node.parent === tree.selectedParent){
-            selectedParentNode = parentNode;
-        }
-        else{
-            // check whether the selectedParent is the other parent of the node
-            for (const otherParentId of node.other_parents) {
-                if (otherParentId === tree.selectedParent) {
-                    selectedParentNode = tree.nodeDict[otherParentId];
-                    break;
-                }
-            }
-        }
-        if (!selectedParentNode) {
-            selectedParentNode = parentNode;
-        }
-
-        const leave_id: string[] = [];
-
-        // Collect leaves among all siblings (children of the same parent)
-        for (const siblingId of selectedParentNode.children) {
-            leave_id.push(siblingId);
-        }
-
-        return leave_id.map((id) => tree.nodeDict[id]);
-    }
+)
 
 
-    // move to the next available node on the right side of the tree.
-    public moveToNextAvailableOnRightHelper(tree: TreeData, node: Node): Node {
-        let nodes = Object.values(tree.nodeDict);
-        // base case: the node is root.
-        // check if it is root.
-        const ancestors = getAncestors(node, tree.nodeDict);
-        if (ancestors.length === 0) {
-            return undefined;
-        } else {
-            // get current index.
-            const siblings = getSiblingsIncludeSelf(node, tree.nodeDict);
-            const index = siblings.findIndex((s) => s.id === node.id);
-            if (index === siblings.length - 1) {
-                return this.moveToNextAvailableOnRightHelper(tree, ancestors[0]);
-            } else {
-                return siblings[index + 1];
-            }
+export const setToCurrNodeChildrenAtom = atom(null, (get, set)=>{
+    const currNode = get(selectedNodeAtom)
+    if (!currNode || currNode.children.length == 0) return
+    set(selectedNodeAtom, currNode.children[0])
+})
+
+
+export const setToCurrNodeParentAtom = atom(null, (get, set)=>{
+    const currNode = get(selectedNodeAtom)
+    if (!currNode || !currNode.parent) return
+    const lastSelectedParent = get(lastSelectedParentAtom)
+    if (currNode.parent !== lastSelectedParent) {
+        if (currNode.other_parents.indexOf(lastSelectedParent) > -1) {
+            set(selectedNodeAtom, lastSelectedParent)
+            return
         }
     }
+    set(selectedNodeAtom, currNode.parent)
+})
 
-    public moveToNextAvailable(tree: TreeData): Node {
 
-        console.log("moveToNextAvailable");
-        let nodes = Object.values(tree.nodeDict);
-        // find the selectedNode, which is selected.
-        const selectedNode = tree.nodeDict[tree.selectedNode]
-        if (!selectedNode) return;
-        // find the next available node recursively.
-        // TODO: what is the time complexity of this function?
-        const children = getChildren(selectedNode, tree.nodeDict);
-        if (children.length > 0) {
-            return children[0];
-        } else {
-            return this.moveToNextAvailableOnRightHelper(tree, selectedNode);
-        }
-    }
-}
+export const darkModeAtom = atom(false)

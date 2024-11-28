@@ -1,10 +1,12 @@
 import React, {useState, useEffect, useRef} from 'react';
-import {Grid, Button, Paper, Typography} from '@mui/material';
-import {Node} from "../entities";
+import {Grid, Paper, Typography} from '@mui/material';
+import {useAtom, useAtomValue} from "jotai";
+import {darkModeAtom, listOfNodesForViewAtom, selectedNodeAtom} from "../Layouter";
 
-const NodeElement = (props) => {
-    const {modifyTree, selected} = props;
-    let node: Node = props.node;
+const NodeElement = ({node, refProps, dark, detail}) => {
+    const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom)
+
+    let selected = selectedNode.id === node.id
     let summary;
     if('short_summary' in node.data){
         summary = node.data['short_summary'];
@@ -23,20 +25,17 @@ const NodeElement = (props) => {
                 wordBreak: "break-word",
                 padding: "1px",
                 overflowY: "auto",
-                backgroundColor: props.dark?(selected ? "#343540" : "#5b5c5d"):(selected ? "#ece7f2" : "#FFFFFF"),
-                color: props.dark ? "white" : "#000000",
+                backgroundColor: dark?(selected ? "#343540" : "#5b5c5d"):(selected ? "#ece7f2" : "#FFFFFF"),
+                color: dark ? "white" : "#000000",
             }}
             onClick={() => {
-                modifyTree({
-                    type: 'setSelectedNode',
-                    id: node.id
-                })
+                setSelectedNode(node.id)
             }}
         >
             {
-                props.refProps && <span ref={props.refProps}/>
+                refProps && <span ref={refProps}/>
             }
-            <Typography style={{textAlign: 'left', marginLeft: '10px', marginRight:'5px'}}>{(node.title+((props.detail&&summary)?"<newline>"+summary:"")).split('<newline>').map((line, index) => (
+            <Typography style={{textAlign: 'left', marginLeft: '10px', marginRight:'5px'}}>{(node.title+((detail&&summary)?"<newline>"+summary:"")).split('<newline>').map((line, index) => (
         <React.Fragment key={index}>
           {line}
           <br />
@@ -48,12 +47,13 @@ const NodeElement = (props) => {
     );
 };
 
-const OtherNodesLayer = ({nodes, modifyTree, selectedNode, dark, level}) => { //level={0: Ancestor,1: Sibling, 2: Children}
+const OtherNodesLayer = ({nodes, level}) => { //level={0: Ancestor,1: Sibling, 2: Children}
 
     const elementsPerPage = 100;
     const [startPoint, setStartPoint] = useState(0);
     const [animate, setAnimate] = useState(false);
-
+    const selectedNode = useAtomValue(selectedNodeAtom)
+    const dark = useAtomValue(darkModeAtom)
     const selectedNodeRef = useRef(null)
     const nodeContainerRef = useRef(null)
 
@@ -94,7 +94,7 @@ const OtherNodesLayer = ({nodes, modifyTree, selectedNode, dark, level}) => { //
     }, [selectedNode]);
 
     return (
-        <Grid container alignItems="center" style={{height: '21vh'}}>
+        <Grid container alignItems="center" style={{}}>
             <Grid container justifyContent="center" direction='column' alignItems="center" style={{overflowY: "auto", margin: '5px',paddingBottom:'10px'}} ref={nodeContainerRef}>
                 {nodes.slice(startPoint, startPoint + elementsPerPage).map((node, index) => (
                     <Grid
@@ -110,13 +110,11 @@ const OtherNodesLayer = ({nodes, modifyTree, selectedNode, dark, level}) => { //
                         }}
                     >
                         {(selectedNode !== undefined && node.id === selectedNode.id) &&
-                            <NodeElement node={node} selected={true}
-                                                     modifyTree={modifyTree}
+                            <NodeElement node={node}
                                                      refProps={selectedNodeRef} dark={dark} detail={level === 1}/>
                         }
                         {(selectedNode !== undefined && node.id !== selectedNode.id) &&
-                        <NodeElement node={node} selected={false}
-                                     modifyTree={modifyTree} dark={dark} detail={level === 1}/>}
+                        <NodeElement node={node} refProps={null} dark={dark} detail={level === 1}/>}
                     </Grid>
                 ))}
             </Grid>

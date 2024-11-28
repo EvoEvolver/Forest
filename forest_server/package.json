@@ -23,9 +23,14 @@
     "@types/minimist": "^1.2.5",
     "cors": "^2.8.5",
     "express": "^4.21.1",
+    "lib0": "^0.2.98",
+    "lodash.debounce": "^4.0.8",
     "minimist": "^1.2.8",
     "socket.io": "^4.8.1",
     "ws": "^8.18.0",
-    "y-websocket": "^2.0.4"
+    "y-leveldb": "^0.1.2",
+    "y-protocols": "^1.0.6",
+    "y-websocket": "^2.0.4",
+    "yjs": "^13.6.20"
   }
 }

@@ -9,103 +9,48 @@ import IconButton from '@mui/material/IconButton';
 import {ToggleButton, ToggleButtonGroup} from "@mui/lab";
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
 import axios from "axios";
-
-const socket = io(`http://${location.hostname}:${currentPort}`, {
-    transports: ["websocket"],
-    withCredentials: false,
-}); // Currently running on default port locally. Need to write it into config file.
-
-
-const send_message_to_main = (message) => {
-    socket.emit("message_to_main", message);
-}
-
-
-function applyPatchTree(currTree: TreeData, patchTree: TreeData) {
-    console.log("original tree", currTree)
-    if (currTree === undefined) {
-        currTree = {
-            selectedNode: null,
-            selectedParent: null,
-            nodeDict: {}
-        };
-    }
-    if (patchTree.selectedNode) {
-        currTree.selectedNode = patchTree.selectedNode;
-    }
-    if (patchTree.selectedParent) {
-        currTree.selectedParent = patchTree.selectedParent;
-    }
-
-    for (let node_id in patchTree.nodeDict) {
-        let patch_node = patchTree.nodeDict[node_id];
-        if (patch_node === null) {
-            delete currTree.nodeDict[node_id];
-        } else {
-            currTree.nodeDict[node_id] = patch_node;
-        }
-    }
-    if (!currTree.selectedNode) {
-        currTree.selectedNode = Object.keys(currTree.nodeDict)[0];
-    }
-    console.log("patched tree", currTree)
-    return currTree;
-}
+import {Provider, useAtom} from "jotai";
+import {selectedTreeIdAtom, darkModeAtom, treesMapAtom, selectedNodeAtom, selectedNodeIdAtom} from "./Layouter";
 
 
 export default function App() {
-    let [trees, setTrees] = useState({});
 
-    let [selectedTreeId, setSelectedTreeId] = useState(undefined);
-    let [toLoadTree, setToLoadTree] = useState([]);
     const [page, setPage] = useState(0);
-    let firstTreeReceived = useRef(false);
-
     const [currPage, setCurrPage] = useState(0);
 
-    const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    const [dark, setDark] = useAtom(darkModeAtom)
+    const [treesMap, setTreesMap] = useAtom(treesMapAtom);
+    const [currTreeId, setCurrTreeId] = useAtom(selectedTreeIdAtom)
+    const [selectedNodeId, setSelectedNodeId] = useAtom(selectedNodeIdAtom)
 
     async function requestTrees() {
         const res = await axios.get(`http://${location.hostname}:${currentPort}/getTrees`);
-        let trees_data: TreeData[] = res.data;
-        for (let tree of Object.values(trees_data)) {
-            if (!tree.selectedNode || tree.selectedNode == "None") {
-                tree.selectedNode = Object.keys(tree.nodeDict)[0];
-            }
-        }
-        console.log("Received whole tree", trees_data)
-        setTrees(res.data);
+        let treesData = res.data;
+        console.log("Received whole tree", treesData)
+        setTreesMap((prev)=>({...prev, ...treesData}))
+        const rootId = Object.keys(treesData)[0];
+        setCurrTreeId((prev) => {
+            if(!prev)
+                return rootId
+            return prev
+        });
+        setSelectedNodeId((prev) => {
+            if(!prev)
+                return rootId
+            return prev
+        });
     }
 
     useEffect(() => {
+        setDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
         requestTrees()
     }, []);
 
-    // On Tree Change
-    useEffect(() => {
-        if (Object.keys(trees).length === 1 || selectedTreeId === undefined) {
-            setSelectedTreeId(Object.keys(trees)[0]);
-            // push the tree to the toLoadTree if not exist, which is an array of tree ids that we want to load.
-        }
-        firstTreeReceived.current = true;
-    }, [trees]);
-
-
-    useEffect(() => {
-        console.log("selectedTreeId", selectedTreeId)
-        if (!toLoadTree.includes(selectedTreeId) && selectedTreeId !== undefined) {
-            setToLoadTree([...toLoadTree, selectedTreeId])
-            console.log(`set to load tree ${selectedTreeId}`)
-        }
-    }, [selectedTreeId]);
 
     const handleToggle = () => {
-        console.log("call handle", currPage);
         setCurrPage(currPage === 0 ? 1 : 0);
         setPage(page === 0 ? 1 : 0);
-
-        console.log("new curr:", currPage)
-
     };
 
     return (
@@ -118,11 +63,11 @@ export default function App() {
                     backgroundColor: dark?"#2c2c2c":"#f4f4f4",
                     boxSizing: "border-box"
                 }}>
-                    {Object.keys(trees).length > 1 && <Grid container direction="row" style={{marginBottom: '10px'}}>
-                        {Object.keys(trees).map((treeId, i) => (
+                    {Object.keys(treesMap).length > 1 && <Grid container direction="row" style={{marginBottom: '10px'}}>
+                        {Object.keys(treesMap).map((treeId, i) => (
                             <Grid item key={treeId} style={{marginBottom: '3px'}}>
                                 <button style={{backgroundColor: "#00000000", color: dark?"#ffffff":"#626262"}}
-                                        onClick={() => setSelectedTreeId(treeId)}>{i + 1}</button>
+                                        onClick={() => setCurrTreeId(treeId)}>{i + 1}</button>
                             </Grid>
                         ))}
                     </Grid>}
@@ -145,16 +90,10 @@ export default function App() {
                 </Grid>
 
                 <Grid item style={{height: "95.5%", boxSizing: "border-box"}}>
-                    {
-                        Object.keys(trees).map((treeId) => {
-                            return <ATree hidden={treeId !== selectedTreeId} key={treeId} tree={trees[treeId]}
-                                          page={page}
-                                          setPage={setPage}
-                                          dark={dark}
-                                          setCurrPage={setCurrPage}
-                                          send_message_to_main={send_message_to_main}/>
-                        })
-                    }
+                        <ATree page={page}
+                               setPage={setPage}
+                               setCurrPage={setCurrPage}
+                        />
                 </Grid>
 
 

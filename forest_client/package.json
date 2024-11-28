@@ -21,6 +21,7 @@
     "axios": "^1.7.8",
     "dagre": "^0.8.5",
     "html-react-parser": "^5.0.11",
+    "jotai": "^2.10.3",
     "plotly.js": "^2.29.1",
     "react": "^18.2.0",
     "react-code-blocks": "^0.1.6",
