@@ -51,7 +51,7 @@ jobs:
       - name: Build
         run: |
           ./build.sh
-          git rev-parse HEAD > dist/version.txt
+          git rev-parse HEAD > forest/dist/version.txt
 
       - name: Compress
         uses: a7ul/tar-action@v1.2.0
