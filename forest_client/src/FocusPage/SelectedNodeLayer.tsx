@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Button, Card, Grid} from '@mui/material';
 import {Node} from "../entities";
 import './SelectedNodeLayer.css';
@@ -67,12 +67,14 @@ const SelectedNodeLayer = (props) => {
     const node: Node = useAtomValue(selectedNodeAtom)
     const [animate, setAnimate] = useState(false);
     const leaves = useAtomValue(listOfNodesForViewAtom)
-    const setSelectedNode = useSetAtom(selectedNodeAtom)
+    const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom)
     const [currNodeInViewMiddle, setCurrNodeInViewMiddle] = useAtom(currNodeInViewMiddleAtom)
+    const selectableColumnRef = useRef(null);
+
     useEffect(() => {
         const handleWheel = () => {
-            console.log("scroll")
-            const targets = document.querySelectorAll('[data-ref]');
+            const targets = selectableColumnRef.current.querySelectorAll('[data-ref]');
+
             let closestIndex = -1;
             let minDistance = Infinity;
 
@@ -80,8 +82,7 @@ const SelectedNodeLayer = (props) => {
             const getDistance = (target) => {
                 const rect = target.getBoundingClientRect();
                 return Math.abs(rect.y + rect.height / 2 - window.innerHeight * 0.3);
-            };
-
+            }
             // Binary search for the minimum absolute rect.y
             for (let i = 0; i < targets.length; i++) {
                 const distance = getDistance(targets[i]);
@@ -128,7 +129,7 @@ const SelectedNodeLayer = (props) => {
         const scrollTimeoutId = setTimeout(() => {
             if (node)
                 scrollToTarget(node.id);
-        }, 30); // Delay scrollToTarget by 50ms
+        }, 40); // Delay scrollToTarget by 50ms
 
         const animateTimeoutId = setTimeout(() => {
             setAnimate(false);
@@ -158,11 +159,12 @@ const SelectedNodeLayer = (props) => {
                 <NodeContentTabs node={node} tabDict={node.tools[0]} title=""/>
             </NodeContentFrame>
 
-            <NodeContentFrame gridStyle={gridStyle} xs={5}>
-
-                {leaves.map((n, index) =>
-                    <MiddleContents node={n} selected={n.id === node.id} key={index} index={index}/>)}
-            </NodeContentFrame>
+                <NodeContentFrame gridStyle={gridStyle} xs={5} >
+                    <div ref={selectableColumnRef}>
+                    {leaves.map((n, index) =>
+                        <MiddleContents node={n} selected={n.id === node.id} key={index} index={index}/>)}
+                    </div>
+                </NodeContentFrame>
 
             <NodeContentFrame gridStyle={gridStyle} xs={3.5}>
                 <NodeContentTabs node={node} tabDict={node.tools[1]} title=""/>

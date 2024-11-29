@@ -3,6 +3,10 @@ import SyntaxHighlighter from 'react-syntax-highlighter';
 import {a11yLight} from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import {InlineMath} from 'react-katex';
 import {EnvFuncsContext} from "../NodeContext";
+import Zoom from 'react-medium-image-zoom'
+import 'react-medium-image-zoom/dist/styles.css'
+import {useSetAtom} from "jotai";
+import {selectedNodeAtom} from "../../TreeState";
 
 export const Code = (props) => {
     return (
@@ -29,14 +33,22 @@ export const SendMessage = (props) => {
 
 
 export const NodeNavigateButton = (props) => {
-    const env_funcs = useContext(EnvFuncsContext)
-    let modifyTree = env_funcs.modifyTree;
+    const setSelectedNode = useSetAtom(selectedNodeAtom)
     let nodeId = props.nodeId;
     // make text props.text, if it's undefined, make it 'navigate to node {nodeId}'
     let text = props.text || `navigate to node ${nodeId}`;
     return (
         <>
-            <button onClick={() => modifyTree({type: 'setSelectedNode', id: nodeId})}>{text}</button>
+            <button onClick={() => setSelectedNode(nodeId)}>{text}</button>
         </>
     );
+}
+
+
+export const FigureBox = (props) => {
+    return <>
+        <Zoom>
+        {props.children}
+        </Zoom>
+    </>
 }

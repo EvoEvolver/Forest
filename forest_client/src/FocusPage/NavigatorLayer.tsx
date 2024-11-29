@@ -3,14 +3,20 @@ import {Grid} from '@mui/material';
 import OtherNodesLayer from './OtherNodesLayer';
 import Card from "@mui/material/Card";
 import {useAtomValue} from "jotai/index";
-import {currNodeAncestorsAtom, currNodeChildrenAtom, darkModeAtom, listOfNodesForViewAtom} from "../TreeState";
+import {
+    ancestorStackNodesAtom,
+    currNodeAncestorsAtom,
+    currNodeChildrenAtom,
+    darkModeAtom,
+    listOfNodesForViewAtom
+} from "../TreeState";
 
 
 const NavigatorLayer = () => {
     const dark = useAtomValue(darkModeAtom)
     const currNodeChildren = useAtomValue(currNodeChildrenAtom)
     const listOfNodesForView = useAtomValue(listOfNodesForViewAtom)
-    const currNodeAncestors = useAtomValue(currNodeAncestorsAtom)
+    const currNodeAncestors = useAtomValue(ancestorStackNodesAtom)
 
     return (
         <>

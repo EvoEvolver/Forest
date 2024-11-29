@@ -31,6 +31,7 @@
     "react-helmet-async": "^2.0.3",
     "react-jsx-parser": "^1.29.0",
     "react-katex": "^3.0.1",
+    "react-medium-image-zoom": "^5.2.11",
     "react-plotly.js": "^2.6.0",
     "react-select": "^5.8.0",
     "react-syntax-highlighter": "^15.5.0",

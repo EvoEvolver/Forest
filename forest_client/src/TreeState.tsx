@@ -30,31 +30,56 @@ export const selectedNodeAtom = atom(
         return currTree.nodeDict[selectedNodeId]
     },
     (get, set, newSelectedNodeId: string) => {
+        if (get(selectedNodeIdAtom) === newSelectedNodeId)
+            return
         const currTree = get(selectedTreeAtom)
         const currentSelected = currTree.nodeDict[get(selectedNodeIdAtom)]
         const inChildren = currentSelected.children.indexOf(newSelectedNodeId) > -1;
         const newNode = currTree.nodeDict[newSelectedNodeId];
-        const lastSelectedParent = get(lastSelectedParentAtom)
+        const ancestorStack = get(ancestorStackAtom)
 
         set(selectedNodeIdAtom, newSelectedNodeId)
 
         if (inChildren) {
-            set(lastSelectedParentAtom, currentSelected.id)
+            set(ancestorStackAtom, [currentSelected.id, ...ancestorStack])
             return
         }
 
-        let keep_parent = false;
-        for (let other_parent of newNode.other_parents) {
-            if (other_parent === lastSelectedParent) {
-                keep_parent = true;
-                break;
+        let matched_ancestor = null;
+        for (let ancestor of ancestorStack) {
+            if (ancestor == newNode.parent) {
+                matched_ancestor = ancestor;
+                break
+            }
+            for (let other_parent of newNode.other_parents) {
+                if (other_parent === ancestor) {
+                    matched_ancestor = ancestor;
+                    break
+                }
             }
         }
-        if (!keep_parent)
-            set(lastSelectedParentAtom, newNode.parent)
 
+        if (matched_ancestor) {
+            set(ancestorStackAtom, ancestorStack.slice(ancestorStack.indexOf(matched_ancestor)))
+        }else {
+            const parents = []
+            let oneParent = newNode.parent
+            while (oneParent){
+                parents.push(oneParent)
+                oneParent = currTree.nodeDict[oneParent].parent
+            }
+            set(ancestorStackAtom, parents)
+        }
     }
 )
+
+export const ancestorStackAtom = atom<string[]>([])
+
+export const ancestorStackNodesAtom = atom<Node[]>((get) => {
+    const ancestorStack = get(ancestorStackAtom)
+    const currTree = get(selectedTreeAtom)
+    return ancestorStack.map((id) => currTree.nodeDict[id])
+})
 
 export const lastSelectedParentAtom = atom<string>("")
 
@@ -70,7 +95,7 @@ export const listOfNodesForViewAtom = atom<Node[]>((get) => {
         return [node]; // If there's no parent or no siblings, return an empty array
     }
 
-    const lastSelectedParent = get(lastSelectedParentAtom)
+    const lastSelectedParent = get(ancestorStackAtom)[0]
     // Find the parent of the given node
     let selectedParentNode
     if (node.parent === lastSelectedParent) {
@@ -123,7 +148,7 @@ export const setToCurrNodeChildrenAtom = atom(null, (get, set) => {
 export const setToCurrNodeParentAtom = atom(null, (get, set) => {
     const currNode = get(selectedNodeAtom)
     if (!currNode || !currNode.parent) return
-    const lastSelectedParent = get(lastSelectedParentAtom)
+    const lastSelectedParent = get(ancestorStackAtom)[0]
     if (currNode.parent !== lastSelectedParent) {
         if (currNode.other_parents.indexOf(lastSelectedParent) > -1) {
             set(selectedNodeAtom, lastSelectedParent)

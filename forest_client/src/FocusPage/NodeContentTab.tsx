@@ -9,8 +9,9 @@ import Typography from "@mui/material/Typography";
 import * as content_components from "./ContentComponents";
 import {atom, useAtomValue} from "jotai";
 import {darkModeAtom} from "../TreeState";
+import Tooltip from '@mui/material/Tooltip';
 
-const envComponentAtom = atom(content_components)
+const envComponentAtom = atom({...content_components, Tooltip})
 
 const renderTabs = (tabs) => {
     const [value, setValue] = React.useState('0');
