@@ -7,8 +7,8 @@ import {
     darkModeAtom,
     listOfNodesForViewAtom,
     selectedNodeAtom,
-    setToCurrNodeChildrenAtom,
-    setToCurrNodeParentAtom
+    setToNodeChildrenAtom,
+    setToNodeParentAtom
 } from "../TreeState";
 import {NodeContentTabs} from "./NodeContentTab";
 import CardContent from "@mui/material/CardContent";
@@ -19,14 +19,14 @@ const currNodeInViewMiddleAtom = atom<string>("")
 
 const NodeNaviButton = ({node}) => {
 
-    const setToCurrNodeChildren = useSetAtom(setToCurrNodeChildrenAtom)
-    const setToCurrNodeParent = useSetAtom(setToCurrNodeParentAtom)
+    const setToNodeChildren = useSetAtom(setToNodeChildrenAtom)
+    const setToNodeParent = useSetAtom(setToNodeParentAtom)
 
     const onLeftBtn = (id) => {
-        setToCurrNodeParent()
+        setToNodeParent(id)
     }
     const onRightBtn = (id) => {
-        setToCurrNodeChildren()
+        setToNodeChildren(id)
     }
 
     return <div

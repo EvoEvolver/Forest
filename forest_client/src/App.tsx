@@ -77,6 +77,7 @@ export default function App() {
     }
 
     useEffect(() => {
+        document.body.style.overflow = 'hidden';
         setDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
         requestTrees()
         //setupYDoc()

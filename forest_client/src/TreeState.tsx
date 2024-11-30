@@ -155,14 +155,16 @@ export const currNodeAncestorsAtom = atom<Node[]>((get) => {
 )
 
 
-export const setToCurrNodeChildrenAtom = atom(null, (get, set) => {
+export const setToNodeChildrenAtom = atom(null, (get, set, nodeid) => {
+    set(selectedNodeIdAtom, nodeid)
     const currNode = get(selectedNodeAtom)
     if (!currNode || currNode.children.length == 0) return
     set(selectedNodeAtom, currNode.children[0])
 })
 
 
-export const setToCurrNodeParentAtom = atom(null, (get, set) => {
+export const setToNodeParentAtom = atom(null, (get, set, nodeid) => {
+    set(selectedNodeIdAtom, nodeid)
     const currNode = get(selectedNodeAtom)
     if (!currNode || !currNode.parent) return
     const lastSelectedParent = get(ancestorStackAtom)[0]
