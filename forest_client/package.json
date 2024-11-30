@@ -39,7 +39,9 @@
     "sanitize-html": "^2.8.1",
     "socket.io-client": "^4.7.2",
     "typescript": "^5.3.3",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "y-websocket": "^2.0.4",
+    "yjs": "^13.6.20"
   },
   "devDependencies": {
     "@types/react": "^18.2.42",

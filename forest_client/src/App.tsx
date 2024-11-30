@@ -4,27 +4,54 @@ import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import {ToggleButton} from '@mui/material'
 import axios from "axios";
-import {useAtom} from "jotai";
+import {atom, useAtom, useSetAtom} from "jotai";
 import {darkModeAtom, selectedNodeIdAtom, selectedTreeAtom, selectedTreeIdAtom, treesMapAtom} from "./TreeState";
 import FocusPage from "./FocusPage";
 import Treemap from "./TreeMap";
 import {useAtomValue} from "jotai/index";
+import * as Y from "yjs";
+import { WebsocketProvider } from 'y-websocket'
 
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
 
+const YDocAtom = atom(new Y.Doc());
+const YjsProviderAtom = atom((get)=>{
+    return new WebsocketProvider(`ws://${location.hostname}:${currentPort}`, "", get(YDocAtom))
+});
+const YMapTreesAtom = atom((get)=>{
+    return get(YDocAtom).getMap("trees")
+})
 
 export default function App() {
 
     const [page, setPage] = useState(0);
     const [currPage, setCurrPage] = useState(0);
-
-
     const [dark, setDark] = useAtom(darkModeAtom)
     const [treesMap, setTreesMap] = useAtom(treesMapAtom);
     const [currTreeId, setCurrTreeId] = useAtom(selectedTreeIdAtom)
     const [selectedNodeId, setSelectedNodeId] = useAtom(selectedNodeIdAtom)
     const contentRef = useRef();
     const tree = useAtomValue(selectedTreeAtom)
+    const [trees, setTrees] = useAtom(treesMapAtom)
+    //const setYjsProvider = useSetAtom(YjsProviderAtom)
+    const ydoc = useAtomValue(YDocAtom)
+    const ymapTrees = useAtomValue(YMapTreesAtom)
+    const wsProvider = useAtomValue(YjsProviderAtom)
+
+    wsProvider.on('status', event => {
+      console.log("wsProvider", event.status) // logs "connected" or "disconnected"
+    })
+
+    const setupYDoc = ()=>{
+        ymapTrees.observe((event)=>{
+            let parsedTree = {}
+            for (let [key, value] of ymapTrees.entries()){
+                parsedTree[key] = JSON.parse(value)
+            }
+            console.log("YMapTrees", parsedTree)
+            setTrees(parsedTree)
+        })
+    }
 
     async function requestTrees() {
         const res = await axios.get(`http://${location.hostname}:${currentPort}/getTrees`);
@@ -46,7 +73,8 @@ export default function App() {
 
     useEffect(() => {
         setDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
-        requestTrees()
+        //requestTrees()
+        setupYDoc()
     }, []);
 
 

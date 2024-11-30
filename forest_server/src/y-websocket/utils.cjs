@@ -254,12 +254,12 @@ const pingTimeout = 30000
  * @param {import('http').IncomingMessage} req
  * @param {any} opts
  */
-exports.setupWSConnection = (conn, req, { docName = '', gc = true } = {}) => {
+exports.setupWSConnection = (conn, req, { docName = null, gc = true } = {}) => {
   // Zijian: i modified the docName so that it is always the same
   // docName = (req.url || '').slice(1).split('?')[0]
   conn.binaryType = 'arraybuffer'
   // get doc, initialize if it does not exist yet
-  const doc = getYDoc(docName, gc)
+  const doc = getYDoc('forest', gc)
   doc.conns.set(conn, new Set())
   // listen and reply to events
   conn.on('message', /** @param {ArrayBuffer} message */ message => messageListener(conn, doc, new Uint8Array(message)))

@@ -19,6 +19,16 @@ export const selectedTreeAtom = atom((get) => {
 
 export const selectedNodeIdAtom = atom("")
 
+function setDefaultAncestors(newNode: Node, currTree: TreeData, set: <Value, Args extends unknown[], Result>(atom: WritableAtom<Value, Args, Result>, ...args: Args) => Result) {
+    const parents = []
+    let oneParent = newNode.parent
+    while (oneParent) {
+        parents.push(oneParent)
+        oneParent = currTree.nodeDict[oneParent].parent
+    }
+    set(ancestorStackAtom, parents)
+}
+
 export const selectedNodeAtom = atom(
     (get) => {
         const currTree = get(selectedTreeAtom)
@@ -33,9 +43,16 @@ export const selectedNodeAtom = atom(
         if (get(selectedNodeIdAtom) === newSelectedNodeId)
             return
         const currTree = get(selectedTreeAtom)
+        if (!currTree)
+            return
         const currentSelected = currTree.nodeDict[get(selectedNodeIdAtom)]
-        const inChildren = currentSelected.children.indexOf(newSelectedNodeId) > -1;
         const newNode = currTree.nodeDict[newSelectedNodeId];
+        if (!currentSelected) {
+            set(selectedNodeIdAtom, newSelectedNodeId)
+            setDefaultAncestors(newNode, currTree, set);
+            return
+        }
+        const inChildren = currentSelected.children.indexOf(newSelectedNodeId) > -1;
         const ancestorStack = get(ancestorStackAtom)
 
         set(selectedNodeIdAtom, newSelectedNodeId)
@@ -62,13 +79,7 @@ export const selectedNodeAtom = atom(
         if (matched_ancestor) {
             set(ancestorStackAtom, ancestorStack.slice(ancestorStack.indexOf(matched_ancestor)))
         }else {
-            const parents = []
-            let oneParent = newNode.parent
-            while (oneParent){
-                parents.push(oneParent)
-                oneParent = currTree.nodeDict[oneParent].parent
-            }
-            set(ancestorStackAtom, parents)
+            setDefaultAncestors(newNode, currTree, set);
         }
     }
 )

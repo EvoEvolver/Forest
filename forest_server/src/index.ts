@@ -2,19 +2,16 @@ import express, { Request, Response } from 'express';
 import path from 'path';
 import minimist from 'minimist'
 import http from 'http';
-import { Server as SocketIoServer } from 'socket.io'
 import cors from 'cors';
 const WebSocket = require('ws')
 const setupWSConnection = require('./y-websocket/utils.cjs').setupWSConnection
 import * as Y from 'yjs'
-//import { TreeData } from '../../forest_client/src/entities'
+const getYDoc = require('./y-websocket/utils.cjs').getYDoc
 
 
 class TreeData {
-    selectedNode: string | null;
     nodeDict: { [key: string]: any };
     constructor() {
-        this.selectedNode = null
         this.nodeDict = {}
     }
 }
@@ -82,7 +79,11 @@ function main(port: number, host: string, frontendRoot: string | null): void {
     const app = express();
     const server = http.createServer(app);
     const wss = new WebSocket.Server({ noServer: true })
-    wss.on('connection', setupWSConnection)
+    const docname = "forest"
+
+    wss.on('connection', (conn: any, req: any, opts: any)=>{
+        setupWSConnection(conn, req, opts)
+    })
 
     app.use(cors());
     //app.use(express.json());
@@ -102,16 +103,15 @@ function main(port: number, host: string, frontendRoot: string | null): void {
         console.log("update tree")
         const tree_patch = req.body.tree;
         const tree_id = req.body.tree_id;
+        const doc = getYDoc(docname)
+        //const nodeDict = doc.getMap("trees").get(tree_id).get
         data.tree = patchTree(data.tree, tree_patch);
         data.tree_id = tree_id;
         data.trees[tree_id] = data.tree;
+        doc.getMap("trees").set(tree_id, JSON.stringify(data.tree));
         res.send("OK");
     });
 
-    app.get('/getTrees', (_req, res) => {
-        console.log("get tree")
-        res.send(data.trees);
-    })
 
     server.listen(port, host, () => {
         console.log(`Server running at http://${host}:${port}/`);
