@@ -11,14 +11,13 @@ import Treemap from "./TreeMap";
 import {useAtomValue} from "jotai/index";
 import * as Y from "yjs";
 import { WebsocketProvider } from 'y-websocket'
+import {YMap} from "yjs/dist/src/types/YMap";
 
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
 
 const YDocAtom = atom(new Y.Doc());
-const YjsProviderAtom = atom((get)=>{
-    return new WebsocketProvider(`ws://${location.hostname}:${currentPort}`, "", get(YDocAtom))
-});
-const YMapTreesAtom = atom((get)=>{
+const YjsProviderAtom = atom();
+const YMapTreesAtom = atom<YMap<YMap<any>>>((get)=>{
     return get(YDocAtom).getMap("trees")
 })
 
@@ -33,23 +32,29 @@ export default function App() {
     const contentRef = useRef();
     const tree = useAtomValue(selectedTreeAtom)
     const [trees, setTrees] = useAtom(treesMapAtom)
-    //const setYjsProvider = useSetAtom(YjsProviderAtom)
+    const [wsProvider, setYjsProvider] = useAtom(YjsProviderAtom)
     const ydoc = useAtomValue(YDocAtom)
     const ymapTrees = useAtomValue(YMapTreesAtom)
-    const wsProvider = useAtomValue(YjsProviderAtom)
 
-    wsProvider.on('status', event => {
-      console.log("wsProvider", event.status) // logs "connected" or "disconnected"
-    })
+
 
     const setupYDoc = ()=>{
-        ymapTrees.observe((event)=>{
-            let parsedTree = {}
-            for (let [key, value] of ymapTrees.entries()){
-                parsedTree[key] = JSON.parse(value)
+        setYjsProvider(new WebsocketProvider(`ws://${location.hostname}:${currentPort}`, "", ydoc))
+        wsProvider.on('status', event => {
+          console.log("wsProvider", event.status) // logs "connected" or "disconnected"
+        })
+        ymapTrees.observeDeep((ymapEvent)=>{
+            let parsedTrees = {}
+            for (let [treeId, yTree] of ymapTrees.entries()){
+                let parsedNodeDict = {}
+                const yNodeDict = yTree.get("nodeDict")
+                for (let [nodeId, nodeStr] of yNodeDict.entries()) {
+                    if(nodeStr)
+                        parsedNodeDict[nodeId] = JSON.parse(nodeStr)
+                }
+                parsedTrees[treeId] = {nodeDict:parsedNodeDict}
             }
-            console.log("YMapTrees", parsedTree)
-            setTrees(parsedTree)
+            setTrees(parsedTrees)
         })
     }
 
@@ -73,8 +78,8 @@ export default function App() {
 
     useEffect(() => {
         setDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
-        //requestTrees()
-        setupYDoc()
+        requestTrees()
+        //setupYDoc()
     }, []);
 
 

@@ -35,8 +35,14 @@ export const selectedNodeAtom = atom(
         if (!currTree)
             return null
         const selectedNodeId = get(selectedNodeIdAtom)
-        if (!selectedNodeId)
-            return Object.values(currTree.nodeDict)[0]
+        if (!selectedNodeId){
+            // iterate the values of the nodeDict and return the first one with no parent
+            for (let key in currTree.nodeDict){
+                if (!currTree.nodeDict[key].parent){
+                    return currTree.nodeDict[key]
+                }
+            }
+        }
         return currTree.nodeDict[selectedNodeId]
     },
     (get, set, newSelectedNodeId: string) => {

@@ -6,6 +6,7 @@ import cors from 'cors';
 const WebSocket = require('ws')
 const setupWSConnection = require('./y-websocket/utils.cjs').setupWSConnection
 import * as Y from 'yjs'
+import {YMap} from "yjs/dist/src/types/YMap";
 const getYDoc = require('./y-websocket/utils.cjs').getYDoc
 
 
@@ -14,29 +15,6 @@ class TreeData {
     constructor() {
         this.nodeDict = {}
     }
-}
-
-
-class TreeDoc {
-    ydoc: Y.Doc
-    nodeDict: Y.Map<string | null>
-    constructor() {
-        this.ydoc = new Y.Doc()
-        this.nodeDict = this.ydoc.getMap("nodeDict")
-        this.nodeDict.set("_selectedNode", null)
-    }
-    getSelectedNode(){
-        return this.nodeDict.get("_selectedNode")
-    }
-
-    setSelectedNode(node_id: string) {
-        this.nodeDict.set("_selectedNode", node_id)
-    }
-
-    removeNode(node_id: string){
-        this.nodeDict.delete(node_id)
-    }
-
 }
 
 class ServerData{
@@ -50,29 +28,20 @@ class ServerData{
     }
 }
 
-function patchTree(currTree: TreeData | null, patchTree: TreeData): TreeData {
-    if (currTree === null) {
-        currTree = new TreeData()
-    }
-    if (patchTree.selectedNode !== null) {
-        currTree.selectedNode = patchTree.selectedNode;
-    }
-    if (patchTree.nodeDict !== null) {
-        for (const key in patchTree.nodeDict) {
-            const newNode = patchTree.nodeDict[key];
-            if (newNode === null) {
-                if (key in currTree.nodeDict) {
-                    delete currTree.nodeDict[key];
-                }
-            } else {
-                if (!currTree.nodeDict) {
-                    currTree.nodeDict = {};
-                }
-                currTree.nodeDict[key] = newNode;
+function patchTree(treeData: YMap<any>, patchTree: TreeData) {
+    if (patchTree.nodeDict === null)
+        return
+    const nodeDict: YMap<any> = treeData.get("nodeDict")
+    for (let key in patchTree.nodeDict) {
+        const newNode = patchTree.nodeDict[key];
+        if (newNode === null) {
+            if (nodeDict.has(key)){
+                nodeDict.delete(key)
             }
+        } else {
+            nodeDict.set(key, JSON.stringify(newNode))
         }
     }
-    return currTree;
 }
 
 function main(port: number, host: string, frontendRoot: string | null): void {
@@ -104,14 +73,37 @@ function main(port: number, host: string, frontendRoot: string | null): void {
         const tree_patch = req.body.tree;
         const tree_id = req.body.tree_id;
         const doc = getYDoc(docname)
-        //const nodeDict = doc.getMap("trees").get(tree_id).get
-        data.tree = patchTree(data.tree, tree_patch);
-        data.tree_id = tree_id;
-        data.trees[tree_id] = data.tree;
-        doc.getMap("trees").set(tree_id, JSON.stringify(data.tree));
+        const trees = doc.getMap("trees")
+        let treeData: YMap<any>
+        let nodeDict: YMap<any>
+        if (!trees.has(tree_id)) {
+            treeData = new Y.Map()
+            trees.set(tree_id, treeData)
+            nodeDict = new Y.Map()
+            treeData.set("nodeDict", nodeDict)
+        }
+        else{
+            treeData = trees.get(tree_id)
+            nodeDict = treeData.get("nodeDict")
+        }
+        patchTree(treeData, tree_patch);
         res.send("OK");
     });
 
+    app.get('/getTrees', (_req, res) => {
+        console.log("get tree")
+        const ytreeJson = getYDoc(docname).getMap("trees").toJSON()
+        const tree :Record<string, TreeData>= {}
+        for (let key in ytreeJson){
+            const treeData = new TreeData()
+            const nodeDict = ytreeJson[key].nodeDict
+            for (let nodeKey in nodeDict){
+                treeData.nodeDict[nodeKey] = JSON.parse(nodeDict[nodeKey])
+            }
+            tree[key] = treeData
+        }
+        res.send(tree);
+    })
 
     server.listen(port, host, () => {
         console.log(`Server running at http://${host}:${port}/`);
