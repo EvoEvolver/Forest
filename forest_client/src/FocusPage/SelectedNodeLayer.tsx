@@ -63,6 +63,9 @@ const NodeNaviButton = ({node}) => {
     </div>
 }
 
+let mouseX = -1
+let mouseY = -1
+
 const SelectedNodeLayer = (props) => {
     const node: Node = useAtomValue(selectedNodeAtom)
     const [animate, setAnimate] = useState(false);
@@ -76,19 +79,23 @@ const SelectedNodeLayer = (props) => {
             const targets = selectableColumnRef.current.querySelectorAll('[data-ref]');
 
             let closestIndex = -1;
-            let minDistance = Infinity;
 
-            // Define a helper function to get the distance of an element's rect.y from 0
-            const getDistance = (target) => {
+            // target.getBoundingClientRect();
+            function isUnderMouse(target) {
+                // return True if the target is under the position of the mouse
                 const rect = target.getBoundingClientRect();
-                return Math.abs(rect.y + rect.height / 2 - window.innerHeight * 0.3);
+                return (
+                    mouseX >= rect.left &&
+                    mouseX <= rect.right &&
+                    mouseY >= rect.top &&
+                    mouseY <= rect.bottom
+                );
             }
-            // Binary search for the minimum absolute rect.y
             for (let i = 0; i < targets.length; i++) {
-                const distance = getDistance(targets[i]);
-                if (distance < minDistance) {
-                    minDistance = distance;
+                const target = targets[i];
+                if (isUnderMouse(target)) {
                     closestIndex = i;
+                    break;
                 }
             }
             if (closestIndex !== -1) {
@@ -101,9 +108,14 @@ const SelectedNodeLayer = (props) => {
                 }
             }
         };
-        window.addEventListener('wheel', handleWheel);
+        selectableColumnRef.current.addEventListener('wheel', handleWheel);
+        selectableColumnRef.current.addEventListener('mousemove', (event) => {
+            mouseX = event.clientX; // Mouse X coordinate
+            mouseY = event.clientY;
+        })
+
         return () => {
-            window.removeEventListener('wheel', handleWheel);
+            selectableColumnRef.current.removeEventListener('wheel', handleWheel);
         };
     }, []);
 
@@ -117,7 +129,16 @@ const SelectedNodeLayer = (props) => {
         if (targetElement) {
             const rect = targetElement.getBoundingClientRect();
             // if (((rect.y + rect.height / 2) > window.innerHeight * 0.7) || ((rect.y + rect.height / 2) < 0)) {
-            targetElement.scrollIntoView({behavior: 'auto', block: 'start'});
+            const parent = selectableColumnRef.current;
+            const parentRect = parent.getBoundingClientRect();
+            const elementRect = targetElement.getBoundingClientRect();
+            const scrollOffset = elementRect.top - parentRect.top + parent.scrollTop;
+
+            // Scroll the parent to bring the element into view
+            parent.scrollTo({
+              top: scrollOffset,
+              behavior: 'smooth'
+            });
             // }
         }
     };
@@ -129,7 +150,7 @@ const SelectedNodeLayer = (props) => {
         const scrollTimeoutId = setTimeout(() => {
             if (node)
                 scrollToTarget(node.id);
-        }, 40); // Delay scrollToTarget by 50ms
+        }, 0); // Delay scrollToTarget by 50ms
 
         const animateTimeoutId = setTimeout(() => {
             setAnimate(false);

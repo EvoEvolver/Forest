@@ -60,6 +60,7 @@ const OtherNodesLayer = ({nodes, level}) => { //level={0: Ancestor,1: Sibling, 2
     const dark = useAtomValue(darkModeAtom)
     const selectedNodeRef = useRef(null)
     const nodeContainerRef = useRef(null)
+    const selectedNodeListRef = useRef(null)
 
     useEffect(() => {
         setAnimate(true);
@@ -93,8 +94,18 @@ const OtherNodesLayer = ({nodes, level}) => { //level={0: Ancestor,1: Sibling, 2
         } else if (selectedNodeIndex >= startPoint + elementsPerPage) {
             handleNext();
         }
-        if (selectedNodeRef.current)
-            selectedNodeRef.current.scrollIntoView({behavior: "instant", block: "center"});
+        if (selectedNodeRef.current){
+            const parent = nodeContainerRef.current.parentElement.parentElement;
+            const parentRect = parent.getBoundingClientRect();
+            const elementRect = selectedNodeRef.current.getBoundingClientRect();
+            const scrollOffset = elementRect.top - parentRect.top - parentRect.height*0.4 + parent.scrollTop;
+            // Scroll the parent to bring the element into view
+            parent.scrollTo({
+              top: scrollOffset,
+              behavior: 'smooth'
+            });
+        }
+         //   selectedNodeRef.current.scrollIntoView({behavior: "instant", block: "center"});
     }, [selectedNode]);
 
     return (
@@ -102,9 +113,8 @@ const OtherNodesLayer = ({nodes, level}) => { //level={0: Ancestor,1: Sibling, 2
             <Grid container justifyContent="center" direction='column' alignItems="center"
                   style={{overflowY: "auto", margin: '5px', paddingBottom: '10px'}} ref={nodeContainerRef}>
                 {nodes.slice(startPoint, startPoint + elementsPerPage).map((node, index) => (
-                    <Grid
+                    <div
                         key={index}
-                        item
                         style={{
                             width: '100%',
                             height: 'auto',
@@ -120,7 +130,7 @@ const OtherNodesLayer = ({nodes, level}) => { //level={0: Ancestor,1: Sibling, 2
                         }
                         {(selectedNode !== undefined && node.id !== selectedNode.id) &&
                             <NodeElement node={node} refProps={null} dark={dark} detail={level === 1}/>}
-                    </Grid>
+                    </div>
                 ))}
             </Grid>
         </Grid>
