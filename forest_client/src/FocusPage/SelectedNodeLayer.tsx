@@ -115,7 +115,8 @@ const SelectedNodeLayer = (props) => {
         })
 
         return () => {
-            selectableColumnRef.current.removeEventListener('wheel', handleWheel);
+            if (selectableColumnRef.current)
+                selectableColumnRef.current.removeEventListener('wheel', handleWheel);
         };
     }, []);
 
@@ -127,17 +128,15 @@ const SelectedNodeLayer = (props) => {
         }
         const targetElement = document.querySelector(`[data-index="${id}"]`);
         if (targetElement) {
-            const rect = targetElement.getBoundingClientRect();
-            // if (((rect.y + rect.height / 2) > window.innerHeight * 0.7) || ((rect.y + rect.height / 2) < 0)) {
-            const parent = selectableColumnRef.current;
+            const parent = selectableColumnRef.current.parentElement.parentElement;
             const parentRect = parent.getBoundingClientRect();
             const elementRect = targetElement.getBoundingClientRect();
-            const scrollOffset = elementRect.top - parentRect.top + parent.scrollTop;
+            const scrollOffset = elementRect.top - parentRect.top - parentRect.height*0.1 + parent.scrollTop;
 
             // Scroll the parent to bring the element into view
             parent.scrollTo({
               top: scrollOffset,
-              behavior: 'smooth'
+              behavior: 'instant'
             });
             // }
         }
@@ -148,7 +147,7 @@ const SelectedNodeLayer = (props) => {
         setAnimate(true);
         // Make sure we scroll to target after the page was fully loaded.
         const scrollTimeoutId = setTimeout(() => {
-            if (node)
+            if (node && currNodeInViewMiddle !== node.id)
                 scrollToTarget(node.id);
         }, 0); // Delay scrollToTarget by 50ms
 
