@@ -1,5 +1,5 @@
 import {Node, TreeData} from './entities';
-import {atom} from 'jotai'
+import {atom, WritableAtom} from 'jotai'
 
 export const selectedTreeIdAtom = atom<string>("")
 export const treesMapAtom = atom<Record<string, TreeData>>({})
@@ -97,8 +97,6 @@ export const ancestorStackNodesAtom = atom<Node[]>((get) => {
     const currTree = get(selectedTreeAtom)
     return ancestorStack.map((id) => currTree.nodeDict[id])
 })
-
-export const lastSelectedParentAtom = atom<string>("")
 
 export const listOfNodesForViewAtom = atom<Node[]>((get) => {
     const node = get(selectedNodeAtom)
