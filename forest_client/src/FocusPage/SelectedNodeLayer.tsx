@@ -75,40 +75,48 @@ const SelectedNodeLayer = (props) => {
     const selectableColumnRef = useRef(null);
 
     useEffect(() => {
+        let wheelTimeout = null;
+
         const handleWheel = () => {
-            const targets = selectableColumnRef.current.querySelectorAll('[data-ref]');
+            if (wheelTimeout) {
+                clearTimeout(wheelTimeout);
+            }
 
-            let closestIndex = -1;
+            wheelTimeout = setTimeout(() => {
+                const targets = selectableColumnRef.current.querySelectorAll('[data-ref]');
 
-            // target.getBoundingClientRect();
-            function isUnderMouse(target) {
-                // return True if the target is under the position of the mouse
-                const rect = target.getBoundingClientRect();
-                return (
-                    mouseX >= rect.left &&
-                    mouseX <= rect.right &&
-                    mouseY >= rect.top &&
-                    mouseY <= rect.bottom
-                );
-            }
-            for (let i = 0; i < targets.length; i++) {
-                const target = targets[i];
-                if (isUnderMouse(target)) {
-                    closestIndex = i;
-                    break;
+                let closestIndex = -1;
+
+                function isUnderMouse(target) {
+                    const rect = target.getBoundingClientRect();
+                    return (
+                        mouseX >= rect.left &&
+                        mouseX <= rect.right &&
+                        mouseY >= rect.top &&
+                        mouseY <= rect.bottom
+                    );
                 }
-            }
-            if (closestIndex !== -1) {
-                const nodeId = targets[closestIndex].getAttribute('data-index');
-                if (nodeId !== node.id) {
-                    setCurrNodeInViewMiddle((prev)=> {
-                        return nodeId
-                    });
-                    setSelectedNode(nodeId);
+
+                for (let i = 0; i < targets.length; i++) {
+                    const target = targets[i];
+                    if (isUnderMouse(target)) {
+                        closestIndex = i;
+                        break;
+                    }
                 }
-            }
+
+                if (closestIndex !== -1) {
+                    const nodeId = targets[closestIndex].getAttribute('data-index');
+                    if (nodeId !== node.id) {
+                        setCurrNodeInViewMiddle(() => nodeId);
+                        setSelectedNode(nodeId);
+                    }
+                }
+            }, 150);
         };
+
         selectableColumnRef.current.addEventListener('wheel', handleWheel);
+
         selectableColumnRef.current.addEventListener('mousemove', (event) => {
             mouseX = event.clientX; // Mouse X coordinate
             mouseY = event.clientY;
@@ -121,7 +129,6 @@ const SelectedNodeLayer = (props) => {
     }, []);
 
 
-
     const scrollToTarget = (id) => {
         if (currNodeInViewMiddle === id) {
             return;
@@ -131,12 +138,12 @@ const SelectedNodeLayer = (props) => {
             const parent = selectableColumnRef.current.parentElement.parentElement;
             const parentRect = parent.getBoundingClientRect();
             const elementRect = targetElement.getBoundingClientRect();
-            const scrollOffset = elementRect.top - parentRect.top - parentRect.height*0.1 + parent.scrollTop;
+            const scrollOffset = elementRect.top - parentRect.top - parentRect.height * 0.1 + parent.scrollTop;
 
             // Scroll the parent to bring the element into view
             parent.scrollTo({
-              top: scrollOffset,
-              behavior: 'instant'
+                top: scrollOffset,
+                behavior: 'instant'
             });
             // }
         }
@@ -179,12 +186,12 @@ const SelectedNodeLayer = (props) => {
                 <NodeContentTabs node={node} tabDict={node.tools[0]} title=""/>
             </NodeContentFrame>
 
-                <NodeContentFrame gridStyle={gridStyle} xs={5} >
-                    <div ref={selectableColumnRef}>
+            <NodeContentFrame gridStyle={gridStyle} xs={5}>
+                <div ref={selectableColumnRef}>
                     {leaves.map((n, index) =>
                         <MiddleContents node={n} selected={n.id === node.id} key={index} index={index}/>)}
-                    </div>
-                </NodeContentFrame>
+                </div>
+            </NodeContentFrame>
 
             <NodeContentFrame gridStyle={gridStyle} xs={3.5}>
                 <NodeContentTabs node={node} tabDict={node.tools[1]} title=""/>
