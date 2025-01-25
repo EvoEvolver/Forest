@@ -1,8 +1,7 @@
-import React, {useContext} from "react";
+import React from "react";
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import {a11yLight} from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import {InlineMath} from 'react-katex';
-import {EnvFuncsContext} from "../NodeContext";
 import Zoom from 'react-medium-image-zoom'
 import 'react-medium-image-zoom/dist/styles.css'
 import {useSetAtom} from "jotai";

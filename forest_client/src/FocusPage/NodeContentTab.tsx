@@ -11,7 +11,7 @@ import {atom, useAtomValue} from "jotai";
 import {darkModeAtom} from "../TreeState";
 import Tooltip from '@mui/material/Tooltip';
 
-const envComponentAtom = atom({...content_components, Tooltip})
+const envComponentAtom = atom({...content_components, Tooltip, Box})
 
 const renderTabs = (tabs) => {
     const [value, setValue] = React.useState('0');
