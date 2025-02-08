@@ -6,6 +6,7 @@ import Zoom from 'react-medium-image-zoom'
 import 'react-medium-image-zoom/dist/styles.css'
 import {useSetAtom} from "jotai";
 import {selectedNodeAtom} from "../../TreeState";
+import {Link} from "@mui/material";
 
 export const Code = (props) => {
     return (
@@ -33,12 +34,25 @@ export const SendMessage = (props) => {
 
 export const NodeNavigateButton = (props) => {
     const setSelectedNode = useSetAtom(selectedNodeAtom)
-    let nodeId = props.nodeId;
     // make text props.text, if it's undefined, make it 'navigate to node {nodeId}'
-    let text = props.text || `navigate to node ${nodeId}`;
+    let text = props.text || `navigate to node ${props.nodeId}`;
     return (
         <>
-            <button onClick={() => setSelectedNode(nodeId)}>{text}</button>
+            <button onClick={() => {setSelectedNode(props.nodeId)}}>{text}</button>
+        </>
+    );
+}
+
+
+export const NodeNavigator = (props) => {
+    const setSelectedNode = useSetAtom(selectedNodeAtom)
+    return (
+        <>
+            <div onClick={() => {
+                setSelectedNode(props.nodeId)
+            }}>
+                {props.children}
+            </div>
         </>
     );
 }
