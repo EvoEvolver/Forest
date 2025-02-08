@@ -32,18 +32,6 @@ export const SendMessage = (props) => {
 }
 
 
-export const NodeNavigateButton = (props) => {
-    const setSelectedNode = useSetAtom(selectedNodeAtom)
-    // make text props.text, if it's undefined, make it 'navigate to node {nodeId}'
-    let text = props.text || `navigate to node ${props.nodeId}`;
-    return (
-        <>
-            <button onClick={() => {setSelectedNode(props.nodeId)}}>{text}</button>
-        </>
-    );
-}
-
-
 export const NodeNavigator = (props) => {
     const setSelectedNode = useSetAtom(selectedNodeAtom)
     return (

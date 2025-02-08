@@ -205,6 +205,12 @@ const MiddleContents = ({node, selected, index}: { node: Node, selected: boolean
 
     let setSelectedNode = useSetAtom(selectedNodeAtom)
 
+    const handleClick = (event) => {
+        if (event.target === event.currentTarget) {
+            setSelectedNode(node.id)
+        }
+    }
+
     return <div
         style={{
             boxShadow: selected ? '0 0 1px 2px rgba(0,0,0,0.1)' : null,
@@ -215,9 +221,7 @@ const MiddleContents = ({node, selected, index}: { node: Node, selected: boolean
 
     >
         <div
-            onClick={() => {
-                setSelectedNode(node.id)
-            }}
+            onClick={handleClick}
             data-ref={`content-${index}`}
             data-index={node.id}
         >
