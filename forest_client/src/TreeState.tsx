@@ -138,6 +138,11 @@ export const currNodeChildrenAtom = atom<Node[]>((get) => {
     return currNode.children.map((i: string) => currTree.nodeDict[i]) as Node[];
 })
 
+export const getNodeChildren = (node_id: string, tree: TreeData) => {
+    return tree.nodeDict[node_id].children.map((i: string) => tree.nodeDict[i]) as Node[];
+}
+
+
 export const currNodeAncestorsAtom = atom<Node[]>((get) => {
         const currNode = get(selectedNodeAtom)
         if (!currNode) return []

@@ -12,6 +12,7 @@ import {
 } from "../TreeState";
 import {NodeContentTabs} from "./NodeContentTab";
 import CardContent from "@mui/material/CardContent";
+import NewNavigatorLayer from "./NewNavigatorLayer";
 
 
 const currNodeInViewMiddleAtom = atom<string>("")
@@ -182,20 +183,33 @@ const SelectedNodeLayer = (props) => {
     }
     return (
         <Grid style={{height: "100%", width: "100%"}} container spacing={1}>
-            <NodeContentFrame gridStyle={gridStyle} xs={3.5}>
-                <NodeContentTabs node={node} tabDict={node.tools[0]} title=""/>
+            <Grid item xs={3.5} style={gridStyle}>
+            <NodeContentFrame>
+                <NewNavigatorLayer/>
             </NodeContentFrame>
-
-            <NodeContentFrame gridStyle={gridStyle} xs={5}>
+            </Grid>
+            <Grid item xs={5} style={gridStyle}>
+            <NodeContentFrame>
                 <div ref={selectableColumnRef}>
                     {leaves.map((n, index) =>
                         <MiddleContents node={n} selected={n.id === node.id} key={index} index={index}/>)}
                 </div>
             </NodeContentFrame>
-
-            <NodeContentFrame gridStyle={gridStyle} xs={3.5}>
-                <NodeContentTabs node={node} tabDict={node.tools[1]} title=""/>
-            </NodeContentFrame>
+            </Grid>
+            <Grid item style={gridStyle} xs={3.5}>
+                <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
+                    <div style={{flex: 0.9, height: '50%', marginBottom: '2%'}}>
+                        <NodeContentFrame>
+                            <NodeContentTabs node={node} tabDict={node.tools[0]} title=""/>
+                        </NodeContentFrame>
+                    </div>
+                    <div style={{flex: 0.9, height: '50%'}}>
+                        <NodeContentFrame>
+                            <NodeContentTabs node={node} tabDict={node.tools[1]} title=""/>
+                        </NodeContentFrame>
+                    </div>
+                </div>
+            </Grid>
         </Grid>
     );
 };
@@ -237,10 +251,9 @@ const MiddleContents = ({node, selected, index}: { node: Node, selected: boolean
 }
 
 
-const NodeContentFrame = ({children, gridStyle, xs}) => {
+const NodeContentFrame = ({children}) => {
     const dark = useAtomValue(darkModeAtom)
     return <>
-        <Grid key={0} item xs={xs} style={gridStyle}>
             <Card sx={{
                 width: "100%",
                 height: "100%",
@@ -253,8 +266,6 @@ const NodeContentFrame = ({children, gridStyle, xs}) => {
                     {children}
                 </CardContent>
             </Card>
-
-        </Grid>
     </>
 }
 

@@ -9,7 +9,7 @@ import {useAtomValue} from "jotai";
 
 export default function FocusPage(props) {
     const dark = useAtomValue(darkModeAtom)
-    const selectedNodeLayerHeight = '70%';
+    const selectedNodeLayerHeight = '99%';
     return (
         <Grid container item style={{height: "100%", width: "100%"}}>
             <Grid item
@@ -21,7 +21,6 @@ export default function FocusPage(props) {
                   }}>
                 <SelectedNodeLayer contentRef={props.contentRef}/>
             </Grid>
-            <NavigatorLayer/>
         </Grid>
     );
 }

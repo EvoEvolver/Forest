@@ -1,9 +1,5 @@
 export type NodeDict = Record<string, Node>
 
-export interface TreeBrowserState {
-    selectedNode: string
-    parentsStack: string[]
-}
 
 export interface TreeData {
     selectedNode: string
