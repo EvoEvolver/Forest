@@ -105,6 +105,10 @@ function main(port: number, host: string, frontendRoot: string | null): void {
         res.send(tree);
     })
 
+    app.get('alive', (_req, res) => {
+        res.send("OK")
+    })
+
     server.listen(port, host, () => {
         console.log(`Server running at http://${host}:${port}/`);
     });
@@ -114,6 +118,7 @@ function main(port: number, host: string, frontendRoot: string | null): void {
             wss.emit('connection', ws, request)
         });
     });
+
 }
 
 
