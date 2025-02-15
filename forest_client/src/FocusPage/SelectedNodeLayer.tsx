@@ -184,7 +184,7 @@ const SelectedNodeLayer = (props) => {
     return (
         <Grid style={{height: "100%", width: "100%"}} container spacing={1}>
             <Grid item xs={3.5} style={gridStyle}>
-            <NodeContentFrame>
+            <NodeContentFrame sx={{}}>
                 <NewNavigatorLayer/>
             </NodeContentFrame>
             </Grid>
