@@ -189,7 +189,7 @@ const SelectedNodeLayer = (props) => {
             </NodeContentFrame>
             </Grid>
             <Grid item xs={5} style={gridStyle}>
-            <NodeContentFrame>
+            <NodeContentFrame sx={{}}>
                 <div ref={selectableColumnRef}>
                     {leaves.map((n, index) =>
                         <MiddleContents node={n} selected={n.id === node.id} key={index} index={index}/>)}
@@ -199,12 +199,12 @@ const SelectedNodeLayer = (props) => {
             <Grid item style={gridStyle} xs={3.5}>
                 <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
                     <div style={{flex: 0.9, height: '50%', marginBottom: '2%'}}>
-                        <NodeContentFrame>
+                        <NodeContentFrame sx={{}}>
                             <NodeContentTabs node={node} tabDict={node.tools[0]} title=""/>
                         </NodeContentFrame>
                     </div>
                     <div style={{flex: 0.9, height: '50%'}}>
-                        <NodeContentFrame>
+                        <NodeContentFrame sx={{}}>
                             <NodeContentTabs node={node} tabDict={node.tools[1]} title=""/>
                         </NodeContentFrame>
                     </div>
@@ -251,16 +251,20 @@ const MiddleContents = ({node, selected, index}: { node: Node, selected: boolean
 }
 
 
-const NodeContentFrame = ({children}) => {
+const NodeContentFrame = ({children, sx}) => {
     const dark = useAtomValue(darkModeAtom)
+    const sxDefault = {
+        width: "100%",
+        height: "100%",
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        wordBreak: "break-word",
+        backgroundColor: dark ? '#3b3d3e' : '#f4f4f4'
+    }
     return <>
             <Card sx={{
-                width: "100%",
-                height: "100%",
-                overflowY: 'auto',
-                overflowX: 'hidden',
-                wordBreak: "break-word",
-                backgroundColor: dark ? '#3b3d3e' : '#f4f4f4'
+                ...sxDefault,
+                ...sx
             }}>
                 <CardContent>
                     {children}

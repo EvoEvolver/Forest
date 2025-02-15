@@ -29,6 +29,14 @@ function setDefaultAncestors(newNode: Node, currTree: TreeData, set: <Value, Arg
     set(ancestorStackAtom, parents)
 }
 
+export const lastSelectedNodeBeforeJumpIdAtom = atom("")
+
+
+export const jumpToNodeAtom = atom(null, (get, set, nodeid) => {
+    set(lastSelectedNodeBeforeJumpIdAtom, get(selectedNodeIdAtom))
+    set(selectedNodeIdAtom, nodeid)
+})
+
 export const selectedNodeAtom = atom(
     (get) => {
         const currTree = get(selectedTreeAtom)
@@ -52,6 +60,7 @@ export const selectedNodeAtom = atom(
         if (!currTree)
             return
         const currentSelected = currTree.nodeDict[get(selectedNodeIdAtom)]
+        //console.log(currentSelected.id, "s", get(lastSelectedNodeIdAtom), "haha", newSelectedNodeId)
         const newNode = currTree.nodeDict[newSelectedNodeId];
         if (!currentSelected) {
             set(selectedNodeIdAtom, newSelectedNodeId)

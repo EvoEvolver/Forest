@@ -4,8 +4,8 @@ import {a11yLight} from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import {InlineMath} from 'react-katex';
 import Zoom from 'react-medium-image-zoom'
 import 'react-medium-image-zoom/dist/styles.css'
-import {useSetAtom} from "jotai";
-import {selectedNodeAtom} from "../../TreeState";
+import {useAtom, useSetAtom} from "jotai";
+import {jumpToNodeAtom, selectedNodeAtom} from "../../TreeState";
 import {Link} from "@mui/material";
 
 export const Code = (props) => {
@@ -33,14 +33,15 @@ export const SendMessage = (props) => {
 
 
 export const NodeNavigator = (props) => {
-    const setSelectedNode = useSetAtom(selectedNodeAtom)
+    const jumpToNode = useSetAtom(jumpToNodeAtom)
+    const handleClick = () => {
+        jumpToNode(props.nodeId)
+    }
     return (
         <>
-            <div onClick={() => {
-                setSelectedNode(props.nodeId)
-            }}>
-                {props.children}
-            </div>
+            <span onClick={() => {
+                handleClick()
+            }}>{props.children}</span>
         </>
     );
 }
