@@ -85,8 +85,9 @@ const NewNavigatorLayer = () => {
     useEffect(() => {
         // ensure all the ancestors are expanded
         const ancestors = currNodeAncestors.map((node) => node.id)
+        const currId = selectedNode.id
         setExpandedItems((oldExpandedItems) => {
-            return [...new Set([...oldExpandedItems, ...ancestors])]
+            return [...new Set([currId, ...oldExpandedItems, ...ancestors])]
         })
         const itemDom = apiRef.current.getItemDOMElement(selectedNode.id)
         if (itemDom) {
