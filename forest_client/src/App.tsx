@@ -59,7 +59,7 @@ export default function App() {
     }
 
     async function requestTrees() {
-        const res = await axios.get(`http://${location.hostname}:${currentPort}/getTrees`);
+        const res = await axios.get(`https://${location.hostname}:${currentPort}/getTrees`);
         let treesData = res.data;
         console.log("Received whole tree", treesData)
         setTreesMap((prev) => ({...prev, ...treesData}))
