@@ -14,6 +14,7 @@ import { WebsocketProvider } from 'y-websocket'
 import {YMap} from "yjs/dist/src/types/YMap";
 
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
+//const currentPort =  window.location.port;
 
 const YDocAtom = atom(new Y.Doc());
 const YjsProviderAtom = atom();
@@ -59,9 +60,14 @@ export default function App() {
     }
 
     async function requestTrees() {
-        const res = await axios.get(`https://${location.hostname}:${currentPort}/getTrees`);
+        const treeId = new URLSearchParams(window.location.search).get("id");
+        const res = await axios.get(`http://${location.hostname}:${currentPort}/api/getTree`, {
+            params: {
+                tree_id: treeId
+            }
+        });
         let treesData = res.data;
-        console.log("Received whole tree", treesData)
+        console.log("Received whole tree", currTreeId, treesData)
         setTreesMap((prev) => ({...prev, ...treesData}))
         const rootId = Object.keys(treesData)[0];
         setCurrTreeId((prev) => {
@@ -79,7 +85,11 @@ export default function App() {
     useEffect(() => {
         document.body.style.overflow = 'hidden';
         setDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
+        const treeId = new URLSearchParams(window.location.search).get("id");
+        console.log(treeId);
+        setCurrTreeId(treeId)
         requestTrees()
+
         //setupYDoc()
     }, []);
 

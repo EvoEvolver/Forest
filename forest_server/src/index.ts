@@ -67,8 +67,14 @@ function main(port: number, host: string, frontendRoot: string | null): void {
             res.sendFile(path.join(__dirname, frontendRoot));
         });
     }
+    else{
+        // forward the request to the frontend server running on port 39999
+        app.get('/', (_req, res) => {
+            res.redirect('http://localhost:39999');
+        });
+    }
 
-    app.put('/updateTree', (req, res) => {
+    app.put('/api/updateTree', (req, res) => {
         console.log("update tree")
         const tree_patch = req.body.tree;
         const tree_id = req.body.tree_id;
@@ -90,7 +96,7 @@ function main(port: number, host: string, frontendRoot: string | null): void {
         res.send("OK");
     });
 
-    app.get('/getTrees', (_req, res) => {
+    app.get('/api/getTrees', (_req, res) => {
         console.log("get tree")
         const ytreeJson = getYDoc(docname).getMap("trees").toJSON()
         const tree :Record<string, TreeData>= {}
@@ -105,7 +111,27 @@ function main(port: number, host: string, frontendRoot: string | null): void {
         res.send(tree);
     })
 
-    app.get('alive', (_req, res) => {
+    app.get('/api/getTree', (req, res) => {
+        const treeId: string = req.query.tree_id as string
+        //const ytreeJson = getYDoc(docname).getMap("trees").toJSON()[treeId]
+        if(!getYDoc(docname).getMap("trees").has(treeId)){
+            res.send({})
+            return
+        }
+        const ytreeJson = getYDoc(docname).getMap("trees").get(treeId).toJSON()
+        const treeData = new TreeData()
+        console.log("treeData", treeData)
+        const nodeDict = ytreeJson["nodeDict"]
+        console.log("nodeDict", nodeDict)
+        for (let key in nodeDict){
+            treeData.nodeDict[key] = JSON.parse(nodeDict[key])
+        }
+        const tree: Record<string, TreeData> = {}
+        tree[treeId] = treeData
+        res.send(tree);
+    })
+
+    app.get('/api/alive', (_req, res) => {
         res.send("OK")
     })
 
