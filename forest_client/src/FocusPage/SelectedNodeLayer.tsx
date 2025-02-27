@@ -12,7 +12,7 @@ import {
 } from "../TreeState";
 import {NodeContentTabs} from "./NodeContentTab";
 import CardContent from "@mui/material/CardContent";
-import NewNavigatorLayer from "./NewNavigatorLayer";
+import {NewNavigatorLayer, NavigatorButtons} from "./NewNavigatorLayer";
 
 
 const currNodeInViewMiddleAtom = atom<string>("")
@@ -184,9 +184,14 @@ const SelectedNodeLayer = (props) => {
     return (
         <Grid style={{height: "100%", width: "100%"}} container spacing={1}>
             <Grid item xs={3.5} style={gridStyle}>
-            <NodeContentFrame sx={{}}>
-                <NewNavigatorLayer/>
-            </NodeContentFrame>
+                <div style={{height: "100%"}}>
+                    <div style={{height: "5%", width: "100%"}}><NavigatorButtons/></div>
+                    <div style={{height: "95%", width: "100%"}}>
+                        <NodeContentFrame sx={{}}>
+                            <NewNavigatorLayer/>
+                        </NodeContentFrame>
+                    </div>
+                </div>
             </Grid>
             <Grid item xs={5} style={gridStyle}>
             <NodeContentFrame sx={{}}>

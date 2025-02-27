@@ -55,7 +55,7 @@ const selectedItemAtom = atom((get) => {
     return [selectedNode.id]
 })
 
-
+const letterLimit = 10
 const beforeJumpNodeTitleAtom = atom((get) => {
     const currTree = get(selectedTreeAtom)
     const lastSelectedNodeBeforeJumpId = get(lastSelectedNodeBeforeJumpIdAtom)
@@ -63,24 +63,57 @@ const beforeJumpNodeTitleAtom = atom((get) => {
         return ""
     }
     const title = currTree.nodeDict[lastSelectedNodeBeforeJumpId].title
-    if(title.length > 27) {
-        return title.slice(0,27) + "..."
+    if(title.length > letterLimit) {
+        return title.slice(0,letterLimit) + "..."
     }
     return title
 })
 
-const NewNavigatorLayer = () => {
+const expandedItemsAtom = atom([])
+
+
+export const NavigatorButtons = ()=>{
+    const beforeJumpNodeTitle = useAtomValue(beforeJumpNodeTitleAtom)
+    const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom)
+    const apiRef = useTreeViewApiRef();
+    const [lastSelectedNodeBeforeJumpId, setLastSelectedNodeBeforeJump] = useAtom(lastSelectedNodeBeforeJumpIdAtom)
+    const currNodeAncestors = useAtomValue(ancestorStackNodesAtom)
+    const [expandedItems, setExpandedItems] = useAtom(expandedItemsAtom)
+    const handleGoBack = () => {
+        const currId = selectedNode.id
+        setSelectedNode(lastSelectedNodeBeforeJumpId)
+        setLastSelectedNodeBeforeJump(currId)
+    }
+    const handleFold = () => {
+        const ancestors = currNodeAncestors.map((node) => node.id)
+        setExpandedItems([selectedNode, ...ancestors])
+    }
+
+    const buttonStyle = {
+        backgroundColor: "#e1eaf3",
+        color: "#000000",
+        '&:hover': {
+            backgroundColor: "#b4d3ee",
+        },
+        margin: "1px",
+    }
+
+    return <>
+        <Button sx={buttonStyle}><UnfoldLessIcon onClick={handleFold}/></Button>
+        {lastSelectedNodeBeforeJumpId != "" && lastSelectedNodeBeforeJumpId != selectedNode.id &&
+            <Button sx={buttonStyle} onClick={handleGoBack}><ArrowBackIcon/>{beforeJumpNodeTitle}</Button>}
+    </>;
+}
+
+export const NewNavigatorLayer = () => {
     const dark = useAtomValue(darkModeAtom)
-    const currNodeChildren = useAtomValue(currNodeChildrenAtom)
-    const listOfNodesForView = useAtomValue(listOfNodesForViewAtom)
     const currNodeAncestors = useAtomValue(ancestorStackNodesAtom)
     const navigatorItems = useAtomValue(NavigatorItemsAtom)
-    const [expandedItems, setExpandedItems] = React.useState([]);
+    const [expandedItems, setExpandedItems] = useAtom(expandedItemsAtom)
     const selectedItems = useAtomValue(selectedItemAtom)
     const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom)
     const apiRef = useTreeViewApiRef();
     const [lastSelectedNodeBeforeJumpId, setLastSelectedNodeBeforeJump] = useAtom(lastSelectedNodeBeforeJumpIdAtom)
-    const beforeJumpNodeTitle = useAtomValue(beforeJumpNodeTitleAtom)
 
     useEffect(() => {
         // ensure all the ancestors are expanded
@@ -105,39 +138,19 @@ const NewNavigatorLayer = () => {
         setLastSelectedNodeBeforeJump(currId)
     }
 
-    const handleFold = () => {
-        const ancestors = currNodeAncestors.map((node) => node.id)
-        setExpandedItems((oldExpandedItems) => {
-            return [...ancestors]
-        })
-    }
-
-    const handleGoBack = () => {
-        const currId = selectedNode.id
-        setSelectedNode(lastSelectedNodeBeforeJumpId)
-        setLastSelectedNodeBeforeJump(currId)
-    }
-
     return (
         <>
-            <div>
-                <Button variant="contained" ><UnfoldLessIcon onClick={handleFold}/></Button>
-
-                {lastSelectedNodeBeforeJumpId !="" && lastSelectedNodeBeforeJumpId != selectedNode.id && <Button variant="contained" onClick={handleGoBack}><ArrowBackIcon/>{beforeJumpNodeTitle}</Button>}
-            </div>
-            <div>
-                <RichTreeView
-                    items={navigatorItems}
-                    selectedItems={selectedItems}
-                    expandedItems={expandedItems}
-                    apiRef={apiRef}
-                    onExpandedItemsChange={handleExpandedItemsChange}
-                    onSelectedItemsChange={handleNewSelectedItemChange}
-                />
-            </div>
+            <RichTreeView
+                items={navigatorItems}
+                selectedItems={selectedItems}
+                expandedItems={expandedItems}
+                apiRef={apiRef}
+                onExpandedItemsChange={handleExpandedItemsChange}
+                onSelectedItemsChange={handleNewSelectedItemChange}
+            />
         </>
     );
 };
 
 
-export default NewNavigatorLayer;
+
