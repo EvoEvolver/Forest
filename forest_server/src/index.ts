@@ -70,7 +70,7 @@ function main(port: number, host: string, frontendRoot: string | null): void {
     else{
         // forward the request to the frontend server running on port 39999
         app.get('/', (_req, res) => {
-            res.redirect('http://localhost:39999');
+            res.redirect('http://0.0.0.0:39999');
         });
     }
 
