@@ -114,42 +114,44 @@ export default function App() {
                       flex: "1 1 100%",
                       boxSizing: "border-box"
                   }}>
-                <Grid container item style={{
+                {false &&
+                    <><Grid container item style={{
                     height: "4.5%",
                     alignItems: "center",
                     backgroundColor: dark ? "#2c2c2c" : "#f4f4f4",
                     boxSizing: "border-box"
                 }}
-                >
-                    {Object.keys(treesMap).length > 1 && <Grid container direction="row" style={{marginBottom: '10px'}}>
-                        {Object.keys(treesMap).map((treeId, i) => (
-                            <Grid item key={treeId} style={{marginBottom: '3px'}}>
-                                <button style={{backgroundColor: "#00000000", color: dark ? "#ffffff" : "#626262"}}
-                                        onClick={() => setCurrTreeId(treeId)}>{i + 1}</button>
-                            </Grid>
-                        ))}
-                    </Grid>}
+            >
+                {Object.keys(treesMap).length > 1 && <Grid container direction="row" style={{marginBottom: '10px'}}>
+                    {Object.keys(treesMap).map((treeId, i) => (
+                        <Grid item key={treeId} style={{marginBottom: '3px'}}>
+                            <button style={{backgroundColor: "#00000000", color: dark ? "#ffffff" : "#626262"}}
+                                    onClick={() => setCurrTreeId(treeId)}>{i + 1}</button>
+                        </Grid>
+                    ))}
+                </Grid>}
 
-                    <Grid item style={{marginLeft: "5px"}}>
-                        <Tooltip title={currPage === 1 ? "Focus View (Shift+T)" : "Tree Map (Shift+T)"}>
-                            <ToggleButton
-                                value={currPage}
-                                selected
-                                style={{
-                                    height: "4.5vh",
-                                    width: "4.5vh",
-                                }}
-                                onChange={handleToggle}
-                            >
-                                {currPage === 1 ? <CenterFocusStrongIcon style={{color: dark ? 'white' : ''}}/> :
-                                    <AccountTreeIcon style={{color: dark ? 'white' : ''}}/>}
-                            </ToggleButton>
-                        </Tooltip>
-                    </Grid>
+                <Grid item style={{marginLeft: "5px"}}>
+                    <Tooltip title={currPage === 1 ? "Focus View (Shift+T)" : "Tree Map (Shift+T)"}>
+                        <ToggleButton
+                            value={currPage}
+                            selected
+                            style={{
+                                height: "4.5vh",
+                                width: "4.5vh",
+                            }}
+                            onChange={handleToggle}
+                        >
+                            {currPage === 1 ? <CenterFocusStrongIcon style={{color: dark ? 'white' : ''}}/> :
+                                <AccountTreeIcon style={{color: dark ? 'white' : ''}}/>}
+                        </ToggleButton>
+                    </Tooltip>
                 </Grid>
+            </Grid>
+                    </>}
 
-                <Grid item style={{height: "95.5%", boxSizing: "border-box"}}>
-                    <Box style={{width: "100vw", height: "95vh", flexGrow: 1, boxSizing: "border-box"}}>
+                <Grid item style={{height: "100%", boxSizing: "border-box"}}>
+                    <Box style={{width: "100vw", height: "100vh", flexGrow: 1, boxSizing: "border-box"}}>
                         {/*make two buttons to change between focus page and treemap. the buttons should be fixed to top left.*/}
                         {tree && page === 0 &&
                             <FocusPage contentRef={contentRef}/>}
