@@ -22,6 +22,10 @@ const YMapTreesAtom = atom<YMap<YMap<any>>>((get)=>{
     return get(YDocAtom).getMap("trees")
 })
 
+// check whether current address starts with http or https
+const http_prefix = window.location.protocol
+
+
 export default function App() {
 
     const [page, setPage] = useState(0);
@@ -61,7 +65,7 @@ export default function App() {
 
     async function requestTrees() {
         const treeId = new URLSearchParams(window.location.search).get("id");
-        const res = await axios.get(`http://${location.hostname}:${currentPort}/api/getTree`, {
+        const res = await axios.get(`${http_prefix}//${location.hostname}:${currentPort}/api/getTree`, {
             params: {
                 tree_id: treeId
             }
