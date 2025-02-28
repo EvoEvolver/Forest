@@ -171,6 +171,26 @@ const SelectedNodeLayer = (props) => {
     }, [node]);
 
 
+    const [mobileMode, setMobileMode] = useState(false);
+
+    useEffect(() => {
+    const handleResize = () => {
+        console.log(window.innerWidth)
+        if (window.innerWidth < 900) {
+            setMobileMode(true);
+        } else {
+            setMobileMode(false);
+        }
+    }
+    handleResize()
+
+    window.addEventListener("resize", handleResize);
+
+    // Cleanup function to remove event listener
+    return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
+
     const gridStyle = {
         height: "100%",
         transition: animate ? 'opacity 0.5s ease-in' : 'none',
@@ -183,7 +203,7 @@ const SelectedNodeLayer = (props) => {
     }
     return (
         <Grid style={{height: "100%", width: "100%"}} container spacing={1}>
-            <Grid item xs={3.5} style={gridStyle}>
+            {!mobileMode && <Grid item xs={3.5} style={gridStyle}>
                 <div style={{height: "100%"}}>
                     <div style={{height: "5%", width: "100%"}}><NavigatorButtons/></div>
                     <div style={{height: "95%", width: "100%"}}>
@@ -192,8 +212,8 @@ const SelectedNodeLayer = (props) => {
                         </NodeContentFrame>
                     </div>
                 </div>
-            </Grid>
-            <Grid item xs={5} style={gridStyle}>
+            </Grid>}
+            <Grid item xs={mobileMode ? 12: 5} style={gridStyle}>
             <NodeContentFrame sx={{}}>
                 <div ref={selectableColumnRef}>
                     {leaves.map((n, index) =>
@@ -201,7 +221,7 @@ const SelectedNodeLayer = (props) => {
                 </div>
             </NodeContentFrame>
             </Grid>
-            <Grid item style={gridStyle} xs={3.5}>
+            {!mobileMode && <Grid item style={gridStyle} xs={3.5} className={"hide-mobile"}>
                 <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
                     <div style={{flex: 0.9, height: '50%', marginBottom: '2%'}}>
                         <NodeContentFrame sx={{}}>
@@ -214,7 +234,7 @@ const SelectedNodeLayer = (props) => {
                         </NodeContentFrame>
                     </div>
                 </div>
-            </Grid>
+            </Grid>}
         </Grid>
     );
 };
