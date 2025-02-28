@@ -38,7 +38,7 @@ const renderTabs = (tabs) => {
             jsx={dark ? `<div style="color: white;">${applyEmphasis ? emphasizeText(content, emphasize.keyword, emphasize.wholeWord) : content}</div>`
                 : (applyEmphasis ? emphasizeText(content, emphasize.keyword, emphasize.wholeWord) : content)
             }
-            renderError={error => <div style={{color: "red"}}>{error.error.toString()}</div>}
+            renderError={error => <><div style={{color: "red"}}>{error.error.toString()}</div><div>{content}</div></>}
         />
     );
     if (!tabs) return <></>
