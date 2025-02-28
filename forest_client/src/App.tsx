@@ -12,6 +12,7 @@ import {useAtomValue} from "jotai/index";
 import * as Y from "yjs";
 import { WebsocketProvider } from 'y-websocket'
 import {YMap} from "yjs/dist/src/types/YMap";
+import {countChildren} from "./process_tree";
 
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
 //const currentPort =  window.location.port;
@@ -71,7 +72,8 @@ export default function App() {
             }
         });
         let treesData = res.data;
-        console.log("Received whole tree", currTreeId, treesData)
+        countChildren(treesData[treeId])
+        console.log("Received whole tree", treeId, treesData)
         setTreesMap((prev) => ({...prev, ...treesData}))
         const rootId = Object.keys(treesData)[0];
         setCurrTreeId((prev) => {

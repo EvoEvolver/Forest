@@ -59,7 +59,7 @@ const NodeNaviButton = ({node}) => {
                 position: 'absolute',
                 right: '0',
             }}
-        >→
+        >→ <span style={{color: "#9e9d9d"}}>({node.data['children_count']})</span>
         </Button>}
     </div>
 }

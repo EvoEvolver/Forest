@@ -86,7 +86,9 @@ export const NavigatorButtons = ()=>{
     }
     const handleFold = () => {
         const ancestors = currNodeAncestors.map((node) => node.id)
-        setExpandedItems([selectedNode, ...ancestors])
+        setExpandedItems((oldExpandedItems) => {
+            return [selectedNode.id, ...ancestors]
+        })
     }
 
     const buttonStyle = {
