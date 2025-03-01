@@ -101,7 +101,7 @@ export const NavigatorButtons = ()=>{
     }
 
     return <>
-        <Button sx={buttonStyle}><UnfoldLessIcon onClick={handleFold}/></Button>
+        <Button sx={buttonStyle} onClick={handleFold}><UnfoldLessIcon/></Button>
         {lastSelectedNodeBeforeJumpId != "" && lastSelectedNodeBeforeJumpId != selectedNode.id &&
             <Button sx={buttonStyle} onClick={handleGoBack}><ArrowBackIcon/>{beforeJumpNodeTitle}</Button>}
     </>;
