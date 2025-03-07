@@ -6,7 +6,8 @@ import Zoom from 'react-medium-image-zoom'
 import 'react-medium-image-zoom/dist/styles.css'
 import {useAtom, useSetAtom} from "jotai";
 import {jumpToNodeAtom, selectedNodeAtom} from "../../TreeState";
-import {Link} from "@mui/material";
+import {Accordion, AccordionDetails, AccordionSummary, Link, Typography} from "@mui/material";
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 export const Code = (props) => {
     return (
@@ -53,4 +54,27 @@ export const FigureBox = (props) => {
         {props.children}
         </Zoom>
     </>
+}
+
+
+
+export const Expandable = (props) => {
+    return <>
+          <Accordion>
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon />}
+        >
+          <Typography component="span">{props.title ? props.title : "Detail"}</Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+            {props.children}
+        </AccordionDetails>
+      </Accordion>
+    </>
+}
+
+export const TextSpan = (props) => {
+    return (
+        <span>{props.text}</span>
+    );
 }
