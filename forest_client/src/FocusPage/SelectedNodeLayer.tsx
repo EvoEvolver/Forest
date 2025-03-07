@@ -175,7 +175,6 @@ const SelectedNodeLayer = (props) => {
 
     useEffect(() => {
     const handleResize = () => {
-        console.log(window.innerWidth)
         if (window.innerWidth < 900) {
             setMobileMode(true);
         } else {

@@ -29,12 +29,35 @@ function setDefaultAncestors(newNode: Node, currTree: TreeData, set: <Value, Arg
     set(ancestorStackAtom, parents)
 }
 
+
+
+const nodesIdBeforeJumpAtom = atom<string[]>([])
+
 export const lastSelectedNodeBeforeJumpIdAtom = atom("")
 
-
 export const jumpToNodeAtom = atom(null, (get, set, nodeid) => {
-    set(lastSelectedNodeBeforeJumpIdAtom, get(selectedNodeIdAtom))
-    set(selectedNodeIdAtom, nodeid)
+    const currSelectedNodeId = get(selectedNodeIdAtom)
+    if (currSelectedNodeId === nodeid) {
+        return
+    }
+    const nodesIdBeforeJump = get(nodesIdBeforeJumpAtom)
+    const lastSelectedNodeId = get(lastSelectedNodeBeforeJumpIdAtom)
+
+    if (lastSelectedNodeId === nodeid) {
+        nodesIdBeforeJump.pop()
+        let newLastSelectedNodeId = nodesIdBeforeJump[nodesIdBeforeJump.length - 1]
+        newLastSelectedNodeId = newLastSelectedNodeId ? newLastSelectedNodeId : ""
+        set(lastSelectedNodeBeforeJumpIdAtom, newLastSelectedNodeId)
+        set(selectedNodeIdAtom, nodeid)
+        return
+    }
+    else {
+        nodesIdBeforeJump.push(get(selectedNodeIdAtom))
+        set(lastSelectedNodeBeforeJumpIdAtom, currSelectedNodeId)
+        set(selectedNodeIdAtom, nodeid)
+        return
+    }
+
 })
 
 export const selectedNodeAtom = atom(
