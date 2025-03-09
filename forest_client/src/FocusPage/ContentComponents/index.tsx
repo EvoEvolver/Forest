@@ -1,7 +1,7 @@
 import React from "react";
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import {a11yLight} from 'react-syntax-highlighter/dist/esm/styles/hljs';
-import {InlineMath} from 'react-katex';
+import Latex from 'react-latex-next';
 import Zoom from 'react-medium-image-zoom'
 import 'react-medium-image-zoom/dist/styles.css'
 import {useAtom, useSetAtom} from "jotai";
@@ -19,9 +19,9 @@ export const Code = (props) => {
 
 
 export const TeX = (props) => {
-    return (
-        <InlineMath math={props.src}/>
-    );
+    return <>
+        <Latex>{props.src}</Latex>
+    </>;
 }
 
 
