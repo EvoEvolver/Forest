@@ -96,19 +96,13 @@ function main(port: number, host: string, frontendRoot: string | null): void {
         res.send("OK");
     });
 
-    app.get('/api/getTrees', (_req, res) => {
-        console.log("get tree")
+    app.get('/api/getTreeList', (_req, res) => {
         const ytreeJson = getYDoc(docname).getMap("trees").toJSON()
-        const tree :Record<string, TreeData>= {}
+        const treeKeys = []
         for (let key in ytreeJson){
-            const treeData = new TreeData()
-            const nodeDict = ytreeJson[key].nodeDict
-            for (let nodeKey in nodeDict){
-                treeData.nodeDict[nodeKey] = JSON.parse(nodeDict[nodeKey])
-            }
-            tree[key] = treeData
+            treeKeys.push(key)
         }
-        res.send(tree);
+        res.send(treeKeys);
     })
 
     app.get('/api/getTree', (req, res) => {
