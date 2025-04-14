@@ -146,7 +146,7 @@ const args = minimist(process.argv.slice(2));
 // Access the port argument
 let frontendRoot = args.FrontendRoot || "./public/index.html"
 const backendPort = args.BackendPort || 29999
-const host = args.Host || "127.0.0.1"
+const host = args.Host || "0.0.0.0"
 const noFrontend = args.NoFrontend || false
 if(noFrontend)
     frontendRoot = null
