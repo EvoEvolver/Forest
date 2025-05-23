@@ -44,15 +44,9 @@ function nodeToMap(node: any): Y.Map<any> {
     return ymapForNode
 }
 
-function patchTree(treeData: Y.Map<any>, patchTree: TreeData) {
+function patchTree(nodeDict: Y.Map<any>, patchTree: TreeData) {
     if (patchTree.nodeDict === null)
         return
-    let nodeDict = treeData.get("nodeDict")
-    if (!nodeDict){
-        nodeDict = new Y.Map()
-        treeData.set("nodeDict", nodeDict)
-    }
-
     for (let key in patchTree.nodeDict) {
         const newNode = patchTree.nodeDict[key];
         if (newNode === null) {
@@ -101,8 +95,8 @@ function main(port: number, host: string, frontendRoot: string | null): void {
         const tree_patch = req.body.tree;
         const treeId = req.body.tree_id;
         const doc = getYDoc(treeId)
-        const treeData = doc.getMap("treeData")
-        patchTree(treeData, tree_patch);
+        const nodeDict = doc.getMap("nodeDict")
+        patchTree(nodeDict, tree_patch);
         res.send("OK");
     });
 

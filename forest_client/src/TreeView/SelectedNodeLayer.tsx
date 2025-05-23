@@ -115,14 +115,14 @@ const SelectedNodeLayer = (props) => {
                 }
             }, 150);
         };
+        if (selectableColumnRef.current){
+            selectableColumnRef.current.addEventListener('wheel', handleWheel);
 
-        selectableColumnRef.current.addEventListener('wheel', handleWheel);
-
-        selectableColumnRef.current.addEventListener('mousemove', (event) => {
-            mouseX = event.clientX; // Mouse X coordinate
-            mouseY = event.clientY;
-        })
-
+            selectableColumnRef.current.addEventListener('mousemove', (event) => {
+                mouseX = event.clientX; // Mouse X coordinate
+                mouseY = event.clientY;
+            })
+        }
         return () => {
             if (selectableColumnRef.current)
                 selectableColumnRef.current.removeEventListener('wheel', handleWheel);

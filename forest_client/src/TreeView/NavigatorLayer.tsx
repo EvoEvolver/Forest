@@ -27,6 +27,9 @@ export const NavigatorItemsAtom = atom((get) => {
                 break
             }
         }
+        if (!root) {
+            return []
+        }
         let children_list = []
         const itemTree = [{
             id: root.id,

@@ -1,8 +1,8 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {Box, Grid} from "@mui/material";
 import axios from "axios";
-import {atom, useAtom} from "jotai";
-import {darkModeAtom, initializeTreeAtom, selectedNodeIdAtom, treeAtom} from "./TreeState/TreeState";
+import {atom, useAtom, useSetAtom} from "jotai";
+import {addNodeToTreeAtom, darkModeAtom, initializeTreeAtom, selectedNodeIdAtom, treeAtom} from "./TreeState/TreeState";
 import TreeView from "./TreeView";
 import Treemap from "./TreeMap";
 import {useAtomValue} from "jotai/index";
@@ -34,25 +34,34 @@ export default function App() {
     const [wsProvider, setYjsProvider] = useAtom(YjsProviderAtom)
     const ydoc = useAtomValue(YDocAtom)
     const ymapTrees = useAtomValue(YMapTreesAtom)
+    const addNodeToTree = useSetAtom(addNodeToTreeAtom)
 
 
     const setupYDoc = () => {
-        setYjsProvider(new WebsocketProvider(`ws://${location.hostname}:${currentPort}`, "", ydoc))
+        setTree({
+            metadata: {},
+            nodeDict: {}
+        })
+        const treeId = new URLSearchParams(window.location.search).get("id");
+        setSelectedNodeId(treeId)
+        let wsProvider = new WebsocketProvider(`ws://${location.hostname}:${currentPort}`, treeId, ydoc)
+        setYjsProvider(wsProvider)
         wsProvider.on('status', event => {
             console.log("wsProvider", event.status) // logs "connected" or "disconnected"
         })
-        ymapTrees.observeDeep((ymapEvent) => {
-            let parsedTrees = {}
-            for (let [treeId, yTree] of ymapTrees.entries()) {
-                let parsedNodeDict = {}
-                const yNodeDict = yTree.get("nodeDict")
-                for (let [nodeId, nodeStr] of yNodeDict.entries()) {
-                    if (nodeStr)
-                        parsedNodeDict[nodeId] = JSON.parse(nodeStr)
+        let nodeDictyMap = ydoc.getMap("nodeDict")
+        nodeDictyMap.observe((ymapEvent) => {
+            console.log("ymapEvent", ymapEvent)
+            ymapEvent.changes.keys.forEach((change, key) => {
+                if (change.action === 'add') {
+                  console.log(`Property "${key}" was added. Initial value:`, nodeDictyMap.get(key).toJSON())
+                  addNodeToTree(nodeDictyMap.get(key).toJSON())
+                } else if (change.action === 'update') {
+                  console.log(`Property "${key}" was updated. New value: "${nodeDictyMap.get(key)}". Previous value: "${change.oldValue}".`)
+                } else if (change.action === 'delete') {
+                  console.log(`Property "${key}" was deleted. New value: undefined. Previous value: "${change.oldValue}".`)
                 }
-                parsedTrees[treeId] = {nodeDict: parsedNodeDict}
-            }
-            // setTrees(parsedTrees)
+              })
         })
     }
 
@@ -76,9 +85,9 @@ export default function App() {
         const treeId = new URLSearchParams(window.location.search).get("id");
         console.log(treeId);
         //setCurrTreeId(treeId)
-        requestTrees()
+        //requestTrees()
 
-        //setupYDoc()
+        setupYDoc()
     }, []);
 
 
