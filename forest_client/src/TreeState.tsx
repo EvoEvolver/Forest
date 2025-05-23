@@ -1,21 +1,8 @@
 import {Node, TreeData} from './entities';
 import {atom, WritableAtom} from 'jotai'
 
-export const selectedTreeIdAtom = atom<string>("")
-export const treesMapAtom = atom<Record<string, TreeData>>({})
 
-export const selectedTreeAtom = atom((get) => {
-        const treeId = get(selectedTreeIdAtom)
-        if (!treeId) {
-            if (Object.keys(get(treesMapAtom)).length === 0)
-                return null
-            return get(treesMapAtom)[Object.keys(get(treesMapAtom))[0]]
-        }
-        return get(treesMapAtom)[treeId]
-    }, (get, set, newTreeId: string) => {
-        set(selectedTreeIdAtom, newTreeId)
-    }
-)
+export const treeAtom = atom(null)
 
 export const selectedNodeIdAtom = atom("")
 
@@ -62,7 +49,7 @@ export const jumpToNodeAtom = atom(null, (get, set, nodeid) => {
 
 export const selectedNodeAtom = atom(
     (get) => {
-        const currTree = get(selectedTreeAtom)
+        const currTree = get(treeAtom)
         if (!currTree)
             return null
         const selectedNodeId = get(selectedNodeIdAtom)
@@ -79,7 +66,7 @@ export const selectedNodeAtom = atom(
     (get, set, newSelectedNodeId: string) => {
         if (get(selectedNodeIdAtom) === newSelectedNodeId)
             return
-        const currTree = get(selectedTreeAtom)
+        const currTree = get(treeAtom)
         if (!currTree)
             return
         const currentSelected = currTree.nodeDict[get(selectedNodeIdAtom)]
@@ -126,7 +113,7 @@ export const ancestorStackAtom = atom<string[]>([])
 
 export const ancestorStackNodesAtom = atom<Node[]>((get) => {
     const ancestorStack = get(ancestorStackAtom)
-    const currTree = get(selectedTreeAtom)
+    const currTree = get(treeAtom)
     return ancestorStack.map((id) => currTree.nodeDict[id])
 })
 
@@ -134,7 +121,7 @@ export const listOfNodesForViewAtom = atom<Node[]>((get) => {
     const node = get(selectedNodeAtom)
     if (!node) return []
 
-    const tree = get(selectedTreeAtom)
+    const tree = get(treeAtom)
 
     const parentNode = tree.nodeDict[node.parent];
 
@@ -166,7 +153,7 @@ export const listOfNodesForViewAtom = atom<Node[]>((get) => {
 export const currNodeChildrenAtom = atom<Node[]>((get) => {
     const currNode = get(selectedNodeAtom)
     if (!currNode) return []
-    const currTree = get(selectedTreeAtom)
+    const currTree = get(treeAtom)
     return currNode.children.map((i: string) => currTree.nodeDict[i]) as Node[];
 })
 
@@ -178,7 +165,7 @@ export const getNodeChildren = (node_id: string, tree: TreeData) => {
 export const currNodeAncestorsAtom = atom<Node[]>((get) => {
         const currNode = get(selectedNodeAtom)
         if (!currNode) return []
-        const currTree = get(selectedTreeAtom)
+        const currTree = get(treeAtom)
         const ancestors = []
         let parent = currTree.nodeDict[currNode.parent]
         while (parent) {

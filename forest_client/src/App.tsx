@@ -1,11 +1,8 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {Box, Grid, Tooltip} from "@mui/material";
-import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong';
-import AccountTreeIcon from '@mui/icons-material/AccountTree';
-import {ToggleButton} from '@mui/material'
 import axios from "axios";
 import {atom, useAtom, useSetAtom} from "jotai";
-import {darkModeAtom, selectedNodeIdAtom, selectedTreeAtom, selectedTreeIdAtom, treesMapAtom} from "./TreeState";
+import {darkModeAtom, selectedNodeIdAtom, treeAtom} from "./TreeState";
 import TreeView from "./TreeView";
 import Treemap from "./TreeMap";
 import {useAtomValue} from "jotai/index";
@@ -31,13 +28,10 @@ export default function App() {
 
     const [page, setPage] = useState(0);
     const [currPage, setCurrPage] = useState(0);
-    const [dark, setDark] = useAtom(darkModeAtom)
-    const [treesMap, setTreesMap] = useAtom(treesMapAtom);
-    const [currTreeId, setCurrTreeId] = useAtom(selectedTreeIdAtom)
-    const [selectedNodeId, setSelectedNodeId] = useAtom(selectedNodeIdAtom)
+    const [, setDark] = useAtom(darkModeAtom)
+    const [tree, setTree] = useAtom(treeAtom);
+    const [, setSelectedNodeId] = useAtom(selectedNodeIdAtom)
     const contentRef = useRef();
-    const tree = useAtomValue(selectedTreeAtom)
-    const [trees, setTrees] = useAtom(treesMapAtom)
     const [wsProvider, setYjsProvider] = useAtom(YjsProviderAtom)
     const ydoc = useAtomValue(YDocAtom)
     const ymapTrees = useAtomValue(YMapTreesAtom)
@@ -74,18 +68,7 @@ export default function App() {
         let treesData = res.data;
         countChildren(treesData[treeId])
         console.log("Received whole tree", treeId, treesData)
-        setTreesMap((prev) => ({...prev, ...treesData}))
-        const rootId = Object.keys(treesData)[0];
-        setCurrTreeId((prev) => {
-            if (!prev)
-                return rootId
-            return prev
-        });
-        setSelectedNodeId((prev) => {
-            if (!prev)
-                return rootId
-            return prev
-        });
+        setTree(treesData[treeId]);
     }
 
     useEffect(() => {
@@ -93,7 +76,7 @@ export default function App() {
         setDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
         const treeId = new URLSearchParams(window.location.search).get("id");
         console.log(treeId);
-        setCurrTreeId(treeId)
+        //setCurrTreeId(treeId)
         requestTrees()
 
         //setupYDoc()
@@ -116,41 +99,7 @@ export default function App() {
                       flex: "1 1 100%",
                       boxSizing: "border-box"
                   }}>
-                {false &&
-                    <><Grid container item style={{
-                    height: "4.5%",
-                    alignItems: "center",
-                    backgroundColor: dark ? "#2c2c2c" : "#f4f4f4",
-                    boxSizing: "border-box"
-                }}
-            >
-                {Object.keys(treesMap).length > 1 && <Grid container direction="row" style={{marginBottom: '10px'}}>
-                    {Object.keys(treesMap).map((treeId, i) => (
-                        <Grid item key={treeId} style={{marginBottom: '3px'}}>
-                            <button style={{backgroundColor: "#00000000", color: dark ? "#ffffff" : "#626262"}}
-                                    onClick={() => setCurrTreeId(treeId)}>{i + 1}</button>
-                        </Grid>
-                    ))}
-                </Grid>}
 
-                <Grid item style={{marginLeft: "5px"}}>
-                    <Tooltip title={currPage === 1 ? "Focus View (Shift+T)" : "Tree Map (Shift+T)"}>
-                        <ToggleButton
-                            value={currPage}
-                            selected
-                            style={{
-                                height: "4.5vh",
-                                width: "4.5vh",
-                            }}
-                            onChange={handleToggle}
-                        >
-                            {currPage === 1 ? <CenterFocusStrongIcon style={{color: dark ? 'white' : ''}}/> :
-                                <AccountTreeIcon style={{color: dark ? 'white' : ''}}/>}
-                        </ToggleButton>
-                    </Tooltip>
-                </Grid>
-            </Grid>
-                    </>}
 
                 <Grid item style={{height: "100%", boxSizing: "border-box"}}>
                     <Box style={{width: "100vw", height: "100vh", flexGrow: 1, boxSizing: "border-box"}}>

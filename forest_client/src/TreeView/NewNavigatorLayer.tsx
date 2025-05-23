@@ -5,7 +5,7 @@ import {
     ancestorStackNodesAtom,
     currNodeChildrenAtom,
     darkModeAtom, getNodeChildren, jumpToNodeAtom, lastSelectedNodeBeforeJumpIdAtom,
-    listOfNodesForViewAtom, selectedNodeAtom, selectedNodeIdAtom, selectedTreeAtom
+    listOfNodesForViewAtom, selectedNodeAtom, selectedNodeIdAtom, treeAtom
 } from "../TreeState";
 import { Node } from '../entities';
 import {useAtom, useSetAtom} from "jotai";
@@ -15,7 +15,7 @@ import UnfoldLessIcon from '@mui/icons-material/UnfoldLess';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 export const NavigatorItemsAtom = atom((get) =>
     {
-        const tree = get(selectedTreeAtom)
+        const tree = get(treeAtom)
         const currNodeAncestors = get(ancestorStackNodesAtom)
         const selectedNode = get(selectedNodeAtom)
         let root: Node
@@ -57,7 +57,7 @@ const selectedItemAtom = atom((get) => {
 
 const letterLimit = 15
 const beforeJumpNodeTitleAtom = atom((get) => {
-    const currTree = get(selectedTreeAtom)
+    const currTree = get(treeAtom)
     const lastSelectedNodeBeforeJumpId = get(lastSelectedNodeBeforeJumpIdAtom)
     if (lastSelectedNodeBeforeJumpId == "") {
         return ""

@@ -1,6 +1,6 @@
 import React from 'react';
 import Plot from 'react-plotly.js';
-import {selectedNodeAtom, selectedTreeAtom} from "../TreeState";
+import {selectedNodeAtom, treeAtom} from "../TreeState";
 import {atom, useAtom, useAtomValue} from "jotai";
 
 
@@ -12,7 +12,7 @@ const treeMapData = atom((get) => {
     let texts = [];
     let ids = [];
     let currentLevel = get(selectedNodeAtom).id
-    for (let node of Object.values(get(selectedTreeAtom).nodeDict)) {
+    for (let node of Object.values(get(treeAtom).nodeDict)) {
         labels.push(node.title);
         ids.push(node.id)
         // find its parent.
