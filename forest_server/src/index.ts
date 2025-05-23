@@ -41,6 +41,9 @@ function nodeToMap(node: any): Y.Map<any> {
             ymapForNode.set(key, node[key])
         }
     }
+    if (!node.ydata){
+        ymapForNode.set("ydata", new Y.Map())
+    }
     return ymapForNode
 }
 

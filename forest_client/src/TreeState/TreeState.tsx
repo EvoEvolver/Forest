@@ -1,6 +1,7 @@
 import {Node, NodeDict, TreeData} from '../entities';
 import {Atom, atom, WritableAtom} from 'jotai'
-
+import {Map as YMap} from 'yjs'
+import {YDocAtom} from "./YjsConnection";
 
 export interface TreeAtomData {
     metadata: {}
@@ -9,6 +10,7 @@ export interface TreeAtomData {
 
 export const treeAtom = atom(null as TreeAtomData | null)
 
+/*
 export const initializeTreeAtom = (nodeDict: NodeDict, setTree) => {
     const treeData: TreeAtomData = {
         metadata: {},
@@ -18,23 +20,54 @@ export const initializeTreeAtom = (nodeDict: NodeDict, setTree) => {
         treeData.nodeDict[key] = atom(value)
     }
     setTree(treeData)
+}*/
+
+function yjsNodeToJsonNode(yjsMapNode: YMap<any>): Node {
+    const node: Node = {
+        id: yjsMapNode.get("id"),
+        title: yjsMapNode.get("title"),
+        parent: yjsMapNode.get("parent"),
+        other_parents: yjsMapNode.get("other_parents"),
+        tabs: yjsMapNode.get("tabs"),
+        children: yjsMapNode.get("children"),
+        ydata: yjsMapNode.get("ydata"),
+        data: yjsMapNode.get("data"),
+        tools: yjsMapNode.get("tools")
+    }
+    return node
 }
 
-export const addNodeToTreeAtom = atom(null, (get, set, newNode: Node) => {
+export const addNodeToTreeAtom = atom(null, (get, set, yjsMapNode: YMap<any>) => {
     const currTree = get(treeAtom)
     if (!currTree)
         return
     const nodeDict = currTree.nodeDict
-    nodeDict[newNode.id] = atom(newNode)
+    let node: Node = yjsNodeToJsonNode(yjsMapNode)
+    //nodeDict[newNode.id] = atom(yjsNode)
     set(treeAtom, {
         ...currTree,
         nodeDict: {
             ...nodeDict,
-            [newNode.id]: atom(newNode)
+            [node.id]: atom(node)
         }
     })
     console.log("addNodeToTree", nodeDict)
 })
+
+export const deleteNodeFromTreeAtom = atom(null, (get, set, nodeId: string) => {
+    const currTree = get(treeAtom)
+    if (!currTree)
+        return
+    const nodeDict = currTree.nodeDict
+    delete nodeDict[nodeId]
+    set(treeAtom, {
+        ...currTree,
+        nodeDict: {
+            ...nodeDict
+        }
+    })
+})
+
 
 export const selectedNodeIdAtom = atom("")
 
@@ -158,7 +191,7 @@ export const ancestorStackAtom = atom<string[]>([])
 export const ancestorStackNodesAtom = atom<Node[]>((get) => {
     const ancestorStack = get(ancestorStackAtom)
     const currTree = get(treeAtom)
-    return ancestorStack.map((id) => currTree.nodeDict[id])
+    return ancestorStack.map((id) => get(currTree.nodeDict[id]))
 })
 
 export const listOfNodesForViewAtom = atom<Node[]>((get) => {

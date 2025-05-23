@@ -18,7 +18,6 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 export const NavigatorItemsAtom = atom((get) => {
         const tree = get(treeAtom)
-        const currNodeAncestors = get(ancestorStackNodesAtom)
         const selectedNode = get(selectedNodeAtom)
         let root: Node
         for (let nodeId in tree.nodeDict) {
@@ -70,7 +69,7 @@ const beforeJumpNodeTitleAtom = atom((get) => {
     if (lastSelectedNodeBeforeJumpId == "") {
         return ""
     }
-    const title = currTree.nodeDict[lastSelectedNodeBeforeJumpId].title
+    const title = get(currTree.nodeDict[lastSelectedNodeBeforeJumpId]).title
     if (title.length > letterLimit) {
         return title.slice(0, letterLimit) + "..."
     }

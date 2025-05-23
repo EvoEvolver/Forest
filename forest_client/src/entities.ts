@@ -1,5 +1,5 @@
 export type NodeDict = Record<string, Node>
-
+import { Map } from "yjs";
 
 export interface TreeData {
     selectedNode: string
@@ -16,7 +16,7 @@ export interface Node {
     other_parents: string[]
     tabs: Tabs
     children: string[]
-    ydata: {}
+    ydata: Map<any>
     data: {}
     tools: [Tabs]
 }
