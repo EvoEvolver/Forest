@@ -6,7 +6,7 @@ import {ToggleButton} from '@mui/material'
 import axios from "axios";
 import {atom, useAtom, useSetAtom} from "jotai";
 import {darkModeAtom, selectedNodeIdAtom, selectedTreeAtom, selectedTreeIdAtom, treesMapAtom} from "./TreeState";
-import FocusPage from "./FocusPage";
+import TreeView from "./TreeView";
 import Treemap from "./TreeMap";
 import {useAtomValue} from "jotai/index";
 import * as Y from "yjs";
@@ -156,7 +156,7 @@ export default function App() {
                     <Box style={{width: "100vw", height: "100vh", flexGrow: 1, boxSizing: "border-box"}}>
                         {/*make two buttons to change between focus page and treemap. the buttons should be fixed to top left.*/}
                         {tree && page === 0 &&
-                            <FocusPage contentRef={contentRef}/>}
+                            <TreeView contentRef={contentRef}/>}
                         {tree && page === 1 &&
                             <Treemap/>}
                     </Box>

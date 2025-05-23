@@ -7,7 +7,7 @@ import {darkModeAtom} from "../TreeState";
 import {useAtomValue} from "jotai";
 
 
-export default function FocusPage(props) {
+export default function TreeView(props) {
     const dark = useAtomValue(darkModeAtom)
     const selectedNodeLayerHeight = '99%';
     return (
