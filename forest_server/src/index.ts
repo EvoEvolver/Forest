@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
 import path from 'path';
 import minimist from 'minimist'
 import http from 'http';
@@ -6,7 +6,6 @@ import cors from 'cors';
 const WebSocket = require('ws')
 const setupWSConnection = require('./y-websocket/utils.cjs').setupWSConnection
 import * as Y from 'yjs'
-import {YMap} from "yjs/dist/src/types/YMap";
 const getYDoc = require('./y-websocket/utils.cjs').getYDoc
 
 
@@ -27,11 +26,33 @@ class ServerData{
         this.tree_id = null
     }
 }
+function nodeToMap(node: any): Y.Map<any> {
+    const ymapForNode = new Y.Map()
+    for (let key in node) {
+        if (key=="ydata"){
+            let ymapForyData = new Y.Map()
+            let ydataDict = node[key]
+            for (let dataKey in ydataDict){
+                ymapForyData.set(dataKey, ydataDict[dataKey])
+            }
+            ymapForNode.set("ydata", ymapForyData)
+        }
+        else {
+            ymapForNode.set(key, node[key])
+        }
+    }
+    return ymapForNode
+}
 
-function patchTree(treeData: YMap<any>, patchTree: TreeData) {
+function patchTree(treeData: Y.Map<any>, patchTree: TreeData) {
     if (patchTree.nodeDict === null)
         return
-    const nodeDict: YMap<any> = treeData.get("nodeDict")
+    let nodeDict = treeData.get("nodeDict")
+    if (!nodeDict){
+        nodeDict = new Y.Map()
+        treeData.set("nodeDict", nodeDict)
+    }
+
     for (let key in patchTree.nodeDict) {
         const newNode = patchTree.nodeDict[key];
         if (newNode === null) {
@@ -39,7 +60,8 @@ function patchTree(treeData: YMap<any>, patchTree: TreeData) {
                 nodeDict.delete(key)
             }
         } else {
-            nodeDict.set(key, JSON.stringify(newNode))
+            const newNodeMap = nodeToMap(newNode)
+            nodeDict.set(key, newNodeMap)
         }
     }
 }
@@ -48,7 +70,7 @@ function main(port: number, host: string, frontendRoot: string | null): void {
     const app = express();
     const server = http.createServer(app);
     const wss = new WebSocket.Server({ noServer: true })
-    const docname = "forest"
+    //const docname = "forest"
 
     wss.on('connection', (conn: any, req: any, opts: any)=>{
         setupWSConnection(conn, req, opts)
@@ -77,36 +99,24 @@ function main(port: number, host: string, frontendRoot: string | null): void {
     app.put('/api/updateTree', (req, res) => {
         console.log("update tree")
         const tree_patch = req.body.tree;
-        const tree_id = req.body.tree_id;
-        const doc = getYDoc(docname)
-        const trees = doc.getMap("trees")
-        let treeData: YMap<any>
-        let nodeDict: YMap<any>
-        if (!trees.has(tree_id)) {
-            treeData = new Y.Map()
-            trees.set(tree_id, treeData)
-            nodeDict = new Y.Map()
-            treeData.set("nodeDict", nodeDict)
-        }
-        else{
-            treeData = trees.get(tree_id)
-            nodeDict = treeData.get("nodeDict")
-        }
+        const treeId = req.body.tree_id;
+        const doc = getYDoc(treeId)
+        const treeData = doc.getMap("treeData")
         patchTree(treeData, tree_patch);
         res.send("OK");
     });
 
-    app.get('/api/getTreeList', (_req, res) => {
+    /*app.get('/api/getTreeList', (_req, res) => {
         const ytreeJson = getYDoc(docname).getMap("trees").toJSON()
         const treeKeys = []
         for (let key in ytreeJson){
             treeKeys.push(key)
         }
         res.send(treeKeys);
-    })
+    })*/
 
     app.get('/api/getTree', (req, res) => {
-        const treeId: string = req.query.tree_id as string
+        /*const treeId: string = req.query.tree_id as string
         //const ytreeJson = getYDoc(docname).getMap("trees").toJSON()[treeId]
         if(!getYDoc(docname).getMap("trees").has(treeId)){
             res.send({})
@@ -122,7 +132,11 @@ function main(port: number, host: string, frontendRoot: string | null): void {
         }
         const tree: Record<string, TreeData> = {}
         tree[treeId] = treeData
-        res.send(tree);
+        res.send(tree);*/
+        const treeId: string = req.query.tree_id as string
+        const ytreeJson = getYDoc(treeId).getMap("treeData").toJSON()
+        console.log("getTree", ytreeJson)
+        res.send(ytreeJson)
     })
 
     app.get('/api/alive', (_req, res) => {

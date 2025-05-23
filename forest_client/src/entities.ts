@@ -16,6 +16,7 @@ export interface Node {
     other_parents: string[]
     tabs: Tabs
     children: string[]
+    ydata: {}
     data: {}
     tools: [Tabs]
 }

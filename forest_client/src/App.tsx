@@ -1,22 +1,21 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {Box, Grid, Tooltip} from "@mui/material";
+import {Box, Grid} from "@mui/material";
 import axios from "axios";
-import {atom, useAtom, useSetAtom} from "jotai";
+import {atom, useAtom} from "jotai";
 import {darkModeAtom, initializeTreeAtom, selectedNodeIdAtom, treeAtom} from "./TreeState/TreeState";
 import TreeView from "./TreeView";
 import Treemap from "./TreeMap";
 import {useAtomValue} from "jotai/index";
 import * as Y from "yjs";
-import { WebsocketProvider } from 'y-websocket'
+import {WebsocketProvider} from 'y-websocket'
 import {YMap} from "yjs/dist/src/types/YMap";
 import {countChildren} from "./process_tree";
 
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
-//const currentPort =  window.location.port;
 
 const YDocAtom = atom(new Y.Doc());
 const YjsProviderAtom = atom();
-const YMapTreesAtom = atom<YMap<YMap<any>>>((get)=>{
+const YMapTreesAtom = atom<YMap<YMap<any>>>((get) => {
     return get(YDocAtom).getMap("trees")
 })
 
@@ -37,24 +36,23 @@ export default function App() {
     const ymapTrees = useAtomValue(YMapTreesAtom)
 
 
-
-    const setupYDoc = ()=>{
+    const setupYDoc = () => {
         setYjsProvider(new WebsocketProvider(`ws://${location.hostname}:${currentPort}`, "", ydoc))
         wsProvider.on('status', event => {
-          console.log("wsProvider", event.status) // logs "connected" or "disconnected"
+            console.log("wsProvider", event.status) // logs "connected" or "disconnected"
         })
-        ymapTrees.observeDeep((ymapEvent)=>{
+        ymapTrees.observeDeep((ymapEvent) => {
             let parsedTrees = {}
-            for (let [treeId, yTree] of ymapTrees.entries()){
+            for (let [treeId, yTree] of ymapTrees.entries()) {
                 let parsedNodeDict = {}
                 const yNodeDict = yTree.get("nodeDict")
                 for (let [nodeId, nodeStr] of yNodeDict.entries()) {
-                    if(nodeStr)
+                    if (nodeStr)
                         parsedNodeDict[nodeId] = JSON.parse(nodeStr)
                 }
-                parsedTrees[treeId] = {nodeDict:parsedNodeDict}
+                parsedTrees[treeId] = {nodeDict: parsedNodeDict}
             }
-           // setTrees(parsedTrees)
+            // setTrees(parsedTrees)
         })
     }
 
@@ -65,10 +63,10 @@ export default function App() {
                 tree_id: treeId
             }
         });
-        let treesData = res.data;
-        countChildren(treesData[treeId])
-        console.log("Received whole tree", treeId, treesData)
-        initializeTreeAtom(treesData[treeId].nodeDict, setTree);
+        let treeData = res.data;
+        countChildren(treeData)
+        console.log("Received whole tree", treeId, treeData)
+        initializeTreeAtom(treeData.nodeDict, setTree);
         setSelectedNodeId(treeId)
     }
 
