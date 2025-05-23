@@ -3,10 +3,9 @@ import { RichTreeView } from '@mui/x-tree-view/RichTreeView';
 import {atom, useAtomValue} from "jotai/index";
 import {
     ancestorStackNodesAtom,
-    currNodeChildrenAtom,
-    darkModeAtom, getNodeChildren, jumpToNodeAtom, lastSelectedNodeBeforeJumpIdAtom,
+    darkModeAtom, jumpToNodeAtom, lastSelectedNodeBeforeJumpIdAtom,
     listOfNodesForViewAtom, selectedNodeAtom, selectedNodeIdAtom, treeAtom
-} from "../TreeState";
+} from "../TreeState/TreeState";
 import { Node } from '../entities';
 import {useAtom, useSetAtom} from "jotai";
 import {useTreeViewApiRef} from "@mui/x-tree-view";
@@ -20,8 +19,8 @@ export const NavigatorItemsAtom = atom((get) =>
         const selectedNode = get(selectedNodeAtom)
         let root: Node
         for (let nodeId in tree.nodeDict) {
-            if (tree.nodeDict[nodeId].parent == null) {
-                root = tree.nodeDict[nodeId]
+            if (get(tree.nodeDict[nodeId]).parent == null) {
+                root = get(tree.nodeDict[nodeId])
                 break
             }
         }
@@ -33,7 +32,10 @@ export const NavigatorItemsAtom = atom((get) =>
         }]
         // iterate itemTree to add children
         const addChildren = (item) => {
-            const children = getNodeChildren(item.id, tree)
+            const node = get(tree.nodeDict[item.id])
+            const children_ids = node.children
+            const children = children_ids.map((childId) => get(tree.nodeDict[childId]))
+
             item.children = children.map((child) => {
             return {
                 id: child.id,

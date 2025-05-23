@@ -9,7 +9,7 @@ import {
     selectedNodeAtom,
     setToNodeChildrenAtom,
     setToNodeParentAtom
-} from "../TreeState";
+} from "../TreeState/TreeState";
 import {NodeContentTabs} from "./NodeContentTab";
 import CardContent from "@mui/material/CardContent";
 import {NewNavigatorLayer, NavigatorButtons} from "./NewNavigatorLayer";

@@ -2,7 +2,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {Box, Grid, Tooltip} from "@mui/material";
 import axios from "axios";
 import {atom, useAtom, useSetAtom} from "jotai";
-import {darkModeAtom, selectedNodeIdAtom, treeAtom} from "./TreeState";
+import {darkModeAtom, initializeTreeAtom, selectedNodeIdAtom, treeAtom} from "./TreeState/TreeState";
 import TreeView from "./TreeView";
 import Treemap from "./TreeMap";
 import {useAtomValue} from "jotai/index";
@@ -54,7 +54,7 @@ export default function App() {
                 }
                 parsedTrees[treeId] = {nodeDict:parsedNodeDict}
             }
-            setTrees(parsedTrees)
+           // setTrees(parsedTrees)
         })
     }
 
@@ -68,7 +68,8 @@ export default function App() {
         let treesData = res.data;
         countChildren(treesData[treeId])
         console.log("Received whole tree", treeId, treesData)
-        setTree(treesData[treeId]);
+        initializeTreeAtom(treesData[treeId].nodeDict, setTree);
+        setSelectedNodeId(treeId)
     }
 
     useEffect(() => {

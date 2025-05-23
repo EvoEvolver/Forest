@@ -5,7 +5,7 @@ import Latex from 'react-latex-next';
 import Zoom from 'react-medium-image-zoom'
 import 'react-medium-image-zoom/dist/styles.css'
 import {useAtom, useSetAtom} from "jotai";
-import {jumpToNodeAtom, selectedNodeAtom} from "../../TreeState";
+import {jumpToNodeAtom, selectedNodeAtom} from "../../TreeState/TreeState";
 import {Accordion, AccordionDetails, AccordionSummary, Link, Typography} from "@mui/material";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 

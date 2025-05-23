@@ -1,7 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {Grid, Paper, Typography} from '@mui/material';
 import {useAtom, useAtomValue} from "jotai";
-import {darkModeAtom, selectedNodeAtom} from "../TreeState";
+import {darkModeAtom, selectedNodeAtom} from "../TreeState/TreeState";
 
 const NodeElement = ({node, refProps, dark, detail}) => {
     const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom)

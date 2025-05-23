@@ -2,8 +2,7 @@ import React from 'react';
 import {Grid} from '@mui/material';
 
 import SelectedNodeLayer from './SelectedNodeLayer';
-import NavigatorLayer from "./NavigatorLayer";
-import {darkModeAtom} from "../TreeState";
+import {darkModeAtom} from "../TreeState/TreeState";
 import {useAtomValue} from "jotai";
 
 

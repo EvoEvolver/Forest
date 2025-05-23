@@ -3,7 +3,7 @@ export type NodeDict = Record<string, Node>
 
 export interface TreeData {
     selectedNode: string
-    selectedParent: string
+    metadata: {}
     nodeDict: NodeDict
 }
 

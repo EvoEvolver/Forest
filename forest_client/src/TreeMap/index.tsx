@@ -1,6 +1,6 @@
 import React from 'react';
 import Plot from 'react-plotly.js';
-import {selectedNodeAtom, treeAtom} from "../TreeState";
+import {selectedNodeAtom, treeAtom} from "../TreeState/TreeState";
 import {atom, useAtom, useAtomValue} from "jotai";
 
 

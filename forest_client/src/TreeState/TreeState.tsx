@@ -1,20 +1,47 @@
-import {Node, TreeData} from './entities';
-import {atom, WritableAtom} from 'jotai'
+import {Node, NodeDict, TreeData} from '../entities';
+import {Atom, atom, WritableAtom} from 'jotai'
 
 
-export const treeAtom = atom(null)
+export interface TreeAtomData {
+    metadata: {}
+    nodeDict: Record<string, Atom<Node>>
+}
+
+export const treeAtom = atom(null as TreeAtomData | null)
+
+export const initializeTreeAtom = (nodeDict: NodeDict, setTree) => {
+    const treeData: TreeAtomData = {
+        metadata: {},
+        nodeDict: {}
+    }
+    for (const [key, value] of Object.entries(nodeDict)) {
+        //console.log("init")
+        //console.log(key, value)
+        treeData.nodeDict[key] = atom(value)
+    }
+    setTree(treeData)
+}
 
 export const selectedNodeIdAtom = atom("")
 
-function setDefaultAncestors(newNode: Node, currTree: TreeData, set: <Value, Args extends unknown[], Result>(atom: WritableAtom<Value, Args, Result>, ...args: Args) => Result) {
+function getNodeById(nodeId, get): Node {
+    const currTree = get(treeAtom)
+    if (!currTree)
+        return null
+    return get(currTree.nodeDict[nodeId])
+}
+
+function setDefaultAncestors(newNode: Node, currTree: TreeAtomData, get, set: <Value, Args extends unknown[], Result>(atom: WritableAtom<Value, Args, Result>, ...args: Args) => Result) {
     const parents = []
     let oneParent = newNode.parent
     while (oneParent) {
         parents.push(oneParent)
-        oneParent = currTree.nodeDict[oneParent].parent
+        oneParent = getNodeById(oneParent, get).parent
     }
     set(ancestorStackAtom, parents)
 }
+
+
 
 
 
@@ -56,12 +83,12 @@ export const selectedNodeAtom = atom(
         if (!selectedNodeId){
             // iterate the values of the nodeDict and return the first one with no parent
             for (let key in currTree.nodeDict){
-                if (!currTree.nodeDict[key].parent){
-                    return currTree.nodeDict[key]
+                if (!getNodeById(key, get).parent){
+                    return get(currTree.nodeDict[key])
                 }
             }
         }
-        return currTree.nodeDict[selectedNodeId]
+        return get(currTree.nodeDict[selectedNodeId])
     },
     (get, set, newSelectedNodeId: string) => {
         if (get(selectedNodeIdAtom) === newSelectedNodeId)
@@ -69,12 +96,12 @@ export const selectedNodeAtom = atom(
         const currTree = get(treeAtom)
         if (!currTree)
             return
-        const currentSelected = currTree.nodeDict[get(selectedNodeIdAtom)]
+        const currentSelected = getNodeById(get(selectedNodeIdAtom), get)
         //console.log(currentSelected.id, "s", get(lastSelectedNodeIdAtom), "haha", newSelectedNodeId)
-        const newNode = currTree.nodeDict[newSelectedNodeId];
+        const newNode = getNodeById(newSelectedNodeId, get)
         if (!currentSelected) {
             set(selectedNodeIdAtom, newSelectedNodeId)
-            setDefaultAncestors(newNode, currTree, set);
+            setDefaultAncestors(newNode, currTree, get, set);
             return
         }
         const inChildren = currentSelected.children.indexOf(newSelectedNodeId) > -1;
@@ -104,7 +131,7 @@ export const selectedNodeAtom = atom(
         if (matched_ancestor) {
             set(ancestorStackAtom, ancestorStack.slice(ancestorStack.indexOf(matched_ancestor)))
         }else {
-            setDefaultAncestors(newNode, currTree, set);
+            setDefaultAncestors(newNode, currTree, get, set);
         }
     }
 )
@@ -123,7 +150,12 @@ export const listOfNodesForViewAtom = atom<Node[]>((get) => {
 
     const tree = get(treeAtom)
 
-    const parentNode = tree.nodeDict[node.parent];
+    const parentNodeAtom = tree.nodeDict[node.parent]
+
+    if (!parentNodeAtom) {
+        return [node]; // If there's no parent, return the node itself
+    }
+    const parentNode = get(parentNodeAtom)
 
     if (!parentNode || parentNode.children.length === 0) {
         return [node]; // If there's no parent or no siblings, return an empty array
@@ -149,32 +181,6 @@ export const listOfNodesForViewAtom = atom<Node[]>((get) => {
 
     return selectedParentNode.children.map((id) => tree.nodeDict[id]);
 })
-
-export const currNodeChildrenAtom = atom<Node[]>((get) => {
-    const currNode = get(selectedNodeAtom)
-    if (!currNode) return []
-    const currTree = get(treeAtom)
-    return currNode.children.map((i: string) => currTree.nodeDict[i]) as Node[];
-})
-
-export const getNodeChildren = (node_id: string, tree: TreeData) => {
-    return tree.nodeDict[node_id].children.map((i: string) => tree.nodeDict[i]) as Node[];
-}
-
-
-export const currNodeAncestorsAtom = atom<Node[]>((get) => {
-        const currNode = get(selectedNodeAtom)
-        if (!currNode) return []
-        const currTree = get(treeAtom)
-        const ancestors = []
-        let parent = currTree.nodeDict[currNode.parent]
-        while (parent) {
-            ancestors.push(parent)
-            parent = currTree.nodeDict[parent.parent]
-        }
-        return ancestors
-    }
-)
 
 
 export const setToNodeChildrenAtom = atom(null, (get, set, nodeid) => {
