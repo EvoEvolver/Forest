@@ -1,19 +1,22 @@
 import React, {useEffect} from 'react';
-import { RichTreeView } from '@mui/x-tree-view/RichTreeView';
+import {RichTreeView} from '@mui/x-tree-view/RichTreeView';
 import {atom, useAtomValue} from "jotai/index";
 import {
     ancestorStackNodesAtom,
-    darkModeAtom, jumpToNodeAtom, lastSelectedNodeBeforeJumpIdAtom,
-    listOfNodesForViewAtom, selectedNodeAtom, selectedNodeIdAtom, treeAtom
+    darkModeAtom,
+    jumpToNodeAtom,
+    lastSelectedNodeBeforeJumpIdAtom,
+    selectedNodeAtom,
+    treeAtom
 } from "../TreeState/TreeState";
-import { Node } from '../entities';
+import {Node} from '../entities';
 import {useAtom, useSetAtom} from "jotai";
 import {useTreeViewApiRef} from "@mui/x-tree-view";
-import {Button, Paper} from "@mui/material";
+import {Button} from "@mui/material";
 import UnfoldLessIcon from '@mui/icons-material/UnfoldLess';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-export const NavigatorItemsAtom = atom((get) =>
-    {
+
+export const NavigatorItemsAtom = atom((get) => {
         const tree = get(treeAtom)
         const currNodeAncestors = get(ancestorStackNodesAtom)
         const selectedNode = get(selectedNodeAtom)
@@ -37,11 +40,11 @@ export const NavigatorItemsAtom = atom((get) =>
             const children = children_ids.map((childId) => get(tree.nodeDict[childId]))
 
             item.children = children.map((child) => {
-            return {
-                id: child.id,
-                label: child.title,
-                children: [],
-            }
+                return {
+                    id: child.id,
+                    label: child.title,
+                    children: [],
+                }
             })
             for (const child of item.children) {
                 addChildren(child)
@@ -65,8 +68,8 @@ const beforeJumpNodeTitleAtom = atom((get) => {
         return ""
     }
     const title = currTree.nodeDict[lastSelectedNodeBeforeJumpId].title
-    if(title.length > letterLimit) {
-        return title.slice(0,letterLimit) + "..."
+    if (title.length > letterLimit) {
+        return title.slice(0, letterLimit) + "..."
     }
     return title
 })
@@ -74,11 +77,11 @@ const beforeJumpNodeTitleAtom = atom((get) => {
 const expandedItemsAtom = atom([])
 
 
-export const NavigatorButtons = ()=>{
+export const NavigatorButtons = () => {
     const beforeJumpNodeTitle = useAtomValue(beforeJumpNodeTitleAtom)
     const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom)
     const apiRef = useTreeViewApiRef();
-    const lastSelectedNodeBeforeJumpId= useAtomValue(lastSelectedNodeBeforeJumpIdAtom)
+    const lastSelectedNodeBeforeJumpId = useAtomValue(lastSelectedNodeBeforeJumpIdAtom)
     const currNodeAncestors = useAtomValue(ancestorStackNodesAtom)
     const [expandedItems, setExpandedItems] = useAtom(expandedItemsAtom)
     const jumpToNode = useSetAtom(jumpToNodeAtom)
@@ -109,7 +112,7 @@ export const NavigatorButtons = ()=>{
     </>;
 }
 
-export const NewNavigatorLayer = () => {
+export const NavigatorLayer = () => {
     const dark = useAtomValue(darkModeAtom)
     const currNodeAncestors = useAtomValue(ancestorStackNodesAtom)
     const navigatorItems = useAtomValue(NavigatorItemsAtom)
