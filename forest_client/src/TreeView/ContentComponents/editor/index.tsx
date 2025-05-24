@@ -9,8 +9,8 @@ import {buildInputRules, buildKeymap, buildMenuItems, exampleSetup} from 'prosem
 import {keymap} from 'prosemirror-keymap';
 import './style.css';
 import {useAtomValue} from "jotai/index";
-import {YjsProviderAtom} from "../../TreeState/YjsConnection";
-import {Node} from "../../entities";
+import {YjsProviderAtom} from "../../../TreeState/YjsConnection";
+import {Node} from "../../../entities";
 import {XmlFragment} from 'yjs';
 import {Schema} from "prosemirror-model";
 import {menuBar, MenuElement} from "prosemirror-menu"
