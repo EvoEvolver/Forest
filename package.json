@@ -1,0 +1,29 @@
+{
+  "name": "forest",
+  "version": "1.0.0",
+  "private": true,
+  "packages": [
+    "forest_client",
+    "forest_server"
+  ],
+  "description": "A Tree-based workspace",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "dev": "pnpm -r run dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EvoEvolver/Forest.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/EvoEvolver/Forest/issues"
+  },
+  "homepage": "https://github.com/EvoEvolver/Forest#readme",
+  "dependencies": {
+    "debug": "^4.4.1"
+  }
+}

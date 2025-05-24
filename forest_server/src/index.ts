@@ -3,65 +3,12 @@ import path from 'path';
 import minimist from 'minimist'
 import http from 'http';
 import cors from 'cors';
+import {patchTree, ServerData} from "./nodeFactory";
+
 const WebSocket = require('ws')
 const setupWSConnection = require('./y-websocket/utils.cjs').setupWSConnection
-import * as Y from 'yjs'
 const getYDoc = require('./y-websocket/utils.cjs').getYDoc
 
-
-class TreeData {
-    nodeDict: { [key: string]: any };
-    constructor() {
-        this.nodeDict = {}
-    }
-}
-
-class ServerData{
-    trees: { [key: string]: TreeData };
-    tree: TreeData | null
-    tree_id: string | null
-    constructor() {
-        this.trees = {}
-        this.tree = null
-        this.tree_id = null
-    }
-}
-function nodeToMap(node: any): Y.Map<any> {
-    const ymapForNode = new Y.Map()
-    for (let key in node) {
-        if (key=="ydata"){
-            let ymapForyData = new Y.Map()
-            let ydataDict = node[key]
-            for (let dataKey in ydataDict){
-                ymapForyData.set(dataKey, ydataDict[dataKey])
-            }
-            ymapForNode.set("ydata", ymapForyData)
-        }
-        else {
-            ymapForNode.set(key, node[key])
-        }
-    }
-    if (!node.ydata){
-        ymapForNode.set("ydata", new Y.Map())
-    }
-    return ymapForNode
-}
-
-function patchTree(nodeDict: Y.Map<any>, patchTree: TreeData) {
-    if (patchTree.nodeDict === null)
-        return
-    for (let key in patchTree.nodeDict) {
-        const newNode = patchTree.nodeDict[key];
-        if (newNode === null) {
-            if (nodeDict.has(key)){
-                nodeDict.delete(key)
-            }
-        } else {
-            const newNodeMap = nodeToMap(newNode)
-            nodeDict.set(key, newNodeMap)
-        }
-    }
-}
 
 function main(port: number, host: string, frontendRoot: string | null): void {
     const app = express();

@@ -244,10 +244,7 @@ const MiddleContents = ({node, selected, index}: { node: Node, selected: boolean
     let setSelectedNode = useSetAtom(selectedNodeAtom)
 
     const handleClick = (event) => {
-        console.log(event.target)
-        //if (event.target === event.currentTarget) {
-            setSelectedNode(node.id)
-        //}
+        setSelectedNode(node.id)
     }
 
     return <div

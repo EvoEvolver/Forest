@@ -18,6 +18,7 @@ export interface Node {
     children: string[]
     ydata: Map<any>
     data: {}
-    tools: [Tabs]
+    tools: [Tabs],
+    ymapForNode: Map<any> | null
 }
 

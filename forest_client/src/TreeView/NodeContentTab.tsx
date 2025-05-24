@@ -11,8 +11,9 @@ import {atom, useAtomValue} from "jotai";
 import {darkModeAtom} from "../TreeState/TreeState";
 import Tooltip from '@mui/material/Tooltip';
 import ProseMirrorEditor from "./ContentComponents/editor";
+import {addChildrenButton} from "./ContentComponents/treeOperations";
 
-const envComponentAtom = atom({...content_components, Tooltip, Box, ProseMirrorEditor})
+const envComponentAtom = atom({...content_components, Tooltip, Box, ProseMirrorEditor, addChildrenButton})
 
 const renderTabs = (tabs, node) => {
     const [value, setValue] = React.useState('0');

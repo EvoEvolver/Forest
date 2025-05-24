@@ -1,6 +1,6 @@
 import {Node, NodeDict, TreeData} from '../entities';
 import {Atom, atom, WritableAtom} from 'jotai'
-import {Map as YMap} from 'yjs'
+import {Map as YMap, Array as YArray, Text as YText} from 'yjs'
 import {YDocAtom} from "./YjsConnection";
 
 export interface TreeAtomData {
@@ -10,32 +10,55 @@ export interface TreeAtomData {
 
 export const treeAtom = atom(null as TreeAtomData | null)
 
-/*
-export const initializeTreeAtom = (nodeDict: NodeDict, setTree) => {
-    const treeData: TreeAtomData = {
-        metadata: {},
-        nodeDict: {}
-    }
-    for (const [key, value] of Object.entries(nodeDict)) {
-        treeData.nodeDict[key] = atom(value)
-    }
-    setTree(treeData)
-}*/
-
 function yjsNodeToJsonNode(yjsMapNode: YMap<any>): Node {
     const node: Node = {
         id: yjsMapNode.get("id"),
-        title: yjsMapNode.get("title"),
+        title: yjsMapNode.get("title").toJSON(),
         parent: yjsMapNode.get("parent"),
         other_parents: yjsMapNode.get("other_parents"),
         tabs: yjsMapNode.get("tabs"),
-        children: yjsMapNode.get("children"),
+        children: yjsMapNode.get("children").toJSON(),
         ydata: yjsMapNode.get("ydata"),
         data: yjsMapNode.get("data"),
-        tools: yjsMapNode.get("tools")
+        tools: yjsMapNode.get("tools"),
+        ymapForNode: yjsMapNode,
     }
+    yjsMapNode.get("children").observe((e => {
+        console.log("children changed", e.target.toJSON())
+        node.children = e.target.toJSON()
+    }))
+    yjsMapNode.get("title").observe((e => {
+        node.title = e.target.toJSON()
+    }))
     return node
 }
+
+export const addNewNodeAtom = atom(null, (get, set, parentId: string) => {
+    const currTree = get(treeAtom)
+    if (!currTree)
+        return
+    const nodeDict = currTree.nodeDict
+    const parentNode = get(nodeDict[parentId])
+    const yArrayChildren = parentNode.ymapForNode.get("children")
+    const newNode = {
+        id: crypto.randomUUID(),
+        title: new YText("new node"),
+        parent: parentId,
+        other_parents: [],
+        tabs: {"content":"<ProseMirrorEditor node={node}/>"},
+        children: new YArray(),
+        ydata: new YMap(),
+        data: {},
+        tools: [],
+    }
+    const nodeDictyMap: YMap<YMap<any>> = get(YDocAtom).getMap("nodeDict")
+    const ymapForNode = new YMap()
+    for (let key in newNode) {
+        ymapForNode.set(key, newNode[key])
+    }
+    nodeDictyMap.set(newNode.id, ymapForNode)
+    yArrayChildren.push([newNode.id])
+})
 
 export const addNodeToTreeAtom = atom(null, (get, set, yjsMapNode: YMap<any>) => {
     const currTree = get(treeAtom)
