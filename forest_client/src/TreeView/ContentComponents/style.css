@@ -388,3 +388,13 @@ li.ProseMirror-selectednode:after {
 }
 
 .ProseMirror p { margin-bottom: 1em }
+
+
+.revision-inserted {
+  background-color: #d4fcdc;
+  text-decoration: underline;
+}
+.revision-deleted {
+  background-color: #fdd;
+  text-decoration: line-through;
+}

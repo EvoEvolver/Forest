@@ -188,7 +188,19 @@ export const marks = {
     toDOM (node) {
       return ['ychange', { ychange_user: node.attrs.user, ychange_state: node.attrs.state }, 0]
     }
-  }
+  },
+  insertion: {
+    attrs: { user: {}, timestamp: {} },
+    inclusive: false,
+    parseDOM: [{ tag: 'ins', getAttrs: dom => ({}) }],
+    toDOM: mark => ['ins', { class: 'revision-inserted' }, 0],
+  },
+  deletion: {
+    attrs: { user: {}, timestamp: {} },
+    inclusive: false,
+    parseDOM: [{ tag: 'del', getAttrs: dom => ({}) }],
+    toDOM: mark => ['del', { class: 'revision-deleted' }, 0],
+  },
 }
 
 // :: Schema
