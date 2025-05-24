@@ -244,6 +244,7 @@ const MiddleContents = ({node, selected, index}: { node: Node, selected: boolean
     let setSelectedNode = useSetAtom(selectedNodeAtom)
 
     const handleClick = (event) => {
+        console.log(event.target)
         setSelectedNode(node.id)
     }
 
