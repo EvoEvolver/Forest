@@ -26,7 +26,7 @@ async def main():
     while True:
         print("Main loop running...")
         nodeDict = ydoc.get("nodeDict", type=Map)
-        print("Current nodeDict:", nodeDict.to_py())
+        print("Current nodeDict:", nodeDict.__str__())
         await asyncio.sleep(1)
 
 asyncio.run(main())
