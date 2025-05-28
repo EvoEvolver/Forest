@@ -1,4 +1,4 @@
-import React from "react";
+import React, {createContext, useEffect} from "react";
 import JsxParser from "react-jsx-parser";
 import TabContext from "@mui/lab/TabContext";
 import {Box} from "@mui/material";
@@ -10,6 +10,9 @@ import {envComponentAtom} from "./ContentComponents";
 import {useAtomValue} from "jotai";
 import {darkModeAtom} from "../TreeState/TreeState";
 
+export const thisNodeContext = createContext(null)
+
+
 const renderTabs = (tabs, node) => {
     const [value, setValue] = React.useState('0');
     const dark = useAtomValue(darkModeAtom);
@@ -17,14 +20,15 @@ const renderTabs = (tabs, node) => {
     const envComponent = useAtomValue(envComponentAtom)
 
     const renderContent = (content, node) => (
-        <JsxParser
-            bindings={{
-                node: node
-            }}
-            components={envComponent}
-            jsx={content}
-            renderError={error => <><div style={{color: "red"}}>{error.error.toString()}</div><div>{content}</div></>}
-        />
+        <thisNodeContext.Provider value={node}>
+            <JsxParser
+                bindings={{
+                    node: node
+                }}
+                components={envComponent}
+                jsx={content}
+                renderError={error => <><div style={{color: "red"}}>{error.error.toString()}</div><div>{content}</div></>}
+        /></thisNodeContext.Provider>
     );
     if (!tabs) return <></>
     return <>
@@ -50,9 +54,8 @@ const renderTabs = (tabs, node) => {
 export const NodeContentTabs = ({node, tabDict, title}) => {
     const dark = useAtomValue(darkModeAtom)
     return (
-        <>
-            {title && <Typography variant="h5" style={{color: dark ? 'white' : 'black'}}>{title}</Typography>}
-            {renderTabs(tabDict, node)}
+        <>{
+            title && <Typography variant="h5" style={{color: dark ? 'white' : 'black'}}>{title}</Typography>}{renderTabs(tabDict, node)}
         </>
     );
 }

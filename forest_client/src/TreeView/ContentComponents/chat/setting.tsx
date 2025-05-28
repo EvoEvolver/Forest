@@ -1,13 +1,11 @@
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import {Box, Button, IconButton, Paper, TextField, Typography} from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import {useAtomValue, useSetAtom} from "jotai/index";
-import {setUsernameAtom, usernameAtom} from "./index";
+import {usernameAtom} from "./index";
+import {useAtom} from "jotai";
 
 const SettingsPanel = ({closePanel}: { closePanel: () => void }) => {
-    const username= useAtomValue(usernameAtom);
-    const setUsername = useSetAtom(setUsernameAtom);
-
+    const [username, setUsername] = useAtom(usernameAtom);
     const handleSave = () => {
         closePanel();
     };

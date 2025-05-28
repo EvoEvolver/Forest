@@ -1,19 +1,23 @@
-import React, {useEffect, useRef, useState} from 'react'
+import React, {useContext, useEffect, useRef, useState} from 'react'
 import {Array as YArray} from 'yjs'
-import {Node} from "../../../entities";
 import {Box, Button, Card, CardContent, Paper, Stack, TextField, Typography,} from "@mui/material";
 import SendIcon from '@mui/icons-material/Send';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SettingsPanel from "./setting";
-import {YjsProviderAtom} from "../../../TreeState/YjsConnection";
-import {atom, useAtom, useSetAtom} from "jotai";
-import {useAtomValue} from "jotai/index";
+import {useAtom} from "jotai";
+import {atomWithStorage} from 'jotai/utils'
+import {thisNodeContext} from "../../NodeContentTab";
 
+interface ChatViewProps {
+  label?: string; // The ? makes it optional
+}
 
-export default function ChatView(props: { node: Node }) {
-    const node = props.node
-    //const provider = useAtomValue(YjsProviderAtom)
-    let yMessages = node.ydata.get("yMessages");
+export default function ChatView({label}: ChatViewProps) {
+    const node = useContext(thisNodeContext);
+
+    let chatLabel = label || "";
+
+    let yMessages = node.ydata.get("yMessages"+chatLabel);
     if (!yMessages) {
         yMessages = new YArray();
         node.ydata.set("yMessages", yMessages);
@@ -37,18 +41,13 @@ export default function ChatView(props: { node: Node }) {
 }
 
 
-export const usernameAtom = atom()
-export const setUsernameAtom = atom(null, (get, set, newUsername: string) => {
-    set(usernameAtom, newUsername);
-    localStorage.setItem('username', newUsername);
-});
+export const usernameAtom = atomWithStorage('chat-username', '');
 
 function ChatViewImpl({sendMessage, messages}) {
     const [message, setMessage] = useState("");
     const endRef = useRef(null);
     const [settingPanelOpen, setSettingPanelOpen] = useState(false)
-    const username= useAtomValue(usernameAtom);
-    const setUsername = useSetAtom(setUsernameAtom);
+    const [username, setUsername] = useAtom(usernameAtom);
 
     useEffect(() => {
         endRef.current?.scrollIntoView({behavior: "smooth"});
@@ -56,14 +55,9 @@ function ChatViewImpl({sendMessage, messages}) {
 
 
     useEffect(() => {
-        if (!username) {
-            const storedUsername = localStorage.getItem('username');
-            if (storedUsername) {
-                setUsername(storedUsername);
-            } else {
-                let defaultUsername = `User${Math.floor(Math.random() * 1000)}`;
-                setUsername(defaultUsername); // Default username
-            }
+        if (username === "") {
+            let defaultUsername = `User${Math.floor(Math.random() * 1000)}`;
+            setUsername(defaultUsername); // Default username
         }
     }, []);
 
@@ -114,7 +108,8 @@ function ChatViewImpl({sendMessage, messages}) {
             </Box>
 
             {/* Conditionally render SettingsPanel */}
-            {settingPanelOpen && <SettingsPanel closePanel={() => setSettingPanelOpen(false)} setUsername={setUsername}/>}
+            {settingPanelOpen &&
+                <SettingsPanel closePanel={() => setSettingPanelOpen(false)} setUsername={setUsername}/>}
 
             <CardContent sx={{flex: 1, overflowY: "auto", pb: 1}}>
                 <Stack spacing={1}>
