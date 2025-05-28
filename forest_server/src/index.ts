@@ -5,7 +5,7 @@ import http from 'http';
 import cors from 'cors';
 import {patchTree, ServerData} from "./nodeFactory";
 
-import WebSocket from 'ws';
+import { WebSocketServer } from 'ws';
 // @ts-ignore
 import {setupWSConnection} from './y-websocket/utils.ts'
 // @ts-ignore
@@ -19,7 +19,7 @@ const openai = new OpenAI({
 function main(port: number, host: string, frontendRoot: string | null): void {
     const app = express();
     const server = http.createServer(app);
-    const wss = new WebSocket.Server({ noServer: true })
+    const wss = new WebSocketServer({ noServer: true })
     //const docname = "forest"
 
     wss.on('connection', (conn: any, req: any, opts: any)=>{
