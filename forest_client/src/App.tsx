@@ -12,10 +12,10 @@ import TreeView from "./TreeView";
 import {useAtomValue} from "jotai/index";
 import {WebsocketProvider} from 'y-websocket'
 import {Map as YMap} from "yjs";
-import {Node} from "./entities";
 import {YDocAtom, YjsProviderAtom} from "./TreeState/YjsConnection";
 
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
+const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
 
 export default function App() {
 
@@ -35,7 +35,8 @@ export default function App() {
         })
         const treeId = new URLSearchParams(window.location.search).get("id");
         setSelectedNodeId(treeId)
-        let wsProvider = new WebsocketProvider(`ws://${location.hostname}:${currentPort}`, treeId, ydoc)
+
+        let wsProvider = new WebsocketProvider(`${wsProtocol}://${location.hostname}:${currentPort}`, treeId, ydoc)
         setYjsProvider(wsProvider)
         wsProvider.on('status', event => {
             console.log("wsProvider", event.status) // logs "connected" or "disconnected"
