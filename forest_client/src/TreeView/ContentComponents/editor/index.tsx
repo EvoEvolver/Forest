@@ -1,4 +1,4 @@
-import React, {useEffect, useRef} from 'react'
+import React, {useContext, useEffect, useRef} from 'react'
 import {redo, undo, yCursorPlugin, ySyncPlugin, yUndoPlugin} from 'y-prosemirror';
 import {EditorState, Plugin} from 'prosemirror-state';
 import {schema} from './schema';
@@ -8,7 +8,7 @@ import {buildInputRules, buildKeymap, buildMenuItems, exampleSetup} from 'prosem
 // @ts-ignore
 import {keymap} from 'prosemirror-keymap';
 import './style.css';
-import {useAtomValue} from "jotai/index";
+import {useAtomValue} from "jotai";
 import {YjsProviderAtom} from "../../../TreeState/YjsConnection";
 import {Node} from "../../../entities";
 import {XmlFragment} from 'yjs';
@@ -18,9 +18,10 @@ import {baseKeymap} from "prosemirror-commands";
 import {dropCursor} from "prosemirror-dropcursor";
 import {gapCursor} from "prosemirror-gapcursor";
 import {history} from "prosemirror-history";
+import {thisNodeContext} from "../../NodeContentTab";
 
 const ProseMirrorEditor: React.FC = (props: { node: Node }) => {
-    const node = props.node
+    const node = useContext(thisNodeContext)
     const editorRef = useRef<HTMLDivElement | null>(null);
     const provider = useAtomValue(YjsProviderAtom)
     let yXML = node.ydata.get("yXmlForEditor");

@@ -109,7 +109,7 @@ function ChatViewImpl({sendMessage, messages}) {
 
             {/* Conditionally render SettingsPanel */}
             {settingPanelOpen &&
-                <SettingsPanel closePanel={() => setSettingPanelOpen(false)} setUsername={setUsername}/>}
+                <SettingsPanel closePanel={() => setSettingPanelOpen(false)}/>}
 
             <CardContent sx={{flex: 1, overflowY: "auto", pb: 1}}>
                 <Stack spacing={1}>

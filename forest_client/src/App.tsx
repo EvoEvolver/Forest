@@ -5,11 +5,10 @@ import {
     addNodeToTreeAtom,
     darkModeAtom,
     deleteNodeFromTreeAtom,
-    selectedNodeIdAtom,
-    treeAtom
+    selectedNodeIdAtom
 } from "./TreeState/TreeState";
 import TreeView from "./TreeView";
-import {useAtomValue} from "jotai/index";
+import {useAtomValue} from "jotai";
 import {WebsocketProvider} from 'y-websocket'
 import {Map as YMap} from "yjs";
 import {YDocAtom, YjsProviderAtom} from "./TreeState/YjsConnection";
@@ -20,7 +19,6 @@ const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
 export default function App() {
 
     const setDark = useSetAtom(darkModeAtom)
-    const setTree = useSetAtom(treeAtom);
     const setSelectedNodeId = useSetAtom(selectedNodeIdAtom)
     const contentRef = useRef();
     const [, setYjsProvider] = useAtom(YjsProviderAtom)
@@ -29,13 +27,8 @@ export default function App() {
     const deleteNodeFromTree = useSetAtom(deleteNodeFromTreeAtom)
 
     const setupYDoc = () => {
-        setTree({
-            metadata: {},
-            nodeDict: {}
-        })
         const treeId = new URLSearchParams(window.location.search).get("id");
         setSelectedNodeId(treeId)
-
         let wsProvider = new WebsocketProvider(`${wsProtocol}://${location.hostname}:${currentPort}`, treeId, ydoc)
         setYjsProvider(wsProvider)
         wsProvider.on('status', event => {
@@ -65,7 +58,6 @@ export default function App() {
     useEffect(() => {
         document.body.style.overflow = 'hidden';
         setDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
-        const treeId = new URLSearchParams(window.location.search).get("id");
         setupYDoc()
     }, []);
 
@@ -80,15 +72,11 @@ export default function App() {
                       flex: "1 1 100%",
                       boxSizing: "border-box"
                   }}>
-
-
                 <Grid item style={{height: "100%", boxSizing: "border-box"}}>
                     <Box style={{width: "100vw", height: "100vh", flexGrow: 1, boxSizing: "border-box"}}>
                         <TreeView contentRef={contentRef}/>
                     </Box>
                 </Grid>
-
-
             </Grid>
         </>
     );

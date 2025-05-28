@@ -1,6 +1,7 @@
-import {Node, NodeDict, TreeData} from '../entities';
-import {Atom, atom, WritableAtom} from 'jotai'
-import {Map as YMap, Array as YArray, Text as YText} from 'yjs'
+import {Node} from '../entities';
+import {Atom, atom, PrimitiveAtom, WritableAtom} from 'jotai'
+import * as Y from 'yjs'
+import {Array as YArray, Map as YMap, Text as YText} from 'yjs'
 import {YDocAtom} from "./YjsConnection";
 
 export interface TreeAtomData {
@@ -8,9 +9,13 @@ export interface TreeAtomData {
     nodeDict: Record<string, Atom<Node>>
 }
 
-export const treeAtom = atom(null as TreeAtomData | null)
+export const treeAtom = atom(
+    {
+        metadata: {},
+        nodeDict: {}
+    } as TreeAtomData | null)
 
-function yjsNodeToJsonNode(yjsMapNode: YMap<any>): Node {
+function yjsNodeToJsonNodeAtom(yjsMapNode: YMap<any>): PrimitiveAtom<Node> {
     const node: Node = {
         id: yjsMapNode.get("id"),
         title: yjsMapNode.get("title").toJSON(),
@@ -30,26 +35,26 @@ function yjsNodeToJsonNode(yjsMapNode: YMap<any>): Node {
     yjsMapNode.get("title").observe((e => {
         node.title = e.target.toJSON()
     }))
-    return node
+    return atom(node)
 }
 
-export const addNewNodeAtom = atom(null, (get, set, parentId: string) => {
+export const addNewNodeAtom = atom(null, (get, set, props: {parentId: string, tabs, tools}) => {
     const currTree = get(treeAtom)
     if (!currTree)
         return
     const nodeDict = currTree.nodeDict
-    const parentNode = get(nodeDict[parentId])
+    const parentNode = get(nodeDict[props.parentId])
     const yArrayChildren = parentNode.ymapForNode.get("children")
     const newNode = {
         id: crypto.randomUUID(),
         title: new YText("new node"),
-        parent: parentId,
+        parent: props.parentId,
         other_parents: [],
-        tabs: {"content":"<ProseMirrorEditor node={node}/>"},
+        tabs: props.tabs,
         children: new YArray(),
         ydata: new YMap(),
         data: {},
-        tools: [],
+        tools: props.tools,
     }
     const nodeDictyMap: YMap<YMap<any>> = get(YDocAtom).getMap("nodeDict")
     const ymapForNode = new YMap()
@@ -65,13 +70,13 @@ export const addNodeToTreeAtom = atom(null, (get, set, yjsMapNode: YMap<any>) =>
     if (!currTree)
         return
     const nodeDict = currTree.nodeDict
-    let node: Node = yjsNodeToJsonNode(yjsMapNode)
-    //nodeDict[newNode.id] = atom(yjsNode)
+    const nodeId = yjsMapNode.get("id")
+    let nodeAtom: Node = yjsNodeToJsonNodeAtom(yjsMapNode)
     set(treeAtom, {
         ...currTree,
         nodeDict: {
             ...nodeDict,
-            [node.id]: atom(node)
+            [nodeId]: nodeAtom
         }
     })
     console.log("addNodeToTree", nodeDict)
