@@ -5,7 +5,8 @@ import * as awarenessProtocol from 'y-protocols/awareness'
 import * as encoding from 'lib0/encoding'
 import * as decoding from 'lib0/decoding'
 import * as map from 'lib0/map'
-
+import {IncomingMessage} from 'http'
+import {WebSocket} from 'ws'
 import debounce from 'lodash.debounce'
 
 import { callbackHandler, isCallbackSet } from './callback'
@@ -69,48 +70,38 @@ const messageSync = 0
 const messageAwareness = 1
 // const messageAuth = 2
 
-/**
- * @param {Uint8Array} update
- * @param {any} _origin
- * @param {WSSharedDoc} doc
- * @param {any} _tr
- */
-const updateHandler = (update, _origin, doc, _tr) => {
+
+const updateHandler = (update: Uint8Array, _origin: any, doc: WSSharedDoc, _tr: any) => {
     const encoder = encoding.createEncoder()
     encoding.writeVarUint(encoder, messageSync)
     syncProtocol.writeUpdate(encoder, update)
     const message = encoding.toUint8Array(encoder)
-    doc.conns.forEach((_, conn) => sendToClient(doc, conn, message))
+    doc.conns.forEach((_, conn: WebSocket) => sendToClient(doc, conn, message))
 }
 
-/**
- * @type {(ydoc: Y.Doc) => Promise<void>}
- */
-let contentInitializor = _ydoc => Promise.resolve()
+
+let contentInitializor: (ydoc: Y.Doc) => Promise<void> = _ydoc => Promise.resolve()
 
 /**
  * This function is called once every time a Yjs document is created. You can
  * use it to pull data from an external source or initialize content.
- *
- * @param {(ydoc: Y.Doc) => Promise<void>} f
  */
-export const setContentInitializor = (f) => {
+export const setContentInitializor = (f: (ydoc: Y.Doc) => Promise<void>) => {
     contentInitializor = f
 }
 
 export class WSSharedDoc extends Y.Doc {
     name: string;
-    conns: Map<Object, Set<number>>;
+     /**
+      * Maps from conn to set of controlled user ids. Delete all user ids from awareness when this conn is closed
+      */
+    conns: Map<WebSocket, Set<number>>;
     awareness: awarenessProtocol.Awareness;
     whenInitialized: Promise<void>;
 
     constructor(name: string) {
         super({gc: gcEnabled})
         this.name = name
-        /**
-         * Maps from conn to set of controlled user ids. Delete all user ids from awareness when this conn is closed
-         * @type {Map<Object, Set<number>>}
-         */
         this.conns = new Map()
         /**
          * @type {awarenessProtocol.Awareness}
@@ -139,7 +130,7 @@ export class WSSharedDoc extends Y.Doc {
             encoding.writeVarUint(encoder, messageAwareness)
             encoding.writeVarUint8Array(encoder, awarenessProtocol.encodeAwarenessUpdate(this.awareness, changedClients))
             const buff = encoding.toUint8Array(encoder)
-            this.conns.forEach((_, c) => {
+            this.conns.forEach((_, c: WebSocket) => {
                 sendToClient(this, c, buff)
             })
         }
@@ -159,12 +150,8 @@ export class WSSharedDoc extends Y.Doc {
 
 /**
  * Gets a Y.Doc by name, whether in memory or on disk
- *
- * @param {string} docname - the name of the Y.Doc to find or create
- * @param {boolean} gc - whether to allow gc on the doc (applies only when created)
- * @return {WSSharedDoc}
  */
-export const getYDoc = (docname, gc = true) => map.setIfUndefined(docs, docname, () => {
+export const getYDoc = (docname: string, gc: boolean = true): WSSharedDoc => map.setIfUndefined(docs, docname, () => {
     const doc = new WSSharedDoc(docname)
     doc.gc = gc
     if (persistence !== null) {
@@ -175,12 +162,8 @@ export const getYDoc = (docname, gc = true) => map.setIfUndefined(docs, docname,
 })
 
 
-/**
- * @param {any} conn
- * @param {WSSharedDoc} doc
- * @param {Uint8Array} message
- */
-const messageListener = (conn, doc, message) => {
+
+const messageListener = (conn: WebSocket, doc: WSSharedDoc, message: Uint8Array) => {
     try {
         const encoder = encoding.createEncoder()
         const decoder = decoding.createDecoder(message)
@@ -209,11 +192,8 @@ const messageListener = (conn, doc, message) => {
     }
 }
 
-/**
- * @param {WSSharedDoc} doc
- * @param {any} conn
- */
-const closeConn = (doc, conn) => {
+
+const closeConn = (doc: WSSharedDoc, conn: WebSocket) => {
     if (doc.conns.has(conn)) {
         /**
          * @type {Set<number>}
@@ -233,12 +213,8 @@ const closeConn = (doc, conn) => {
     conn.close()
 }
 
-/**
- * @param {WSSharedDoc} doc
- * @param {import('ws').WebSocket} conn
- * @param {Uint8Array} m
- */
-const sendToClient = (doc, conn, m) => {
+
+const sendToClient = (doc: WSSharedDoc, conn: WebSocket, m: Uint8Array) => {
     if (conn.readyState !== wsReadyStateConnecting && conn.readyState !== wsReadyStateOpen) {
         closeConn(doc, conn)
     }
@@ -253,19 +229,18 @@ const sendToClient = (doc, conn, m) => {
 
 const pingTimeout = 30000
 
-/**
- * @param {import('ws').WebSocket} conn
- * @param {import('http').IncomingMessage} req
- * @param {any} opts
- */
-export const setupWSConnection = (conn, req, {docName = null, gc = true} = {}) => {
+
+export const setupWSConnection = (conn: WebSocket, req: IncomingMessage, {
+    docName = null,
+    gc = true
+}: any = {}) => {
     docName = (req.url || '').slice(1).split('?')[0]
     conn.binaryType = 'arraybuffer'
     // get doc, initialize if it does not exist yet
     const doc = getYDoc(docName, gc)
     doc.conns.set(conn, new Set())
     // listen and reply to events
-    conn.on('message', /** @param {ArrayBuffer} message */message => messageListener(conn, doc, new Uint8Array(message)))
+    conn.on('message', (message: ArrayBuffer) => messageListener(conn, doc, new Uint8Array(message)))
 
     // Check if the connection is still alive
     let pongReceived = true
