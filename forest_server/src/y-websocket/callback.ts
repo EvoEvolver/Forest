@@ -1,18 +1,15 @@
-const http = require('http')
-const number = require('lib0/number')
+import http from 'http'
+import { parseInt } from 'lib0/number'
+import {WSSharedDoc} from "./utils";
 
 const CALLBACK_URL = process.env.CALLBACK_URL ? new URL(process.env.CALLBACK_URL) : null
-const CALLBACK_TIMEOUT = number.parseInt(process.env.CALLBACK_TIMEOUT || '5000')
+const CALLBACK_TIMEOUT = parseInt(process.env.CALLBACK_TIMEOUT || '5000')
 const CALLBACK_OBJECTS = process.env.CALLBACK_OBJECTS ? JSON.parse(process.env.CALLBACK_OBJECTS) : {}
 
-exports.isCallbackSet = !!CALLBACK_URL
+export const isCallbackSet = !!CALLBACK_URL
 
-/**
- * @param {Uint8Array} update
- * @param {any} origin
- * @param {import('./utils.cjs').WSSharedDoc} doc
- */
-exports.callbackHandler = (update, origin, doc) => {
+
+export const callbackHandler = (update: Uint8Array, origin: any, doc: WSSharedDoc) => {
   const room = doc.name
   const dataToSend = {
     room,
@@ -29,13 +26,9 @@ exports.callbackHandler = (update, origin, doc) => {
   CALLBACK_URL && callbackRequest(CALLBACK_URL, CALLBACK_TIMEOUT, dataToSend)
 }
 
-/**
- * @param {URL} url
- * @param {number} timeout
- * @param {Object} data
- */
-const callbackRequest = (url, timeout, data) => {
-  data = JSON.stringify(data)
+
+const callbackRequest = (url: URL, timeout: number, data: object) => {
+  const dataStr = JSON.stringify(data)
   const options = {
     hostname: url.hostname,
     port: url.port,
@@ -44,7 +37,7 @@ const callbackRequest = (url, timeout, data) => {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Content-Length': Buffer.byteLength(data)
+      'Content-Length': Buffer.byteLength(dataStr)
     }
   }
   const req = http.request(options)
@@ -56,22 +49,18 @@ const callbackRequest = (url, timeout, data) => {
     console.error('Callback request error.', e)
     req.abort()
   })
-  req.write(data)
+  req.write(dataStr)
   req.end()
 }
 
-/**
- * @param {string} objName
- * @param {string} objType
- * @param {import('./utils.cjs').WSSharedDoc} doc
- */
-const getContent = (objName, objType, doc) => {
+
+const getContent = (objName: string, objType: string, doc: WSSharedDoc) => {
   switch (objType) {
     case 'Array': return doc.getArray(objName)
     case 'Map': return doc.getMap(objName)
     case 'Text': return doc.getText(objName)
     case 'XmlFragment': return doc.getXmlFragment(objName)
     case 'XmlElement': return doc.getXmlElement(objName)
-    default : return {}
+    default : throw new Error(`Unknown object type: ${objType} for object: ${objName}`)
   }
 }

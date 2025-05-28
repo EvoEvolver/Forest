@@ -5,10 +5,16 @@ import http from 'http';
 import cors from 'cors';
 import {patchTree, ServerData} from "./nodeFactory";
 
-const WebSocket = require('ws')
-const setupWSConnection = require('./y-websocket/utils.cjs').setupWSConnection
-const getYDoc = require('./y-websocket/utils.cjs').getYDoc
+import WebSocket from 'ws';
+// @ts-ignore
+import {setupWSConnection} from './y-websocket/utils.ts'
+// @ts-ignore
+import {getYDoc} from "./y-websocket/utils.ts";
+import OpenAI from 'openai';
 
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY, // Make sure you use a secure method to store this
+});
 
 function main(port: number, host: string, frontendRoot: string | null): void {
     const app = express();
@@ -41,42 +47,16 @@ function main(port: number, host: string, frontendRoot: string | null): void {
     }
 
     app.put('/api/updateTree', (req, res) => {
-        console.log("update tree")
         const tree_patch = req.body.tree;
         const treeId = req.body.tree_id;
         const doc = getYDoc(treeId)
         const nodeDict = doc.getMap("nodeDict")
         patchTree(nodeDict, tree_patch);
+        console.log("update tree", req.body.tree_id)
         res.send("OK");
     });
 
-    /*app.get('/api/getTreeList', (_req, res) => {
-        const ytreeJson = getYDoc(docname).getMap("trees").toJSON()
-        const treeKeys = []
-        for (let key in ytreeJson){
-            treeKeys.push(key)
-        }
-        res.send(treeKeys);
-    })*/
-
     app.get('/api/getTree', (req, res) => {
-        /*const treeId: string = req.query.tree_id as string
-        //const ytreeJson = getYDoc(docname).getMap("trees").toJSON()[treeId]
-        if(!getYDoc(docname).getMap("trees").has(treeId)){
-            res.send({})
-            return
-        }
-        const ytreeJson = getYDoc(docname).getMap("trees").get(treeId).toJSON()
-        const treeData = new TreeData()
-        console.log("treeData", treeData)
-        const nodeDict = ytreeJson["nodeDict"]
-        console.log("nodeDict", nodeDict)
-        for (let key in nodeDict){
-            treeData.nodeDict[key] = JSON.parse(nodeDict[key])
-        }
-        const tree: Record<string, TreeData> = {}
-        tree[treeId] = treeData
-        res.send(tree);*/
         const treeId: string = req.query.tree_id as string
         const ytreeJson = getYDoc(treeId).getMap("treeData").toJSON()
         console.log("getTree", ytreeJson)
@@ -86,6 +66,22 @@ function main(port: number, host: string, frontendRoot: string | null): void {
     app.get('/api/alive', (_req, res) => {
         res.send("OK")
     })
+
+    app.get('/api/llm', async (req, res) => {
+        try {
+            const messages = req.query.messages
+            const response = await openai.chat.completions.create({
+                model: 'gpt-4.1-mini-2025-04-14',
+                // @ts-ignore
+                messages: messages,
+            });
+            const result = response.choices[0].message.content;
+            res.send({ result });
+        } catch (error) {
+            console.error('Error in /api/llm:', error);
+            res.status(500).send({ error: 'An error occurred while processing the request.' });
+        }
+    });
 
     server.listen(port, host, () => {
         console.log(`Server running at http://${host}:${port}/`);
