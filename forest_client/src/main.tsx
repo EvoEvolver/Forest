@@ -11,7 +11,8 @@ if (rootElement) {
         <Provider>
             <React.StrictMode>
                 <App/>
-            </React.StrictMode></Provider>,
+            </React.StrictMode>
+        </Provider>,
     );
 } else {
     console.error('Root element not found in the document');

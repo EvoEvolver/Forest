@@ -1,6 +1,5 @@
 import {Node} from '../entities';
 import {Atom, atom, PrimitiveAtom, WritableAtom} from 'jotai'
-import * as Y from 'yjs'
 import {Array as YArray, Map as YMap, Text as YText} from 'yjs'
 import {YDocAtom} from "./YjsConnection";
 
@@ -15,7 +14,7 @@ export const treeAtom = atom(
         nodeDict: {}
     } as TreeAtomData | null)
 
-function yjsNodeToJsonNodeAtom(yjsMapNode: YMap<any>): PrimitiveAtom<Node> {
+function yjsNodeToJsonNode(yjsMapNode: YMap<any>): Node {
     const node: Node = {
         id: yjsMapNode.get("id"),
         title: yjsMapNode.get("title").toJSON(),
@@ -28,17 +27,31 @@ function yjsNodeToJsonNodeAtom(yjsMapNode: YMap<any>): PrimitiveAtom<Node> {
         tools: yjsMapNode.get("tools"),
         ymapForNode: yjsMapNode,
     }
-    yjsMapNode.get("children").observe((e => {
-        console.log("children changed", e.target.toJSON())
-        node.children = e.target.toJSON()
-    }))
-    yjsMapNode.get("title").observe((e => {
-        node.title = e.target.toJSON()
-    }))
-    return atom(node)
+    return node
 }
 
-export const addNewNodeAtom = atom(null, (get, set, props: {parentId: string, tabs, tools}) => {
+function yjsNodeToJsonNodeAtom(yjsMapNode: YMap<any>): PrimitiveAtom<Node> {
+    const node: Node = yjsNodeToJsonNode(yjsMapNode)
+    const nodeAtom = atom(node)
+    nodeAtom.onMount = (set) => {
+        const observeFunc = (ymapEvent) => {
+            ymapEvent.changes.keys.forEach((change, key) => {
+                if (change.action !== 'update') {
+                    throw Error(`Property "${key}" was ${change.action}, which is not supported.`)
+                }
+            })
+        }
+        yjsMapNode.observe(observeFunc)
+        const newNode: Node = yjsNodeToJsonNode(yjsMapNode)
+        set(newNode)
+        return () => {
+            yjsMapNode.unobserve(observeFunc)
+        }
+    }
+    return nodeAtom
+}
+
+export const addNewNodeAtom = atom(null, (get, set, props: { parentId: string, tabs, tools }) => {
     const currTree = get(treeAtom)
     if (!currTree)
         return
@@ -71,7 +84,7 @@ export const addNodeToTreeAtom = atom(null, (get, set, yjsMapNode: YMap<any>) =>
         return
     const nodeDict = currTree.nodeDict
     const nodeId = yjsMapNode.get("id")
-    let nodeAtom: Node = yjsNodeToJsonNodeAtom(yjsMapNode)
+    let nodeAtom: PrimitiveAtom<Node> = yjsNodeToJsonNodeAtom(yjsMapNode)
     set(treeAtom, {
         ...currTree,
         nodeDict: {
@@ -120,9 +133,6 @@ function setDefaultAncestors(newNode: Node, currTree: TreeAtomData, get, set: <V
 }
 
 
-
-
-
 const nodesIdBeforeJumpAtom = atom<string[]>([])
 
 export const lastSelectedNodeBeforeJumpIdAtom = atom("")
@@ -142,8 +152,7 @@ export const jumpToNodeAtom = atom(null, (get, set, nodeid) => {
         set(lastSelectedNodeBeforeJumpIdAtom, newLastSelectedNodeId)
         set(selectedNodeIdAtom, nodeid)
         return
-    }
-    else {
+    } else {
         nodesIdBeforeJump.push(get(selectedNodeIdAtom))
         set(lastSelectedNodeBeforeJumpIdAtom, currSelectedNodeId)
         set(selectedNodeIdAtom, nodeid)
@@ -158,10 +167,10 @@ export const selectedNodeAtom = atom(
         if (!currTree || Object.keys(currTree.nodeDict).length === 0)
             return null
         const selectedNodeId = get(selectedNodeIdAtom)
-        if (!selectedNodeId){
+        if (!selectedNodeId) {
             // iterate the values of the nodeDict and return the first one with no parent
-            for (let key in currTree.nodeDict){
-                if (!getNodeById(key, get).parent){
+            for (let key in currTree.nodeDict) {
+                if (!getNodeById(key, get).parent) {
                     return get(currTree.nodeDict[key])
                 }
             }
@@ -208,7 +217,7 @@ export const selectedNodeAtom = atom(
 
         if (matched_ancestor) {
             set(ancestorStackAtom, ancestorStack.slice(ancestorStack.indexOf(matched_ancestor)))
-        }else {
+        } else {
             setDefaultAncestors(newNode, currTree, get, set);
         }
     }
