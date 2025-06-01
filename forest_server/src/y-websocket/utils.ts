@@ -9,7 +9,16 @@ import {IncomingMessage} from 'http'
 import {WebSocket} from 'ws'
 import debounce from 'lodash.debounce'
 
-import { callbackHandler, isCallbackSet } from './callback'
+import {callbackHandler, isCallbackSet} from './callback'
+import {MongodbPersistence} from "y-mongodb-provider";
+import * as path from 'path'
+
+// Read dotenv variables
+import * as dotenv from 'dotenv'
+dotenv.config({
+  path: path.resolve(__dirname, '.env'),
+})
+
 
 const CALLBACK_DEBOUNCE_WAIT = parseInt(process.env.CALLBACK_DEBOUNCE_WAIT || '2000')
 const CALLBACK_DEBOUNCE_MAXWAIT = parseInt(process.env.CALLBACK_DEBOUNCE_MAXWAIT || '10000')
@@ -21,31 +30,15 @@ const wsReadyStateClosed = 3 // eslint-disable-line
 
 // disable gc when using snapshots!
 const gcEnabled = process.env.GC !== 'false' && process.env.GC !== '0'
-const persistenceDir = process.env.YPERSISTENCE
+if (gcEnabled) {
+    console.log("Garbage collection is enabled.")
+}
+
 /**
  * @type {{bindState: function(string,WSSharedDoc):void, writeState:function(string,WSSharedDoc):Promise<any>, provider: any}|null}
  */
 let persistence = null
-if (typeof persistenceDir === 'string') {
-    console.info('Persisting documents to "' + persistenceDir + '"')
-    // @ts-ignore
-    const LeveldbPersistence = null//require('y-leveldb').LeveldbPersistence
-    const ldb = new LeveldbPersistence(persistenceDir)
-    persistence = {
-        provider: ldb,
-        bindState: async (docName, ydoc) => {
-            const persistedYdoc = await ldb.getYDoc(docName)
-            const newUpdates = Y.encodeStateAsUpdate(ydoc)
-            ldb.storeUpdate(docName, newUpdates)
-            Y.applyUpdate(ydoc, Y.encodeStateAsUpdate(persistedYdoc))
-            ydoc.on('update', update => {
-                ldb.storeUpdate(docName, update)
-            })
-        },
-        writeState: async (_docName, _ydoc) => {
-        }
-    }
-}
+
 
 /**
  * @param {{bindState: function(string,WSSharedDoc):void,
@@ -60,6 +53,48 @@ export const setPersistence = persistence_ => {
  * writeState:function(string,WSSharedDoc):Promise<any>}|null} used persistence layer
  */
 export const getPersistence = () => persistence
+
+//
+let mongoUrl = process.env.Y_PERSISTENCE_MONGO_URL || null
+if (mongoUrl) {
+    console.log("Connecting to MongoDB because a Y_PERSISTENCE_MONGO_URL is set")
+    const mdb = new MongodbPersistence(mongoUrl, {
+        collectionName: 'transactions',
+        flushSize: 100,
+        multipleCollections: true,
+    });
+
+    setPersistence({
+        bindState: async (docName, ydoc) => {
+            // Here you listen to granular document updates and store them in the database
+            // You don't have to do this, but it ensures that you don't lose content when the server crashes
+            // See https://github.com/yjs/yjs#Document-Updates for documentation on how to encode
+            // document updates
+
+            // official default code from: https://github.com/yjs/y-websocket/blob/37887badc1f00326855a29fc6b9197745866c3aa/bin/utils.js#L36
+            const persistedYdoc = await mdb.getYDoc(docName);
+            const newUpdates = Y.encodeStateAsUpdate(ydoc);
+            mdb.storeUpdate(docName, newUpdates);
+            Y.applyUpdate(ydoc, Y.encodeStateAsUpdate(persistedYdoc));
+            ydoc.on('update', async (update) => {
+                mdb.storeUpdate(docName, update);
+            });
+        },
+        writeState: async (docName, ydoc) => {
+            // This is called when all connections to the document are closed.
+            // In the future, this method might also be called in intervals or after a certain number of updates.
+            return new Promise<void>((resolve) => {
+                // When the returned Promise resolves, the document will be destroyed.
+                // So make sure that the document really has been written to the database.
+                resolve();
+            });
+        },
+    })
+
+}
+else{
+    console.log("Not connecting to MongoDB because no Y_PERSISTENCE_MONGO_URL is set")
+}
 
 /**
  * @type {Map<string,WSSharedDoc>}
@@ -92,9 +127,9 @@ export const setContentInitializor = (f: (ydoc: Y.Doc) => Promise<void>) => {
 
 export class WSSharedDoc extends Y.Doc {
     name: string;
-     /**
-      * Maps from conn to set of controlled user ids. Delete all user ids from awareness when this conn is closed
-      */
+    /**
+     * Maps from conn to set of controlled user ids. Delete all user ids from awareness when this conn is closed
+     */
     conns: Map<WebSocket, Set<number>>;
     awareness: awarenessProtocol.Awareness;
     whenInitialized: Promise<void>;
@@ -162,7 +197,6 @@ export const getYDoc = (docname: string, gc: boolean = true): WSSharedDoc => map
 })
 
 
-
 const messageListener = (conn: WebSocket, doc: WSSharedDoc, message: Uint8Array) => {
     try {
         const encoder = encoding.createEncoder()
@@ -205,9 +239,10 @@ const closeConn = (doc: WSSharedDoc, conn: WebSocket) => {
         if (doc.conns.size === 0 && persistence !== null) {
             // if persisted, we store state and destroy ydocument
             persistence.writeState(doc.name, doc).then(() => {
-                //doc.destroy()
+                doc.destroy()
             })
-            //docs.delete(doc.name)
+            console.log("Deleting doc because no connections left:", doc.name)
+            docs.delete(doc.name)
         }
     }
     conn.close()
