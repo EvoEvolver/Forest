@@ -1,5 +1,5 @@
 import * as Y from 'yjs'
-import * as syncProtocol from 'y-protocols/sync'
+import * as syncProtocol from './sync_protocol'
 import * as awarenessProtocol from 'y-protocols/awareness'
 
 import * as encoding from 'lib0/encoding'
@@ -11,8 +11,10 @@ import debounce from 'lodash.debounce'
 
 import {callbackHandler, isCallbackSet} from './callback'
 import {MongodbPersistence} from "y-mongodb-provider";
-import * as path from 'path'
 
+import {Redis} from "ioredis";
+
+import * as path from 'path'
 // Read dotenv variables
 import * as dotenv from 'dotenv'
 dotenv.config({
@@ -96,6 +98,18 @@ else{
     console.log("Not connecting to MongoDB because no Y_PERSISTENCE_MONGO_URL is set")
 }
 
+const redisUrl = process.env.Y_STREAM_REDIS_URL || null
+export var redisClient: Redis | null = null
+if (redisUrl) {
+    console.log("Connecting to Redis because a Y_STREAM_REDIS_URL is set")
+    redisClient = new Redis(redisUrl)
+}
+else {
+    console.log("Not connecting to Redis because no Y_STREAM_REDIS_URL is set")
+}
+
+
+
 /**
  * @type {Map<string,WSSharedDoc>}
  */
@@ -111,6 +125,7 @@ const updateHandler = (update: Uint8Array, _origin: any, doc: WSSharedDoc, _tr: 
     encoding.writeVarUint(encoder, messageSync)
     syncProtocol.writeUpdate(encoder, update)
     const message = encoding.toUint8Array(encoder)
+    // broadcast update to all connections
     doc.conns.forEach((_, conn: WebSocket) => sendToClient(doc, conn, message))
 }
 
@@ -168,6 +183,13 @@ export class WSSharedDoc extends Y.Doc {
             this.conns.forEach((_, c: WebSocket) => {
                 sendToClient(this, c, buff)
             })
+            /*if (redisClient) {
+                // also send awareness update to redis stream
+                const encoded = Buffer.from(buff).toString('base64');
+                redisClient.xadd(`y-websocket:awareness:${this.name}`, '*', "data", encoded).catch(err => {
+                    console.error("Error sending awareness update to Redis stream:", err)
+                })
+            }*/
         }
         this.awareness.on('update', awarenessChangeHandler)
         this.on('update', /** @type {any} */ (updateHandler))
@@ -248,7 +270,9 @@ const closeConn = (doc: WSSharedDoc, conn: WebSocket) => {
     conn.close()
 }
 
-
+/*
+ * Sends a message to the client, closes the connection if it fails
+ */
 const sendToClient = (doc: WSSharedDoc, conn: WebSocket, m: Uint8Array) => {
     if (conn.readyState !== wsReadyStateConnecting && conn.readyState !== wsReadyStateOpen) {
         closeConn(doc, conn)
@@ -317,5 +341,7 @@ export const setupWSConnection = (conn: WebSocket, req: IncomingMessage, {
             encoding.writeVarUint8Array(encoder, awarenessProtocol.encodeAwarenessUpdate(doc.awareness, Array.from(awarenessStates.keys())))
             sendToClient(doc, conn, encoding.toUint8Array(encoder))
         }
+        // todo: the doc can be destroyed here after the sync step 1 message has been sent
+
     }
 }
