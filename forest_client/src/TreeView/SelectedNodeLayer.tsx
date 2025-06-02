@@ -18,10 +18,12 @@ import {NavigatorLayer, NavigatorButtons} from "./NavigatorLayer";
 const currNodeInViewMiddleAtom = atom<string>("")
 
 
-const NodeNaviButton = ({node}) => {
+const NodeNaviButton = (props: {node: Node}) => {
 
     const setToNodeChildren = useSetAtom(setToNodeChildrenAtom)
     const setToNodeParent = useSetAtom(setToNodeParentAtom)
+    const nodeChildren = useAtomValue(props.node.children)
+    const node = props.node;
 
     const onLeftBtn = (id) => {
         setToNodeParent(id)
@@ -51,7 +53,7 @@ const NodeNaviButton = ({node}) => {
             }}
         >←
         </Button>}
-        {node.children.length > 0 && <Button
+        {nodeChildren.length > 0 && <Button
             class="hover-button"
             onClick={() => onRightBtn(node.id)}
             style={{

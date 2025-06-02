@@ -221,7 +221,9 @@ export const getYDoc = (docname: string, gc: boolean = true): WSSharedDoc => map
 
 const messageListener = (conn: WebSocket, doc: WSSharedDoc, message: Uint8Array) => {
     try {
+        // encoder is the message that will be sent back to the client
         const encoder = encoding.createEncoder()
+        // decoder is the message received from the client
         const decoder = decoding.createDecoder(message)
         const messageType = decoding.readVarUint(decoder)
         switch (messageType) {

@@ -1,3 +1,5 @@
+import {PrimitiveAtom} from "jotai";
+
 export type NodeDict = Record<string, Node>
 import { Map } from "yjs";
 
@@ -15,7 +17,7 @@ export interface Node {
     parent: string
     other_parents: string[]
     tabs: Tabs
-    children: string[]
+    children: PrimitiveAtom<string[]>
     ydata: Map<any>
     data: {}
     tools: [Tabs],

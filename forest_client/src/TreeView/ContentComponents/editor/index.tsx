@@ -20,14 +20,22 @@ import {gapCursor} from "prosemirror-gapcursor";
 import {history} from "prosemirror-history";
 import {thisNodeContext} from "../../NodeContentTab";
 
-const ProseMirrorEditor: React.FC = (props: { node: Node }) => {
+
+interface ProseMirrorEditorProps {
+    label?: string
+}
+
+
+const ProseMirrorEditor= (props: ProseMirrorEditorProps) => {
     const node = useContext(thisNodeContext)
     const editorRef = useRef<HTMLDivElement | null>(null);
     const provider = useAtomValue(YjsProviderAtom)
-    let yXML = node.ydata.get("yXmlForEditor");
+    const ydataLabel = props.label || "";
+    const ydataKey = "ydata" + ydataLabel;
+    let yXML = node.ydata.get(ydataKey);
     if (!yXML) {
         yXML = new XmlFragment();
-        node.ydata.set("yXmlForEditor", yXML);
+        node.ydata.set(ydataKey, yXML);
     }
 
     useEffect(() => {
@@ -62,37 +70,39 @@ const ProseMirrorEditor: React.FC = (props: { node: Node }) => {
 };
 
 function editorSetup(options: {
-  /// The schema to generate key bindings and menu items for.
-  schema: Schema
-  /// Can be used to [adjust](#example-setup.buildKeymap) the key bindings created.
-  mapKeys?: {[key: string]: string | false}
-  /// Set to false to disable the menu bar.
-  menuBar?: boolean
-  /// Set to false to disable the history plugin.
-  history?: boolean
-  /// Set to false to make the menu bar non-floating.
-  floatingMenu?: boolean
-  /// Can be used to override the menu content.
-  menuContent?: MenuElement[][]
+    /// The schema to generate key bindings and menu items for.
+    schema: Schema
+    /// Can be used to [adjust](#example-setup.buildKeymap) the key bindings created.
+    mapKeys?: { [key: string]: string | false }
+    /// Set to false to disable the menu bar.
+    menuBar?: boolean
+    /// Set to false to disable the history plugin.
+    history?: boolean
+    /// Set to false to make the menu bar non-floating.
+    floatingMenu?: boolean
+    /// Can be used to override the menu content.
+    menuContent?: MenuElement[][]
 }) {
-  let plugins = [
-    buildInputRules(options.schema),
-    keymap(buildKeymap(options.schema, options.mapKeys)),
-    keymap(baseKeymap),
-    dropCursor(),
-    gapCursor()
-  ]
-  if (options.menuBar !== false)
-    plugins.push(menuBar({floating: options.floatingMenu !== false,
-                          content: options.menuContent || buildMenuItems(options.schema).fullMenu}))
-  if (options.history !== false)
-    plugins.push(history())
+    let plugins = [
+        buildInputRules(options.schema),
+        keymap(buildKeymap(options.schema, options.mapKeys)),
+        keymap(baseKeymap),
+        dropCursor(),
+        gapCursor()
+    ]
+    if (options.menuBar !== false)
+        plugins.push(menuBar({
+            floating: options.floatingMenu !== false,
+            content: options.menuContent || buildMenuItems(options.schema).fullMenu
+        }))
+    if (options.history !== false)
+        plugins.push(history())
 
-  return plugins.concat(new Plugin({
-    props: {
-      attributes: {class: "ProseMirror-example-setup-style"}
-    }
-  }))
+    return plugins.concat(new Plugin({
+        props: {
+            attributes: {class: "ProseMirror-example-setup-style"}
+        }
+    }))
 }
 
 

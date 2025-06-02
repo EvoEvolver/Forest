@@ -2,9 +2,10 @@ import {Box} from "@mui/material";
 import {atom} from "jotai/index";
 import Tooltip from "@mui/material/Tooltip";
 import ProseMirrorEditor from "./editor";
-import {addChildrenButton} from "./treeOperations";
+import {AddChildrenButton} from "./treeOperations";
 import ChatView from "./chat";
 import {Code, Expandable, FigureBox, NodeNavigator, TeX, TextSpan} from "./inline";
+import {PaperEditorMain, PaperEditorSide} from "./integrated/paperEditor";
 
 
 export const envComponentAtom = atom({
@@ -17,6 +18,8 @@ export const envComponentAtom = atom({
     Tooltip,
     Box,
     ProseMirrorEditor,
-    addChildrenButton,
-    ChatView
+    addChildrenButton: AddChildrenButton,
+    ChatView,
+    PaperEditorMain,
+    PaperEditorSide,
 })

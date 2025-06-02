@@ -2,6 +2,7 @@ import {Node} from '../entities';
 import {Atom, atom, PrimitiveAtom, WritableAtom} from 'jotai'
 import {Array as YArray, Map as YMap, Text as YText} from 'yjs'
 import {YDocAtom} from "./YjsConnection";
+import { RESET } from 'jotai/utils';
 
 export interface TreeAtomData {
     metadata: {}
@@ -15,19 +16,38 @@ export const treeAtom = atom(
     } as TreeAtomData | null)
 
 function yjsNodeToJsonNode(yjsMapNode: YMap<any>): Node {
+
+    //const titleAtom = atom(yjsMapNode.get("title").toJSON())
+    const childrenAtom = getYjsBindedAtom(yjsMapNode, "children")
     const node: Node = {
         id: yjsMapNode.get("id"),
         title: yjsMapNode.get("title").toJSON(),
         parent: yjsMapNode.get("parent"),
         other_parents: yjsMapNode.get("other_parents"),
         tabs: yjsMapNode.get("tabs"),
-        children: yjsMapNode.get("children").toJSON(),
+        children: childrenAtom,
         ydata: yjsMapNode.get("ydata"),
         data: yjsMapNode.get("data"),
         tools: yjsMapNode.get("tools"),
         ymapForNode: yjsMapNode,
     }
     return node
+}
+
+function getYjsBindedAtom(yjsMapNode: YMap<any>, key: string): PrimitiveAtom<any> {
+    const yjsValue = yjsMapNode.get(key)
+    const yjsAtom = atom(yjsValue.toJSON())
+    yjsAtom.onMount = (set) => {
+        const observeFunc = (ymapEvent) => {
+            set(yjsValue.toJSON())
+        }
+        yjsValue.observe(observeFunc)
+        set(yjsValue.toJSON())
+        return () => {
+            yjsValue.unobserve(observeFunc)
+        }
+    }
+    return yjsAtom
 }
 
 function yjsNodeToJsonNodeAtom(yjsMapNode: YMap<any>): PrimitiveAtom<Node> {
@@ -51,12 +71,52 @@ function yjsNodeToJsonNodeAtom(yjsMapNode: YMap<any>): PrimitiveAtom<Node> {
     return nodeAtom
 }
 
+export const deleteNodeAtom = atom(null, (get, set, props: {nodeId: string}) => {
+    const currTree = get(treeAtom)
+    if (!currTree)
+        return
+    const nodeDict = currTree.nodeDict
+    const nodeToRemoveAtom = nodeDict[props.nodeId]
+    const nodeToRemove = get(nodeToRemoveAtom)
+    if (get(nodeToRemove.children).length > 0) {
+        return
+    }
+    const parentId = nodeToRemove.parent
+    const parentNodeAtom = nodeDict[parentId]
+    const parentNode = get(parentNodeAtom)
+    const yArrayChildren = parentNode.ymapForNode.get("children")
+    const Idx = yArrayChildren.toJSON().indexOf(props.nodeId)
+    if (Idx === -1) {
+        console.warn(`Node with id ${props.nodeId} not found in parent with id ${parentId}`)
+        return
+    }
+    // remove the node from the parent's children
+    console.log(yArrayChildren.toJSON())
+    yArrayChildren.delete(Idx, 1)
+    console.log("after", yArrayChildren.toJSON())
+    // delete the node from the nodeDict
+    set(nodeToRemoveAtom, RESET)
+    delete nodeDict[props.nodeId]
+    set(treeAtom, {
+        ...currTree,
+        nodeDict: {
+            ...nodeDict
+        }
+    })
+    if (get(selectedNodeIdAtom) === props.nodeId) {
+        // if the deleted node was selected, set the selectedNodeId to the parent
+        set(selectedNodeIdAtom, parentId)
+    }
+})
+
+
 export const addNewNodeAtom = atom(null, (get, set, props: { parentId: string, tabs, tools }) => {
     const currTree = get(treeAtom)
     if (!currTree)
         return
     const nodeDict = currTree.nodeDict
-    const parentNode = get(nodeDict[props.parentId])
+    const parentNodeAtom = nodeDict[props.parentId]
+    const parentNode = get(parentNodeAtom)
     const yArrayChildren = parentNode.ymapForNode.get("children")
     const newNode = {
         id: crypto.randomUUID(),
@@ -191,7 +251,7 @@ export const selectedNodeAtom = atom(
             setDefaultAncestors(newNode, currTree, get, set);
             return
         }
-        const inChildren = currentSelected.children.indexOf(newSelectedNodeId) > -1;
+        const inChildren = get(currentSelected.children).indexOf(newSelectedNodeId) > -1;
         const ancestorStack = get(ancestorStackAtom)
 
         set(selectedNodeIdAtom, newSelectedNodeId)
@@ -244,7 +304,7 @@ export const listOfNodesForViewAtom = atom<Node[]>((get) => {
     }
     const parentNode = get(parentNodeAtom)
 
-    if (!parentNode || parentNode.children.length === 0) {
+    if (!parentNode || get(parentNode.children).length === 0) {
         return [currNode]; // If there's no parent or no siblings, return an empty array
     }
 
@@ -266,15 +326,15 @@ export const listOfNodesForViewAtom = atom<Node[]>((get) => {
         selectedParentNode = parentNode;
     }
 
-    return selectedParentNode.children.map((id) => get(tree.nodeDict[id]));
+    return get(selectedParentNode.children).map((id) => get(tree.nodeDict[id]));
 })
 
 
 export const setToNodeChildrenAtom = atom(null, (get, set, nodeid) => {
     set(selectedNodeIdAtom, nodeid)
     const currNode = get(selectedNodeAtom)
-    if (!currNode || currNode.children.length == 0) return
-    set(selectedNodeAtom, currNode.children[0])
+    if (!currNode || get(currNode.children).length == 0) return
+    set(selectedNodeAtom, get(currNode.children)[0])
 })
 
 

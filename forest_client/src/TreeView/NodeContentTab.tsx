@@ -1,4 +1,4 @@
-import React, {createContext, useEffect} from "react";
+import React, {Context, createContext, useEffect} from "react";
 import JsxParser from "react-jsx-parser";
 import TabContext from "@mui/lab/TabContext";
 import {Box} from "@mui/material";
@@ -9,8 +9,9 @@ import Typography from "@mui/material/Typography";
 import {envComponentAtom} from "./ContentComponents";
 import {useAtomValue} from "jotai";
 import {darkModeAtom} from "../TreeState/TreeState";
+import {Node} from "../entities"
 
-export const thisNodeContext = createContext(null)
+export const thisNodeContext: Context<Node> = createContext(null)
 
 
 const renderTabs = (tabs, node) => {

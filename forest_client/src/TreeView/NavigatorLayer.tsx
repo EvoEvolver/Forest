@@ -38,7 +38,7 @@ export const NavigatorItemsAtom = atom((get) => {
         // iterate itemTree to add children
         const addChildren = (item) => {
             const node = get(tree.nodeDict[item.id])
-            const children_ids = node.children
+            const children_ids = get(node.children)
             const children = children_ids.map((childId) => get(tree.nodeDict[childId]))
 
             item.children = children.map((child) => {
