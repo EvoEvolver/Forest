@@ -11,9 +11,9 @@
   "dependencies": {
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
-    "@mui/icons-material": "^5.17.1",
+    "@mui/icons-material": "^6.4.2",
     "@mui/lab": "5.0.0-alpha.162",
-    "@mui/material": "^6.0.0",
+    "@mui/material": "^6.4.12",
     "@mui/system": "^5.15.20",
     "@mui/x-tree-view": "^7.26.0",
     "html-react-parser": "^5.0.11",
