@@ -19,9 +19,10 @@ function yjsNodeToJsonNode(yjsMapNode: YMap<any>): Node {
 
     //const titleAtom = atom(yjsMapNode.get("title").toJSON())
     const childrenAtom = getYjsBindedAtom(yjsMapNode, "children")
+    const titleAtom = atom(yjsMapNode.get("title"))
     const node: Node = {
         id: yjsMapNode.get("id"),
-        title: yjsMapNode.get("title").toJSON(),
+        title: titleAtom,
         parent: yjsMapNode.get("parent"),
         other_parents: yjsMapNode.get("other_parents"),
         tabs: yjsMapNode.get("tabs"),
@@ -36,7 +37,14 @@ function yjsNodeToJsonNode(yjsMapNode: YMap<any>): Node {
 
 function getYjsBindedAtom(yjsMapNode: YMap<any>, key: string): PrimitiveAtom<any> {
     const yjsValue = yjsMapNode.get(key)
-    const yjsAtom = atom(yjsValue.toJSON())
+    // check if yjsValue has a toJSON method, if not, return a simple atom
+    let yjsAtom: PrimitiveAtom<any>;
+    if (typeof yjsValue.toJSON === 'function') {
+        yjsAtom = atom(yjsValue.toJSON())
+    }
+    else {
+        console.warn(`Yjs value for key "${key}" does not have a toJSON method, using a simple atom instead.`);
+    }
     yjsAtom.onMount = (set) => {
         const observeFunc = (ymapEvent) => {
             set(yjsValue.toJSON())
@@ -60,6 +68,8 @@ function yjsNodeToJsonNodeAtom(yjsMapNode: YMap<any>): PrimitiveAtom<Node> {
                     throw Error(`Property "${key}" was ${change.action}, which is not supported.`)
                 }
             })
+            const newNode: Node = yjsNodeToJsonNode(yjsMapNode)
+            set(newNode)
         }
         yjsMapNode.observe(observeFunc)
         const newNode: Node = yjsNodeToJsonNode(yjsMapNode)
@@ -91,9 +101,7 @@ export const deleteNodeAtom = atom(null, (get, set, props: {nodeId: string}) => 
         return
     }
     // remove the node from the parent's children
-    console.log(yArrayChildren.toJSON())
     yArrayChildren.delete(Idx, 1)
-    console.log("after", yArrayChildren.toJSON())
     // delete the node from the nodeDict
     set(nodeToRemoveAtom, RESET)
     delete nodeDict[props.nodeId]
@@ -105,7 +113,14 @@ export const deleteNodeAtom = atom(null, (get, set, props: {nodeId: string}) => 
     })
     if (get(selectedNodeIdAtom) === props.nodeId) {
         // if the deleted node was selected, set the selectedNodeId to the parent
-        set(selectedNodeIdAtom, parentId)
+        const newChildrenList = yArrayChildren.toJSON()
+        if (newChildrenList.length > 0) {
+            // if there are still children, select the first one
+            set(selectedNodeIdAtom, newChildrenList[0])
+        } else {
+            // if there are no children, select the parent
+            set(selectedNodeIdAtom, parentId)
+        }
     }
 })
 
@@ -120,7 +135,7 @@ export const addNewNodeAtom = atom(null, (get, set, props: { parentId: string, t
     const yArrayChildren = parentNode.ymapForNode.get("children")
     const newNode = {
         id: crypto.randomUUID(),
-        title: new YText("new node"),
+        title: "new node",//new YText("new node"),
         parent: props.parentId,
         other_parents: [],
         tabs: props.tabs,

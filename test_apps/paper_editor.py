@@ -11,5 +11,5 @@ class PaperEditor(Attr):
 if __name__ == '__main__':
     root = Node("root")
     PaperEditor(root)
-    root.node_id = 123456
+    root.node_id = 123457
     root.display(dev_mode=True)

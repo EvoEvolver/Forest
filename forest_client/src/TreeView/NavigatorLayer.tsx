@@ -32,7 +32,7 @@ export const NavigatorItemsAtom = atom((get) => {
         let children_list = []
         const itemTree = [{
             id: root.id,
-            label: root.title,
+            label: get(root.title),
             children: children_list,
         }]
         // iterate itemTree to add children
@@ -44,7 +44,7 @@ export const NavigatorItemsAtom = atom((get) => {
             item.children = children.map((child) => {
                 return {
                     id: child.id,
-                    label: child.title,
+                    label: get(child.title),
                     children: [],
                 }
             })
@@ -69,7 +69,7 @@ const beforeJumpNodeTitleAtom = atom((get) => {
     if (lastSelectedNodeBeforeJumpId == "") {
         return ""
     }
-    const title = get(currTree.nodeDict[lastSelectedNodeBeforeJumpId]).title
+    const title = get(get(currTree.nodeDict[lastSelectedNodeBeforeJumpId]).title)
     if (title.length > letterLimit) {
         return title.slice(0, letterLimit) + "..."
     }

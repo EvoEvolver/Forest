@@ -242,7 +242,6 @@ const SelectedNodeLayer = (props) => {
 
 
 const MiddleContents = ({node, selected, index}: { node: Node, selected: boolean, index: number }) => {
-
     let setSelectedNode = useSetAtom(selectedNodeAtom)
 
     const handleClick = (event) => {
@@ -267,7 +266,7 @@ const MiddleContents = ({node, selected, index}: { node: Node, selected: boolean
             <NodeContentTabs
                 node={node}
                 tabDict={node.tabs}
-                title={node.title}
+                titleAtom={node.title}
                 //ref={props.contentRef}
             />
         </div>

@@ -52,11 +52,92 @@ const renderTabs = (tabs, node) => {
     </>
 }
 
-export const NodeContentTabs = ({node, tabDict, title}) => {
-    const dark = useAtomValue(darkModeAtom)
+import { useState } from "react";
+import TextField from "@mui/material/TextField";
+
+export const NodeContentTabs = ({node, tabDict, titleAtom}) => {
+    const dark = useAtomValue(darkModeAtom);
+    const [isEditing, setIsEditing] = useState(false);
+    let title
+    if (titleAtom){
+        title = useAtomValue(titleAtom);
+    }
+    const [editedTitle, setEditedTitle] = useState("");
+    useEffect(() => {
+        if (titleAtom){
+            if (title) {
+                setEditedTitle(title)
+            }
+        }
+    }, []);
+
+    if (titleAtom){
+        useEffect(() => {
+            if (title) {
+                setEditedTitle(title)
+            }
+        }, [title]);
+    }
+
+    const handleDoubleClick = () => {
+        setIsEditing(true);
+    };
+
+    const handleBlur = () => {
+        setIsEditing(false);
+    };
+
+    const handleChange = (event) => {
+        setEditedTitle(event.target.value);
+    };
+
+    const handleKeyPress = (event) => {
+        if (event.key === 'Enter') {
+            setIsEditing(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!titleAtom) return
+        if (isEditing) return;
+        if (editedTitle === title) return;
+        if (!editedTitle) return;
+        node.ymapForNode.set("title", editedTitle);
+    }, [isEditing]);
+
     return (
         <>{
-            title && <Typography variant="h5" style={{color: dark ? 'white' : 'black'}}>{title}</Typography>}{renderTabs(tabDict, node)}
+            title && (
+                isEditing ? (
+                    <TextField
+                        value={editedTitle}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        onKeyPress={handleKeyPress}
+                        variant="standard"
+                        fullWidth
+                        autoFocus
+                        sx={{
+                            '& .MuiInputBase-input': {
+                                color: dark ? 'white' : 'black',
+                                fontSize: '1.5rem',
+                                fontWeight: 400,
+                                lineHeight: 1.334,
+                                letterSpacing: '0em',
+                            }
+                        }}
+                    />
+                ) : (
+                    <Typography
+                        variant="h5"
+                        style={{color: dark ? 'white' : 'black'}}
+                        onDoubleClick={handleDoubleClick}
+                    >
+                        {title}
+                    </Typography>
+                )
+            )}
+            {renderTabs(tabDict, node)}
         </>
     );
-}
+};

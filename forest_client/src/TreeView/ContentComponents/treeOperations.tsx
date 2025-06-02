@@ -28,7 +28,7 @@ export const DeleteNodeButton = () => {
     return <>
         <button
             onClick={handleDelete}
-            disabled={nodeChildren.length > 0}
+            disabled={nodeChildren.length > 0 || node.parent === null}
         >
             Delete this node
         </button>

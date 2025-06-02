@@ -13,7 +13,7 @@ type Tabs = { [key: string]: string }
 
 export interface Node {
     id: string
-    title: string
+    title: PrimitiveAtom<string>
     parent: string
     other_parents: string[]
     tabs: Tabs
