@@ -17,3 +17,4 @@ if __name__ == '__main__':
 
     host = "https://treer.ai"
     #res = send_tree_to_backend(host, Renderer().render_to_json(root), root.node_id)
+    print(f"{host}/?id={root.node_id}")

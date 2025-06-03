@@ -8,8 +8,23 @@ export const AddChildrenButton = ({tabs, tools}) => {
     const parent = useContext(thisNodeContext);
     const addNewNode = useSetAtom(addNewNodeAtom)
     const parentId = parent.id;
+    const positionId = null
     return <>
-        <button onClick={()=>addNewNode({parentId, tabs: tabs || {}, tools: tools || [{},{}]})}>Add children</button>
+        <button onClick={()=>addNewNode({parentId, positionId, tabs: tabs || {}, tools: tools || [{},{}]})}>Add children</button>
+    </>
+}
+
+
+export const AddSiblingButton = ({tabs, tools}) => {
+    const node = useContext(thisNodeContext);
+    const parentId = node.parent;
+    const addNewNode = useSetAtom(addNewNodeAtom)
+    const positionId = node.id;
+    if (!parentId) {
+        return <></>
+    }
+    return <>
+        <button onClick={()=>addNewNode({parentId, positionId, tabs: tabs || {}, tools: tools || [{},{}]})}>Add sibling</button>
     </>
 }
 

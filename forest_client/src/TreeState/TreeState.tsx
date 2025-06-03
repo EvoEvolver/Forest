@@ -125,7 +125,7 @@ export const deleteNodeAtom = atom(null, (get, set, props: {nodeId: string}) => 
 })
 
 
-export const addNewNodeAtom = atom(null, (get, set, props: { parentId: string, tabs, tools }) => {
+export const addNewNodeAtom = atom(null, (get, set, props: { parentId: string, positionId: string, tabs, tools }) => {
     const currTree = get(treeAtom)
     if (!currTree)
         return
@@ -150,7 +150,19 @@ export const addNewNodeAtom = atom(null, (get, set, props: { parentId: string, t
         ymapForNode.set(key, newNode[key])
     }
     nodeDictyMap.set(newNode.id, ymapForNode)
-    yArrayChildren.push([newNode.id])
+
+    // find the position of the node with positionId in yArrayChildren
+    let positionIdx = -1
+    if (props.positionId) {
+        positionIdx = get(parentNode.children).indexOf(props.positionId) + 1
+        if (positionIdx === -1) {
+            console.warn(`Position ID ${props.positionId} not found in parent with id ${props.parentId}`)
+            positionIdx = yArrayChildren.length // append to the end
+        }
+    } else {
+        positionIdx = yArrayChildren.length // append to the end
+    }
+    yArrayChildren.insert(positionIdx, [newNode.id])
 })
 
 export const addNodeToTreeAtom = atom(null, (get, set, yjsMapNode: YMap<any>) => {
