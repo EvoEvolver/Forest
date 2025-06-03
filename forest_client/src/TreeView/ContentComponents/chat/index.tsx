@@ -36,14 +36,14 @@ export default function ChatView({label}: ChatViewProps) {
     }
 
     return <>
-        <ChatViewImpl sendMessage={sendMessage} messages={messages}/>
+        <ChatViewImpl sendMessage={sendMessage} messages={messages} messageDisabled={false}/>
     </>
 }
 
 
 export const usernameAtom = atomWithStorage('chat-username', '');
 
-function ChatViewImpl({sendMessage, messages}) {
+export function ChatViewImpl({sendMessage, messages,messageDisabled}) {
     const [message, setMessage] = useState("");
     const endRef = useRef(null);
     const [settingPanelOpen, setSettingPanelOpen] = useState(false)
@@ -81,7 +81,7 @@ function ChatViewImpl({sendMessage, messages}) {
                 padding: 2,
                 display: "flex",
                 flexDirection: "column",
-                height: 500,
+                height: "100%",
                 position: "relative", // Enable absolute positioning for child elements
             }}
         >
@@ -156,10 +156,26 @@ function ChatViewImpl({sendMessage, messages}) {
                     placeholder="Type a message..."
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            if (e.shiftKey) {
+                                return;
+                            }
+                            if (!messageDisabled) {
+                                e.preventDefault();
+                                handleSend();
+                            }
+                        }
+                    }}
                     autoComplete="off"
+                    disabled={messageDisabled}
+                    multiline
                 />
-                <Button variant="contained" onClick={handleSend}>
+                <Button
+                    variant="contained"
+                    onClick={handleSend}
+                    disabled={messageDisabled}
+                >
                     <SendIcon/>
                 </Button>
             </Box>

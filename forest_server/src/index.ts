@@ -67,15 +67,17 @@ function main(port: number, host: string, frontendRoot: string | null): void {
         res.send("OK")
     })
 
-    app.get('/api/llm', async (req, res) => {
+    app.post('/api/llm', async (req, res) => {
+        console.log("llm request received");
         try {
-            const messages = req.query.messages
+            const messages = req.body.messages
             const response = await openai.chat.completions.create({
                 model: 'gpt-4.1-mini-2025-04-14',
                 // @ts-ignore
                 messages: messages,
             });
             const result = response.choices[0].message.content;
+            console.log(result)
             res.send({ result });
         } catch (error) {
             console.error('Error in /api/llm:', error);

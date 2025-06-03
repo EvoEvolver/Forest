@@ -5,7 +5,7 @@ import ProseMirrorEditor from "./editor";
 import {AddChildrenButton} from "./treeOperations";
 import ChatView from "./chat";
 import {Code, Expandable, FigureBox, NodeNavigator, TeX, TextSpan} from "./inline";
-import {PaperEditorMain, PaperEditorSide} from "./integrated/paperEditor";
+import {PaperEditorMain, PaperEditorSide1, PaperEditorSide2} from "./integrated/paperEditor";
 
 
 export const envComponentAtom = atom({
@@ -21,5 +21,6 @@ export const envComponentAtom = atom({
     addChildrenButton: AddChildrenButton,
     ChatView,
     PaperEditorMain,
-    PaperEditorSide,
+    PaperEditorSide1,
+    PaperEditorSide2
 })

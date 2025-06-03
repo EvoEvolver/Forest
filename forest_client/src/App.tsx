@@ -15,6 +15,8 @@ import {YDocAtom, YjsProviderAtom} from "./TreeState/YjsConnection";
 
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
 const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
+const wsUrl = `${wsProtocol}://${location.hostname}:${currentPort}`
+export const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort}`
 
 export default function App() {
 
@@ -29,7 +31,7 @@ export default function App() {
     const setupYDoc = () => {
         const treeId = new URLSearchParams(window.location.search).get("id");
         setSelectedNodeId(treeId)
-        let wsProvider = new WebsocketProvider(`${wsProtocol}://${location.hostname}:${currentPort}`, treeId, ydoc)
+        let wsProvider = new WebsocketProvider(wsUrl, treeId, ydoc)
         setYjsProvider(wsProvider)
         wsProvider.on('status', event => {
             console.log("wsProvider", event.status) // logs "connected" or "disconnected"
