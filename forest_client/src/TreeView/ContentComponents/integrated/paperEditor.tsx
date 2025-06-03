@@ -1,12 +1,12 @@
 import React from "react";
-import ProseMirrorEditor from "../editor";
+import TiptapEditor from "../editor";
 import {AddChildrenButton, DeleteNodeButton} from "../treeOperations";
 import {AiChat} from "../chat/aiChat";
 
 
 export const PaperEditorMain = (props) => {
     return <>
-        <ProseMirrorEditor label="paperEditor"/>
+        <TiptapEditor label="paperEditor"/>
     </>
 }
 
