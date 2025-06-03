@@ -13,13 +13,13 @@ const linearNodeListAtom = atom((get) => {
     const nodeDict = currTree.nodeDict
     const rootNode = get(Object.values(nodeDict).find(node => get(node).parent === null))
     // use get(node.children) to get children of root node
-    // do a depth-first traversal to get all leaf node in a linear list
+    // do a depth-first traversal to get all node in a linear list
     const traverse = (node) => {
         const children = get(node.children) as string[];
         if (children.length === 0) {
             return [node];
         }
-        return children.flatMap(childId => traverse(get(nodeDict[childId])));
+        return [node, ...children.flatMap(childId => traverse(get(nodeDict[childId])))]
     };
     const linearNodes = traverse(rootNode);
     return linearNodes;
@@ -28,12 +28,40 @@ const linearNodeListAtom = atom((get) => {
 
 export default function LinearView(props) {
     const nodes = useAtomValue(linearNodeListAtom);
+    const renderNode = (node: {
+        id: string;
+        children: any; // or more specific atom type if available
+        title: string;
+        tabs?: any; // specify the correct type for tabs if known
+    }) => {
+        const children = useAtomValue(node.children) as string[];
+        const title = useAtomValue(node.title);
+        if (!children) {
+            return <></>;
+        }
+        if (children.length > 0) {
+            return <div key={node.id}>
+                <h2>{title}</h2>
+            </div>;
+        }
+        return (
+            <NodeContentTabs
+                key={node.id}
+                node={node}
+                tabDict={node.tabs}
+                titleAtom={node.title}
+            />
+        );
+    };
+
+
     return (
         <div style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             width: '100%',
+            height: '100vh', // Set container height to viewport height
         }}>
             <Paper
                 elevation={1}
@@ -42,17 +70,12 @@ export default function LinearView(props) {
                     width: '100%',
                     margin: '20px',
                     padding: '20px',
-                    bgcolor: '#f4f4f4'
+                    bgcolor: '#f4f4f4',
+                    maxHeight: 'calc(100vh - 40px)', // Account for margins
+                    overflowY: 'auto', // Enable vertical scrolling
                 }}
             >
-                {nodes.map((node) => (
-                    <NodeContentTabs
-                        key={node.id}
-                        node={node}
-                        tabDict={node.tabs}
-                        titleAtom={node.title}
-                    />
-                ))}
+                {nodes.map(renderNode)}
             </Paper>
         </div>
     );
