@@ -30,6 +30,10 @@ function domToYXmlElement(parentXML, domNode) {
             domToYXmlElement(yElement, child)
         }
     } else if (domNode.nodeType === Node.TEXT_NODE) {
+        // skip empty text nodes
+        if (domNode.textContent && domNode.textContent.trim() === "") {
+            return
+        }
         parentXML.push([new XmlText(domNode.textContent)])
     }
     else{
@@ -44,7 +48,7 @@ async function fetchChatResponse(messages: Message[]) {
         return "No messages to process.";
     }
     if (messages[messages.length - 1].content === "123") {
-        return `<editor_content><paragraph>1<aiGenerated>333</aiGenerated>1</paragraph></editor_content>`
+        return `<editor_content><paragraph> [AI generated] </paragraph></editor_content>`
     }
     if (messages[messages.length - 1].content === "1") {
         return messages[0].content
@@ -93,8 +97,15 @@ export const AiChat: React.FC = (props) => {
         let editorContentPrompt = null
         if (yXML) {
             const editorContent = yXML.toJSON()
-            editorContentPrompt =  `You are an AI writing assistant who help the user to write an article in an editor. You are required to directly output the content the user required based on what the user has input. The output should follow the same format as the input and surrounded by <editor_content>. The user has provided the following content in the editor: `;
-            editorContentPrompt += `<editor_content>${editorContent}</editor_content>`;
+            editorContentPrompt =  `
+You are an AI writing assistant who help the user to write an article in an editor. 
+
+You are required to directly output the content the user required based on what the user has input. 
+You should not include any html tag other than <editor_content> and <paragraph>. 
+
+The user has provided the following content in the editor: 
+<editor_content>${editorContent}</editor_content>
+`;
             let newMessageWithEditorContent = {
                 content: editorContentPrompt,
                 author,
@@ -116,7 +127,7 @@ export const AiChat: React.FC = (props) => {
         if (yXML && response) {
             const editorContentMatch = response.match(/<editor_content>([\s\S]*?)<\/editor_content>/);
             const parser = new DOMParser()
-            const xmlDoc = parser.parseFromString("<div>"+editorContentMatch[1]+"</div>", 'text/xml')
+            const xmlDoc = parser.parseFromString("<div><paragraph>[AI generated]</paragraph>"+editorContentMatch[1]+"</div>", 'text/xml')
             console.log(xmlDoc)
             yXML.doc.transact(() => {
                 for(let child of xmlDoc.childNodes[0].childNodes) {

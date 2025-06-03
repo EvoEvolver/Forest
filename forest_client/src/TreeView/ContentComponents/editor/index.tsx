@@ -14,7 +14,9 @@ import TaskList from '@tiptap/extension-task-list'
 import { EditorContent, useEditor } from '@tiptap/react'
 import {StarterKit} from '@tiptap/starter-kit'
 import { AiGenerated } from './AiGeneratedNode';
-
+import Document from '@tiptap/extension-document'
+import Paragraph from '@tiptap/extension-paragraph'
+import Text from '@tiptap/extension-text'
 
 interface TiptapEditorProps {
     label?: string
@@ -80,36 +82,10 @@ function getToolBar(editor: Editor) {
     </div>
   </div>;
 }
-const AiGeneratedToolbar = ({ editor }) => {
-  if (!editor) {
-    return null;
-  }
-
-  return (
-    <div style={{ marginBottom: '8px' }}>
-      <button
-        onClick={() => editor.chain().focus().toggleMark('aiGenerated').run()}
-        style={{
-          backgroundColor: editor.isActive('aiGenerated') ? '#3399ff' : '#eee',
-          color: editor.isActive('aiGenerated') ? '#fff' : '#000',
-          padding: '4px 8px',
-          border: '1px solid #ccc',
-          borderRadius: '4px',
-          marginRight: '4px',
-        }}
-      >
-        Toggle AI Mark
-      </button>
-    </div>
-  );
-};
-
 
 const EditorImpl = ({
   yXML, provider,
 }) => {
-  const [status, setStatus] = useState('connecting')
-  const [currentUser, setCurrentUser] = useState([])
 
   const editor = useEditor({
     enableContentCheck: true,
@@ -124,13 +100,9 @@ const EditorImpl = ({
       })
     },
     extensions: [
-      StarterKit.configure({
-        history: false,
-      }),
-      Highlight,
-      TaskList,
-      TaskItem,
-      AiGenerated,
+        Document,
+        Paragraph,
+        Text,
       /*CharacterCount.extend().configure({
         limit: 10000,
       }),*/
@@ -143,19 +115,6 @@ const EditorImpl = ({
     ],
   })
 
-  useEffect(() => {
-    // Update status changes
-    const statusHandler = event => {
-      setStatus(event.status)
-    }
-
-    provider.on('status', statusHandler)
-
-    return () => {
-      provider.off('status', statusHandler)
-    }
-  }, [provider])
-
 
   if (!editor) {
     return null
@@ -163,28 +122,6 @@ const EditorImpl = ({
 
   return (
     <div className="column-half">
-      <div className="flex flex-wrap items-center gap-2 p-2 border border-gray-200 rounded-md bg-gray-50 shadow-sm">
-        <button
-          onClick={() => editor.chain().focus().toggleAiGenerated().run()}
-          disabled={!editor.can().toggleAiGenerated()} // Disable if selection cannot be wrapped/unwrapped
-          title={editor.isActive('aiGenerated') ? 'Unmark selected AI text' : 'Mark selected text as AI'}
-          className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors
-            ${editor.isActive('aiGenerated') 
-              ? 'bg-red-500 text-white hover:bg-red-600' 
-              : 'bg-blue-500 text-white hover:bg-blue-600'}
-            disabled:opacity-50 disabled:cursor-not-allowed`}
-        >
-          {editor.isActive('aiGenerated') ? 'Unmark AI Text' : 'Mark as AI Text'}
-        </button>
-         {/* Add other toolbar buttons here as needed, e.g., bold, italic */}
-        <button
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            disabled={!editor.can().chain().focus().toggleBold().run()}
-            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${editor.isActive('bold') ? 'bg-indigo-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} disabled:opacity-50`}
-        >
-            Bold
-        </button>
-      </div>
       <EditorContent editor={editor} className="main-group"/>
     </div>
   )
