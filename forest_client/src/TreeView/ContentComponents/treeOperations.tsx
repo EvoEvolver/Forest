@@ -28,6 +28,52 @@ export const AddSiblingButton = ({tabs, tools}) => {
     </>
 }
 
+import { setNodePositionAtom } from "../../TreeState/TreeState";
+
+export const MoveNodeButtons = () => {
+    const node = useContext(thisNodeContext);
+    const setNodePosition = useSetAtom(setNodePositionAtom);
+
+    const moveUp = () => {
+        setNodePosition({
+            nodeId: node.id,
+            targetId: node.id,
+            shift: -1 // Move up by 1 position
+        });
+    };
+
+    const moveDown = () => {
+        setNodePosition({
+            nodeId: node.id,
+            targetId: node.id,
+            shift: 1 // Move down by 1 position
+        });
+    };
+
+    // Don't show move buttons for root node
+    if (node.parent === null) {
+        return null;
+    }
+
+    return (
+        <div className="move-node-buttons">
+            <button
+                onClick={moveUp}
+                aria-label="Move node up"
+            >
+                ↑ Move Up
+            </button>
+            <button
+                onClick={moveDown}
+                aria-label="Move node down"
+            >
+                ↓ Move Down
+            </button>
+        </div>
+    );
+};
+
+
 export const DeleteNodeButton = () => {
     const node = useContext(thisNodeContext);
     const nodeChildren = useAtomValue(node.children)

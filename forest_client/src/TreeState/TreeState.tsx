@@ -124,6 +124,53 @@ export const deleteNodeAtom = atom(null, (get, set, props: {nodeId: string}) => 
     }
 })
 
+/*
+* This atom is used to set the position of a node in the tree.
+* The position is determined by the targetId and the shift value.
+* The targetId is the id of the node that the current node should be moved relative to.
+* The shift value is the number of positions to move the current node.
+*/
+export const setNodePositionAtom = atom(null, (get, set, props: { nodeId: string, targetId: string, shift: number }) => {
+    const currTree = get(treeAtom)
+    if (!currTree)
+        return
+
+    const nodeDict = currTree.nodeDict
+    const nodeToMoveAtom = nodeDict[props.nodeId]
+    const nodeToMove = get(nodeToMoveAtom)
+
+    // Get the parent node
+    const parentId = nodeToMove.parent
+    const parentNodeAtom = nodeDict[parentId]
+    const parentNode = get(parentNodeAtom)
+    const yArrayChildren = parentNode.ymapForNode.get("children")
+
+    // Find current position of the node
+    const currentIdx = get(parentNode.children).indexOf(props.nodeId)
+    if (currentIdx === -1) {
+        console.warn(`Node with id ${props.nodeId} not found in parent with id ${parentId}`)
+        return
+    }
+
+    // Find target position
+    const targetIdx = get(parentNode.children).indexOf(props.targetId)
+    if (targetIdx === -1) {
+        console.warn(`Target node with id ${props.targetId} not found in parent with id ${parentId}`)
+        return
+    }
+
+    // Calculate new position based on target position and shift, accounting for the deletion
+    let newPosition = targetIdx + props.shift - (currentIdx < targetIdx ? 1 : 0)
+    // Ensure new position is within bounds
+    newPosition = Math.max(0, Math.min(newPosition, yArrayChildren.length - 1))
+
+    yArrayChildren.doc.transact(() => {
+        yArrayChildren.delete(currentIdx, 1)
+        yArrayChildren.insert(newPosition, [props.nodeId])
+    })
+
+})
+
 
 export const addNewNodeAtom = atom(null, (get, set, props: { parentId: string, positionId: string, tabs, tools }) => {
     const currTree = get(treeAtom)

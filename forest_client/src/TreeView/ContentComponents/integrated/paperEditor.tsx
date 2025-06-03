@@ -1,6 +1,6 @@
 import React from "react";
 import TiptapEditor from "../editor";
-import {AddChildrenButton, AddSiblingButton, DeleteNodeButton} from "../treeOperations";
+import {AddChildrenButton, AddSiblingButton, DeleteNodeButton, MoveNodeButtons} from "../treeOperations";
 import {AiChat} from "../chat/aiChat";
 
 
@@ -17,6 +17,7 @@ export const PaperEditorSide1 = (props) => {
     return <>
         <AddChildrenButton tabs={tabs} tools={tools}/>
         <DeleteNodeButton/><AddSiblingButton tabs={tabs} tools={tools}/>
+        <MoveNodeButtons/>
     </>
 }
 
