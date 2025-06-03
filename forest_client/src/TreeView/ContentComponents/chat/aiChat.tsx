@@ -122,7 +122,7 @@ The user has provided the following content in the editor:
             time: new Date().toISOString()
         };
 
-        setMessages(prevMessages => [...prevMessages, assistantMessage]);
+        setMessages(prevMessages => []);
 
         if (yXML && response) {
             const editorContentMatch = response.match(/<editor_content>([\s\S]*?)<\/editor_content>/);
