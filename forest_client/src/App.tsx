@@ -6,7 +6,11 @@ import {
     darkModeAtom,
     deleteNodeFromTreeAtom,
     selectedNodeIdAtom,
-    setTreeMetadataAtom
+    setTreeMetadataAtom,
+    userAtom,
+    authTokenAtom,
+    userPermissionsAtom,
+    supabaseClientAtom
 } from "./TreeState/TreeState";
 import TreeView from "./TreeView";
 import {WebsocketProvider} from 'y-websocket'
@@ -15,6 +19,9 @@ import {YDocAtom, YjsProviderAtom} from "./TreeState/YjsConnection";
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import ArticleIcon from '@mui/icons-material/Article';
 import LinearView from "./LinearView";
+import { supabase } from './supabase';
+import AuthButton from './components/AuthButton';
+import AuthModal from './components/AuthModal';
 
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
 const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
@@ -75,7 +82,12 @@ export default function App() {
     const addNodeToTree = useSetAtom(addNodeToTreeAtom)
     const deleteNodeFromTree = useSetAtom(deleteNodeFromTreeAtom)
     const setTreeMetadata = useSetAtom(setTreeMetadataAtom);
-
+    
+    // Authentication state
+    const [, setUser] = useAtom(userAtom)
+    const [, setAuthToken] = useAtom(authTokenAtom)
+    const [, setUserPermissions] = useAtom(userPermissionsAtom)
+    const [, setSupabaseClient] = useAtom(supabaseClientAtom)
 
     const [currentPage, setCurrentPage] = useState('tree');
     const renderPage = () => {
@@ -97,6 +109,42 @@ export default function App() {
         setTreeMetadata({
             id: new URLSearchParams(window.location.search).get("id")
         })
+
+        // Initialize Supabase client in atom
+        setSupabaseClient(supabase)
+
+        // Set up auth state change listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (session) {
+                // User is signed in
+                setUser({
+                    id: session.user.id,
+                    email: session.user.email || '',
+                    ...session.user.user_metadata
+                })
+                setAuthToken(session.access_token)
+                
+                // Set default permissions (draft)
+                setUserPermissions({
+                    canUseAI: true,
+                    canUploadFiles: true,
+                    maxFileSize: 10, // 10MB default
+                })
+            } else {
+                // User is signed out
+                setUser(null)
+                setAuthToken(null)
+                setUserPermissions({
+                    canUseAI: false,
+                    canUploadFiles: false,
+                    maxFileSize: 0
+                })
+            }
+        })
+
+        return () => {
+            subscription.unsubscribe()
+        }
     }, []);
 
     return (
@@ -116,7 +164,7 @@ export default function App() {
                             <Typography variant="h6" component="div" sx={{marginRight: 3}}>
                                 Treer
                             </Typography>
-                            <Stack direction="row" spacing={2}>
+                            <Stack direction="row" spacing={2} sx={{ flexGrow: 1 }}>
                                 <Button
                                     color="inherit"
                                     onClick={() => setCurrentPage('tree')}
@@ -132,6 +180,9 @@ export default function App() {
                                     <ArticleIcon/>
                                 </Button>
                             </Stack>
+                            
+                            {/* Auth button in the top right */}
+                            <AuthButton />
                         </Toolbar>
                     </AppBar>
                 </Grid>
@@ -139,6 +190,9 @@ export default function App() {
                     {renderPage()}
                 </Grid>
             </Grid>
+            
+            {/* Auth Modal */}
+            <AuthModal />
         </>
     );
 }
