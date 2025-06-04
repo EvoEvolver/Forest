@@ -65,7 +65,7 @@ const AuthModal: React.FC = () => {
                 },
               },
             }}
-            providers={[]}
+            providers={['github']}
             onlyThirdPartyProviders={false}
             magicLink={true}
             showLinks={false}

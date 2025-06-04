@@ -1,39 +1,31 @@
 import React from 'react'
-import { Box, Typography, Button, Container, Paper } from '@mui/material'
+import { Box, Typography, Button, Container, Paper, Stack } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import CloseIcon from '@mui/icons-material/Close'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 
 const AuthSuccessPage: React.FC = () => {
-  const handleReturnToApp = () => {
+  const handleCloseWindow = () => {
     try {
-      // Standard window close
       window.close()
       
-      // More aggressive approach for stubborn windows
+      // Fallback for stubborn windows
       setTimeout(() => {
         window.open('', '_self').close()
       }, 100)
       
-      // If all else fails, replace with blank page then try to close
-      setTimeout(() => {
-        if (!window.closed) {
-          window.location.replace('about:blank')
-          setTimeout(() => {
-            window.close()
-          }, 100)
-        }
-      }, 300)
-      
-      // Ultimate fallback - redirect to main app after attempts
-      setTimeout(() => {
-        if (!window.closed) {
-          console.log('🔄 Window close failed, redirecting to main app...')
-          window.location.href = window.location.origin
-        }
-      }, 1000)
-      
     } catch (error) {
       console.error('Error closing window:', error)
-      // Emergency fallback
+    }
+  }
+
+  const handleGoBack = () => {
+    try {
+      // Simple browser back navigation
+      window.history.go(-1)
+    } catch (error) {
+      console.error('Error going back:', error)
+      // Fallback to main app
       window.location.href = window.location.origin
     }
   }
@@ -103,45 +95,75 @@ const AuthSuccessPage: React.FC = () => {
             }}
           >
             You have successfully signed in to Treer. 
-            Please return to your original page to continue.
+            Choose how you'd like to continue.
           </Typography>
           
-          {/* Return Button */}
-          <Button
-            variant="contained"
-            size="large"
-            onClick={handleReturnToApp}
-            title="Click to close this window and return to the main application"
-            sx={{
-              backgroundColor: '#4caf50',
-              color: '#ffffff',
-              padding: { xs: '10px 24px', sm: '12px 32px' },
-              fontSize: { xs: '14px', sm: '16px' },
-              fontWeight: 500,
-              borderRadius: 2,
-              textTransform: 'none',
-              minWidth: { xs: '200px', sm: '250px' },
-              marginBottom: 2,
-              '&:hover': {
-                backgroundColor: '#45a049'
-              }
+          {/* Action Buttons */}
+          <Stack 
+            direction={{ xs: 'column', sm: 'row' }} 
+            spacing={2} 
+            sx={{ 
+              justifyContent: 'center',
+              marginBottom: 2 
             }}
           >
-            Close Window & Return to App
-          </Button>
+            <Button
+              variant="contained"
+              size="large"
+              onClick={handleCloseWindow}
+              startIcon={<CloseIcon />}
+              sx={{
+                backgroundColor: '#4caf50',
+                color: '#ffffff',
+                padding: { xs: '10px 20px', sm: '12px 24px' },
+                fontSize: { xs: '14px', sm: '16px' },
+                fontWeight: 500,
+                borderRadius: 2,
+                textTransform: 'none',
+                minWidth: { xs: '180px', sm: '200px' },
+                '&:hover': {
+                  backgroundColor: '#45a049'
+                }
+              }}
+            >
+              Close Window
+            </Button>
 
+            <Button
+              variant="outlined"
+              size="large"
+              onClick={handleGoBack}
+              startIcon={<ArrowBackIcon />}
+              sx={{
+                borderColor: '#4caf50',
+                color: '#4caf50',
+                padding: { xs: '10px 20px', sm: '12px 24px' },
+                fontSize: { xs: '14px', sm: '16px' },
+                fontWeight: 500,
+                borderRadius: 2,
+                textTransform: 'none',
+                minWidth: { xs: '180px', sm: '200px' },
+                '&:hover': {
+                  borderColor: '#45a049',
+                  color: '#45a049',
+                  backgroundColor: 'rgba(76, 175, 80, 0.04)'
+                }
+              }}
+            >
+              Go Back
+            </Button>
+          </Stack>
           
           {/* Helper Text */}
           <Typography 
             variant="caption" 
             sx={{ 
               color: '#999999', 
-              marginTop: { xs: 1.5, sm: 2 },
               fontSize: { xs: '12px', sm: '14px' },
               display: 'block'
             }}
           >
-            This window will close automatically
+            Authentication completed successfully
           </Typography>
         </Paper>
       </Container>
