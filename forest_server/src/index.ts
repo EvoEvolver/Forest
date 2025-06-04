@@ -12,6 +12,9 @@ import {setupWSConnection} from './y-websocket/utils.ts'
 import {getYDoc} from "./y-websocket/utils.ts";
 import OpenAI from 'openai';
 
+// Import authentication middleware
+import { authenticateToken, requireAIPermission, AuthenticatedRequest } from './middleware/auth';
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY, // Make sure you use a secure method to store this
 });
@@ -67,8 +70,26 @@ function main(port: number, host: string, frontendRoot: string | null): void {
         res.send("OK")
     })
 
-    app.post('/api/llm', async (req, res) => {
-        console.log("llm request received");
+    // Test endpoint for authentication - no auth required
+    app.get('/api/test/public', (_req, res) => {
+        res.json({ 
+            message: "✅ Public endpoint working", 
+            timestamp: new Date().toISOString() 
+        });
+    });
+
+    // Test endpoint for authentication - auth required
+    app.get('/api/test/protected', authenticateToken, (req: AuthenticatedRequest, res) => {
+        res.json({ 
+            message: "🔐 Protected endpoint working", 
+            user: req.user,
+            timestamp: new Date().toISOString() 
+        });
+    });
+
+    // Protected AI endpoint - requires authentication and AI permission
+    app.post('/api/llm', authenticateToken, requireAIPermission, async (req: AuthenticatedRequest, res) => {
+        console.log(`🤖 AI request from authenticated user: ${req.user?.email}`);
         try {
             const messages = req.body.messages
             const response = await openai.chat.completions.create({
@@ -77,10 +98,10 @@ function main(port: number, host: string, frontendRoot: string | null): void {
                 messages: messages,
             });
             const result = response.choices[0].message.content;
-            console.log(result)
+            console.log(`✅ AI response generated for user: ${req.user?.email}`);
             res.send({ result });
         } catch (error) {
-            console.error('Error in /api/llm:', error);
+            console.error(`❌ Error in /api/llm for user ${req.user?.email}:`, error);
             res.status(500).send({ error: 'An error occurred while processing the request.' });
         }
     });

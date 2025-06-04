@@ -70,6 +70,7 @@ const AuthModal: React.FC = () => {
             magicLink={true}
             showLinks={false}
             view="magic_link"
+            redirectTo={`${window.location.origin}/auth-success`}
             localization={{
               variables: {
                 magic_link: {

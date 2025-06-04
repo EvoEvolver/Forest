@@ -22,6 +22,7 @@ import LinearView from "./LinearView";
 import { supabase } from './supabase';
 import AuthButton from './components/AuthButton';
 import AuthModal from './components/AuthModal';
+import AuthSuccessPage from './components/AuthSuccessPage';
 
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
 const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
@@ -90,6 +91,15 @@ export default function App() {
     const [, setSupabaseClient] = useAtom(supabaseClientAtom)
 
     const [currentPage, setCurrentPage] = useState('tree');
+
+    // Check if current URL is auth-success route
+    const isAuthSuccessPage = window.location.pathname === '/auth-success';
+
+    // If on auth-success page, render only AuthSuccessPage
+    if (isAuthSuccessPage) {
+        return <AuthSuccessPage />;
+    }
+
     const renderPage = () => {
         switch (currentPage) {
             case 'tree':

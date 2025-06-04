@@ -3,6 +3,8 @@ import {thisNodeContext} from "../../NodeContentTab";
 import {ChatViewImpl} from "./index";
 import {httpUrl} from "../../../App";
 import {XmlFragment, XmlText, XmlElement} from "yjs";
+import { useAtomValue, useSetAtom } from "jotai";
+import { authTokenAtom, isAuthenticatedAtom, authModalOpenAtom } from "../../../TreeState/TreeState";
 
 interface Message {
     content: string;
@@ -42,7 +44,7 @@ function domToYXmlElement(parentXML, domNode) {
 }
 
 
-async function fetchChatResponse(messages: Message[]) {
+async function fetchChatResponse(messages: Message[], authToken: string | null) {
     // if last message is 123, return "123"
     if (messages.length === 0) {
         return "No messages to process.";
@@ -53,6 +55,12 @@ async function fetchChatResponse(messages: Message[]) {
     if (messages[messages.length - 1].content === "1") {
         return messages[0].content
     }
+
+    // Check authentication before making API call
+    if (!authToken) {
+        throw new Error("AUTHENTICATION_REQUIRED");
+    }
+
     const messageOpenAI = messages.map(msg => ({
         role: msg.author !== "assistant" ? "user" : "assistant",
         content: msg.content
@@ -63,11 +71,24 @@ async function fetchChatResponse(messages: Message[]) {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                "Authorization": `Bearer ${authToken}`, // Add JWT token
             },
             body: JSON.stringify({
                 messages: messageOpenAI
             })
         });
+
+        if (response.status === 401) {
+            throw new Error("AUTHENTICATION_FAILED");
+        }
+
+        if (response.status === 403) {
+            throw new Error("PERMISSION_DENIED");
+        }
+
+        if (!response.ok) {
+            throw new Error(`HTTP_ERROR_${response.status}`);
+        }
 
         const data = await response.json();
         if (data.error) {
@@ -77,27 +98,33 @@ async function fetchChatResponse(messages: Message[]) {
         return data.result;
     } catch (error) {
         console.error("Network error:", error);
-        return "Error: Failed to fetch response" + error.message;
+        throw error; // Re-throw to handle in component
     }
 }
 
 export const AiChat: React.FC = (props) => {
     const node = useContext(thisNodeContext);
     const [messages, setMessages] = useState<Message[]>([]);
+    
+    // Authentication state
+    const authToken = useAtomValue(authTokenAtom);
+    const isAuthenticated = useAtomValue(isAuthenticatedAtom);
+    const setAuthModalOpen = useSetAtom(authModalOpenAtom);
 
     const ydataKey = "ydata" + "paperEditor"
     let yXML = node.ydata.get(ydataKey);
-
 
     const sendMessage = async ({content, author, time}: Message) => {
         const messageInList = {content, author, time};
         let messagesToSend = [...messages, messageInList];
         setMessages(prevMessages => [...prevMessages, messageInList]);
-        let newMessage = null
-        let editorContentPrompt = null
-        if (yXML) {
-            const editorContent = yXML.toJSON()
-            editorContentPrompt =  `
+        
+        try {
+            let newMessage = null
+            let editorContentPrompt = null
+            if (yXML) {
+                const editorContent = yXML.toJSON()
+                editorContentPrompt =  `
 You are an AI writing assistant who help the user to write an article in an editor. 
 
 You are required to directly output the content the user required based on what the user has input. 
@@ -106,40 +133,59 @@ You should not include any html tag other than <editor_content> and <paragraph>.
 The user has provided the following content in the editor: 
 <editor_content>${editorContent}</editor_content>
 `;
-            let newMessageWithEditorContent = {
-                content: editorContentPrompt,
-                author,
-                time
-            }
-            messagesToSend = [newMessageWithEditorContent, ...messagesToSend];
-        }
-        // Use the updated messages array from the callback to ensure we have the latest state
-        const response = await fetchChatResponse(messagesToSend);
-        
-        const assistantMessage = {
-            content: response,
-            author: "assistant",
-            time: new Date().toISOString()
-        };
-
-        setMessages(prevMessages => []);
-
-        if (yXML && response) {
-            const editorContentMatch = response.match(/<editor_content>([\s\S]*?)<\/editor_content>/);
-            const parser = new DOMParser()
-            const xmlDoc = parser.parseFromString("<div><paragraph>[AI generated]</paragraph>"+editorContentMatch[1]+"</div>", 'text/xml')
-            console.log(xmlDoc)
-            yXML.doc.transact(() => {
-                for(let child of xmlDoc.childNodes[0].childNodes) {
-                    console.log("child", child)
-                    domToYXmlElement(yXML, child)
+                let newMessageWithEditorContent = {
+                    content: editorContentPrompt,
+                    author,
+                    time
                 }
-            }, "ai agent")
-            /*const yElements = Array.from(xmlDoc.childNodes).map((child) => domToYXmlElement(child))
-            yXML.push(yElements);
-            for (const yElement of yElements) {
-                console.log(yElement.toJSON())
-            }*/
+                messagesToSend = [newMessageWithEditorContent, ...messagesToSend];
+            }
+            
+            // Use the updated messages array from the callback to ensure we have the latest state
+            const response = await fetchChatResponse(messagesToSend, authToken);
+            
+            const assistantMessage = {
+                content: response,
+                author: "assistant",
+                time: new Date().toISOString()
+            };
+
+            setMessages(prevMessages => []);
+
+            if (yXML && response) {
+                const editorContentMatch = response.match(/<editor_content>([\s\S]*?)<\/editor_content>/);
+                const parser = new DOMParser()
+                const xmlDoc = parser.parseFromString("<div><paragraph>[AI generated]</paragraph>"+editorContentMatch[1]+"</div>", 'text/xml')
+                console.log(xmlDoc)
+                yXML.doc.transact(() => {
+                    for(let child of xmlDoc.childNodes[0].childNodes) {
+                        console.log("child", child)
+                        domToYXmlElement(yXML, child)
+                    }
+                }, "ai agent")
+            }
+        } catch (error) {
+            // Handle authentication and permission errors
+            let errorMessage = "An error occurred while processing your request.";
+            
+            if (error.message === "AUTHENTICATION_REQUIRED" || error.message === "AUTHENTICATION_FAILED") {
+                errorMessage = "🔐 Please sign in to use AI features";
+                setAuthModalOpen(true); // Open login modal
+            } else if (error.message === "PERMISSION_DENIED") {
+                errorMessage = "🚫 AI access not available. Please upgrade your subscription.";
+            } else if (error.message.startsWith("HTTP_ERROR_")) {
+                errorMessage = `Server error: ${error.message}`;
+            } else {
+                errorMessage = `Network error: ${error.message}`;
+            }
+
+            // Add error message to chat
+            const errorChatMessage = {
+                content: errorMessage,
+                author: "system",
+                time: new Date().toISOString()
+            };
+            setMessages(prevMessages => [...prevMessages, errorChatMessage]);
         }
     };
 
