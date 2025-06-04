@@ -6,6 +6,7 @@ import {AddChildrenButton, AddSiblingButton, GetNodeUrlButton, MoveNodeButtons} 
 import ChatView from "./chat";
 import {Code, Expandable, FigureBox, NodeNavigator, TeX, TextSpan} from "./inline";
 import {PaperEditorMain, PaperEditorSide1, PaperEditorSide2} from "./integrated/paperEditor";
+import RemirrorEditor from "./editor2";
 
 
 export const envComponentAtom = atom({
@@ -25,5 +26,6 @@ export const envComponentAtom = atom({
     ChatView,
     PaperEditorMain,
     PaperEditorSide1,
-    PaperEditorSide2
+    PaperEditorSide2,
+    RemirrorEditor
 })
