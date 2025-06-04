@@ -24,3 +24,6 @@ node_modules
 *.sln
 *.sw?
 *.env
+
+*/README_*.md
+*-lock.yaml
