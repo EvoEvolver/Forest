@@ -1,5 +1,5 @@
 import React, {useContext} from "react";
-import {addNewNodeAtom, deleteNodeAtom} from "../../TreeState/TreeState";
+import {addNewNodeAtom, deleteNodeAtom, treeAtom} from "../../TreeState/TreeState";
 import {useAtomValue, useSetAtom} from "jotai";
 import {thisNodeContext} from "../NodeContentTab";
 
@@ -94,4 +94,25 @@ export const DeleteNodeButton = () => {
             Delete this node
         </button>
     </>
+}
+
+export const GetNodeUrlButton = () => {
+    const node = useContext(thisNodeContext);
+    const nodeId = node.id;
+    const tree = useAtomValue(treeAtom)
+    const treeId = tree.metadata.id
+    let currentUrl = window.location.href;
+    // remove all the query parameters
+    currentUrl = currentUrl.split('?')[0];
+    const nodeUrl = `${currentUrl}?id=${treeId}&n=${nodeId}`;
+    return (
+        <button
+            onClick={() => {
+                navigator.clipboard.writeText(nodeUrl);
+                alert(`Node URL copied to clipboard: ${nodeUrl}`);
+            }}
+        >
+            Copy Node URL
+        </button>
+    );
 }

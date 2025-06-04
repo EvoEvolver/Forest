@@ -11,9 +11,23 @@ export interface TreeAtomData {
 
 export const treeAtom = atom(
     {
-        metadata: {},
+        metadata: {
+        },
         nodeDict: {}
     } as TreeAtomData | null)
+
+export const setTreeMetadataAtom = atom(null, (get, set, metadata: Record<string, any>) => {
+    const currTree = get(treeAtom)
+    if (!currTree)
+        return
+    set(treeAtom, {
+        ...currTree,
+        metadata: {
+            ...currTree.metadata,
+            ...metadata
+        }
+    })
+})
 
 function yjsNodeToJsonNode(yjsMapNode: YMap<any>): Node {
 
@@ -226,7 +240,6 @@ export const addNodeToTreeAtom = atom(null, (get, set, yjsMapNode: YMap<any>) =>
             [nodeId]: nodeAtom
         }
     })
-    console.log("addNodeToTree", nodeDict)
 })
 
 export const deleteNodeFromTreeAtom = atom(null, (get, set, nodeId: string) => {
@@ -318,7 +331,6 @@ export const selectedNodeAtom = atom(
         if (!currTree)
             return
         const currentSelected = getNodeById(get(selectedNodeIdAtom), get)
-        //console.log(currentSelected.id, "s", get(lastSelectedNodeIdAtom), "haha", newSelectedNodeId)
         const newNode = getNodeById(newSelectedNodeId, get)
         if (!currentSelected) {
             set(selectedNodeIdAtom, newSelectedNodeId)

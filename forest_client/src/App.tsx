@@ -1,52 +1,67 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {Box, Button, Grid, Stack} from "@mui/material";
-import {useAtom, useSetAtom} from "jotai";
+import {AppBar, Box, Button, Grid, Stack, Toolbar, Typography} from "@mui/material";
+import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import {
     addNodeToTreeAtom,
     darkModeAtom,
     deleteNodeFromTreeAtom,
-    selectedNodeIdAtom
+    selectedNodeIdAtom,
+    setTreeMetadataAtom
 } from "./TreeState/TreeState";
 import TreeView from "./TreeView";
-import {useAtomValue} from "jotai";
 import {WebsocketProvider} from 'y-websocket'
 import {Map as YMap} from "yjs";
 import {YDocAtom, YjsProviderAtom} from "./TreeState/YjsConnection";
-import {AppBar, Toolbar, Typography} from "@mui/material";
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import ArticleIcon from '@mui/icons-material/Article';
 import LinearView from "./LinearView";
+
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
 const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
 const wsUrl = `${wsProtocol}://${location.hostname}:${currentPort}`
 export const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort}`
-const setupYDoc = (setSelectedNodeId, setYjsProvider,addNodeToTree,ydoc, deleteNodeFromTree) => {
+
+const setupYDoc = (setSelectedNodeId, setYjsProvider, addNodeToTree, ydoc, deleteNodeFromTree) => {
     const treeId = new URLSearchParams(window.location.search).get("id");
     setSelectedNodeId(treeId)
     let wsProvider = new WebsocketProvider(wsUrl, treeId, ydoc)
     setYjsProvider(wsProvider)
     wsProvider.on('status', event => {
-        console.log("wsProvider", event.status) // logs "connected" or "disconnected"
     })
     let nodeDictyMap: YMap<YMap<any>> = ydoc.getMap("nodeDict")
     nodeDictyMap.observe((ymapEvent) => {
-        console.log("ymapEvent", ymapEvent)
         ymapEvent.changes.keys.forEach((change, key) => {
             if (change.action === 'add') {
                 let newNode = nodeDictyMap.get(key)
-                console.log(`Property "${key}" was added. Initial value:`, nodeDictyMap.get(key).toJSON())
                 addNodeToTree(newNode)
             } else if (change.action === 'update') {
-                //console.log(`Property "${key}" was updated. New value: "${nodeDictyMap.get(key)}". Previous value: "${change.oldValue}".`)
                 let newNode = nodeDictyMap.get(key)
                 deleteNodeFromTree(key)
                 addNodeToTree(newNode)
             } else if (change.action === 'delete') {
-                //console.log(`Property "${key}" was deleted. New value: undefined. Previous value: "${change.oldValue}".`)
                 deleteNodeFromTree(key)
             }
         })
     })
+}
+
+const setToNodeInUrl = (ydoc, setSelectedNodeId) => {
+    const nodeId = new URLSearchParams(window.location.search).get("n");
+    const nodeDict = ydoc.getMap("nodeDict") as YMap<any>;
+    if (!nodeId) return;
+    // observe the nodeDict for changes
+    const observer = (ymapEvent) => {
+        if (ymapEvent.keys.has(nodeId)) {
+            setSelectedNodeId(nodeId);
+            // unobserve the nodeDict after setting the selected node
+            nodeDict.unobserve(observer);
+        }
+    }
+    nodeDict.observe(observer)
+    // unobserve the nodeDict after 10 seconds
+    setTimeout(() => {
+        nodeDict.unobserve(observer);
+    }, 10000);
 }
 
 
@@ -59,23 +74,29 @@ export default function App() {
     const ydoc = useAtomValue(YDocAtom)
     const addNodeToTree = useSetAtom(addNodeToTreeAtom)
     const deleteNodeFromTree = useSetAtom(deleteNodeFromTreeAtom)
+    const setTreeMetadata = useSetAtom(setTreeMetadataAtom);
+
+
     const [currentPage, setCurrentPage] = useState('tree');
     const renderPage = () => {
-        switch(currentPage) {
+        switch (currentPage) {
             case 'tree':
-                return <TreeViewPage contentRef={contentRef} />;
+                return <TreeViewPage contentRef={contentRef}/>;
             case 'linear':
-                return <SecondPage />;
+                return <SecondPage/>;
             default:
-                return <TreeViewPage contentRef={contentRef} />;
+                return <TreeViewPage contentRef={contentRef}/>;
         }
     };
-
 
     useEffect(() => {
         document.body.style.overflow = 'hidden';
         setDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
         setupYDoc(setSelectedNodeId, setYjsProvider, addNodeToTree, ydoc, deleteNodeFromTree);
+        setToNodeInUrl(ydoc, setSelectedNodeId);
+        setTreeMetadata({
+            id: new URLSearchParams(window.location.search).get("id")
+        })
     }, []);
 
     return (
@@ -92,7 +113,7 @@ export default function App() {
                 <Grid item style={{width: "100%"}}>
                     <AppBar position="static">
                         <Toolbar variant="dense">
-                            <Typography variant="h6" component="div" sx={{ marginRight: 3 }}>
+                            <Typography variant="h6" component="div" sx={{marginRight: 3}}>
                                 Treer
                             </Typography>
                             <Stack direction="row" spacing={2}>
@@ -123,7 +144,7 @@ export default function App() {
 }
 
 
-const TreeViewPage = ({ contentRef }) => (
+const TreeViewPage = ({contentRef}) => (
     <Box style={{width: "100vw", height: "100%", flexGrow: 1, boxSizing: "border-box"}}>
         <TreeView contentRef={contentRef}/>
     </Box>
