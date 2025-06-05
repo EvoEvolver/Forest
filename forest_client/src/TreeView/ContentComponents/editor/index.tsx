@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useRef, useState} from 'react'
+import React, {useContext, useEffect, useState} from 'react'
 import './style.css';
 import './comment.css';
 import {useAtomValue} from "jotai";
@@ -17,6 +17,13 @@ import ListItem from '@tiptap/extension-list-item'
 import Image from '@tiptap/extension-image'
 import {CommentExtension} from './comment'
 import RateReviewIcon from '@mui/icons-material/RateReview';
+import {usePopper} from 'react-popper';
+
+// get if the current environment is development or production
+const isDevMode = (import.meta.env.MODE === 'development');
+if (isDevMode) {
+    console.warn("this is dev mode");
+}
 
 interface TiptapEditorProps {
     label?: string
@@ -53,6 +60,24 @@ const EditorImpl = ({
                         yXML, provider, dataLabel
                     }) => {
 
+
+    const extensions = [
+        Document,
+        Paragraph,
+        Text,
+        BulletList,
+        OrderedList,
+        ListItem,
+        Image,
+
+        Collaboration.extend().configure({
+            fragment: yXML,
+        }),
+        CollaborationCursor.extend().configure({
+            provider,
+        }),
+    ]
+
     const [comments, setComments] = useState<Comment[]>([])
     const [activeCommentId, setActiveCommentId] = useState<string | null>(null)
     const [activeCommentElement, setActiveCommentElement] = useState<HTMLElement | null>(null)
@@ -79,6 +104,19 @@ const EditorImpl = ({
         setActiveCommentId(newComment.id)
     }
 
+    if (isDevMode) {
+
+        const commentExtension = CommentExtension.configure({
+            HTMLAttributes: {
+                class: "my-comment",
+            },
+            onCommentActivated: (commentId) => {
+                setActiveCommentId(commentId);
+            },
+        })
+        extensions.push(commentExtension)
+    }
+
     const editor = useEditor({
         enableContentCheck: true,
         onContentError: ({disableCollaboration}) => {
@@ -91,29 +129,7 @@ const EditorImpl = ({
                 }
             })
         },
-        extensions: [
-            Document,
-            Paragraph,
-            Text,
-            BulletList,
-            OrderedList,
-            ListItem,
-            Image,
-            CommentExtension.configure({
-                HTMLAttributes: {
-                    class: "my-comment",
-                },
-                onCommentActivated: (commentId) => {
-                    setActiveCommentId(commentId);
-                },
-            }),
-            Collaboration.extend().configure({
-                fragment: yXML,
-            }),
-            CollaborationCursor.extend().configure({
-                provider,
-            }),
-        ],
+        extensions: extensions,
     })
 
     const node = useContext(thisNodeContext)
@@ -125,7 +141,7 @@ const EditorImpl = ({
     return (
         <div className="column-half">
             <EditorContent editor={editor} className="main-group"/>
-            <BubbleMenu editor={editor} className='p-1 border rounded-lg border-slate-400'>
+            {isDevMode && <BubbleMenu editor={editor} className='p-1 border rounded-lg border-slate-400'>
                 <button
                     className='rounded-md bg-white/10 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-white/20'
                     onClick={setComment}
@@ -133,20 +149,21 @@ const EditorImpl = ({
                     <RateReviewIcon/>
                 </button>
             </BubbleMenu>
-            {activeCommentId && (
-                <InputBubble target={activeCommentElement} />
+            }
+            {isDevMode && activeCommentId && (
+                <InputBubble target={activeCommentElement}/>
             )}
+
         </div>
     )
 }
-import { usePopper } from 'react-popper';
 /*
 When target is provided, it will display <div>123</div> in the bubble and put it in the target element use popper.js
  */
 const InputBubble = ({target}) => {
     const [referenceElement, setReferenceElement] = useState(null);
     const [popperElement, setPopperElement] = useState(null);
-    const { styles, attributes } = usePopper(referenceElement, popperElement, {
+    const {styles, attributes} = usePopper(referenceElement, popperElement, {
         placement: 'top',
     });
 
@@ -159,8 +176,9 @@ const InputBubble = ({target}) => {
     return (
         <div ref={setPopperElement} style={styles.popper} {...attributes.popper}>
             <div style={{
-                backgroundColor : 'white',
-            }}>Some comment</div>
+                backgroundColor: 'white',
+            }}>Some comment
+            </div>
         </div>
     );
 

@@ -104,6 +104,7 @@ function main(port: number, host: string, frontendRoot: string | null): void {
             const result = response.choices[0].message.content;
             console.log(`✅ AI response generated for user: ${req.user?.email}`);
             res.send({ result });
+
         } catch (error) {
             console.error(`❌ Error in /api/llm for user ${req.user?.email}:`, error);
             res.status(500).send({ error: 'An error occurred while processing the request.' });
