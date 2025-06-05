@@ -73,6 +73,41 @@ const setToNodeInUrl = (ydoc, setSelectedNodeId) => {
 }
 
 
+function setupAuth(setSupabaseClient, setUser, setAuthToken, setUserPermissions) {
+    // Initialize Supabase client in atom
+    setSupabaseClient(supabase)
+
+    // Set up auth state change listener
+    const {data: {subscription}} = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (session) {
+            // User is signed in
+            setUser({
+                id: session.user.id,
+                email: session.user.email || '',
+                ...session.user.user_metadata
+            })
+            setAuthToken(session.access_token)
+
+            // Set default permissions (draft)
+            setUserPermissions({
+                canUseAI: true,
+                canUploadFiles: true,
+                maxFileSize: 10, // 10MB default
+            })
+        } else {
+            // User is signed out
+            setUser(null)
+            setAuthToken(null)
+            setUserPermissions({
+                canUseAI: false,
+                canUploadFiles: false,
+                maxFileSize: 0
+            })
+        }
+    })
+    return subscription;
+}
+
 export default function App() {
 
     const setDark = useSetAtom(darkModeAtom)
@@ -119,40 +154,11 @@ export default function App() {
         setTreeMetadata({
             id: new URLSearchParams(window.location.search).get("id")
         })
-
-        // Initialize Supabase client in atom
-        setSupabaseClient(supabase)
-
-        // Set up auth state change listener
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            if (session) {
-                // User is signed in
-                setUser({
-                    id: session.user.id,
-                    email: session.user.email || '',
-                    ...session.user.user_metadata
-                })
-                setAuthToken(session.access_token)
-                
-                // Set default permissions (draft)
-                setUserPermissions({
-                    canUseAI: true,
-                    canUploadFiles: true,
-                    maxFileSize: 10, // 10MB default
-                })
-            } else {
-                // User is signed out
-                setUser(null)
-                setAuthToken(null)
-                setUserPermissions({
-                    canUseAI: false,
-                    canUploadFiles: false,
-                    maxFileSize: 0
-                })
-            }
-        })
-
+        let subscription
+        if (supabase)
+           subscription = setupAuth(setSupabaseClient, setUser, setAuthToken, setUserPermissions);
         return () => {
+            if (supabase)
             subscription.unsubscribe()
         }
     }, []);
@@ -192,7 +198,7 @@ export default function App() {
                             </Stack>
                             
                             {/* Auth button in the top right */}
-                            <AuthButton />
+                            {supabase && <AuthButton />}
                         </Toolbar>
                     </AppBar>
                 </Grid>
