@@ -1,6 +1,5 @@
-import React, {useContext, useEffect, useState} from 'react'
+import React, {useContext, useState} from 'react'
 import './style.css';
-import './comment.css';
 import {useAtomValue} from "jotai";
 import {YjsProviderAtom} from "../../../TreeState/YjsConnection";
 import {XmlFragment} from 'yjs';
@@ -15,11 +14,12 @@ import BulletList from '@tiptap/extension-bullet-list'
 import OrderedList from '@tiptap/extension-ordered-list'
 import ListItem from '@tiptap/extension-list-item'
 import Image from '@tiptap/extension-image'
-import {CommentExtension} from './comment'
+import {CommentExtension} from './Extensions/comment'
 import RateReviewIcon from '@mui/icons-material/RateReview';
-import {usePopper} from 'react-popper';
+import {CommentComponent, Comment} from "./EditorComponents/Comment/commentComponent";
 
 // get if the current environment is development or production
+// @ts-ignore
 const isDevMode = (import.meta.env.MODE === 'development');
 if (isDevMode) {
     console.warn("this is dev mode");
@@ -47,20 +47,10 @@ const TiptapEditor = (props: TiptapEditorProps) => {
 
 };
 
-interface Comment {
-    id: string
-    content: string
-    replies: Comment[]
-    createdAt: Date
-}
-
 export default TiptapEditor;
 
-const EditorImpl = ({
-                        yXML, provider, dataLabel
-                    }) => {
 
-
+const EditorImpl = ({yXML, provider, dataLabel}) => {
     const extensions = [
         Document,
         Paragraph,
@@ -78,43 +68,31 @@ const EditorImpl = ({
         }),
     ]
 
-    const [comments, setComments] = useState<Comment[]>([])
-    const [activeCommentId, setActiveCommentId] = useState<string | null>(null)
-    const [activeCommentElement, setActiveCommentElement] = useState<HTMLElement | null>(null)
-
-    useEffect(() => {
-        // update active comment element when activeCommentId changes
-        if (activeCommentId) {
-            const commentElement = document.querySelector(`[data-comment-id="${activeCommentId}"]`);
-            setActiveCommentElement(commentElement as HTMLElement);
-        } else {
-            setActiveCommentElement(null);
-        }
-    }, [activeCommentId]);
-
-    const setComment = () => {
-        const newComment = {
-            id: `comment-${Date.now()}`,
-            content: 'to be done',
-            replies: [],
-            createdAt: new Date(),
-        }
-        setComments([...comments, newComment])
-        editor?.commands.setComment(newComment.id)
-        setActiveCommentId(newComment.id)
-    }
-
     if (isDevMode) {
-
         const commentExtension = CommentExtension.configure({
             HTMLAttributes: {
                 class: "my-comment",
             },
-            onCommentActivated: (commentId) => {
-                setActiveCommentId(commentId);
-            },
+            onCommentActivated: (commentId) => {},
         })
+        // @ts-ignore
         extensions.push(commentExtension)
+    }
+
+    const [comments, setComments] = useState<Comment[]>([])
+
+    const setComment = () => {
+        const id = `comment-${Date.now()}`;
+        const newComment: Comment = {
+            id,
+            content: '',
+            replies: [],
+            createdAt: new Date(),
+            selection: null
+        };
+        editor?.commands.setComment(newComment.id)
+        setComments((prev) => ([...prev, newComment]))
+        newComment.selection = document.querySelector(`[data-comment-id="${id}"]`) as HTMLElement
     }
 
     const editor = useEditor({
@@ -150,36 +128,9 @@ const EditorImpl = ({
                 </button>
             </BubbleMenu>
             }
-            {isDevMode && activeCommentId && (
-                <InputBubble target={activeCommentElement}/>
-            )}
-
+            {isDevMode && comments.map((comment: Comment) => (
+                <CommentComponent key={comment.id} comment={comment} />
+            ))}
         </div>
     )
-}
-/*
-When target is provided, it will display <div>123</div> in the bubble and put it in the target element use popper.js
- */
-const InputBubble = ({target}) => {
-    const [referenceElement, setReferenceElement] = useState(null);
-    const [popperElement, setPopperElement] = useState(null);
-    const {styles, attributes} = usePopper(referenceElement, popperElement, {
-        placement: 'top',
-    });
-
-    useEffect(() => {
-        if (target) {
-            setReferenceElement(target);
-        }
-    }, [target]);
-
-    return (
-        <div ref={setPopperElement} style={styles.popper} {...attributes.popper}>
-            <div style={{
-                backgroundColor: 'white',
-            }}>Some comment
-            </div>
-        </div>
-    );
-
 }

@@ -1,4 +1,4 @@
-import {mergeAttributes, Node, NodeType} from '@tiptap/core'; // Added Editor, NodeType, RawCommands for clarity if needed elsewhere, not strictly for augmentation
+import {mergeAttributes, Node} from '@tiptap/core'; // Added Editor, RawCommands for clarity if needed elsewhere, not strictly for augmentation
 import {NodeViewContent, NodeViewWrapper, ReactNodeViewRenderer} from '@tiptap/react';
 import React from 'react';
 

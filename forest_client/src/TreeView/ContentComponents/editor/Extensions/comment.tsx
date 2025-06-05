@@ -16,17 +16,17 @@ declare module "@tiptap/core" {
   }
 }
 
-export interface MarkWithRange {
+interface MarkWithRange {
   mark: PMMark;
   range: Range;
 }
 
-export interface CommentOptions {
+interface CommentOptions {
   HTMLAttributes: Record<string, any>;
   onCommentActivated: (commentId: string) => void;
 }
 
-export interface CommentStorage {
+interface CommentStorage {
   activeCommentId: string | null;
 }
 
