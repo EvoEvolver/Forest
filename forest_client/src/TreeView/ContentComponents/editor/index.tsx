@@ -55,6 +55,17 @@ const EditorImpl = ({
 
     const [comments, setComments] = useState<Comment[]>([])
     const [activeCommentId, setActiveCommentId] = useState<string | null>(null)
+    const [activeCommentElement, setActiveCommentElement] = useState<HTMLElement | null>(null)
+
+    useEffect(() => {
+        // update active comment element when activeCommentId changes
+        if (activeCommentId) {
+            const commentElement = document.querySelector(`[data-comment-id="${activeCommentId}"]`);
+            setActiveCommentElement(commentElement as HTMLElement);
+        } else {
+            setActiveCommentElement(null);
+        }
+    }, [activeCommentId]);
 
     const setComment = () => {
         const newComment = {
@@ -123,13 +134,34 @@ const EditorImpl = ({
                 </button>
             </BubbleMenu>
             {activeCommentId && (
-                <div>
-                    <b>Comment: </b>
-                    <div className="comment">
-                        {comments.find(comment => comment.id === activeCommentId)?.content || "No content"}
-                    </div>
-                </div>
+                <InputBubble target={activeCommentElement} />
             )}
         </div>
     )
+}
+import { usePopper } from 'react-popper';
+/*
+When target is provided, it will display <div>123</div> in the bubble and put it in the target element use popper.js
+ */
+const InputBubble = ({target}) => {
+    const [referenceElement, setReferenceElement] = useState(null);
+    const [popperElement, setPopperElement] = useState(null);
+    const { styles, attributes } = usePopper(referenceElement, popperElement, {
+        placement: 'top',
+    });
+
+    useEffect(() => {
+        if (target) {
+            setReferenceElement(target);
+        }
+    }, [target]);
+
+    return (
+        <div ref={setPopperElement} style={styles.popper} {...attributes.popper}>
+            <div style={{
+                backgroundColor : 'white',
+            }}>Some comment</div>
+        </div>
+    );
+
 }
