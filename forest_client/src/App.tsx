@@ -202,7 +202,7 @@ export default function App() {
             </Grid>
             
             {/* Auth Modal */}
-            <AuthModal />
+            {supabase && <AuthModal/>}
         </>
     );
 }
