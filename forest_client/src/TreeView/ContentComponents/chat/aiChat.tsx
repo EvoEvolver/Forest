@@ -50,7 +50,7 @@ async function fetchChatResponse(messages: Message[], authToken: string | null) 
         return "No messages to process.";
     }
     if (messages[messages.length - 1].content === "123") {
-        return `<editor_content><paragraph> [AI generated] </paragraph></editor_content>`
+        return `<editor_content><p>Haha I'm here for test</p></editor_content>`
     }
     if (messages[messages.length - 1].content === "1") {
         return messages[0].content
@@ -111,8 +111,9 @@ export const AiChat: React.FC = (props) => {
     const isAuthenticated = useAtomValue(isAuthenticatedAtom);
     const setAuthModalOpen = useSetAtom(authModalOpenAtom);
 
-    const ydataKey = "ydata" + "paperEditor"
-    let yXML = node.ydata.get(ydataKey);
+
+    const dataKey = "tiptap_editor_" + "paperEditor"
+    const editor = node.data[dataKey];
 
     const sendMessage = async ({content, author, time}: Message) => {
         const messageInList = {content, author, time};
@@ -122,13 +123,12 @@ export const AiChat: React.FC = (props) => {
         try {
             let newMessage = null
             let editorContentPrompt = null
-            if (yXML) {
-                const editorContent = yXML.toJSON()
+            if (editor) {
+                const editorContent = editor.getHTML();
                 editorContentPrompt =  `
 You are an AI writing assistant who help the user to write an article in an editor. 
 
 You are required to directly output the content the user required based on what the user has input. 
-You should not include any html tag other than <editor_content> and <paragraph>. 
 
 The user has provided the following content in the editor: 
 <editor_content>${editorContent}</editor_content>
@@ -152,17 +152,12 @@ The user has provided the following content in the editor:
 
             setMessages(prevMessages => []);
 
-            if (yXML && response) {
+            if (editor && response) {
                 const editorContentMatch = response.match(/<editor_content>([\s\S]*?)<\/editor_content>/);
                 const parser = new DOMParser()
-                const xmlDoc = parser.parseFromString("<div><paragraph>[AI generated]</paragraph>"+editorContentMatch[1]+"</div>", 'text/xml')
+                const xmlDoc = parser.parseFromString("<div>[AI generated]"+editorContentMatch[1]+"</div>", 'text/xml')
                 console.log(xmlDoc)
-                yXML.doc.transact(() => {
-                    for(let child of xmlDoc.childNodes[0].childNodes) {
-                        console.log("child", child)
-                        domToYXmlElement(yXML, child)
-                    }
-                }, "ai agent")
+                editor.commands.insertContent(xmlDoc.documentElement.innerHTML, false);
             }
         } catch (error) {
             // Handle authentication and permission errors
