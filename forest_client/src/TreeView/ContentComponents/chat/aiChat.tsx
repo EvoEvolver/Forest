@@ -129,6 +129,8 @@ export const AiChat: React.FC = (props) => {
 You are an AI writing assistant who help the user to write an article in an editor. 
 
 You are required to directly output the content the user required based on what the user has input. 
+You output should be wrapped by <editor_content> tags. 
+You output should have a similar style of html to the editor content provided by the user.
 
 The user has provided the following content in the editor: 
 <editor_content>${editorContent}</editor_content>

@@ -11,6 +11,10 @@ import {setupWSConnection} from './y-websocket/utils.ts'
 // @ts-ignore
 import {getYDoc} from "./y-websocket/utils.ts";
 import OpenAI from 'openai';
+import * as dotenv from 'dotenv'
+dotenv.config({
+  path: path.resolve(__dirname, '.env'),
+})
 
 // Import authentication middleware
 import { authenticateToken, requireAIPermission, AuthenticatedRequest } from './middleware/auth';
