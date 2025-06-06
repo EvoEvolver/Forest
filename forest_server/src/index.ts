@@ -67,9 +67,12 @@ function main(port: number, host: string, frontendRoot: string | null): void {
         });
     }
     else{
+        console.log("No frontend root set, assuming dev mode")
         // forward the request to the frontend server running on port 39999
         app.get('/', (_req, res) => {
-            res.redirect('http://0.0.0.0:39999');
+            const query = _req.originalUrl.split('?')[1] || '';
+            const redirectUrl = `http://0.0.0.0:39999${query ? '?' + query : ''}`;
+            res.redirect(redirectUrl);
         });
     }
 
@@ -86,7 +89,7 @@ function main(port: number, host: string, frontendRoot: string | null): void {
             metadata.set("rootId", rootId);
         }
         metadata.set("version", "0.0.1");
-        console.log("update tree", req.body.tree_id)
+        console.log("Created tree", treeId)
         // send the new tree ID back to the client
         res.json({ tree_id: treeId });
     });
@@ -157,7 +160,7 @@ function main(port: number, host: string, frontendRoot: string | null): void {
 
 const args = minimist(process.argv.slice(2));
 // Access the port argument
-let frontendRoot = args.FrontendRoot || "./public/index.html"
+let frontendRoot = args.FrontendRoot || null
 const backendPort = args.BackendPort || 29999
 const host = args.Host || "0.0.0.0"
 const noFrontend = args.NoFrontend || false

@@ -17,15 +17,13 @@ def duplicate_tree(tree_id, host="http://0.0.0.0:29999"):
     response = requests.request("PUT", url, headers=headers, data=payload)
     response.raise_for_status()
     new_tree_id = response.json()['new_tree_id']
-    print("http://0.0.0.0:39999/?id="+new_tree_id)
+    print(f"{host}/?id="+new_tree_id)
 
 if __name__ == '__main__':
     root = Node()
-    root.content = "123"
-    root.node_id = "123456"
-
-    tree_id = "123456"
+    root.content = "1234567"
+    tree_id = push_tree(root)
     try:
-        duplicate_tree("123456")
+        duplicate_tree(tree_id)
     except requests.HTTPError as e:
         print(f"Failed to duplicate tree: {e}")
