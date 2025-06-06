@@ -4,32 +4,30 @@ import minimist from 'minimist'
 import http from 'http';
 import cors from 'cors';
 import {patchTree, ServerData} from "./nodeFactory";
-import { Doc } from 'yjs';
-import { WebSocketServer } from 'ws';
+import {applyUpdate, Doc, encodeStateAsUpdate} from 'yjs';
+import {WebSocketServer} from 'ws';
 // @ts-ignore
-import {setupWSConnection} from './y-websocket/utils.ts'
 // @ts-ignore
-import {getYDoc} from "./y-websocket/utils.ts";
+import {getYDoc, setupWSConnection} from './y-websocket/utils.ts'
 import OpenAI from 'openai';
 import * as dotenv from 'dotenv'
+// Import authentication middleware
+import {AuthenticatedRequest, authenticateToken, requireAIPermission} from './middleware/auth';
+
 dotenv.config({
-  path: path.resolve(__dirname, '.env'),
+    path: path.resolve(__dirname, '.env'),
 })
 
-// Import authentication middleware
-import { authenticateToken, requireAIPermission, AuthenticatedRequest } from './middleware/auth';
-import {applyUpdate, encodeStateAsUpdate} from "yjs";
-
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY, // Make sure you use a secure method to store this
+    apiKey: process.env.OPENAI_API_KEY, // Make sure you use a secure method to store this
 });
 
-function check_and_upgrade(doc: Doc, treeId: string){
+function check_and_upgrade(doc: Doc, treeId: string) {
     const metadata = doc.getMap("metadata");
     if (!doc.getMap("metadata").has("version")) {
         doc.getMap("metadata").set("version", "0.0.1");
     }
-    if (!metadata.get("rootId")){
+    if (!metadata.get("rootId")) {
         metadata.set("rootId", treeId);
     }
 }
@@ -38,11 +36,11 @@ function check_and_upgrade(doc: Doc, treeId: string){
 function main(port: number, host: string, frontendRoot: string | null): void {
     const app = express();
     const server = http.createServer(app);
-    const wss = new WebSocketServer({ noServer: true})
+    const wss = new WebSocketServer({noServer: true})
 
-    wss.on('connection', (conn: any, req: any, opts: any)=>{
+    wss.on('connection', (conn: any, req: any, opts: any) => {
         const treeId = (req.url || '').slice(1).split('?')[0]
-        if (!treeId || treeId=="null"){
+        if (!treeId || treeId == "null") {
             // refuse the connection
             conn.close?.()
             return
@@ -65,13 +63,12 @@ function main(port: number, host: string, frontendRoot: string | null): void {
 
     const data: ServerData = new ServerData();
 
-    if (frontendRoot){
+    if (frontendRoot) {
         app.use(express.static(path.join(__dirname, path.dirname(frontendRoot))));
         app.get('/', (_req, res) => {
             res.sendFile(path.join(__dirname, frontendRoot));
         });
-    }
-    else{
+    } else {
         console.log("No frontend root set, assuming dev mode")
         // forward the request to the frontend server running on port 39999
         app.get('/', (_req, res) => {
@@ -96,7 +93,7 @@ function main(port: number, host: string, frontendRoot: string | null): void {
         metadata.set("version", "0.0.1");
         console.log("Created tree", treeId)
         // send the new tree ID back to the client
-        res.json({ tree_id: treeId });
+        res.json({tree_id: treeId});
     });
 
 
@@ -109,24 +106,24 @@ function main(port: number, host: string, frontendRoot: string | null): void {
         const stateOrigin = encodeStateAsUpdate(originDoc)
         applyUpdate(newDoc, stateOrigin);
         // return the new document ID
-        res.json({ new_tree_id: newDocId });
+        res.json({new_tree_id: newDocId});
     });
 
 
     // Test endpoint for authentication - no auth required
     app.get('/api/test/public', (_req, res) => {
-        res.json({ 
-            message: "✅ Public endpoint working", 
-            timestamp: new Date().toISOString() 
+        res.json({
+            message: "✅ Public endpoint working",
+            timestamp: new Date().toISOString()
         });
     });
 
     // Test endpoint for authentication - auth required
     app.get('/api/test/protected', authenticateToken, (req: AuthenticatedRequest, res) => {
-        res.json({ 
-            message: "🔐 Protected endpoint working", 
+        res.json({
+            message: "🔐 Protected endpoint working",
             user: req.user,
-            timestamp: new Date().toISOString() 
+            timestamp: new Date().toISOString()
         });
     });
 
@@ -142,11 +139,11 @@ function main(port: number, host: string, frontendRoot: string | null): void {
             });
             const result = response.choices[0].message.content;
             console.log(`✅ AI response generated for user: ${req.user?.email}`);
-            res.send({ result });
+            res.send({result});
 
         } catch (error) {
             console.error(`❌ Error in /api/llm for user ${req.user?.email}:`, error);
-            res.status(500).send({ error: 'An error occurred while processing the request.' });
+            res.status(500).send({error: 'An error occurred while processing the request.'});
         }
     });
 
@@ -169,9 +166,10 @@ let frontendRoot = args.FrontendRoot || "./public/index.html"
 const backendPort = args.BackendPort || 29999
 const host = args.Host || "0.0.0.0"
 const noFrontend = args.NoFrontend || false
-if(noFrontend)
+if (noFrontend) {
     console.log("noFrontend mode")
     frontendRoot = null
+}
 
 console.log(__dirname)
 
