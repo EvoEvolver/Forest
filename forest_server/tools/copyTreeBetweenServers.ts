@@ -39,4 +39,4 @@ function main(host1, host2, treeId){
 
 const host1 = 'wss://treer.ai'
 const host2 = 'ws://0.0.0.0:29999'
-main(host1, host2, '123456')
+main(host1, host2, '291542531202716545479662584430023525144')

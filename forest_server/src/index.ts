@@ -165,12 +165,10 @@ const args = minimist(process.argv.slice(2));
 let frontendRoot = args.FrontendRoot || "./public/index.html"
 const backendPort = args.BackendPort || 29999
 const host = args.Host || "0.0.0.0"
-const noFrontend = args.NoFrontend || false
+const noFrontend = args.noFrontend
 if (noFrontend) {
-    console.log("noFrontend mode")
+    console.log("no frontend mode")
     frontendRoot = null
 }
-
-console.log(__dirname)
 
 main(backendPort, host, frontendRoot)
