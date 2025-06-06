@@ -100,7 +100,7 @@ export const GetNodeUrlButton = () => {
     const node = useContext(thisNodeContext);
     const nodeId = node.id;
     const tree = useAtomValue(treeAtom)
-    const treeId = tree.metadata.id
+    const treeId = tree.metadata.treeId
     let currentUrl = window.location.href;
     // remove all the query parameters
     currentUrl = currentUrl.split('?')[0];

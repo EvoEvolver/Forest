@@ -291,14 +291,10 @@ const sendToClient = (doc: WSSharedDoc, conn: WebSocket, m: Uint8Array) => {
 const pingTimeout = 30000
 
 
-export const setupWSConnection = (conn: WebSocket, req: IncomingMessage, {
-    docName = null,
-    gc = true
-}: any = {}) => {
-    docName = (req.url || '').slice(1).split('?')[0]
+export const setupWSConnection = (conn: WebSocket, req: IncomingMessage, options) => {
+    const {doc, gc}=options
     conn.binaryType = 'arraybuffer'
     // get doc, initialize if it does not exist yet
-    const doc = getYDoc(docName, gc)
     doc.conns.set(conn, new Set())
     // listen and reply to events
     conn.on('message', (message: ArrayBuffer) => messageListener(conn, doc, new Uint8Array(message)))

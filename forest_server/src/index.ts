@@ -4,7 +4,7 @@ import minimist from 'minimist'
 import http from 'http';
 import cors from 'cors';
 import {patchTree, ServerData} from "./nodeFactory";
-
+import { Doc } from 'yjs';
 import { WebSocketServer } from 'ws';
 // @ts-ignore
 import {setupWSConnection} from './y-websocket/utils.ts'
@@ -18,19 +18,39 @@ dotenv.config({
 
 // Import authentication middleware
 import { authenticateToken, requireAIPermission, AuthenticatedRequest } from './middleware/auth';
+import {applyUpdate, encodeStateAsUpdate} from "yjs";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY, // Make sure you use a secure method to store this
 });
 
+function check_and_upgrade(doc: Doc, treeId: string){
+    const metadata = doc.getMap("metadata");
+    if (!doc.getMap("metadata").has("version")) {
+        doc.getMap("metadata").set("version", "0.0.1");
+    }
+    if (!metadata.get("rootId")){
+        metadata.set("rootId", treeId);
+    }
+}
+
+
 function main(port: number, host: string, frontendRoot: string | null): void {
     const app = express();
     const server = http.createServer(app);
-    const wss = new WebSocketServer({ noServer: true })
-    //const docname = "forest"
+    const wss = new WebSocketServer({ noServer: true})
 
     wss.on('connection', (conn: any, req: any, opts: any)=>{
-        setupWSConnection(conn, req, opts)
+        console.log(req.url)
+        const treeId = (req.url || '').slice(1).split('?')[0]
+        const garbageCollect = true
+        const doc = getYDoc(treeId, garbageCollect)
+        // check if upgrade needed
+        check_and_upgrade(doc, treeId)
+        setupWSConnection(conn, req, {
+            doc: doc,
+            gc: garbageCollect
+        })
     })
 
     app.use(cors());
@@ -53,26 +73,37 @@ function main(port: number, host: string, frontendRoot: string | null): void {
         });
     }
 
-    app.put('/api/updateTree', (req, res) => {
+    app.put('/api/createTree', (req, res) => {
         const tree_patch = req.body.tree;
-        const treeId = req.body.tree_id;
+        const treeId = crypto.randomUUID();
+        const rootId = req.body.root_id;
         const doc = getYDoc(treeId)
         const nodeDict = doc.getMap("nodeDict")
         patchTree(nodeDict, tree_patch);
+        // update the metadata
+        const metadata = doc.getMap("metadata");
+        if (rootId) {
+            metadata.set("rootId", rootId);
+        }
+        metadata.set("version", "0.0.1");
         console.log("update tree", req.body.tree_id)
-        res.send("OK");
+        // send the new tree ID back to the client
+        res.json({ tree_id: treeId });
     });
 
-    app.get('/api/getTree', (req, res) => {
-        const treeId: string = req.query.tree_id as string
-        const ytreeJson = getYDoc(treeId).getMap("treeData").toJSON()
-        console.log("getTree", ytreeJson)
-        res.send(ytreeJson)
-    })
 
-    app.get('/api/alive', (_req, res) => {
-        res.send("OK")
-    })
+    app.put('/api/duplicateTree', (req, res) => {
+        const originTreeId = req.body.origin_tree_id;
+        const originDoc = getYDoc(originTreeId)
+        // generate a new document ID string using uuid
+        const newDocId = crypto.randomUUID();
+        const newDoc = getYDoc(newDocId)
+        const stateOrigin = encodeStateAsUpdate(originDoc)
+        applyUpdate(newDoc, stateOrigin);
+        // return the new document ID
+        res.json({ new_tree_id: newDocId });
+    });
+
 
     // Test endpoint for authentication - no auth required
     app.get('/api/test/public', (_req, res) => {

@@ -29,13 +29,16 @@ const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
 const wsUrl = `${wsProtocol}://${location.hostname}:${currentPort}`
 export const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort}`
 
-const setupYDoc = (setSelectedNodeId, setYjsProvider, addNodeToTree, ydoc, deleteNodeFromTree) => {
+const setupYDoc = (setTreeMetadata, setYjsProvider, addNodeToTree, ydoc, deleteNodeFromTree) => {
     const treeId = new URLSearchParams(window.location.search).get("id");
-    setSelectedNodeId(treeId)
+    //setSelectedNodeId(treeId)
     let wsProvider = new WebsocketProvider(wsUrl, treeId, ydoc)
     setYjsProvider(wsProvider)
     wsProvider.on('status', event => {
+        console.log("Server connected!")
     })
+    // Set up the metadata map
+    setTreeMetadata(ydoc.getMap("metadata").toJSON())
     let nodeDictyMap: YMap<YMap<any>> = ydoc.getMap("nodeDict")
     nodeDictyMap.observe((ymapEvent) => {
         ymapEvent.changes.keys.forEach((change, key) => {
@@ -53,9 +56,10 @@ const setupYDoc = (setSelectedNodeId, setYjsProvider, addNodeToTree, ydoc, delet
     })
 }
 
-const setToNodeInUrl = (ydoc, setSelectedNodeId) => {
-    const nodeId = new URLSearchParams(window.location.search).get("n");
+const initSelectedNode = (ydoc, setSelectedNodeId) => {
+    let nodeId = new URLSearchParams(window.location.search).get("n");
     const nodeDict = ydoc.getMap("nodeDict") as YMap<any>;
+    if (!nodeId) nodeId = ydoc.getMap("metadata").get("rootId") || null;
     if (!nodeId) return;
     // observe the nodeDict for changes
     const observer = (ymapEvent) => {
@@ -118,7 +122,6 @@ export default function App() {
     const addNodeToTree = useSetAtom(addNodeToTreeAtom)
     const deleteNodeFromTree = useSetAtom(deleteNodeFromTreeAtom)
     const setTreeMetadata = useSetAtom(setTreeMetadataAtom);
-    
     // Authentication state
     const [, setUser] = useAtom(userAtom)
     const [, setAuthToken] = useAtom(authTokenAtom)
@@ -149,10 +152,10 @@ export default function App() {
     useEffect(() => {
         document.body.style.overflow = 'hidden';
         setDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
-        setupYDoc(setSelectedNodeId, setYjsProvider, addNodeToTree, ydoc, deleteNodeFromTree);
-        setToNodeInUrl(ydoc, setSelectedNodeId);
+        setupYDoc(setTreeMetadata, setYjsProvider, addNodeToTree, ydoc, deleteNodeFromTree);
+        initSelectedNode(ydoc, setSelectedNodeId);
         setTreeMetadata({
-            id: new URLSearchParams(window.location.search).get("id")
+            treeId: new URLSearchParams(window.location.search).get("id")
         })
         let subscription
         if (supabase)
@@ -177,9 +180,6 @@ export default function App() {
                 <Grid item style={{width: "100%"}}>
                     <AppBar position="static">
                         <Toolbar variant="dense">
-                            <Typography variant="h6" component="div" sx={{marginRight: 3}}>
-                                Treer
-                            </Typography>
                             <Stack direction="row" spacing={2} sx={{ flexGrow: 1 }}>
                                 <Button
                                     color="inherit"
