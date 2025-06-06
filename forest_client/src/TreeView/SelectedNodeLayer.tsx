@@ -66,112 +66,13 @@ const NodeNaviButton = (props: {node: Node}) => {
     </div>
 }
 
-let mouseX = -1
-let mouseY = -1
 
 const SelectedNodeLayer = (props) => {
     const node: Node = useAtomValue(selectedNodeAtom)
     const [animate, setAnimate] = useState(false);
     const leaves = useAtomValue(listOfNodesForViewAtom)
-    const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom)
     const [currNodeInViewMiddle, setCurrNodeInViewMiddle] = useAtom(currNodeInViewMiddleAtom)
     const selectableColumnRef = useRef(null);
-
-    useEffect(() => {
-        let wheelTimeout = null;
-
-        const handleWheel = () => {
-            if (wheelTimeout) {
-                clearTimeout(wheelTimeout);
-            }
-
-            wheelTimeout = setTimeout(() => {
-                const targets = selectableColumnRef.current.querySelectorAll('[data-ref]');
-
-                let closestIndex = -1;
-
-                function isUnderMouse(target) {
-                    const rect = target.getBoundingClientRect();
-                    return (
-                        mouseX >= rect.left &&
-                        mouseX <= rect.right &&
-                        mouseY >= rect.top &&
-                        mouseY <= rect.bottom
-                    );
-                }
-
-                for (let i = 0; i < targets.length; i++) {
-                    const target = targets[i];
-                    if (isUnderMouse(target)) {
-                        closestIndex = i;
-                        break;
-                    }
-                }
-
-                if (closestIndex !== -1) {
-                    const nodeId = targets[closestIndex].getAttribute('data-index');
-                    if (nodeId !== node.id) {
-                        setCurrNodeInViewMiddle(() => nodeId);
-                        setSelectedNode(nodeId);
-                    }
-                }
-            }, 150);
-        };
-        if (selectableColumnRef.current){
-            selectableColumnRef.current.addEventListener('wheel', handleWheel);
-
-            selectableColumnRef.current.addEventListener('mousemove', (event) => {
-                mouseX = event.clientX; // Mouse X coordinate
-                mouseY = event.clientY;
-            })
-        }
-        return () => {
-            if (selectableColumnRef.current)
-                selectableColumnRef.current.removeEventListener('wheel', handleWheel);
-        };
-    }, []);
-
-
-    const scrollToTarget = (id) => {
-        if (currNodeInViewMiddle === id) {
-            return;
-        }
-        const targetElement = document.querySelector(`[data-index="${id}"]`);
-        if (targetElement) {
-            const parent = selectableColumnRef.current.parentElement.parentElement;
-            const parentRect = parent.getBoundingClientRect();
-            const elementRect = targetElement.getBoundingClientRect();
-            const scrollOffset = elementRect.top - parentRect.top - parentRect.height * 0.1 + parent.scrollTop;
-
-            // Scroll the parent to bring the element into view
-            parent.scrollTo({
-                top: scrollOffset,
-                behavior: 'instant'
-            });
-            // }
-        }
-    };
-
-
-    useEffect(() => {
-        setAnimate(true);
-        // Make sure we scroll to target after the page was fully loaded.
-        const scrollTimeoutId = setTimeout(() => {
-            if (node && currNodeInViewMiddle !== node.id)
-                scrollToTarget(node.id);
-        }, 0); // Delay scrollToTarget by 50ms
-
-        const animateTimeoutId = setTimeout(() => {
-            setAnimate(false);
-        }, 0);
-
-        // Clear both timeouts when the component unmounts or `node` changes
-        return () => {
-            clearTimeout(scrollTimeoutId);
-            clearTimeout(animateTimeoutId);
-        };
-    }, [node]);
-
 
     const [mobileMode, setMobileMode] = useState(false);
 

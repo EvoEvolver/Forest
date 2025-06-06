@@ -101,11 +101,11 @@ const EditorImpl = ({yXML, provider, dataLabel}) => {
             disableCollaboration()
         },
         onCreate: ({editor: currentEditor}) => {
-            provider.on('synced', () => {
+            /*provider.on('synced', () => {
                 if (currentEditor.isEmpty) {
                     currentEditor.commands.setContent("")
                 }
-            })
+            })*/
         },
         extensions: extensions,
     })
