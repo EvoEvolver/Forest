@@ -28,10 +28,9 @@ const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "
 const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
 const wsUrl = `${wsProtocol}://${location.hostname}:${currentPort}`
 export const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort}`
+const treeId = new URLSearchParams(window.location.search).get("id");
 
 const setupYDoc = (setTreeMetadata, setYjsProvider, addNodeToTree, ydoc, deleteNodeFromTree) => {
-    const treeId = new URLSearchParams(window.location.search).get("id");
-    //setSelectedNodeId(treeId)
     let wsProvider = new WebsocketProvider(wsUrl, treeId, ydoc)
     setYjsProvider(wsProvider)
     wsProvider.on('status', event => {
@@ -151,12 +150,16 @@ export default function App() {
 
     useEffect(() => {
         document.body.style.overflow = 'hidden';
-        setDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
-        setupYDoc(setTreeMetadata, setYjsProvider, addNodeToTree, ydoc, deleteNodeFromTree);
-        initSelectedNode(ydoc, setSelectedNodeId);
-        setTreeMetadata({
-            treeId: new URLSearchParams(window.location.search).get("id")
-        })
+        //setDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
+        // disable dark mode until we finish it
+        setDark(false)
+        if (treeId){
+            setupYDoc(setTreeMetadata, setYjsProvider, addNodeToTree, ydoc, deleteNodeFromTree);
+            initSelectedNode(ydoc, setSelectedNodeId);
+            setTreeMetadata({
+                treeId: treeId
+            })
+        }
         let subscription
         if (supabase)
            subscription = setupAuth(setSupabaseClient, setUser, setAuthToken, setUserPermissions);

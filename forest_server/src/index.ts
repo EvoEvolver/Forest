@@ -41,8 +41,13 @@ function main(port: number, host: string, frontendRoot: string | null): void {
     const wss = new WebSocketServer({ noServer: true})
 
     wss.on('connection', (conn: any, req: any, opts: any)=>{
-        console.log(req.url)
         const treeId = (req.url || '').slice(1).split('?')[0]
+        if (!treeId || treeId=="null"){
+            // refuse the connection
+            conn.close?.()
+            return
+        }
+        console.log("ws connected:", treeId)
         const garbageCollect = true
         const doc = getYDoc(treeId, garbageCollect)
         // check if upgrade needed
@@ -160,11 +165,12 @@ function main(port: number, host: string, frontendRoot: string | null): void {
 
 const args = minimist(process.argv.slice(2));
 // Access the port argument
-let frontendRoot = args.FrontendRoot || null
+let frontendRoot = args.FrontendRoot || "./public/index.html"
 const backendPort = args.BackendPort || 29999
 const host = args.Host || "0.0.0.0"
 const noFrontend = args.NoFrontend || false
 if(noFrontend)
+    console.log("noFrontend mode")
     frontendRoot = null
 
 console.log(__dirname)
