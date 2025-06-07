@@ -3,6 +3,8 @@ import {Atom, atom, PrimitiveAtom, WritableAtom} from 'jotai'
 import {Array as YArray, Map as YMap, Text as YText} from 'yjs'
 import {YDocAtom} from "./YjsConnection";
 import { RESET } from 'jotai/utils';
+import { v4 as uuidv4 } from 'uuid';
+import {updateChildrenCountAtom} from "./childrenCount";
 
 export interface TreeAtomData {
     metadata: {}
@@ -136,6 +138,8 @@ export const deleteNodeAtom = atom(null, (get, set, props: {nodeId: string}) => 
             set(selectedNodeIdAtom, parentId)
         }
     }
+
+    set(updateChildrenCountAtom, {});
 })
 
 /*
@@ -195,7 +199,7 @@ export const addNewNodeAtom = atom(null, (get, set, props: { parentId: string, p
     const parentNode = get(parentNodeAtom)
     const yArrayChildren = parentNode.ymapForNode.get("children")
     const newNode = {
-        id: crypto.randomUUID(),
+        id: uuidv4(),
         title: "new node",//new YText("new node"),
         parent: props.parentId,
         other_parents: [],
@@ -224,6 +228,8 @@ export const addNewNodeAtom = atom(null, (get, set, props: { parentId: string, p
         positionIdx = yArrayChildren.length // append to the end
     }
     yArrayChildren.insert(positionIdx, [newNode.id])
+
+    set(updateChildrenCountAtom, {});
 })
 
 export const addNodeToTreeAtom = atom(null, (get, set, yjsMapNode: YMap<any>) => {

@@ -22,7 +22,7 @@ import {CommentComponent, Comment} from "./EditorComponents/Comment/commentCompo
 // @ts-ignore
 const isDevMode = (import.meta.env.MODE === 'development');
 if (isDevMode) {
-    console.warn("this is dev mode");
+    console.warn("This is dev mode. Experimental features are enabled.");
 }
 
 interface TiptapEditorProps {

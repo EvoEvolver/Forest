@@ -1,16 +1,16 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {AppBar, Box, Button, Grid, Stack, Toolbar, Typography} from "@mui/material";
+import {AppBar, Box, Button, Grid, Stack, Toolbar} from "@mui/material";
 import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import {
     addNodeToTreeAtom,
+    authTokenAtom,
     darkModeAtom,
     deleteNodeFromTreeAtom,
     selectedNodeIdAtom,
     setTreeMetadataAtom,
+    supabaseClientAtom,
     userAtom,
-    authTokenAtom,
-    userPermissionsAtom,
-    supabaseClientAtom
+    userPermissionsAtom
 } from "./TreeState/TreeState";
 import TreeView from "./TreeView";
 import {WebsocketProvider} from 'y-websocket'
@@ -19,10 +19,11 @@ import {YDocAtom, YjsProviderAtom} from "./TreeState/YjsConnection";
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import ArticleIcon from '@mui/icons-material/Article';
 import LinearView from "./LinearView";
-import { supabase } from './supabase';
+import {supabase} from './supabase';
 import AuthButton from './components/AuthButton';
 import AuthModal from './components/AuthModal';
 import AuthSuccessPage from './components/AuthSuccessPage';
+import {updateChildrenCountAtom} from "./TreeState/childrenCount";
 
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
 const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
@@ -30,14 +31,17 @@ const wsUrl = `${wsProtocol}://${location.hostname}:${currentPort}`
 export const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort}`
 const treeId = new URLSearchParams(window.location.search).get("id");
 
-const setupYDoc = (setTreeMetadata, setYjsProvider, addNodeToTree, ydoc, deleteNodeFromTree) => {
+const setupYDoc = (setYjsProvider, addNodeToTree, ydoc, deleteNodeFromTree, observeSync) => {
     let wsProvider = new WebsocketProvider(wsUrl, treeId, ydoc)
     setYjsProvider(wsProvider)
     wsProvider.on('status', event => {
-        console.log("Server connected!")
+        console.log("Server connected!", event)
     })
-    // Set up the metadata map
-    setTreeMetadata(ydoc.getMap("metadata").toJSON())
+    wsProvider.on('sync', isSynced => {
+        if (isSynced) {
+            observeSync()
+        }
+    })
     let nodeDictyMap: YMap<YMap<any>> = ydoc.getMap("nodeDict")
     nodeDictyMap.observe((ymapEvent) => {
         ymapEvent.changes.keys.forEach((change, key) => {
@@ -121,6 +125,8 @@ export default function App() {
     const addNodeToTree = useSetAtom(addNodeToTreeAtom)
     const deleteNodeFromTree = useSetAtom(deleteNodeFromTreeAtom)
     const setTreeMetadata = useSetAtom(setTreeMetadataAtom);
+    const updateChildrenCount = useSetAtom(updateChildrenCountAtom);
+
     // Authentication state
     const [, setUser] = useAtom(userAtom)
     const [, setAuthToken] = useAtom(authTokenAtom)
@@ -134,7 +140,7 @@ export default function App() {
 
     // If on auth-success page, render only AuthSuccessPage
     if (isAuthSuccessPage) {
-        return <AuthSuccessPage />;
+        return <AuthSuccessPage/>;
     }
 
     const renderPage = () => {
@@ -153,8 +159,14 @@ export default function App() {
         //setDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
         // disable dark mode until we finish it
         setDark(false)
-        if (treeId){
-            setupYDoc(setTreeMetadata, setYjsProvider, addNodeToTree, ydoc, deleteNodeFromTree);
+        if (treeId) {
+            setupYDoc(setYjsProvider, addNodeToTree, ydoc, deleteNodeFromTree, () => {
+                const treeMetadata = ydoc.getMap("metadata").toJSON()
+                console.log('Yjs sync completed', treeMetadata)
+                // Set up the metadata map
+                setTreeMetadata(treeMetadata)
+                updateChildrenCount({});
+            })
             initSelectedNode(ydoc, setSelectedNodeId);
             setTreeMetadata({
                 treeId: treeId
@@ -162,10 +174,10 @@ export default function App() {
         }
         let subscription
         if (supabase)
-           subscription = setupAuth(setSupabaseClient, setUser, setAuthToken, setUserPermissions);
+            subscription = setupAuth(setSupabaseClient, setUser, setAuthToken, setUserPermissions);
         return () => {
             if (supabase)
-            subscription.unsubscribe()
+                subscription.unsubscribe()
         }
     }, []);
 
@@ -183,7 +195,7 @@ export default function App() {
                 <Grid item style={{width: "100%"}}>
                     <AppBar position="static">
                         <Toolbar variant="dense">
-                            <Stack direction="row" spacing={2} sx={{ flexGrow: 1 }}>
+                            <Stack direction="row" spacing={2} sx={{flexGrow: 1}}>
                                 <Button
                                     color="inherit"
                                     onClick={() => setCurrentPage('tree')}
@@ -199,9 +211,9 @@ export default function App() {
                                     <ArticleIcon/>
                                 </Button>
                             </Stack>
-                            
+
                             {/* Auth button in the top right */}
-                            {supabase && <AuthButton />}
+                            {supabase && <AuthButton/>}
                         </Toolbar>
                     </AppBar>
                 </Grid>
@@ -209,7 +221,7 @@ export default function App() {
                     {renderPage()}
                 </Grid>
             </Grid>
-            
+
             {/* Auth Modal */}
             {supabase && <AuthModal/>}
         </>

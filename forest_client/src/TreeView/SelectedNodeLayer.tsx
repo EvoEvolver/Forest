@@ -1,8 +1,8 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {Button, Card, Grid} from '@mui/material';
+import React, {useEffect, useState} from 'react';
+import {Card, Grid} from '@mui/material';
 import {Node} from "../entities";
 import './SelectedNodeLayer.css';
-import {atom, useAtom, useAtomValue, useSetAtom} from "jotai";
+import {useAtomValue, useSetAtom} from "jotai";
 import {
     darkModeAtom,
     listOfNodesForViewAtom,
@@ -12,13 +12,10 @@ import {
 } from "../TreeState/TreeState";
 import {NodeContentTabs} from "./NodeContentTab";
 import CardContent from "@mui/material/CardContent";
-import {NavigatorLayer, NavigatorButtons} from "./NavigatorLayer";
+import {NavigatorButtons, NavigatorLayer} from "./NavigatorLayer";
 
 
-const currNodeInViewMiddleAtom = atom<string>("")
-
-
-const NodeNaviButton = (props: {node: Node}) => {
+const NodeNaviButton = (props: { node: Node }) => {
 
     const setToNodeChildren = useSetAtom(setToNodeChildrenAtom)
     const setToNodeParent = useSetAtom(setToNodeParentAtom)
@@ -42,19 +39,18 @@ const NodeNaviButton = (props: {node: Node}) => {
             position: 'relative'
         }}
     >
-        {node.parent && <Button
-            class="hover-button"
+        {node.parent && <button
+            className={"hover-button"}
             onClick={() => onLeftBtn(node.id)}
             style={{
                 //align left
                 position: 'absolute',
                 left: '0',
-
             }}
         >←
-        </Button>}
-        {nodeChildren.length > 0 && <Button
-            class="hover-button"
+        </button>}
+        {nodeChildren.length > 0 && <button
+            className={"hover-button"}
             onClick={() => onRightBtn(node.id)}
             style={{
                 // align right
@@ -62,41 +58,36 @@ const NodeNaviButton = (props: {node: Node}) => {
                 right: '0',
             }}
         >→ <span style={{color: "#777777"}}>({node.data['children_count']} more)</span>
-        </Button>}
+        </button>}
     </div>
 }
 
 
 const SelectedNodeLayer = (props) => {
     const node: Node = useAtomValue(selectedNodeAtom)
-    const [animate, setAnimate] = useState(false);
     const leaves = useAtomValue(listOfNodesForViewAtom)
-    const [currNodeInViewMiddle, setCurrNodeInViewMiddle] = useAtom(currNodeInViewMiddleAtom)
-    const selectableColumnRef = useRef(null);
 
     const [mobileMode, setMobileMode] = useState(false);
 
     useEffect(() => {
-    const handleResize = () => {
-        if (window.innerWidth < 900) {
-            setMobileMode(true);
-        } else {
-            setMobileMode(false);
+        const handleResize = () => {
+            if (window.innerWidth < 800) {
+                setMobileMode(true);
+            } else {
+                setMobileMode(false);
+            }
         }
-    }
-    handleResize()
+        handleResize()
 
-    window.addEventListener("resize", handleResize);
+        window.addEventListener("resize", handleResize);
 
-    // Cleanup function to remove event listener
-    return () => window.removeEventListener("resize", handleResize);
+        // Cleanup function to remove event listener
+        return () => window.removeEventListener("resize", handleResize);
     }, []);
 
 
     const gridStyle = {
         height: "100%",
-        transition: animate ? 'opacity 0.5s ease-in' : 'none',
-        opacity: animate ? 0 : 1,
     }
 
 
@@ -115,13 +106,13 @@ const SelectedNodeLayer = (props) => {
                     </div>
                 </div>
             </Grid>}
-            <Grid item xs={mobileMode ? 12: 5} style={gridStyle}>
-            <NodeContentFrame sx={{}}>
-                <div ref={selectableColumnRef}>
-                    {leaves.map((n, index) =>
-                        <MiddleContents node={n} selected={n.id === node.id} key={index} index={index}/>)}
-                </div>
-            </NodeContentFrame>
+            <Grid item xs={mobileMode ? 12 : 5} style={gridStyle}>
+                <NodeContentFrame sx={{}}>
+                    <div>
+                        {leaves.map((n, index) =>
+                            <MiddleContents node={n} selected={n.id === node.id} key={index} index={index}/>)}
+                    </div>
+                </NodeContentFrame>
             </Grid>
             {!mobileMode && <Grid item style={gridStyle} xs={3.5} className={"hide-mobile"}>
                 <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
@@ -187,14 +178,14 @@ const NodeContentFrame = ({children, sx}) => {
         backgroundColor: dark ? '#3b3d3e' : '#f4f4f4'
     }
     return <>
-            <Card sx={{
-                ...sxDefault,
-                ...sx
-            }}>
-                <CardContent>
-                    {children}
-                </CardContent>
-            </Card>
+        <Card sx={{
+            ...sxDefault,
+            ...sx
+        }}>
+            <CardContent>
+                {children}
+            </CardContent>
+        </Card>
     </>
 }
 

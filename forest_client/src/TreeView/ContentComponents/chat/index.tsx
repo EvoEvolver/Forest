@@ -59,6 +59,9 @@ export function ChatViewImpl({sendMessage, messages,messageDisabled}) {
             let defaultUsername = `User${Math.floor(Math.random() * 1000)}`;
             setUsername(defaultUsername); // Default username
         }
+        return () => {
+            endRef.current = null
+        }
     }, []);
 
     const handleSend = () => {

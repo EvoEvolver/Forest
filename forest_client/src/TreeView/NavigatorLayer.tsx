@@ -18,12 +18,19 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 export const NavigatorItemsAtom = atom((get) => {
         const tree = get(treeAtom)
-        const selectedNode = get(selectedNodeAtom)
         let root: Node
-        for (let nodeId in tree.nodeDict) {
-            if (get(tree.nodeDict[nodeId]).parent == null) {
-                root = get(tree.nodeDict[nodeId])
-                break
+        if (tree.metadata.rootId){
+            // if rootId is set, use it to find the root node
+            root = get(tree.nodeDict[tree.metadata.rootId])
+        }
+        else {
+            console.warn("No rootId set in tree metadata, trying to find root node by parent == null. This may imply a bug.")
+            // find the root node
+            for (let nodeId in tree.nodeDict) {
+                if (get(tree.nodeDict[nodeId]).parent == null) {
+                    root = get(tree.nodeDict[nodeId])
+                    break
+                }
             }
         }
         if (!root) {
@@ -82,7 +89,6 @@ const expandedItemsAtom = atom([])
 export const NavigatorButtons = () => {
     const beforeJumpNodeTitle = useAtomValue(beforeJumpNodeTitleAtom)
     const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom)
-    const apiRef = useTreeViewApiRef();
     const lastSelectedNodeBeforeJumpId = useAtomValue(lastSelectedNodeBeforeJumpIdAtom)
     const currNodeAncestors = useAtomValue(ancestorStackNodesAtom)
     const [expandedItems, setExpandedItems] = useAtom(expandedItemsAtom)
