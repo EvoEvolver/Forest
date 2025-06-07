@@ -1,7 +1,6 @@
 import React, {useEffect, useState} from 'react';
-import {Card, Grid} from '@mui/material';
+import {Button, Card, Grid2 as Grid} from '@mui/material';
 import {Node} from "../entities";
-import './SelectedNodeLayer.css';
 import {useAtomValue, useSetAtom} from "jotai";
 import {
     darkModeAtom,
@@ -13,13 +12,16 @@ import {
 import {NodeContentTabs} from "./NodeContentTab";
 import CardContent from "@mui/material/CardContent";
 import {NavigatorButtons, NavigatorLayer} from "./NavigatorLayer";
-
+import {useTheme} from "@mui/system";
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
 const NodeNaviButton = (props: { node: Node }) => {
 
     const setToNodeChildren = useSetAtom(setToNodeChildrenAtom)
     const setToNodeParent = useSetAtom(setToNodeParentAtom)
     const nodeChildren = useAtomValue(props.node.children)
+    const theme = useTheme()
     const node = props.node;
 
     const onLeftBtn = (id) => {
@@ -39,26 +41,30 @@ const NodeNaviButton = (props: { node: Node }) => {
             position: 'relative'
         }}
     >
-        {node.parent && <button
-            className={"hover-button"}
+        {node.parent && <Button
+            variant="contained"
             onClick={() => onLeftBtn(node.id)}
             style={{
                 //align left
                 position: 'absolute',
                 left: '0',
+                width: "45%",
+                backgroundColor: theme.palette.primary.light
             }}
-        >←
-        </button>}
-        {nodeChildren.length > 0 && <button
-            className={"hover-button"}
+        ><ArrowBackIcon></ArrowBackIcon>
+        </Button>}
+        {nodeChildren.length > 0 && <Button
+            variant="contained"
             onClick={() => onRightBtn(node.id)}
             style={{
                 // align right
                 position: 'absolute',
                 right: '0',
+                width: "45%",
+                backgroundColor: theme.palette.primary.light
             }}
-        >→ <span style={{color: "#777777"}}>({node.data['children_count']} more)</span>
-        </button>}
+        ><ArrowForwardIcon></ArrowForwardIcon> <span>({node.data['children_count']} more)</span>
+        </Button>}
     </div>
 }
 
@@ -96,7 +102,7 @@ const SelectedNodeLayer = (props) => {
     }
     return (
         <Grid style={{height: "100%", width: "100%"}} container spacing={1}>
-            {!mobileMode && <Grid item xs={3.5} style={gridStyle}>
+            {!mobileMode && <Grid item size={3.5} style={gridStyle}>
                 <div style={{height: "100%"}}>
                     <div style={{height: "5%", width: "100%"}}><NavigatorButtons/></div>
                     <div style={{height: "95%", width: "100%"}}>
@@ -106,7 +112,7 @@ const SelectedNodeLayer = (props) => {
                     </div>
                 </div>
             </Grid>}
-            <Grid item xs={mobileMode ? 12 : 5} style={gridStyle}>
+            <Grid item size={mobileMode ? 12 : 5} style={gridStyle}>
                 <NodeContentFrame sx={{}}>
                     <div>
                         {leaves.map((n, index) =>
@@ -114,7 +120,7 @@ const SelectedNodeLayer = (props) => {
                     </div>
                 </NodeContentFrame>
             </Grid>
-            {!mobileMode && <Grid item style={gridStyle} xs={3.5} className={"hide-mobile"}>
+            {!mobileMode && <Grid item style={gridStyle} size={3.5} className={"hide-mobile"}>
                 <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
                     <div style={{flex: 0.9, height: '50%', marginBottom: '2%'}}>
                         <NodeContentFrame sx={{}}>
@@ -159,7 +165,6 @@ const MiddleContents = ({node, selected, index}: { node: Node, selected: boolean
                 node={node}
                 tabDict={node.tabs}
                 titleAtom={node.title}
-                //ref={props.contentRef}
             />
         </div>
         <NodeNaviButton node={node}/>

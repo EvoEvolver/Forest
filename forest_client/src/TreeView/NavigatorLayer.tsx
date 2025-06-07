@@ -104,19 +104,11 @@ export const NavigatorButtons = () => {
         })
     }
 
-    const buttonStyle = {
-        backgroundColor: "#e1eaf3",
-        color: "#000000",
-        '&:hover': {
-            backgroundColor: "#b4d3ee",
-        },
-        margin: "1px",
-    }
 
     return <>
-        <Button sx={buttonStyle} onClick={handleFold}><UnfoldLessIcon/></Button>
+        <Button variant="contained" onClick={handleFold}><UnfoldLessIcon/></Button>
         {lastSelectedNodeBeforeJumpId != "" && lastSelectedNodeBeforeJumpId != selectedNode.id &&
-            <Button sx={buttonStyle} onClick={handleGoBack}><ArrowBackIcon/>{beforeJumpNodeTitle}</Button>}
+            <Button variant="contained" onClick={handleGoBack}><ArrowBackIcon/>{beforeJumpNodeTitle}</Button>}
     </>;
 }
 

@@ -1,5 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {AppBar, Box, Button, Grid, Stack, Toolbar} from "@mui/material";
+import {AppBar, Box, Button, Grid2 as Grid, Stack, Toolbar} from "@mui/material";
+import { ThemeProvider, createTheme } from '@mui/material/styles';
 import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import {
     addNodeToTreeAtom,
@@ -24,7 +25,9 @@ import AuthButton from './components/AuthButton';
 import AuthModal from './components/AuthModal';
 import AuthSuccessPage from './components/AuthSuccessPage';
 import {updateChildrenCountAtom} from "./TreeState/childrenCount";
+import {themeOptions} from "./theme";
 
+const isDevMode = (import.meta.env.MODE === 'development');
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
 const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
 const wsUrl = `${wsProtocol}://${location.hostname}:${currentPort}`
@@ -183,6 +186,7 @@ export default function App() {
 
     return (
         <>
+            <ThemeProvider theme={themeOptions}>
             <Grid container
                   style={{
                       width: "100%",
@@ -224,6 +228,7 @@ export default function App() {
 
             {/* Auth Modal */}
             {supabase && <AuthModal/>}
+            </ThemeProvider>
         </>
     );
 }

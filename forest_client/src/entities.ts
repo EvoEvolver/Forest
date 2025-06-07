@@ -1,13 +1,5 @@
 import {PrimitiveAtom} from "jotai";
-
-export type NodeDict = Record<string, Node>
 import { Map } from "yjs";
-
-export interface TreeData {
-    selectedNode: string
-    metadata: {}
-    nodeDict: NodeDict
-}
 
 type Tabs = { [key: string]: string }
 

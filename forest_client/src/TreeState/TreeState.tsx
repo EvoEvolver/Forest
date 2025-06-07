@@ -11,7 +11,7 @@ export interface TreeAtomData {
     nodeDict: Record<string, Atom<Node>>
 }
 
-export const treeAtom = atom(
+export const treeAtom: PrimitiveAtom<TreeAtomData> = atom(
     {
         metadata: {
         },
