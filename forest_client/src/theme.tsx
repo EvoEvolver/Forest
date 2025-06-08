@@ -4,8 +4,8 @@ const normalTheme = {
   palette: {
     mode: 'light',
     primary: {
-      main: '#6696bf',
-      light: 'rgba(46,117,182,0.84)',
+      main: '#4e89c0',
+      light: '#6696bf',
     },
     secondary: {
       main: '#ff9e80',
@@ -27,4 +27,4 @@ const devTheme = {
 }
 
 
-export const themeOptions: ThemeOptions = createTheme(isDevMode? devTheme : normalTheme)
+export const themeOptions: ThemeOptions = createTheme(isDevMode? normalTheme : normalTheme)
