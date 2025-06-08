@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import * as jwt from 'jsonwebtoken';
 const isDevelopment = process.env.NODE_ENV === 'development';
+// disable authentication before we finish the login flow
+const noAuthRequired = true
 
 // Interface for JWT claims from Supabase
 interface SupabaseJWTClaims {
@@ -31,7 +33,7 @@ export interface AuthenticatedRequest extends Request {
 export const authenticateToken = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
   try {
     // Always grant permission in development mode
-    if (isDevelopment) {
+    if (isDevelopment || noAuthRequired) {
       console.log('⚠️ Development mode: AI permission automatically granted');
       req.user = {
         id: 'dev-user',
