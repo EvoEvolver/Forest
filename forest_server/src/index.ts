@@ -6,9 +6,7 @@ import cors from 'cors';
 import {patchTree, ServerData} from "./nodeFactory";
 import {applyUpdate, Doc, encodeStateAsUpdate} from 'yjs';
 import {WebSocketServer} from 'ws';
-// @ts-ignore
-// @ts-ignore
-import {getYDoc, setupWSConnection} from './y-websocket/utils.ts'
+import {getYDoc, setupWSConnection} from './y-websocket/utils'
 import OpenAI from 'openai';
 import * as dotenv from 'dotenv'
 // Import authentication middleware

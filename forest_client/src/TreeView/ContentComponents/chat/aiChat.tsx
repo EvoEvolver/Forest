@@ -5,6 +5,7 @@ import {httpUrl} from "../../../App";
 import {XmlFragment, XmlText, XmlElement} from "yjs";
 import { useAtomValue, useSetAtom } from "jotai";
 import { authTokenAtom, isAuthenticatedAtom, authModalOpenAtom } from "../../../TreeState/TreeState";
+const devMode = import.meta.env.MODE === 'development'; // Check if in development mode
 
 interface Message {
     content: string;
@@ -57,7 +58,7 @@ async function fetchChatResponse(messages: Message[], authToken: string | null) 
     }
 
     // Check authentication before making API call
-    if (!authToken) {
+    if ((!authToken) && (!devMode)) {
         throw new Error("AUTHENTICATION_REQUIRED");
     }
 
@@ -126,11 +127,7 @@ export const AiChat: React.FC = (props) => {
             if (editor) {
                 const editorContent = editor.getHTML();
                 editorContentPrompt =  `
-You are an AI writing assistant who help the user to write an article in an editor. 
-
-You are required to directly output the content the user required based on what the user has input. 
-You output should be wrapped by <editor_content> tags. 
-You output should have a similar style of html to the editor content provided by the user.
+You are an AI writing assistant who answers questions about a paper manuscript that is being edited. 
 
 The user has provided the following content in the editor: 
 <editor_content>${editorContent}</editor_content>
@@ -152,15 +149,15 @@ The user has provided the following content in the editor:
                 time: new Date().toISOString()
             };
 
-            setMessages(prevMessages => []);
+            setMessages(prevMessages => [...prevMessages, assistantMessage]);
 
-            if (editor && response) {
+            /*if (editor && response) {
                 const editorContentMatch = response.match(/<editor_content>([\s\S]*?)<\/editor_content>/);
                 const parser = new DOMParser()
                 const xmlDoc = parser.parseFromString("<div>[AI generated]"+editorContentMatch[1]+"</div>", 'text/xml')
                 console.log(xmlDoc)
                 editor.commands.insertContent(xmlDoc.documentElement.innerHTML, false);
-            }
+            }*/
         } catch (error) {
             // Handle authentication and permission errors
             let errorMessage = "An error occurred while processing your request.";
@@ -173,7 +170,8 @@ The user has provided the following content in the editor:
             } else if (error.message.startsWith("HTTP_ERROR_")) {
                 errorMessage = `Server error: ${error.message}`;
             } else {
-                errorMessage = `Network error: ${error.message}`;
+                //errorMessage = `Network error: ${error.message}`;
+                throw error; // Re-throw to handle in component
             }
 
             // Add error message to chat

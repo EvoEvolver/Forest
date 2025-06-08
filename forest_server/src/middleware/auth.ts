@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as jwt from 'jsonwebtoken';
+const isDevelopment = process.env.NODE_ENV === 'development';
 
 // Interface for JWT claims from Supabase
 interface SupabaseJWTClaims {
@@ -29,6 +30,17 @@ export interface AuthenticatedRequest extends Request {
  */
 export const authenticateToken = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
   try {
+    // Always grant permission in development mode
+    if (isDevelopment) {
+      console.log('⚠️ Development mode: AI permission automatically granted');
+      req.user = {
+        id: 'dev-user',
+        email: 'dev-user@test.com',
+        role: 'authenticated'
+      };
+      next();
+      return;
+    }
     // Get JWT secret from environment
     const jwtSecret = process.env.SUPABASE_JWT_SECRET;
     
@@ -104,11 +116,11 @@ export const requireAIPermission = (req: AuthenticatedRequest, res: Response, ne
   // For now, all authenticated users can use AI
   // This can be extended to check user subscription, role, usage limits, etc.
   const hasAIPermission = true; // Future: check user subscription/permissions
-  
+
   if (!hasAIPermission) {
-    res.status(403).json({ 
-      error: 'AI access not available', 
-      message: 'Please upgrade your subscription to use AI features' 
+    res.status(403).json({
+      error: 'AI access not available',
+      message: 'Please upgrade your subscription to use AI features'
     });
     return;
   }
