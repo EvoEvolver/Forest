@@ -8,6 +8,7 @@ import {
     MoveNodeButtons
 } from "../treeOperations";
 import {AiChat} from "../chat/aiChat";
+import {TodoApp} from "../todoList";
 
 
 export const PaperEditorMain = (props) => {
@@ -21,9 +22,7 @@ const tools=[{"Operations":"<PaperEditorSide1/>"},{"AI assistant": "<PaperEditor
 
 export const PaperEditorSide1 = (props) => {
     return <>
-        <AddChildrenButton tabs={tabs} tools={tools}/>
-        <DeleteNodeButton/><AddSiblingButton tabs={tabs} tools={tools}/>
-        <MoveNodeButtons/><GetNodeUrlButton/>
+        <TodoApp/>
     </>
 }
 

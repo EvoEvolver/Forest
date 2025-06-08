@@ -1,54 +1,115 @@
 import React from 'react';
-import { TextField, Button, List, ListItem, ListItemText, Container, Typography, Paper, Checkbox } from '@mui/material';
-import { atom, useAtom } from 'jotai';
+import { TextField, Button, List, ListItem, ListItemText, Checkbox } from '@mui/material';
+import { Array as YArray } from 'yjs';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { thisNodeContext } from "../NodeContentTab";
 
-const todosAtom = atom([]);
 
-export default function TodoApp() {
-  const [todos, setTodos] = useAtom(todosAtom);
-  const [input, setInput] = React.useState('');
+interface Todo {
+    text: string;
+    id: number;
+    done: boolean;
+}
 
-  const addTodo = () => {
-    if (input.trim()) {
-      setTodos([...todos, { text: input, id: Date.now(), done: false }]);
-      setInput('');
+export function TodoApp() {
+    const node = React.useContext(thisNodeContext);
+    let yList = node.ydata.get("todolist");
+    if (!yList) {
+        yList = new YArray();
+        node.ydata.set("todolist", yList);
     }
-  };
 
-  const toggleDone = (id) => {
-    setTodos(todos.map(todo => todo.id === id ? { ...todo, done: !todo.done } : todo));
-  };
+    const [todos, setTodos] = React.useState<Todo[]>([]);
+    const [input, setInput] = React.useState('');
 
-  const sortedTodos = [...todos].sort((a, b) => a.done - b.done);
+    // Subscribe to changes in the yList
+    React.useEffect(() => {
+        const observer = () => {
+            setTodos(yList.toArray());
+        };
 
-  return (
-    <Container maxWidth="sm">
-      <Typography variant="h4" gutterBottom align="center">Todo List</Typography>
-      <Paper style={{ padding: 16, marginBottom: 16 }}>
-        <TextField
-          label="New Todo"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          fullWidth
-        />
-        <Button variant="contained" color="primary" onClick={addTodo} fullWidth style={{ marginTop: 8 }}>
-          Add
-        </Button>
-      </Paper>
-      <List>
-        {sortedTodos.map((todo) => (
-          <ListItem key={todo.id} divider>
-            <Checkbox
-              checked={todo.done}
-              onChange={() => toggleDone(todo.id)}
+        yList.observe(observer);
+        // Initial load
+        setTodos(yList.toArray());
+
+        return () => {
+            yList.unobserve(observer);
+        };
+    }, [yList]);
+
+    const addTodo = () => {
+        if (input.trim()) {
+            const newTodo = { text: input.trim(), id: Date.now(), done: false };
+            yList.insert(0, [newTodo]);
+            setInput('');
+        }
+    };
+
+    const toggleDone = (id: number) => {
+        const index = yList.toArray().findIndex(todo => todo.id === id);
+        if (index !== -1) {
+            const todo = yList.get(index);
+            yList.delete(index);
+            yList.insert(index, [{...todo, done: !todo.done}]);
+        }
+    };
+
+    const deleteTodo = (id: number) => {
+        const index = yList.toArray().findIndex(todo => todo.id === id);
+        if (index !== -1) {
+            yList.delete(index);
+        }
+    };
+
+    const sortedTodos = [...todos].sort((a, b) => Number(a.done) - Number(b.done));
+
+    return (
+        <div style={{marginTop:"20px"}}>
+            <TextField
+                label="New Todo"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                fullWidth
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                        addTodo();
+                    }
+                }}
+                autoComplete="off"
+                placeholder="Press Enter to add"
             />
-            <ListItemText
-              primary={todo.text}
-              style={{ textDecoration: todo.done ? 'line-through' : 'none' }}
-            />
-          </ListItem>
-        ))}
-      </List>
-    </Container>
-  );
+            <List>
+                {sortedTodos.map((todo) => (
+                    <ListItem
+                        key={todo.id}
+                        divider
+                        secondaryAction={
+                            <Button
+                                size="small"
+                                variant="outlined"
+                                sx={{
+                                    minWidth: '36px',
+                                    width: '36px',
+                                    height: '36px',
+                                    borderRadius: '50%',
+                                    padding: 0
+                                }}
+                            >
+                                <DeleteIcon onClick={() => deleteTodo(todo.id)} fontSize="small"/>
+                            </Button>
+                        }
+                    >
+                        <Checkbox
+                            checked={todo.done}
+                            onChange={() => toggleDone(todo.id)}
+                        />
+                        <ListItemText
+                            primary={todo.text}
+                            style={{ textDecoration: todo.done ? 'line-through' : 'none' }}
+                        />
+                    </ListItem>
+                ))}
+            </List>
+        </div>
+    );
 }
