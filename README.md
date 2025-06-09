@@ -15,6 +15,7 @@ Then, install the dependencies:
 
 ```bash
 pip install -r requirements.txt
+pip install -e .   #to install forest
 pnpm i
 ```
 
