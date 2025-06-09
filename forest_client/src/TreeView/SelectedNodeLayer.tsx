@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {Card, Grid2 as Grid} from '@mui/material';
 import {Node} from "../entities";
 import {useAtomValue, useSetAtom} from "jotai";
-import {darkModeAtom, listOfNodesForViewAtom, selectedNodeAtom} from "../TreeState/TreeState";
+import {listOfNodesForViewAtom, selectedNodeAtom} from "../TreeState/TreeState";
 import {NodeContentTabs} from "./NodeContentTab";
 import CardContent from "@mui/material/CardContent";
 import {NavigatorButtons, NavigatorLayer} from "./NavigatorLayer";
@@ -113,14 +113,13 @@ const MiddleContents = ({node, selected, index}: { node: Node, selected: boolean
 
 
 const NodeContentFrame = ({children, sx}) => {
-    const dark = useAtomValue(darkModeAtom)
     const sxDefault = {
         width: "100%",
         height: "100%",
         overflowY: 'auto',
         overflowX: 'hidden',
         wordBreak: "break-word",
-        backgroundColor: dark ? '#3b3d3e' : '#f4f4f4'
+        backgroundColor: '#f4f4f4'
     }
     return <>
         <Card sx={{

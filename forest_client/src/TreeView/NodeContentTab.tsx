@@ -8,7 +8,6 @@ import TabPanel from "@mui/lab/TabPanel";
 import Typography from "@mui/material/Typography";
 import {envComponentAtom} from "./ContentComponents";
 import {useAtomValue} from "jotai";
-import {darkModeAtom} from "../TreeState/TreeState";
 import {Node} from "../entities"
 
 export const thisNodeContext: Context<Node> = createContext(null)
@@ -16,7 +15,6 @@ export const thisNodeContext: Context<Node> = createContext(null)
 
 const renderTabs = (tabs, node) => {
     const [value, setValue] = React.useState('0');
-    const dark = useAtomValue(darkModeAtom);
     const handleChange = (event, newValue) => setValue(newValue);
     const envComponent = useAtomValue(envComponentAtom)
 
@@ -34,13 +32,13 @@ const renderTabs = (tabs, node) => {
     if (!tabs) return <></>
     return <>
         <TabContext value={value}>
-            <Box sx={{borderBottom: 0, borderColor: 'divider'}}>
-                <TabList onChange={handleChange}>
+            {tabs.length>1&&<Box sx={{borderBottom: 0, borderColor: 'divider'}}>
+                {<TabList onChange={handleChange}>
                     {Object.keys(tabs).map((tab, i) => (
-                        <Tab style={{color: dark ? 'white' : ''}} key={i} label={tab} value={i.toString()}/>
+                        <Tab key={i} label={tab} value={i.toString()}/>
                     ))}
-                </TabList>
-            </Box>
+                </TabList>}
+            </Box>}
             {Object.keys(tabs).map((tab, i) => (
                 <TabPanel key={i} value={i.toString()} sx={{padding: "5px 10px"}}>
                     <Box sx={{overflowX: "auto", fontFamily: 'Verdana, sans-serif'}}>
@@ -56,7 +54,6 @@ import { useState } from "react";
 import TextField from "@mui/material/TextField";
 
 export const NodeContentTabs = ({node, tabDict, titleAtom}) => {
-    const dark = useAtomValue(darkModeAtom);
     const [isEditing, setIsEditing] = useState(false);
     let title
     if (titleAtom){
@@ -119,7 +116,6 @@ export const NodeContentTabs = ({node, tabDict, titleAtom}) => {
                         autoFocus
                         sx={{
                             '& .MuiInputBase-input': {
-                                color: dark ? 'white' : 'black',
                                 fontSize: '1.5rem',
                                 fontWeight: 400,
                                 lineHeight: 1.334,
@@ -130,7 +126,6 @@ export const NodeContentTabs = ({node, tabDict, titleAtom}) => {
                 ) : (
                     <Typography
                         variant="h5"
-                        style={{color: dark ? 'white' : 'black'}}
                         onDoubleClick={handleDoubleClick}
                     >
                         {title}

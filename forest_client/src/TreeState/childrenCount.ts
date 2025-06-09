@@ -5,7 +5,7 @@ export const updateChildrenCountAtom = atom(null, (get, set, props) => {
     const currTree = get(treeAtom)
     if (!currTree)
         return
-    console.log("Count children")
+    //console.log("Count children")
     const nodeDict = currTree.nodeDict
     for (let nodeAtom of Object.values(nodeDict)){
         let node = get(nodeAtom);

@@ -3,7 +3,6 @@ import {RichTreeView} from '@mui/x-tree-view/RichTreeView';
 import {atom, useAtomValue} from "jotai/index";
 import {
     ancestorStackNodesAtom,
-    darkModeAtom,
     jumpToNodeAtom,
     lastSelectedNodeBeforeJumpIdAtom,
     selectedNodeAtom,
@@ -113,7 +112,6 @@ export const NavigatorButtons = () => {
 }
 
 export const NavigatorLayer = () => {
-    const dark = useAtomValue(darkModeAtom)
     const currNodeAncestors = useAtomValue(ancestorStackNodesAtom)
     const navigatorItems = useAtomValue(NavigatorItemsAtom)
     const [expandedItems, setExpandedItems] = useAtom(expandedItemsAtom)
