@@ -1,6 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {AppBar, Box, Button, Grid2 as Grid, Stack, Toolbar} from "@mui/material";
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import {AppBar, Box, Button, Stack, Toolbar} from "@mui/material";
+import {ThemeProvider} from '@mui/material/styles';
 import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import {
     addNodeToTreeAtom,
@@ -219,43 +219,47 @@ export default function App() {
     return (
         <>
             <ThemeProvider theme={themeOptions}>
-            <Grid container
-                  style={{
-                      width: "100%",
-                      height: "100vh",
-                  }}>
-                <Grid item style={{width: "100%"}}>
-                    <AppBar position="static">
-                        <Toolbar variant="dense">
-                            <Stack direction="row" spacing={2} sx={{flexGrow: 1}}>
-                                <Button
-                                    color="inherit"
-                                    onClick={() => setCurrentPage('tree')}
-                                    variant={currentPage === 'tree' ? 'outlined' : 'text'}
-                                >
-                                    <AccountTreeIcon/>
-                                </Button>
-                                <Button
-                                    color="inherit"
-                                    onClick={() => setCurrentPage('linear')}
-                                    variant={currentPage === 'second' ? 'outlined' : 'text'}
-                                >
-                                    <ArticleIcon/>
-                                </Button>
-                            </Stack>
+                <Box sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    width: '100%',
+                    height: '100vh'
+                }}>
+                    <Box sx={{width: '100%'}}>
+                        <AppBar position="static">
+                            <Toolbar variant="dense">
+                                <Stack direction="row" spacing={2} sx={{flexGrow: 1}}>
+                                    <Button
+                                        color="inherit"
+                                        onClick={() => setCurrentPage('tree')}
+                                        variant={currentPage === 'tree' ? 'outlined' : 'text'}
+                                    >
+                                        <AccountTreeIcon/>
+                                    </Button>
+                                    <Button
+                                        color="inherit"
+                                        onClick={() => setCurrentPage('linear')}
+                                        variant={currentPage === 'second' ? 'outlined' : 'text'}
+                                    >
+                                        <ArticleIcon/>
+                                    </Button>
+                                </Stack>
 
-                            {/* Auth button in the top right */}
-                            {supabase && <AuthButton/>}
-                        </Toolbar>
-                    </AppBar>
-                </Grid>
-                <Grid item style={{height: "calc(100% - 48px)", boxSizing: "border-box"}}>
-                    {renderPage()}
-                </Grid>
-            </Grid>
+                                {/* Auth button in the top right */}
+                                {supabase && <AuthButton/>}
+                            </Toolbar>
+                        </AppBar>
+                    </Box>
+                    <Box sx={{
+                        height: 'calc(100% - 48px)',
+                        boxSizing: 'border-box'
+                    }}>
+                        {renderPage()}
+                    </Box>
+                </Box>
 
-            {/* Auth Modal */}
-            {supabase && <AuthModal/>}
+                {/* Auth Modal */}
+                {supabase && <AuthModal/>}
             </ThemeProvider>
         </>
     );
