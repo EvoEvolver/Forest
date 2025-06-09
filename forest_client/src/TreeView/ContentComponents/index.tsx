@@ -4,7 +4,7 @@ import Tooltip from "@mui/material/Tooltip";
 import TiptapEditor from "./editor";
 import {AddChildrenButton, AddSiblingButton, GetNodeUrlButton, MoveNodeButtons} from "./treeOperations";
 import ChatView from "./chat";
-import {Code, Expandable, FigureBox, NodeNavigator, TeX, TextSpan} from "./inline";
+import {Code, Expandable, FigureBox, HTMLContent, NodeNavigator, TeX, TextSpan} from "./inline";
 import {PaperEditorMain, PaperEditorSide1, PaperEditorSide2} from "./integrated/paperEditor";
 
 export const envComponentAtom = atom({
@@ -24,5 +24,6 @@ export const envComponentAtom = atom({
     ChatView,
     PaperEditorMain,
     PaperEditorSide1,
-    PaperEditorSide2
+    PaperEditorSide2,
+    HTMLContent
 })

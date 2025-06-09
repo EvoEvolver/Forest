@@ -60,3 +60,9 @@ export const TextSpan = (props) => {
         <span>{props.text}</span>
     );
 }
+
+export const HTMLContent = (props) => {
+    return (
+        <span dangerouslySetInnerHTML={{__html: props.html}}/>
+    );
+}
