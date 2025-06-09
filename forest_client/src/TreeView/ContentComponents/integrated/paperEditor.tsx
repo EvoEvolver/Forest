@@ -1,12 +1,5 @@
 import React from "react";
 import TiptapEditor from "../editor";
-import {
-    AddChildrenButton,
-    AddSiblingButton,
-    DeleteNodeButton,
-    GetNodeUrlButton,
-    MoveNodeButtons
-} from "../treeOperations";
 import {AiChat} from "../chat/aiChat";
 import {TodoApp} from "../todoList";
 
@@ -18,7 +11,7 @@ export const PaperEditorMain = (props) => {
 }
 
 const tabs = {"content": `<PaperEditorMain/>`}
-const tools=[{"Operations":"<PaperEditorSide1/>"},{"AI assistant": "<PaperEditorSide2/>"}]
+const tools = [{"Operations": "<PaperEditorSide1/>"}, {"AI assistant": "<PaperEditorSide2/>"}]
 
 export const PaperEditorSide1 = (props) => {
     return <>
