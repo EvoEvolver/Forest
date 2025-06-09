@@ -4,7 +4,8 @@ import {ChatViewImpl} from "./index";
 import {httpUrl} from "../../../App";
 import {XmlFragment, XmlText, XmlElement} from "yjs";
 import { useAtomValue, useSetAtom } from "jotai";
-import { authTokenAtom, isAuthenticatedAtom, authModalOpenAtom } from "../../../TreeState/TreeState";
+
+import {authModalOpenAtom, authTokenAtom, isAuthenticatedAtom} from "../../../components/authStates";
 const devMode = import.meta.env.MODE === 'development'; // Check if in development mode
 
 interface Message {

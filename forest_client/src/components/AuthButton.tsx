@@ -11,14 +11,8 @@ import {
 } from '@mui/material'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import LogoutIcon from '@mui/icons-material/Logout'
-import {
-  userAtom,
-  isAuthenticatedAtom,
-  authModalOpenAtom,
-  authTokenAtom,
-  userPermissionsAtom
-} from '../TreeState/TreeState'
 import { supabase } from '../supabase'
+import {authModalOpenAtom, authTokenAtom, isAuthenticatedAtom, userAtom, userPermissionsAtom} from "./authStates";
 
 const AuthButton: React.FC = () => {
   const user = useAtomValue(userAtom)

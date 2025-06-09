@@ -13,7 +13,8 @@ import CloseIcon from '@mui/icons-material/Close'
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { supabase } from '../supabase'
-import { authModalOpenAtom } from '../TreeState/TreeState'
+
+import {authModalOpenAtom} from "./authStates";
 
 const AuthModal: React.FC = () => {
   const [authModalOpen, setAuthModalOpen] = useAtom(authModalOpenAtom)

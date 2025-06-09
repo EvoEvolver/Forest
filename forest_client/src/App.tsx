@@ -4,14 +4,10 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import {
     addNodeToTreeAtom,
-    authTokenAtom,
     darkModeAtom,
     deleteNodeFromTreeAtom,
     selectedNodeIdAtom,
-    setTreeMetadataAtom,
-    supabaseClientAtom,
-    userAtom,
-    userPermissionsAtom
+    setTreeMetadataAtom
 } from "./TreeState/TreeState";
 import TreeView from "./TreeView";
 import {WebsocketProvider} from 'y-websocket'
@@ -26,6 +22,7 @@ import AuthModal from './components/AuthModal';
 import AuthSuccessPage from './components/AuthSuccessPage';
 import {updateChildrenCountAtom} from "./TreeState/childrenCount";
 import {themeOptions} from "./theme";
+import {authTokenAtom, supabaseClientAtom, userAtom, userPermissionsAtom} from "./components/authStates";
 
 const isDevMode = (import.meta.env.MODE === 'development');
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
@@ -191,10 +188,6 @@ export default function App() {
                   style={{
                       width: "100%",
                       height: "100vh",
-                      display: "flex",
-                      flexDirection: "column",
-                      flex: "1 1 100%",
-                      boxSizing: "border-box"
                   }}>
                 <Grid item style={{width: "100%"}}>
                     <AppBar position="static">
