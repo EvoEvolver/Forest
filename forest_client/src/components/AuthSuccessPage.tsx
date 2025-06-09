@@ -1,10 +1,30 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Box, Typography, Button, Container, Paper, Stack } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CloseIcon from '@mui/icons-material/Close'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import { supabase } from '../supabase'
 
 const AuthSuccessPage: React.FC = () => {
+  // Handle authentication on this page
+  useEffect(() => {
+    const handleAuthCallback = async () => {
+      try {
+        // This ensures the session is properly handled even on this page
+        const { data: { session }, error } = await supabase.auth.getSession()
+        if (error) {
+          console.error('Error getting session on auth success page:', error)
+        } else if (session) {
+          console.log('Session confirmed on auth success page:', session.user.email)
+        }
+      } catch (error) {
+        console.error('Error handling auth callback:', error)
+      }
+    }
+    
+    handleAuthCallback()
+  }, [])
+
   const handleCloseWindow = () => {
     try {
       window.close()

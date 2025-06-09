@@ -11,9 +11,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
         auth: {
             autoRefreshToken: true,
             persistSession: true,
-            detectSessionInUrl: true
+            detectSessionInUrl: true,
+            storage: window.localStorage,
+            storageKey: 'treer_supabase_auth_token',
+            flowType: 'pkce'
         }
     })
+    
+    if (import.meta.env.MODE === 'development') {
+        console.log('Supabase client initialized with session persistence enabled')
+    }
 }
 
 

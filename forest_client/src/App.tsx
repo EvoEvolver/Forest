@@ -84,8 +84,42 @@ function setupAuth(setSupabaseClient, setUser, setAuthToken, setUserPermissions)
     // Initialize Supabase client in atom
     setSupabaseClient(supabase)
 
+    // Get current session on app startup (CRITICAL for session restoration)
+    const initializeSession = async () => {
+        try {
+            const { data: { session }, error } = await supabase.auth.getSession()
+            if (error) {
+                console.error('Error getting session:', error)
+                return
+            }
+            
+            if (session) {
+                console.log('Restoring existing session:', session.user.email)
+                // Restore existing session
+                setUser({
+                    id: session.user.id,
+                    email: session.user.email || '',
+                    ...session.user.user_metadata
+                })
+                setAuthToken(session.access_token)
+                setUserPermissions({
+                    canUseAI: true,
+                    canUploadFiles: true,
+                    maxFileSize: 10,
+                })
+            }
+        } catch (error) {
+            console.error('Error initializing session:', error)
+        }
+    }
+    
+    // Initialize session immediately
+    initializeSession()
+
     // Set up auth state change listener
     const {data: {subscription}} = supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email)
+        
         if (session) {
             // User is signed in
             setUser({
@@ -136,7 +170,8 @@ export default function App() {
     const [currentPage, setCurrentPage] = useState('tree');
 
     // Check if current URL is auth-success route
-    const isAuthSuccessPage = window.location.pathname === '/auth-success';
+   // const isAuthSuccessPage = window.location.pathname === '/auth-success';
+    const isAuthSuccessPage = window.location.pathname.includes('/auth-success');
 
     // If on auth-success page, render only AuthSuccessPage
     if (isAuthSuccessPage) {
