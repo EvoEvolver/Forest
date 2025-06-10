@@ -1,4 +1,4 @@
-import {Node} from "../entities";
+import {Node} from "../TreeState/entities";
 import {useAtomValue, useSetAtom} from "jotai/index";
 import {
     addNewNodeAtom,

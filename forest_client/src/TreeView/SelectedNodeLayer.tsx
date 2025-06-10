@@ -1,36 +1,36 @@
 import React, {useEffect, useState} from 'react';
 import {Card, Grid2 as Grid} from '@mui/material';
-import {Node} from "../entities";
+import {Node} from "../TreeState/entities";
 import {useAtomValue, useSetAtom} from "jotai";
 import {listOfNodesForViewAtom, selectedNodeAtom} from "../TreeState/TreeState";
 import {NodeContentTabs} from "./NodeContentTab";
 import CardContent from "@mui/material/CardContent";
 import {NavigatorButtons, NavigatorLayer} from "./NavigatorLayer";
 import {NodeButtons} from "./NodeButtons";
+import {isMobileModeAtom} from "../appState";
+
+
+function LeftColumn(node: Node) {
+    return <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
+        <div style={{flex: 0.9, height: '50%', marginBottom: '2%'}}>
+            <NodeContentFrame sx={{}}>
+                <NodeContentTabs node={node} tabDict={node.tools[0]} title=""/>
+            </NodeContentFrame>
+        </div>
+        <div style={{flex: 0.9, height: '50%'}}>
+            <NodeContentFrame sx={{}}>
+                <NodeContentTabs node={node} tabDict={node.tools[1]} title=""/>
+            </NodeContentFrame>
+        </div>
+    </div>;
+}
+
 
 
 const SelectedNodeLayer = (props) => {
     const node: Node = useAtomValue(selectedNodeAtom)
     const leaves = useAtomValue(listOfNodesForViewAtom)
-
-    const [mobileMode, setMobileMode] = useState(false);
-
-    useEffect(() => {
-        const handleResize = () => {
-            if (window.innerWidth < 800) {
-                setMobileMode(true);
-            } else {
-                setMobileMode(false);
-            }
-        }
-        handleResize()
-
-        window.addEventListener("resize", handleResize);
-
-        // Cleanup function to remove event listener
-        return () => window.removeEventListener("resize", handleResize);
-    }, []);
-
+    const mobileMode = useAtomValue(isMobileModeAtom)
 
     const gridStyle = {
         height: "100%",
@@ -61,18 +61,7 @@ const SelectedNodeLayer = (props) => {
                 </NodeContentFrame>
             </Grid>
             {!mobileMode && <Grid style={gridStyle} size={3.5} className={"hide-mobile"}>
-                <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
-                    <div style={{flex: 0.9, height: '50%', marginBottom: '2%'}}>
-                        <NodeContentFrame sx={{}}>
-                            <NodeContentTabs node={node} tabDict={node.tools[0]} title=""/>
-                        </NodeContentFrame>
-                    </div>
-                    <div style={{flex: 0.9, height: '50%'}}>
-                        <NodeContentFrame sx={{}}>
-                            <NodeContentTabs node={node} tabDict={node.tools[1]} title=""/>
-                        </NodeContentFrame>
-                    </div>
-                </div>
+                {LeftColumn(node)}
             </Grid>}
         </Grid>
     );

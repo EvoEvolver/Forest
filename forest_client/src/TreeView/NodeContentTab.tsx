@@ -8,7 +8,7 @@ import TabPanel from "@mui/lab/TabPanel";
 import Typography from "@mui/material/Typography";
 import {envComponentAtom} from "./ContentComponents";
 import {useAtomValue} from "jotai";
-import {Node} from "../entities"
+import {Node} from "../TreeState/entities"
 
 export const thisNodeContext: Context<Node> = createContext(null)
 

@@ -20,7 +20,7 @@ import {subscriptionAtom} from "./UserSystem/authStates";
 import {getAppBar} from "./AppBar";
 
 
-const isDevMode = (import.meta.env.MODE === 'development');
+
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
 const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
 export const wsUrl = `${wsProtocol}://${location.hostname}:${currentPort}`

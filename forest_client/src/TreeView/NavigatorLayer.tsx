@@ -8,7 +8,7 @@ import {
     selectedNodeAtom,
     treeAtom
 } from "../TreeState/TreeState";
-import {Node} from '../entities';
+import {Node} from '../TreeState/entities';
 import {useAtom, useSetAtom} from "jotai";
 import {useTreeViewApiRef} from "@mui/x-tree-view";
 import {Button} from "@mui/material";

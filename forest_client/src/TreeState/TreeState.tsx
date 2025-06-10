@@ -1,4 +1,4 @@
-import {Node} from '../entities';
+import {Node} from './entities';
 import {Atom, atom, PrimitiveAtom, WritableAtom} from 'jotai'
 import {Array as YArray, Map as YMap} from 'yjs'
 import {YDocAtom} from "./YjsConnection";
@@ -7,7 +7,10 @@ import {v4 as uuidv4} from 'uuid';
 import {updateChildrenCountAtom} from "./childrenCount";
 
 export interface TreeAtomData {
-    metadata: {}
+    metadata: {
+        rootId?: string, // The root node id of the tree
+        treeId?: string, // The id of the tree
+    }
     nodeDict: Record<string, Atom<Node>>
 }
 
@@ -446,6 +449,5 @@ export const setToNodeParentAtom = atom(null, (get, set, nodeid) => {
 })
 
 
-export const darkModeAtom = atom(false)
 
 
