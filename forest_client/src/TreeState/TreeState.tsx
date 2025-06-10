@@ -268,6 +268,14 @@ export const deleteNodeFromTreeAtom = atom(null, (get, set, nodeId: string) => {
 
 export const selectedNodeIdAtom = atom("")
 
+export const scrollToNodeFuncAtom = atom(null, (get, set, nodeId: string) => {
+    const nodeElement = document.querySelector(`#frame-${nodeId}`);
+    console.log("scrolling to node", nodeId, nodeElement);
+    if (nodeElement) {
+        nodeElement.scrollIntoView({behavior: 'instant', block: 'center'});
+    }
+})
+
 function getNodeById(nodeId, get): Node {
     const currTree = get(treeAtom)
     if (!currTree)

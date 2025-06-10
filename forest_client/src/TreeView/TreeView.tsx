@@ -1,7 +1,7 @@
-import React from 'react';
+import React, {useRef} from 'react';
 import {Card, Grid2 as Grid} from '@mui/material';
 import {Node} from "../TreeState/entities";
-import {useAtomValue} from "jotai";
+import {useAtomValue, useSetAtom} from "jotai";
 import {listOfNodesForViewAtom, selectedNodeAtom} from "../TreeState/TreeState";
 import {NodeContentTabs} from "./NodeContentTab";
 import CardContent from "@mui/material/CardContent";
@@ -9,12 +9,12 @@ import {NodeButtons} from "./NodeButtons";
 import {isMobileModeAtom} from "../appState";
 import {RightColumn} from "./RightColumn";
 import {LeftColumn} from "./LeftColumn";
-import {useSetAtom} from "jotai/index";
 
 
 const TreeView = () => {
     const leaves = useAtomValue(listOfNodesForViewAtom)
     const mobileMode = useAtomValue(isMobileModeAtom)
+    const nodesDivRef = useRef(null);
 
     if (leaves.length === 0) {
         return <></>
@@ -26,7 +26,7 @@ const TreeView = () => {
             </Grid>}
             <Grid size={mobileMode ? 12 : 5} style={{height: "100%"}}>
                 <NodeContentFrame sx={{}}>
-                    <div>
+                    <div ref={nodesDivRef}>
                         {leaves.map((n, index) => <MiddleContents node={n} key={index}/>)}
                     </div>
                 </NodeContentFrame>
@@ -80,7 +80,7 @@ const NodeFrame = ({node}) => {
         height: "100%",
         boxShadow: isSelected ? '0 0 1px 2px rgba(0,0,0,0.1)' : null,
     }
-    return <div style={divStyle}>
+    return <div style={divStyle} id={"frame-" + node.id}>
     </div>
 }
 

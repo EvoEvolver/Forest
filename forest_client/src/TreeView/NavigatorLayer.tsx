@@ -1,14 +1,14 @@
 import React from 'react';
 import {RichTreeView} from '@mui/x-tree-view/RichTreeView';
-import {atom, useAtomValue, useStore} from "jotai/index";
+import {atom, useAtom, useAtomValue, useSetAtom, useStore} from "jotai";
 import {
     jumpToNodeAtom,
     lastSelectedNodeBeforeJumpIdAtom,
+    scrollToNodeFuncAtom,
     selectedNodeAtom,
     treeAtom
 } from "../TreeState/TreeState";
 import {Node} from '../TreeState/entities';
-import {useAtom, useSetAtom} from "jotai";
 import {useTreeViewApiRef} from "@mui/x-tree-view";
 import {Button} from "@mui/material";
 import UnfoldLessIcon from '@mui/icons-material/UnfoldLess';
@@ -17,11 +17,10 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 export const NavigatorItemsAtom = atom((get) => {
         const tree = get(treeAtom)
         let root: Node
-        if (tree.metadata.rootId){
+        if (tree.metadata.rootId) {
             // if rootId is set, use it to find the root node
             root = get(tree.nodeDict[tree.metadata.rootId])
-        }
-        else {
+        } else {
             console.error("No rootId set in tree metadata, trying to find root node by parent == null. This may imply a bug.")
         }
         if (!root) {
@@ -119,7 +118,7 @@ export const NavigatorLayer = () => {
     const apiRef = useTreeViewApiRef();
     const jumpToNode = useSetAtom(jumpToNodeAtom)
     //const store = useStore()
-
+    const scrollToNodeFunc = useSetAtom(scrollToNodeFuncAtom)
     /*useEffect(() => {
         // ensure all the ancestors are expanded
         const ancestors = getAncestorIds(store.get, selectedNode, store.get(treeAtom).nodeDict)
@@ -139,6 +138,11 @@ export const NavigatorLayer = () => {
 
     const handleNewSelectedItemChange = (event, newItemId) => {
         jumpToNode(newItemId)
+        if (scrollToNodeFunc) {
+            setTimeout(() => {
+                scrollToNodeFunc(newItemId)
+            }, 100)
+        }
     }
 
     return (

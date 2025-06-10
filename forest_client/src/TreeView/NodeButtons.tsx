@@ -3,6 +3,7 @@ import {useAtomValue, useSetAtom} from "jotai/index";
 import {
     addNewNodeAtom,
     deleteNodeAtom,
+    scrollToNodeFuncAtom,
     setNodePositionAtom,
     setToNodeChildrenAtom,
     setToNodeParentAtom,
@@ -24,12 +25,18 @@ export const NodeButtons = (props: { node: Node }) => {
 
     const setToNodeChildren = useSetAtom(setToNodeChildrenAtom)
     const setToNodeParent = useSetAtom(setToNodeParentAtom)
+    const scrollToNodeFunc = useSetAtom(scrollToNodeFuncAtom)
     const nodeChildren = useAtomValue(props.node.children)
     const theme = useTheme()
     const node = props.node;
 
     const onLeftBtn = () => {
         setToNodeParent(node.id)
+        if (scrollToNodeFunc) {
+            setTimeout(() => {
+                scrollToNodeFunc(node.parent)
+            }, 100)
+        }
     }
     const onRightBtn = () => {
         setToNodeChildren(node.id)
