@@ -26,6 +26,8 @@ def push_tree(root: Node, host="http://0.0.0.0:29999"):
             tree_id = response_data['tree_id']
             print(f"Tree updated successfully with ID: {tree_id}")
             print(f"Created tree to {host}/?id={tree_id}")
+
+            print(f"For dev, go to http://localhost/?id={tree_id}")
             return tree_id
         else:
             print("Tree updated but no tree_id returned.")
