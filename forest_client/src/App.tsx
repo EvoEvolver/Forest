@@ -10,9 +10,8 @@ import {
     setTreeMetadataAtom
 } from "./TreeState/TreeState";
 import TreeView from "./TreeView";
-import {WebsocketProvider} from 'y-websocket'
 import {Map as YMap} from "yjs";
-import {YDocAtom, YjsProviderAtom} from "./TreeState/YjsConnection";
+import {setupYDoc, YDocAtom, YjsProviderAtom} from "./TreeState/YjsConnection";
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import ArticleIcon from '@mui/icons-material/Article';
 import LinearView from "./LinearView";
@@ -28,37 +27,9 @@ import {subscriptionAtom} from "./UserSystem/authStates";
 const isDevMode = (import.meta.env.MODE === 'development');
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
 const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
-const wsUrl = `${wsProtocol}://${location.hostname}:${currentPort}`
+export const wsUrl = `${wsProtocol}://${location.hostname}:${currentPort}`
 export const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort}`
-const treeId = new URLSearchParams(window.location.search).get("id");
-
-const setupYDoc = (setYjsProvider, addNodeToTree, ydoc, deleteNodeFromTree, observeSync) => {
-    let wsProvider = new WebsocketProvider(wsUrl, treeId, ydoc)
-    setYjsProvider(wsProvider)
-    wsProvider.on('status', event => {
-        console.log("Server connected!", event)
-    })
-    wsProvider.on('sync', isSynced => {
-        if (isSynced) {
-            observeSync()
-        }
-    })
-    let nodeDictyMap: YMap<YMap<any>> = ydoc.getMap("nodeDict")
-    nodeDictyMap.observe((ymapEvent) => {
-        ymapEvent.changes.keys.forEach((change, key) => {
-            if (change.action === 'add') {
-                let newNode = nodeDictyMap.get(key)
-                addNodeToTree(newNode)
-            } else if (change.action === 'update') {
-                let newNode = nodeDictyMap.get(key)
-                deleteNodeFromTree(key)
-                addNodeToTree(newNode)
-            } else if (change.action === 'delete') {
-                deleteNodeFromTree(key)
-            }
-        })
-    })
-}
+export const treeId = new URLSearchParams(window.location.search).get("id");
 
 const initSelectedNode = (ydoc, setSelectedNodeId) => {
     let nodeId = new URLSearchParams(window.location.search).get("n");
