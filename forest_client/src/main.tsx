@@ -5,6 +5,7 @@ import './index.css';
 import {Provider} from "jotai";
 import { BrowserRouter, Routes, Route } from "react-router";
 import AuthSuccessPage from "./UserSystem/AuthSuccessPage";
+import {UserPanel} from "./UserSystem/UserPanel";
 
 const rootElement = document.getElementById('root');
 
@@ -16,6 +17,7 @@ if (rootElement) {
                     <Routes>
                         <Route path="/" element={<App />} />
                         <Route path="/auth-success" element={<AuthSuccessPage />} />
+                        <Route path="user" element={<UserPanel/>} />
                     </Routes>
                 </React.StrictMode>
             </Provider>
