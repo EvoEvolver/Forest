@@ -1,10 +1,9 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {AppBar, Box, Button, Stack, Toolbar} from "@mui/material";
+import React, {useEffect, useState} from 'react';
+import {Box} from "@mui/material";
 import {ThemeProvider} from '@mui/material/styles';
 import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import {
     addNodeToTreeAtom,
-    darkModeAtom,
     deleteNodeFromTreeAtom,
     selectedNodeIdAtom,
     setTreeMetadataAtom
@@ -12,16 +11,13 @@ import {
 import TreeView from "./TreeView";
 import {Map as YMap} from "yjs";
 import {setupYDoc, YDocAtom, YjsProviderAtom} from "./TreeState/YjsConnection";
-import AccountTreeIcon from '@mui/icons-material/AccountTree';
-import ArticleIcon from '@mui/icons-material/Article';
 import LinearView from "./LinearView";
 import {supabase} from './supabase';
-import AuthButton from './UserSystem/AuthButton';
 import AuthModal from './UserSystem/AuthModal';
-import AuthSuccessPage from './UserSystem/AuthSuccessPage';
 import {updateChildrenCountAtom} from "./TreeState/childrenCount";
 import {themeOptions} from "./theme";
 import {subscriptionAtom} from "./UserSystem/authStates";
+import {getAppBar} from "./AppBar";
 
 
 const isDevMode = (import.meta.env.MODE === 'development');
@@ -53,10 +49,7 @@ const initSelectedNode = (ydoc, setSelectedNodeId) => {
 
 
 export default function App() {
-
-    const setDark = useSetAtom(darkModeAtom)
     const setSelectedNodeId = useSetAtom(selectedNodeIdAtom)
-    const contentRef = useRef();
     const [, setYjsProvider] = useAtom(YjsProviderAtom)
     const ydoc = useAtomValue(YDocAtom)
     const addNodeToTree = useSetAtom(addNodeToTreeAtom)
@@ -66,31 +59,10 @@ export default function App() {
     const [subscription, setSubscription] = useAtom(subscriptionAtom);
     const [currentPage, setCurrentPage] = useState('tree');
 
-    // Check if current URL is auth-success route
-   // const isAuthSuccessPage = window.location.pathname === '/auth-success';
-    const isAuthSuccessPage = window.location.pathname.includes('/auth-success');
-
-    // If on auth-success page, render only AuthSuccessPage
-    if (isAuthSuccessPage) {
-        return <AuthSuccessPage/>;
-    }
-
-    const renderPage = () => {
-        switch (currentPage) {
-            case 'tree':
-                return <TreeViewPage contentRef={contentRef}/>;
-            case 'linear':
-                return <SecondPage/>;
-            default:
-                return <TreeViewPage contentRef={contentRef}/>;
-        }
-    };
-
     useEffect(() => {
         document.body.style.overflow = 'hidden';
         //setDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
         // disable dark mode until we finish it
-        setDark(false)
         if (treeId) {
             setupYDoc(setYjsProvider, addNodeToTree, ydoc, deleteNodeFromTree, () => {
                 const treeMetadata = ydoc.getMap("metadata").toJSON()
@@ -115,45 +87,14 @@ export default function App() {
     return (
         <>
             <ThemeProvider theme={themeOptions}>
-                <Box sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    width: '100%',
-                    height: '100vh'
-                }}>
+                <Box sx={{display: 'flex', flexDirection: 'column', width: '100%', height: '100vh'}}>
                     <Box sx={{width: '100%'}}>
-                        <AppBar position="static">
-                            <Toolbar variant="dense">
-                                <Stack direction="row" spacing={2} sx={{flexGrow: 1}}>
-                                    <Button
-                                        color="inherit"
-                                        onClick={() => setCurrentPage('tree')}
-                                        variant={currentPage === 'tree' ? 'outlined' : 'text'}
-                                    >
-                                        <AccountTreeIcon/>
-                                    </Button>
-                                    <Button
-                                        color="inherit"
-                                        onClick={() => setCurrentPage('linear')}
-                                        variant={currentPage === 'second' ? 'outlined' : 'text'}
-                                    >
-                                        <ArticleIcon/>
-                                    </Button>
-                                </Stack>
-
-                                {/* Auth button in the top right */}
-                                {supabase && <AuthButton/>}
-                            </Toolbar>
-                        </AppBar>
+                        {getAppBar(setCurrentPage, currentPage)}
                     </Box>
-                    <Box sx={{
-                        height: 'calc(100% - 48px)',
-                        boxSizing: 'border-box'
-                    }}>
-                        {renderPage()}
+                    <Box sx={{height: 'calc(100% - 48px)', boxSizing: 'border-box'}}>
+                        {renderSelectedPage(currentPage)}
                     </Box>
                 </Box>
-
                 {/* Auth Modal */}
                 {supabase && <AuthModal/>}
             </ThemeProvider>
@@ -162,14 +103,25 @@ export default function App() {
 }
 
 
-const TreeViewPage = ({contentRef}) => (
+const TreeViewPage = () => (
     <Box style={{width: "100vw", height: "100%", flexGrow: 1, boxSizing: "border-box"}}>
-        <TreeView contentRef={contentRef}/>
+        <TreeView/>
     </Box>
 );
 
-const SecondPage = () => (
+const LinearViewPage = () => (
     <Box style={{width: "100vw", height: "100%", flexGrow: 1, boxSizing: "border-box"}}>
         <LinearView/>
     </Box>
 );
+
+const renderSelectedPage = (currentPage) => {
+    switch (currentPage) {
+        case 'tree':
+            return <TreeViewPage/>;
+        case 'linear':
+            return <LinearViewPage/>;
+        default:
+            return <TreeViewPage/>;
+    }
+};

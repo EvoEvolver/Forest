@@ -3,16 +3,23 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 import {Provider} from "jotai";
+import { BrowserRouter, Routes, Route } from "react-router";
+import AuthSuccessPage from "./UserSystem/AuthSuccessPage";
 
 const rootElement = document.getElementById('root');
 
 if (rootElement) {
     ReactDOM.createRoot(rootElement).render(
-        <Provider>
-            <React.StrictMode>
-                <App/>
-            </React.StrictMode>
-        </Provider>,
+        <BrowserRouter>
+            <Provider>
+                <React.StrictMode>
+                    <Routes>
+                        <Route path="/" element={<App />} />
+                        <Route path="/auth-success" element={<AuthSuccessPage />} />
+                    </Routes>
+                </React.StrictMode>
+            </Provider>
+        </BrowserRouter>
     );
 } else {
     console.error('Root element not found in the document');
