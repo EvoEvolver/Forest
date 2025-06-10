@@ -1,7 +1,7 @@
 import React from 'react';
 import {Card, Grid2 as Grid} from '@mui/material';
 import {Node} from "../TreeState/entities";
-import {useAtom, useAtomValue} from "jotai";
+import {useAtomValue} from "jotai";
 import {listOfNodesForViewAtom, selectedNodeAtom} from "../TreeState/TreeState";
 import {NodeContentTabs} from "./NodeContentTab";
 import CardContent from "@mui/material/CardContent";
@@ -9,57 +9,55 @@ import {NodeButtons} from "./NodeButtons";
 import {isMobileModeAtom} from "../appState";
 import {RightColumn} from "./RightColumn";
 import {LeftColumn} from "./LeftColumn";
+import {useSetAtom} from "jotai/index";
 
 
 const TreeView = () => {
-    const node: Node = useAtomValue(selectedNodeAtom)
     const leaves = useAtomValue(listOfNodesForViewAtom)
     const mobileMode = useAtomValue(isMobileModeAtom)
 
-    if (!node) {
+    if (leaves.length === 0) {
         return <></>
     }
     return (
         <Grid style={{height: "100%", width: "100%"}} container spacing={1}>
             {!mobileMode && <Grid size={3.5} style={{height: "100%"}}>
-                {RightColumn()}
+                <RightColumn/>
             </Grid>}
             <Grid size={mobileMode ? 12 : 5} style={{height: "100%"}}>
                 <NodeContentFrame sx={{}}>
                     <div>
-                        {leaves.map((n, index) => <MiddleContents node={n} key={index} index={index}/>)}
+                        {leaves.map((n, index) => <MiddleContents node={n} key={index}/>)}
                     </div>
                 </NodeContentFrame>
             </Grid>
             {!mobileMode && <Grid style={{height: "100%"}} size={3.5} className={"hide-mobile"}>
-                {LeftColumn(node)}
+                <LeftColumn/>
             </Grid>}
         </Grid>
     );
 };
 
 
-export const MiddleContents = ({node, index}: { node: Node, index: number }) => {
-    let [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom)
+export const MiddleContents = ({node}: { node: Node }) => {
+    let setSelectedNode = useSetAtom(selectedNodeAtom)
 
     const handleClick = (event) => {
-        console.log(event.target)
+        //console.log(event.target)
         setSelectedNode(node.id)
     }
 
     return <div
         style={{
-            boxShadow: selectedNode.id == node.id ? '0 0 1px 2px rgba(0,0,0,0.1)' : null,
             padding: "2px",
             paddingLeft: '10px',
             paddingRight: '10px',
+            position: "relative",
         }}
-
     >
+        <NodeFrame node={node}/>
         <div
             onClick={handleClick}
-            data-ref={`content-${index}`}
-            data-index={node.id}
         >
             <NodeContentTabs
                 node={node}
@@ -71,6 +69,20 @@ export const MiddleContents = ({node, index}: { node: Node, index: number }) => 
     </div>
 }
 
+const NodeFrame = ({node}) => {
+    let selectedNode = useAtomValue(selectedNodeAtom)
+    const isSelected = selectedNode.id === node.id;
+    const divStyle = {
+        position: "absolute",
+        top: "0",
+        left: "0",
+        width: "100%",
+        height: "100%",
+        boxShadow: isSelected ? '0 0 1px 2px rgba(0,0,0,0.1)' : null,
+    }
+    return <div style={divStyle}>
+    </div>
+}
 
 export const NodeContentFrame = ({children, sx}) => {
     const sxDefault = {

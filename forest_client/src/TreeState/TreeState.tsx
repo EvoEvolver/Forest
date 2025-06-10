@@ -334,18 +334,24 @@ export const selectedNodeAtom = atom(
     }
 )
 
+export const currNodeParentIdAtom = atom((get) => {
+    const currNode = get(selectedNodeAtom)
+    if (!currNode) return null
+    return currNode.parent
+})
+
 
 export const listOfNodesForViewAtom = atom<Node[]>((get) => {
-    const currNode = get(selectedNodeAtom)
-    if (!currNode) return []
     const tree = get(treeAtom)
-    const parentNodeAtom = tree.nodeDict[currNode.parent]
-
-    if (!parentNodeAtom) {
-        return [currNode]; // If there's no parent, return the node itself
+    if (Object.keys(tree.nodeDict).length === 0) {
+        return []; // If there are no nodes, return an empty array
     }
+    const parentNodeId = get(currNodeParentIdAtom)
+    if (!parentNodeId) {
+        return [get(tree.nodeDict[tree.metadata.rootId])]; // If there's no parent, return the root
+    }
+    const parentNodeAtom = tree.nodeDict[parentNodeId]
     const parentNode = get(parentNodeAtom)
-
     return get(parentNode.children).map((id) => get(tree.nodeDict[id]));
 })
 
