@@ -1,6 +1,6 @@
 /*** Authentication related atoms ***/
 import {atom} from "jotai/index";
-import {supabase} from "../supabase";
+import {setupSupabaseClient} from "../supabase";
 import {WritableAtom} from "jotai";
 
 // Authentication related atoms
@@ -48,11 +48,15 @@ export const subscriptionAtom: WritableAtom<any, any, any> = atom((get) => {
 }, async (get, set) => {
     // Initialize Supabase client in atom
     // @ts-ignore
-    set(supabaseClientAtom, supabase);
+    const supabaseClient = setupSupabaseClient()
+    set(supabaseClientAtom, supabaseClient);
+    if (!supabaseClient) {
+        return
+    }
     // Get current session on app startup (CRITICAL for session restoration)
     const initializeSession = async () => {
         try {
-            const {data: {session}, error} = await supabase.auth.getSession()
+            const {data: {session}, error} = await supabaseClient.auth.getSession()
             if (error) {
                 console.error('Error getting session:', error)
                 return
@@ -84,7 +88,7 @@ export const subscriptionAtom: WritableAtom<any, any, any> = atom((get) => {
     initializeSession()
 
     // Set up auth state change listener
-    const {data: {subscription}} = supabase.auth.onAuthStateChange(async (event, session) => {
+    const {data: {subscription}} = supabaseClient.auth.onAuthStateChange(async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email)
         if (session) {
             // User is signed in

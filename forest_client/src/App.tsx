@@ -12,11 +12,10 @@ import TreeView from "./TreeView/TreeView";
 import {Map as YMap} from "yjs";
 import {setupYDoc, YDocAtom, YjsProviderAtom} from "./TreeState/YjsConnection";
 import LinearView from "./LinearView";
-import {supabase} from './supabase';
 import AuthModal from './UserSystem/AuthModal';
 import {updateChildrenCountAtom} from "./TreeState/childrenCount";
 import {themeOptions} from "./theme";
-import {subscriptionAtom} from "./UserSystem/authStates";
+import {subscriptionAtom, supabaseClientAtom} from "./UserSystem/authStates";
 import {getAppBar} from "./AppBar";
 import {treeId} from "./appState";
 
@@ -52,6 +51,7 @@ export default function App() {
     const updateChildrenCount = useSetAtom(updateChildrenCountAtom);
     const [subscription, setSubscription] = useAtom(subscriptionAtom);
     const [currentPage, setCurrentPage] = useState('tree');
+    const supabaseClient = useAtomValue(supabaseClientAtom)
 
     useEffect(() => {
         document.body.style.overflow = 'hidden';
@@ -70,8 +70,7 @@ export default function App() {
                 treeId: treeId
             })
         }
-        if (supabase)
-            setSubscription()
+        setSubscription()
         return () => {
             if (subscription)
                 subscription.unsubscribe()
@@ -90,7 +89,7 @@ export default function App() {
                     </Box>
                 </Box>
                 {/* Auth Modal */}
-                {supabase && <AuthModal/>}
+                {supabaseClient && <AuthModal/>}
             </ThemeProvider>
         </>
     );

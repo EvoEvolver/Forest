@@ -1,11 +1,13 @@
 import {AppBar, Button, Stack, Toolbar} from "@mui/material";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import ArticleIcon from "@mui/icons-material/Article";
-import {supabase} from "./supabase";
 import AuthButton from "./UserSystem/AuthButton";
 import React from "react";
+import {useAtomValue} from "jotai/index";
+import {supabaseClientAtom} from "./UserSystem/authStates";
 
 export function getAppBar(setCurrentPage: (value: (((prevState: string) => string) | string)) => void, currentPage: string) {
+    const supabaseClient = useAtomValue(supabaseClientAtom)
     return <AppBar position="static">
         <Toolbar variant="dense">
             <Stack direction="row" spacing={2} sx={{flexGrow: 1}}>
@@ -26,7 +28,7 @@ export function getAppBar(setCurrentPage: (value: (((prevState: string) => strin
             </Stack>
 
             {/* Auth button in the top right */}
-            {supabase && <AuthButton/>}
+            {supabaseClient && <AuthButton/>}
         </Toolbar>
     </AppBar>;
 }
