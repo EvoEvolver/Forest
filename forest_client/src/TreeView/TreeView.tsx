@@ -1,66 +1,38 @@
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import {Card, Grid2 as Grid} from '@mui/material';
 import {Node} from "../TreeState/entities";
-import {useAtomValue, useSetAtom} from "jotai";
+import {useAtom, useAtomValue} from "jotai";
 import {listOfNodesForViewAtom, selectedNodeAtom} from "../TreeState/TreeState";
 import {NodeContentTabs} from "./NodeContentTab";
 import CardContent from "@mui/material/CardContent";
-import {NavigatorButtons, NavigatorLayer} from "./NavigatorLayer";
 import {NodeButtons} from "./NodeButtons";
 import {isMobileModeAtom} from "../appState";
+import {RightColumn} from "./RightColumn";
+import {LeftColumn} from "./LeftColumn";
 
 
-function LeftColumn(node: Node) {
-    return <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
-        <div style={{flex: 0.9, height: '50%', marginBottom: '2%'}}>
-            <NodeContentFrame sx={{}}>
-                <NodeContentTabs node={node} tabDict={node.tools[0]} title=""/>
-            </NodeContentFrame>
-        </div>
-        <div style={{flex: 0.9, height: '50%'}}>
-            <NodeContentFrame sx={{}}>
-                <NodeContentTabs node={node} tabDict={node.tools[1]} title=""/>
-            </NodeContentFrame>
-        </div>
-    </div>;
-}
-
-
-
-const SelectedNodeLayer = (props) => {
+const TreeView = () => {
     const node: Node = useAtomValue(selectedNodeAtom)
     const leaves = useAtomValue(listOfNodesForViewAtom)
     const mobileMode = useAtomValue(isMobileModeAtom)
-
-    const gridStyle = {
-        height: "100%",
-    }
-
 
     if (!node) {
         return <></>
     }
     return (
         <Grid style={{height: "100%", width: "100%"}} container spacing={1}>
-            {!mobileMode && <Grid size={3.5} style={gridStyle}>
-                <div style={{height: "100%"}}>
-                    <div style={{height: "5%", width: "100%"}}><NavigatorButtons/></div>
-                    <div style={{height: "95%", width: "100%"}}>
-                        <NodeContentFrame sx={{}}>
-                            <NavigatorLayer/>
-                        </NodeContentFrame>
-                    </div>
-                </div>
+            {!mobileMode && <Grid size={3.5} style={{height: "100%"}}>
+                {RightColumn()}
             </Grid>}
-            <Grid size={mobileMode ? 12 : 5} style={gridStyle}>
+            <Grid size={mobileMode ? 12 : 5} style={{height: "100%"}}>
                 <NodeContentFrame sx={{}}>
                     <div>
                         {leaves.map((n, index) =>
-                            <MiddleContents node={n} selected={n.id === node.id} key={index} index={index}/>)}
+                            <MiddleContents node={n} key={index} index={index}/>)}
                     </div>
                 </NodeContentFrame>
             </Grid>
-            {!mobileMode && <Grid style={gridStyle} size={3.5} className={"hide-mobile"}>
+            {!mobileMode && <Grid style={{height: "100%"}} size={3.5} className={"hide-mobile"}>
                 {LeftColumn(node)}
             </Grid>}
         </Grid>
@@ -68,8 +40,8 @@ const SelectedNodeLayer = (props) => {
 };
 
 
-const MiddleContents = ({node, selected, index}: { node: Node, selected: boolean, index: number }) => {
-    let setSelectedNode = useSetAtom(selectedNodeAtom)
+const MiddleContents = ({node, index}: { node: Node, selected: boolean, index: number }) => {
+    let [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom)
 
     const handleClick = (event) => {
         console.log(event.target)
@@ -78,7 +50,7 @@ const MiddleContents = ({node, selected, index}: { node: Node, selected: boolean
 
     return <div
         style={{
-            boxShadow: selected ? '0 0 1px 2px rgba(0,0,0,0.1)' : null,
+            boxShadow: selectedNode.id == node.id ? '0 0 1px 2px rgba(0,0,0,0.1)' : null,
             padding: "2px",
             paddingLeft: '10px',
             paddingRight: '10px',
@@ -101,7 +73,7 @@ const MiddleContents = ({node, selected, index}: { node: Node, selected: boolean
 }
 
 
-const NodeContentFrame = ({children, sx}) => {
+export const NodeContentFrame = ({children, sx}) => {
     const sxDefault = {
         width: "100%",
         height: "100%",
@@ -122,4 +94,5 @@ const NodeContentFrame = ({children, sx}) => {
     </>
 }
 
-export default SelectedNodeLayer;
+
+export default TreeView;

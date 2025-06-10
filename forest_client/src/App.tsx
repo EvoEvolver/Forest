@@ -8,7 +8,7 @@ import {
     selectedNodeIdAtom,
     setTreeMetadataAtom
 } from "./TreeState/TreeState";
-import TreeView from "./TreeView";
+import TreeView from "./TreeView/TreeView";
 import {Map as YMap} from "yjs";
 import {setupYDoc, YDocAtom, YjsProviderAtom} from "./TreeState/YjsConnection";
 import LinearView from "./LinearView";
@@ -18,14 +18,8 @@ import {updateChildrenCountAtom} from "./TreeState/childrenCount";
 import {themeOptions} from "./theme";
 import {subscriptionAtom} from "./UserSystem/authStates";
 import {getAppBar} from "./AppBar";
+import {treeId} from "./appState";
 
-
-
-const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
-const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
-export const wsUrl = `${wsProtocol}://${location.hostname}:${currentPort}`
-export const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort}`
-export const treeId = new URLSearchParams(window.location.search).get("id");
 
 const initSelectedNode = (ydoc, setSelectedNodeId) => {
     let nodeId = new URLSearchParams(window.location.search).get("n");
@@ -91,7 +85,7 @@ export default function App() {
                     <Box sx={{width: '100%'}}>
                         {getAppBar(setCurrentPage, currentPage)}
                     </Box>
-                    <Box sx={{height: 'calc(100% - 48px)', boxSizing: 'border-box'}}>
+                    <Box sx={{height: 'calc(100% - 48px)', boxSizing: 'border-box', 'padding-top': '4px'}}>
                         {renderSelectedPage(currentPage)}
                     </Box>
                 </Box>

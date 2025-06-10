@@ -1,11 +1,12 @@
 import React, {useContext, useState} from "react";
 import {thisNodeContext} from "../../NodeContentTab";
 import {ChatViewImpl} from "./index";
-import {httpUrl} from "../../../App";
-import {XmlFragment, XmlText, XmlElement} from "yjs";
-import { useAtomValue, useSetAtom } from "jotai";
+import {XmlElement, XmlText} from "yjs";
+import {useAtomValue, useSetAtom} from "jotai";
 
 import {authModalOpenAtom, authTokenAtom, isAuthenticatedAtom} from "../../../UserSystem/authStates";
+import {httpUrl} from "../../../appState";
+
 const devMode = import.meta.env.MODE === 'development'; // Check if in development mode
 
 interface Message {
@@ -39,8 +40,7 @@ function domToYXmlElement(parentXML, domNode) {
             return
         }
         parentXML.push([new XmlText(domNode.textContent)])
-    }
-    else{
+    } else {
         console.warn("domToYXmlElement", domNode.nodeType)
     }
 }
@@ -107,7 +107,7 @@ async function fetchChatResponse(messages: Message[], authToken: string | null) 
 export const AiChat: React.FC = (props) => {
     const node = useContext(thisNodeContext);
     const [messages, setMessages] = useState<Message[]>([]);
-    
+
     // Authentication state
     const authToken = useAtomValue(authTokenAtom);
     const isAuthenticated = useAtomValue(isAuthenticatedAtom);
@@ -121,13 +121,13 @@ export const AiChat: React.FC = (props) => {
         const messageInList = {content, author, time};
         let messagesToSend = [...messages, messageInList];
         setMessages(prevMessages => [...prevMessages, messageInList]);
-        
+
         try {
             let newMessage = null
             let editorContentPrompt = null
             if (editor) {
                 const editorContent = editor.getHTML();
-                editorContentPrompt =  `
+                editorContentPrompt = `
 You are an AI writing assistant who answers questions about a paper manuscript that is being edited. 
 
 The user has provided the following content in the editor: 
@@ -140,10 +140,10 @@ The user has provided the following content in the editor:
                 }
                 messagesToSend = [newMessageWithEditorContent, ...messagesToSend];
             }
-            
+
             // Use the updated messages array from the callback to ensure we have the latest state
             const response = await fetchChatResponse(messagesToSend, authToken);
-            
+
             const assistantMessage = {
                 content: response,
                 author: "assistant",
@@ -162,7 +162,7 @@ The user has provided the following content in the editor:
         } catch (error) {
             // Handle authentication and permission errors
             let errorMessage = "An error occurred while processing your request.";
-            
+
             if (error.message === "AUTHENTICATION_REQUIRED" || error.message === "AUTHENTICATION_FAILED") {
                 errorMessage = "🔐 Please sign in to use AI features";
                 setAuthModalOpen(true); // Open login modal
