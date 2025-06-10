@@ -42,7 +42,7 @@ const SelectedNodeLayer = (props) => {
     }
     return (
         <Grid style={{height: "100%", width: "100%"}} container spacing={1}>
-            {!mobileMode && <Grid item size={3.5} style={gridStyle}>
+            {!mobileMode && <Grid size={3.5} style={gridStyle}>
                 <div style={{height: "100%"}}>
                     <div style={{height: "5%", width: "100%"}}><NavigatorButtons/></div>
                     <div style={{height: "95%", width: "100%"}}>
@@ -52,7 +52,7 @@ const SelectedNodeLayer = (props) => {
                     </div>
                 </div>
             </Grid>}
-            <Grid item size={mobileMode ? 12 : 5} style={gridStyle}>
+            <Grid size={mobileMode ? 12 : 5} style={gridStyle}>
                 <NodeContentFrame sx={{}}>
                     <div>
                         {leaves.map((n, index) =>
@@ -60,7 +60,7 @@ const SelectedNodeLayer = (props) => {
                     </div>
                 </NodeContentFrame>
             </Grid>
-            {!mobileMode && <Grid item style={gridStyle} size={3.5} className={"hide-mobile"}>
+            {!mobileMode && <Grid style={gridStyle} size={3.5} className={"hide-mobile"}>
                 <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
                     <div style={{flex: 0.9, height: '50%', marginBottom: '2%'}}>
                         <NodeContentFrame sx={{}}>

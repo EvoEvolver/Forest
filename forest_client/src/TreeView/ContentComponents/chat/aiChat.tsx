@@ -5,7 +5,7 @@ import {httpUrl} from "../../../App";
 import {XmlFragment, XmlText, XmlElement} from "yjs";
 import { useAtomValue, useSetAtom } from "jotai";
 
-import {authModalOpenAtom, authTokenAtom, isAuthenticatedAtom} from "../../../components/authStates";
+import {authModalOpenAtom, authTokenAtom, isAuthenticatedAtom} from "../../../UserSystem/authStates";
 const devMode = import.meta.env.MODE === 'development'; // Check if in development mode
 
 interface Message {

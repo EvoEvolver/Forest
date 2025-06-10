@@ -17,12 +17,13 @@ import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import ArticleIcon from '@mui/icons-material/Article';
 import LinearView from "./LinearView";
 import {supabase} from './supabase';
-import AuthButton from './components/AuthButton';
-import AuthModal from './components/AuthModal';
-import AuthSuccessPage from './components/AuthSuccessPage';
+import AuthButton from './UserSystem/AuthButton';
+import AuthModal from './UserSystem/AuthModal';
+import AuthSuccessPage from './UserSystem/AuthSuccessPage';
 import {updateChildrenCountAtom} from "./TreeState/childrenCount";
 import {themeOptions} from "./theme";
-import {authTokenAtom, supabaseClientAtom, userAtom, userPermissionsAtom} from "./components/authStates";
+import {subscriptionAtom} from "./UserSystem/authStates";
+
 
 const isDevMode = (import.meta.env.MODE === 'development');
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
@@ -80,75 +81,6 @@ const initSelectedNode = (ydoc, setSelectedNodeId) => {
 }
 
 
-function setupAuth(setSupabaseClient, setUser, setAuthToken, setUserPermissions) {
-    // Initialize Supabase client in atom
-    setSupabaseClient(supabase)
-
-    // Get current session on app startup (CRITICAL for session restoration)
-    const initializeSession = async () => {
-        try {
-            const { data: { session }, error } = await supabase.auth.getSession()
-            if (error) {
-                console.error('Error getting session:', error)
-                return
-            }
-            
-            if (session) {
-                console.log('Restoring existing session:', session.user.email)
-                // Restore existing session
-                setUser({
-                    id: session.user.id,
-                    email: session.user.email || '',
-                    ...session.user.user_metadata
-                })
-                setAuthToken(session.access_token)
-                setUserPermissions({
-                    canUseAI: true,
-                    canUploadFiles: true,
-                    maxFileSize: 10,
-                })
-            }
-        } catch (error) {
-            console.error('Error initializing session:', error)
-        }
-    }
-    
-    // Initialize session immediately
-    initializeSession()
-
-    // Set up auth state change listener
-    const {data: {subscription}} = supabase.auth.onAuthStateChange(async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email)
-        
-        if (session) {
-            // User is signed in
-            setUser({
-                id: session.user.id,
-                email: session.user.email || '',
-                ...session.user.user_metadata
-            })
-            setAuthToken(session.access_token)
-
-            // Set default permissions (draft)
-            setUserPermissions({
-                canUseAI: true,
-                canUploadFiles: true,
-                maxFileSize: 10, // 10MB default
-            })
-        } else {
-            // User is signed out
-            setUser(null)
-            setAuthToken(null)
-            setUserPermissions({
-                canUseAI: false,
-                canUploadFiles: false,
-                maxFileSize: 0
-            })
-        }
-    })
-    return subscription;
-}
-
 export default function App() {
 
     const setDark = useSetAtom(darkModeAtom)
@@ -160,13 +92,7 @@ export default function App() {
     const deleteNodeFromTree = useSetAtom(deleteNodeFromTreeAtom)
     const setTreeMetadata = useSetAtom(setTreeMetadataAtom);
     const updateChildrenCount = useSetAtom(updateChildrenCountAtom);
-
-    // Authentication state
-    const [, setUser] = useAtom(userAtom)
-    const [, setAuthToken] = useAtom(authTokenAtom)
-    const [, setUserPermissions] = useAtom(userPermissionsAtom)
-    const [, setSupabaseClient] = useAtom(supabaseClientAtom)
-
+    const [subscription, setSubscription] = useAtom(subscriptionAtom);
     const [currentPage, setCurrentPage] = useState('tree');
 
     // Check if current URL is auth-success route
@@ -207,11 +133,10 @@ export default function App() {
                 treeId: treeId
             })
         }
-        let subscription
         if (supabase)
-            subscription = setupAuth(setSupabaseClient, setUser, setAuthToken, setUserPermissions);
+            setSubscription()
         return () => {
-            if (supabase)
+            if (subscription)
                 subscription.unsubscribe()
         }
     }, []);
