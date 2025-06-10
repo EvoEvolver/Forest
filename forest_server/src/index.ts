@@ -25,7 +25,7 @@ function check_and_upgrade(doc: Doc, treeId: string) {
     if (!doc.getMap("metadata").has("version")) {
         doc.getMap("metadata").set("version", "0.0.1");
     }
-    if (!metadata.get("rootId")) {
+    if (!metadata.has("rootId")) {
         metadata.set("rootId", treeId);
     }
 }
@@ -46,12 +46,12 @@ function main(port: number, host: string, frontendRoot: string | null): void {
         console.log("ws connected:", treeId)
         const garbageCollect = true
         const doc = getYDoc(treeId, garbageCollect)
-        // check if upgrade needed
-        check_and_upgrade(doc, treeId)
         setupWSConnection(conn, req, {
             doc: doc,
             gc: garbageCollect
         })
+        // check if upgrade needed
+        check_and_upgrade(doc, treeId)
     })
 
     app.use(cors());
