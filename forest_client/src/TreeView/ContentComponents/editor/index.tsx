@@ -1,4 +1,4 @@
-import React, {useContext, useState} from 'react'
+import React, {useContext, useEffect, useState} from 'react'
 import './style.css';
 import {useAtomValue} from "jotai";
 import {YjsProviderAtom} from "../../../TreeState/YjsConnection";
@@ -111,7 +111,13 @@ const EditorImpl = ({yXML, provider, dataLabel}) => {
     })
 
     const node = useContext(thisNodeContext)
-    node.data["tiptap_editor_" + dataLabel] = editor
+    useEffect(() => {
+        const editorFieldName = "tiptap_editor_" + dataLabel;
+        node.data[editorFieldName] = editor
+        return () => {
+            editor.destroy();
+        }
+    }, []);
     if (!editor) {
         return null
     }
