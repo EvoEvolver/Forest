@@ -28,11 +28,11 @@ export const NodeButtons = (props: { node: Node }) => {
     const theme = useTheme()
     const node = props.node;
 
-    const onLeftBtn = (id) => {
-        setToNodeParent(id)
+    const onLeftBtn = () => {
+        setToNodeParent(node.id)
     }
-    const onRightBtn = (id) => {
-        setToNodeChildren(id)
+    const onRightBtn = () => {
+        setToNodeChildren(node.id)
     }
 
     return <div
@@ -48,7 +48,7 @@ export const NodeButtons = (props: { node: Node }) => {
         {node.parent && <Button
             size="small"
             variant="contained"
-            onClick={() => onLeftBtn(node.id)}
+            onClick={() => onLeftBtn()}
             style={{
                 //align left
                 position: 'absolute',
@@ -64,7 +64,7 @@ export const NodeButtons = (props: { node: Node }) => {
         {nodeChildren.length > 0 && <Button
             size="small"
             variant="contained"
-            onClick={() => onRightBtn(node.id)}
+            onClick={() => onRightBtn()}
             style={{
                 // align right
                 position: 'absolute',

@@ -1,8 +1,7 @@
-import React, {useEffect} from 'react';
+import React from 'react';
 import {RichTreeView} from '@mui/x-tree-view/RichTreeView';
-import {atom, useAtomValue} from "jotai/index";
+import {atom, useAtomValue, useStore} from "jotai/index";
 import {
-    ancestorStackNodesAtom,
     jumpToNodeAtom,
     lastSelectedNodeBeforeJumpIdAtom,
     selectedNodeAtom,
@@ -23,14 +22,7 @@ export const NavigatorItemsAtom = atom((get) => {
             root = get(tree.nodeDict[tree.metadata.rootId])
         }
         else {
-            console.warn("No rootId set in tree metadata, trying to find root node by parent == null. This may imply a bug.")
-            // find the root node
-            for (let nodeId in tree.nodeDict) {
-                if (get(tree.nodeDict[nodeId]).parent == null) {
-                    root = get(tree.nodeDict[nodeId])
-                    break
-                }
-            }
+            console.error("No rootId set in tree metadata, trying to find root node by parent == null. This may imply a bug.")
         }
         if (!root) {
             return []
@@ -84,25 +76,33 @@ const beforeJumpNodeTitleAtom = atom((get) => {
 
 const expandedItemsAtom = atom([])
 
+function getAncestorIds(get, node, nodeDict) {
+    const ancestors = []
+    let currNode = node
+    while (currNode.parent !== null) {
+        currNode = get(nodeDict[currNode.parent])
+        ancestors.push(currNode.id)
+    }
+    return ancestors.reverse()
+}
 
 export const NavigatorButtons = () => {
     const beforeJumpNodeTitle = useAtomValue(beforeJumpNodeTitleAtom)
     const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom)
     const lastSelectedNodeBeforeJumpId = useAtomValue(lastSelectedNodeBeforeJumpIdAtom)
-    const currNodeAncestors = useAtomValue(ancestorStackNodesAtom)
-    const [expandedItems, setExpandedItems] = useAtom(expandedItemsAtom)
+    const [, setExpandedItems] = useAtom(expandedItemsAtom)
     const jumpToNode = useSetAtom(jumpToNodeAtom)
+    const store = useStore()
 
     const handleGoBack = () => {
         jumpToNode(lastSelectedNodeBeforeJumpId)
     }
     const handleFold = () => {
-        const ancestors = currNodeAncestors.map((node) => node.id)
+        const ancestors = getAncestorIds(store.get, selectedNode, store.get(treeAtom).nodeDict)
         setExpandedItems((oldExpandedItems) => {
             return [selectedNode.id, ...ancestors]
         })
     }
-
 
     return <>
         <Button variant="contained" onClick={handleFold}><UnfoldLessIcon/></Button>
@@ -112,17 +112,17 @@ export const NavigatorButtons = () => {
 }
 
 export const NavigatorLayer = () => {
-    const currNodeAncestors = useAtomValue(ancestorStackNodesAtom)
     const navigatorItems = useAtomValue(NavigatorItemsAtom)
     const [expandedItems, setExpandedItems] = useAtom(expandedItemsAtom)
     const selectedItems = useAtomValue(selectedItemAtom)
-    const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom)
+    //const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom)
     const apiRef = useTreeViewApiRef();
     const jumpToNode = useSetAtom(jumpToNodeAtom)
+    //const store = useStore()
 
-    useEffect(() => {
+    /*useEffect(() => {
         // ensure all the ancestors are expanded
-        const ancestors = currNodeAncestors.map((node) => node.id)
+        const ancestors = getAncestorIds(store.get, selectedNode, store.get(treeAtom).nodeDict)
         const currId = selectedNode.id
         setExpandedItems((oldExpandedItems) => {
             return [...new Set([currId, ...oldExpandedItems, ...ancestors])]
@@ -131,7 +131,7 @@ export const NavigatorLayer = () => {
         if (itemDom) {
             itemDom.scrollIntoView({behavior: "smooth", inline: "center", block: "nearest"})
         }
-    }, [currNodeAncestors]);
+    }, [selectedNode]);*/
 
     const handleExpandedItemsChange = (event, itemIds) => {
         setExpandedItems(itemIds)
