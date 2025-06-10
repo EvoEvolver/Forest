@@ -127,7 +127,7 @@ export const NodeContentTabs = ({node, tabDict, titleAtom}) => {
                     <Typography
                         variant="h5"
                         onDoubleClick={handleDoubleClick}
-                        style={{"padding-bottom": "5px", "cursor": "pointer"}}
+                        style={{"paddingBottom": "5px", "cursor": "pointer"}}
                     >
                         {title}
                     </Typography>

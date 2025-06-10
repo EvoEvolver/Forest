@@ -85,7 +85,7 @@ export default function App() {
                     <Box sx={{width: '100%'}}>
                         {getAppBar(setCurrentPage, currentPage)}
                     </Box>
-                    <Box sx={{height: 'calc(100% - 48px)', boxSizing: 'border-box', 'padding-top': '4px'}}>
+                    <Box sx={{height: 'calc(100% - 48px)', boxSizing: 'border-box', 'paddingTop': '4px'}}>
                         {renderSelectedPage(currentPage)}
                     </Box>
                 </Box>
