@@ -11,9 +11,9 @@ export interface User {
 }
 
 // User authentication state
-export const userAtom = atom<User | null>(null)
+export const userAtom: WritableAtom<User | null, [User | null], void> = atom<User | null>(null)
 // Auth token (JWT from Supabase)
-export const authTokenAtom = atom<string | null>(null)
+export const authTokenAtom: WritableAtom<string | null, [string | null], void> = atom<string | null>(null)
 // Authentication status
 export const isAuthenticatedAtom = atom((get) => {
     const user = get(userAtom)

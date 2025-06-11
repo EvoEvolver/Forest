@@ -126,24 +126,6 @@ function main(port: number, host: string, frontendRoot: string | null): void {
         }
     });
 
-
-    // Test endpoint for authentication - no auth required
-    app.get('/api/test/public', (_req, res) => {
-        res.json({
-            message: "✅ Public endpoint working",
-            timestamp: new Date().toISOString()
-        });
-    });
-
-    // Test endpoint for authentication - auth required
-    app.get('/api/test/protected', authenticateToken, (req: AuthenticatedRequest, res) => {
-        res.json({
-            message: "🔐 Protected endpoint working",
-            user: req.user,
-            timestamp: new Date().toISOString()
-        });
-    });
-
     // Protected AI endpoint - requires authentication and AI permission
     app.post('/api/llm', authenticateToken, requireAIPermission, async (req: AuthenticatedRequest, res) => {
         console.log(`🤖 AI request from authenticated user: ${req.user?.email}`);
