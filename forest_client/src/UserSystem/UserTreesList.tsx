@@ -10,7 +10,6 @@ import {
     List,
     ListItem,
     ListItemText,
-    ListItemSecondaryAction,
     IconButton,
     Chip,
     Divider,
@@ -36,17 +35,22 @@ interface UserTree {
 }
 
 interface UserTreesListProps {
-    onTreeDeleted?: () => void;
+    copySuccess: boolean;
+    onCopySuccess: (success: boolean) => void;
 }
 
-export const UserTreesList: React.FC<UserTreesListProps> = ({ onTreeDeleted }) => {
+export const UserTreesList: React.FC<UserTreesListProps> = ({ copySuccess, onCopySuccess }) => {
     const [trees, setTrees] = useState<UserTree[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [deletingTreeId, setDeletingTreeId] = useState<string | null>(null);
     
+    
+    
     const authToken = useAtomValue(authTokenAtom);
     const user = useAtomValue(userAtom);
+
+
 
     const fetchUserTrees = async () => {
         if (!authToken || !user) return;
@@ -111,7 +115,6 @@ export const UserTreesList: React.FC<UserTreesListProps> = ({ onTreeDeleted }) =
 
             // Remove the deleted tree from the list
             setTrees(prevTrees => prevTrees.filter(tree => tree.id !== treeId));
-            onTreeDeleted?.();
             
         } catch (err) {
             console.error('Error deleting tree:', err);
@@ -189,33 +192,7 @@ export const UserTreesList: React.FC<UserTreesListProps> = ({ onTreeDeleted }) =
                                         border: '1px solid',
                                         borderColor: 'divider'
                                     }}
-                                >
-                                    <ListItemText
-                                        primary={
-                                            <Stack direction="row" alignItems="center" spacing={1}>
-                                                <Typography variant="subtitle2" component="span">
-                                                    {tree.title}
-                                                </Typography>
-                                                <Chip 
-                                                    size="small" 
-                                                    label={`${tree.node_count} nodes`}
-                                                    variant="outlined"
-                                                />
-                                            </Stack>
-                                        }
-                                        secondary={
-                                            <Stack spacing={0.5} mt={0.5}>
-                                                <Typography variant="caption" display="flex" alignItems="center">
-                                                    <AccessTimeIcon fontSize="inherit" sx={{ mr: 0.5 }} />
-                                                    Last accessed: {formatDate(tree.last_accessed)}
-                                                </Typography>
-                                                <Typography variant="caption" color="text.secondary">
-                                                    Created: {formatDate(tree.created_at)}
-                                                </Typography>
-                                            </Stack>
-                                        }
-                                    />
-                                    <ListItemSecondaryAction>
+                                    secondaryAction={
                                         <Stack direction="row" spacing={0.5}>
                                             <Tooltip title="Open Tree">
                                                 <IconButton 
@@ -243,7 +220,51 @@ export const UserTreesList: React.FC<UserTreesListProps> = ({ onTreeDeleted }) =
                                                 </IconButton>
                                             </Tooltip>
                                         </Stack>
-                                    </ListItemSecondaryAction>
+                                    }
+                                >
+                                    <ListItemText
+                                        primary={
+                                            <Stack direction="row" alignItems="center" spacing={1}>
+                                                <Typography variant="subtitle2" component="span">
+                                                    {tree.title}
+                                                    <Tooltip title="Click to copy ID">
+                                                        <Typography 
+                                                            component="span" 
+                                                            variant="caption" 
+                                                            color="text.secondary" 
+                                                            sx={{ 
+                                                                ml: 1,
+                                                                cursor: 'pointer',
+                                                                '&:hover': { textDecoration: 'underline' }
+                                                            }}
+                                                            onClick={() => {
+                                                                navigator.clipboard.writeText(tree.id);
+                                                                onCopySuccess(true);
+                                                            }}
+                                                        >
+                                                            {tree.id.substring(0, 9)}...
+                                                        </Typography>
+                                                    </Tooltip>
+                                                </Typography>
+                                                <Chip 
+                                                    size="small" 
+                                                    label={`${tree.node_count} nodes`}
+                                                    variant="outlined"
+                                                />
+                                            </Stack>
+                                        }
+                                        secondary={
+                                            <Stack spacing={0.5} mt={0.5}>
+                                                <Typography variant="caption" display="flex" alignItems="center">
+                                                    <AccessTimeIcon fontSize="inherit" sx={{ mr: 0.5 }} />
+                                                    Last accessed: {formatDate(tree.last_accessed)}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Created: {formatDate(tree.created_at)}
+                                                </Typography>
+                                            </Stack>
+                                        }
+                                    />
                                 </ListItem>
                                 {index < trees.length - 1 && <Divider />}
                             </React.Fragment>
@@ -251,6 +272,7 @@ export const UserTreesList: React.FC<UserTreesListProps> = ({ onTreeDeleted }) =
                     </List>
                 )}
             </CardContent>
+
         </Card>
     );
 };

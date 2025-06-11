@@ -46,13 +46,12 @@ function main(port: number, host: string, frontendRoot: string | null): void {
             return
         }
         console.log("ws connected:", treeId)
+        const garbageCollect = true
+        const doc = getYDoc(treeId, garbageCollect)
 
         // update last accessed time
         treeMetadataManager.updateLastAccessed(treeId);
 
-
-        const garbageCollect = true
-        const doc = getYDoc(treeId, garbageCollect)
         setupWSConnection(conn, req, {
             doc: doc,
             gc: garbageCollect
@@ -67,7 +66,7 @@ function main(port: number, host: string, frontendRoot: string | null): void {
     app.use(express.urlencoded({limit: '50mb'}));
 
     const data: ServerData = new ServerData();
-
+    console.log(`serving with frontendRoot: ${frontendRoot}`)
     if (frontendRoot) {
         app.use(express.static(path.join(__dirname, path.dirname(frontendRoot))));
         app.get('/', (_req, res) => {
@@ -82,6 +81,7 @@ function main(port: number, host: string, frontendRoot: string | null): void {
         app.get('/', (_req, res) => {
             const query = _req.originalUrl.split('?')[1] || '';
             const redirectUrl = `http://0.0.0.0:39999${query ? '?' + query : ''}`;
+            console.log(`redirecting to ${redirectUrl}`)
             res.redirect(redirectUrl);
         });
     }

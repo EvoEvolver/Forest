@@ -11,8 +11,10 @@ import {
     Stack, 
     Button, 
     Paper,
+    Alert,
     TextField,
-    FormControl
+    FormControl,
+    Snackbar
 } from '@mui/material';
 import { v4 as uuidv4 } from 'uuid';
 import {httpUrl} from "../appState";
@@ -32,9 +34,38 @@ export const UserPanel = ({}) => {
     const authToken = useAtomValue(authTokenAtom)
     const [treeIdToDuplicate, setTreeIdToDuplicate] = useState('');
 
+    const [copySuccess, setCopySuccess] = useState(false);
+
+    const handleApiResponse = async (response: Response, errorContext: string) => {
+        if (!response.ok) {
+            const status = response.status;
+            if (status === 401) throw new Error("AUTHENTICATION_FAILED");
+            if (status === 403) throw new Error("PERMISSION_DENIED");
+            throw new Error(`HTTP_ERROR_${status}`);
+        }
+        
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+        return data;
+    };
+
+    const CopySuccessSnackbar = ({
+        open,
+        onClose,
+      }: {
+        open: boolean;
+        onClose: () => void;
+      }) => {
+        return (
+          <Snackbar open={open} autoHideDuration={1000} onClose={onClose}>
+            <Alert severity="success">Copied</Alert>
+          </Snackbar>
+        );
+      };
+    
     const handleCreateTree = async () => {
         try {
-            const nodeId = uuidv4();  
+            const nodeId = uuidv4();
             const treeData = {
                 tree: {
                     selectedNode: null,
@@ -53,99 +84,55 @@ export const UserPanel = ({}) => {
                 },
                 root_id: nodeId
             };
-            console.log("request body:", treeData)
-            const response = await fetch(httpUrl + "/api/createTree", {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${authToken}`,
-                },
-                body: JSON.stringify(treeData)
-            });
-
-            if (response.status === 401) {
-                throw new Error("AUTHENTICATION_FAILED");
-            }
-
-            if (response.status === 403) {
-                throw new Error("PERMISSION_DENIED");
-            }
-
-            if (!response.ok) {
-                throw new Error(`HTTP_ERROR_${response.status}`);
-            }
-
-            const data = await response.json();
-            if (data.error) {
-                console.error("Error creating tree:", data.error);
-                throw new Error(data.error);
-            }
-
-            // get returned tree_id and redirect to the tree
-            const treeId = data.tree_id;
-            if (treeId) {
-                console.log(`Tree created successfully with ID: ${treeId}`);
-                window.location.href = `${window.location.origin}/?id=${treeId}`;
-            } else {
-                throw new Error("No tree_id returned from server");
-            }
-
+    
+            const data = await handleApiResponse(
+                await fetch(httpUrl + "/api/createTree", {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${authToken}`,
+                    },
+                    body: JSON.stringify(treeData)
+                }),
+                "create tree"
+            );
+    
+            if (!data.tree_id) throw new Error("No tree_id returned from server");
+            window.location.href = `${window.location.origin}/?id=${data.tree_id}`;
+    
         } catch (error) {
             console.error("Error creating tree:", error);
             throw error;
         }
-    }
-
+    };
+    
     const handleDuplicateTree = async () => {
         if (!treeIdToDuplicate) {
             alert('Please enter a tree ID to duplicate');
             return;
         }
-
+    
         try {
-            const response = await fetch(httpUrl + "/api/duplicateTree", {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${authToken}`,
-                },
-                body: JSON.stringify({
-                    origin_tree_id: treeIdToDuplicate
-                })
-            });
-
-            if (response.status === 401) {
-                throw new Error("AUTHENTICATION_FAILED");
-            }
-
-            if (response.status === 403) {
-                throw new Error("PERMISSION_DENIED");
-            }
-
-            if (!response.ok) {
-                throw new Error(`HTTP_ERROR_${response.status}`);
-            }
-
-            const data = await response.json();
-            if (data.error) {
-                console.error("Error duplicating tree:", data.error);
-                throw new Error(data.error);
-            }
-
-            // get returned new_tree_id and redirect to the tree
-            const newTreeId = data.new_tree_id;
-            if (newTreeId) {
-                console.log(`Tree duplicated successfully with new ID: ${newTreeId}`);
-                window.location.href = `${window.location.origin}/?id=${newTreeId}`;
-            } else {
-                throw new Error("No new_tree_id returned from server");
-            }
-
+            const data = await handleApiResponse(
+                await fetch(httpUrl + "/api/duplicateTree", {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${authToken}`,
+                    },
+                    body: JSON.stringify({ origin_tree_id: treeIdToDuplicate })
+                }),
+                "duplicate tree"
+            );
+    
+            if (!data.new_tree_id) throw new Error("No new_tree_id returned from server");
+            window.location.href = `${window.location.origin}/?id=${data.new_tree_id}`;
+    
         } catch (error) {
             console.error("Error duplicating tree:", error);
             alert(`Failed to duplicate tree: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
-    }
+    };
 
     return (
         <Box
@@ -176,7 +163,10 @@ export const UserPanel = ({}) => {
                                 <Tooltip title="Copy ID">
                                     <IconButton
                                         size="small"
-                                        onClick={() => navigator.clipboard.writeText(user.id)}
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(user.id)
+                                            setCopySuccess(true)
+                                        }}
                                     >
                                         <ContentCopyIcon fontSize="inherit" />
                                     </IconButton>
@@ -208,8 +198,31 @@ export const UserPanel = ({}) => {
                         </Stack>
                     </FormControl>
                 </Stack>
-                <UserTreesList />
+                <UserTreesList copySuccess={copySuccess} onCopySuccess={setCopySuccess} />
             </Card>
+            <Snackbar
+                open={copySuccess}
+                autoHideDuration={1000}
+                sx={{ 
+                    opacity: 0.9,
+                }}
+                onClose={() => setCopySuccess(false)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert 
+                    severity="success" 
+                    sx={{ 
+                        bgcolor: 'primary.main',
+                        color: 'white',
+                        opacity: 0.9,
+                        '& .MuiAlert-icon': {
+                            color: 'white'
+                        }
+                    }}
+                >
+                    Copied
+                </Alert>
+            </Snackbar>
         </Box>
     );
 };
