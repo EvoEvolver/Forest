@@ -2,14 +2,12 @@ import React, {useContext, useEffect, useRef, useState} from 'react'
 import {Array as YArray} from 'yjs'
 import {Box, Button, Card, CardContent, Paper, Stack, TextField, Typography,} from "@mui/material";
 import SendIcon from '@mui/icons-material/Send';
-import SettingsIcon from '@mui/icons-material/Settings';
-import SettingsPanel from "./setting";
 import {useAtom} from "jotai";
 import {atomWithStorage} from 'jotai/utils'
 import {thisNodeContext} from "../../NodeContentTab";
 
 interface ChatViewProps {
-  label?: string; // The ? makes it optional
+    label?: string; // The ? makes it optional
 }
 
 export default function ChatView({label}: ChatViewProps) {
@@ -17,7 +15,7 @@ export default function ChatView({label}: ChatViewProps) {
 
     let chatLabel = label || "";
 
-    let yMessages = node.ydata.get("yMessages"+chatLabel);
+    let yMessages = node.ydata.get("yMessages" + chatLabel);
     if (!yMessages) {
         yMessages = new YArray();
         node.ydata.set("yMessages", yMessages);
@@ -43,10 +41,9 @@ export default function ChatView({label}: ChatViewProps) {
 
 export const usernameAtom = atomWithStorage('chat-username', '');
 
-export function ChatViewImpl({sendMessage, messages,messageDisabled}) {
+export function ChatViewImpl({sendMessage, messages, messageDisabled}) {
     const [message, setMessage] = useState("");
     const endRef = useRef(null);
-    const [settingPanelOpen, setSettingPanelOpen] = useState(false)
     const [username, setUsername] = useAtom(usernameAtom);
 
     useEffect(() => {
@@ -97,22 +94,8 @@ export function ChatViewImpl({sendMessage, messages,messageDisabled}) {
                     cursor: "pointer",
                 }}
             >
-                <Box
-                    sx={{
-                        position: "absolute",
-                        top: 8,
-                        right: 8,
-                        cursor: "pointer",
-                    }}
-                    onClick={() => setSettingPanelOpen(true)} // Toggle SettingsPanel on click
-                >
-                    <SettingsIcon/>
-                </Box>
             </Box>
 
-            {/* Conditionally render SettingsPanel */}
-            {settingPanelOpen &&
-                <SettingsPanel closePanel={() => setSettingPanelOpen(false)}/>}
 
             <CardContent sx={{flex: 1, overflowY: "auto", pb: 1}}>
                 <Stack spacing={1}>
