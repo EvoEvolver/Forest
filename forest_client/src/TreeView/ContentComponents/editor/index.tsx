@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useState} from 'react'
+import React, {useContext, useEffect, useRef, useState} from 'react'
 import './style.css';
 import {useAtomValue} from "jotai";
 import {YjsProviderAtom} from "../../../TreeState/YjsConnection";
@@ -15,8 +15,10 @@ import OrderedList from '@tiptap/extension-ordered-list'
 import ListItem from '@tiptap/extension-list-item'
 import Image from '@tiptap/extension-image'
 import {CommentExtension} from './Extensions/comment'
-import RateReviewIcon from '@mui/icons-material/RateReview';
-import {CommentComponent, Comment} from "./EditorComponents/Comment/commentComponent";
+import {MathExtension} from '@aarkue/tiptap-math-extension'
+import Bold from '@tiptap/extension-bold'
+import {Button, Card, Menu, TextField} from "@mui/material";
+import {usePopper} from "react-popper";
 
 // get if the current environment is development or production
 // @ts-ignore
@@ -49,8 +51,55 @@ const TiptapEditor = (props: TiptapEditorProps) => {
 
 export default TiptapEditor;
 
+const CommentHover = ({hoveredEl, editor}) => {
+    const commentId = hoveredEl.getAttribute("data-comment-id");
+    const [editedComment, setEditedComment] = useState(hoveredEl.getAttribute("data-comment"));
+    const handleCommentUpdate = () => {
+        editor.commands.updateComment(commentId, editedComment);
+    };
+
+    const removeHover = () => {
+        const commentExtension = editor.extensionManager.extensions.find(ext => ext.name === 'comment');
+        commentExtension.options.onCommentActivated(null);
+    }
+
+    const handleCommentRemove = () => {
+        editor.commands.unsetComment(commentId);
+        removeHover()
+    };
+
+    return (
+        <Card sx={{width: 'fit-content', p: 1}}>
+            <TextField
+                size="small"
+                value={editedComment}
+                onChange={(e) => setEditedComment(e.target.value)}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                        handleCommentUpdate()
+                        removeHover()
+                        e.preventDefault(); // Prevents the default behavior of adding a new line
+                    }
+                }}
+                onBlur={handleCommentUpdate}
+            />
+            <Button
+                variant="contained"
+                size="small"
+                color="error"
+                onClick={handleCommentRemove}
+                sx={{ml: 1}}
+            >
+                Remove
+            </Button>
+        </Card>
+    );
+};
 
 const EditorImpl = ({yXML, provider, dataLabel}) => {
+    let editor = null;
+    const editorDivRef = useRef<HTMLDivElement>(null);
+
     const extensions = [
         Document,
         Paragraph,
@@ -59,7 +108,8 @@ const EditorImpl = ({yXML, provider, dataLabel}) => {
         OrderedList,
         ListItem,
         Image,
-
+        Bold,
+        MathExtension.configure({evaluation: false}),
         Collaboration.extend().configure({
             fragment: yXML,
         }),
@@ -68,34 +118,56 @@ const EditorImpl = ({yXML, provider, dataLabel}) => {
         }),
     ]
 
-    if (isDevMode) {
-        const commentExtension = CommentExtension.configure({
-            HTMLAttributes: {
-                class: "my-comment",
-            },
-            onCommentActivated: (commentId) => {},
-        })
-        // @ts-ignore
-        extensions.push(commentExtension)
-    }
+    const [hoverElements, setHoverElements] = useState([]);
 
-    const [comments, setComments] = useState<Comment[]>([])
+    const onCommentActivated = (commentId) => {
+            if (!commentId) {
+                setHoverElements([]);
+                return;
+            }
+            const el = editorDivRef.current?.querySelector(`[data-comment-id="${commentId}"]`);
+            console.log(el)
+            setHoverElements(prev => {
+                if (el) {
+                    return [{
+                        el: el,
+                        render: (el, editor) => <CommentHover hoveredEl={el} editor={editor}/>
+                    }];
+                }
+                return prev;
+            })
+        }
 
-    const setComment = () => {
+    const commentExtension = CommentExtension.configure({
+        HTMLAttributes: {
+            class: "comment",
+        },
+        onCommentActivated: onCommentActivated,
+    })
+    // @ts-ignore
+    extensions.push(commentExtension)
+    // Inside EditorImpl component, add these state variables
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const [commentText, setCommentText] = useState('');
+
+    // Add these handlers
+    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleClose = () => {
+        setAnchorEl(null);
+    };
+
+    const handleCommentSubmit = () => {
         const id = `comment-${Date.now()}`;
-        const newComment: Comment = {
-            id,
-            content: '',
-            replies: [],
-            createdAt: new Date(),
-            selection: null
-        };
-        editor?.commands.setComment(newComment.id)
-        setComments((prev) => ([...prev, newComment]))
-        newComment.selection = document.querySelector(`[data-comment-id="${id}"]`) as HTMLElement
-    }
+        editor?.commands.setComment(id, commentText);
+        setCommentText('');
+        handleClose();
+    };
 
-    const editor = useEditor({
+
+    editor = useEditor({
         enableContentCheck: true,
         onContentError: ({disableCollaboration}) => {
             disableCollaboration()
@@ -124,19 +196,80 @@ const EditorImpl = ({yXML, provider, dataLabel}) => {
 
     return (
         <div className="column-half">
-            <EditorContent editor={editor} className="main-group"/>
-            {isDevMode && <BubbleMenu editor={editor} className='p-1 border rounded-lg border-slate-400'>
-                <button
-                    className='rounded-md bg-white/10 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-white/20'
-                    onClick={setComment}
+            <div ref={editorDivRef}>
+                <EditorContent editor={editor} className="main-group"/>
+            </div>
+            <BubbleMenu editor={editor} tippyOptions={{duration: 100}}>
+                <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => editor.chain().focus().toggleBold().run()}
                 >
-                    <RateReviewIcon/>
-                </button>
+                    Bold
+                </Button>
+                <Button variant="contained" size="small" onClick={handleClick}>Comment</Button><Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleClose}
+            >
+                <div style={{padding: '16px'}}>
+                    <TextField
+                        size="small"
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                        placeholder="Enter your comment"
+                    />
+                    <Button
+                        variant="contained"
+                        size="small"
+                        onClick={handleCommentSubmit}
+                        sx={{marginLeft: 1}}
+                    >Submit
+                    </Button>
+                </div>
+            </Menu>
             </BubbleMenu>
-            }
-            {isDevMode && comments.map((comment: Comment) => (
-                <CommentComponent key={comment.id} comment={comment} />
-            ))}
+            <HoverElements hoverElements={hoverElements} editor={editor}/>
         </div>
     )
 }
+const HoverElements = ({hoverElements, editor}) => {
+    const [referenceElement, setReferenceElement] = useState(null);
+    const [popperElement, setPopperElement] = useState(null);
+
+    const {styles, attributes} = usePopper(referenceElement, popperElement, {
+        placement: 'top-start',
+        modifiers: [
+            {
+                name: 'offset',
+                options: {
+                    offset: [0, 8],
+                },
+            },
+        ],
+    });
+
+    useEffect(() => {
+        if (hoverElements.length > 0) {
+            setReferenceElement(hoverElements[0].el);
+        }
+    }, [hoverElements]);
+
+    return (
+        <>
+            {hoverElements.map((el, index) => {
+                const {render} = el;
+                return (
+                    <div
+                        ref={setPopperElement}
+                        style={{...styles.popper, zIndex: 99}}
+                        {...attributes.popper}
+                        key={index}
+                    >
+                        {render(el.el, editor)}
+                    </div>
+                );
+            })}
+        </>
+    );
+};
