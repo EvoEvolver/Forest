@@ -3,6 +3,7 @@ import path from 'path';
 import minimist from 'minimist'
 import http from 'http';
 import cors from 'cors';
+import crypto from 'crypto';
 import {patchTree, ServerData} from "./nodeFactory";
 import {applyUpdate, Doc, encodeStateAsUpdate} from 'yjs';
 import {WebSocketServer} from 'ws';
@@ -10,7 +11,7 @@ import {getYDoc, setupWSConnection} from './y-websocket/utils'
 import OpenAI from 'openai';
 import * as dotenv from 'dotenv'
 // Import authentication middleware
-import {AuthenticatedRequest, authenticateToken, requireAIPermission} from './middleware/auth';
+import {AuthenticatedRequest, authenticateToken, requireAIPermission, requireCreateTreePermission} from './middleware/auth';
 
 dotenv.config({
     path: path.resolve(__dirname, '.env'),
@@ -79,35 +80,50 @@ function main(port: number, host: string, frontendRoot: string | null): void {
         });
     }
 
-    app.put('/api/createTree', (req, res) => {
-        const tree_patch = req.body.tree;
-        const treeId = crypto.randomUUID();
-        const rootId = req.body.root_id;
-        const doc = getYDoc(treeId)
-        const nodeDict = doc.getMap("nodeDict")
-        patchTree(nodeDict, tree_patch);
-        // update the metadata
-        const metadata = doc.getMap("metadata");
-        if (rootId) {
-            metadata.set("rootId", rootId);
+    // Protected tree creation endpoint - requires authentication and tree creation permission
+    app.put('/api/createTree', authenticateToken, requireCreateTreePermission, (req: AuthenticatedRequest, res) => {
+        console.log(`🌳 Tree creation request from authenticated user: ${req.user?.email}`);
+        try {
+            const tree_patch = req.body.tree;
+            const treeId = crypto.randomUUID();
+            const rootId = req.body.root_id;
+            const doc = getYDoc(treeId)
+            const nodeDict = doc.getMap("nodeDict")
+            patchTree(nodeDict, tree_patch);
+            // update the metadata
+            const metadata = doc.getMap("metadata");
+            if (rootId) {
+                metadata.set("rootId", rootId);
+            }
+            metadata.set("version", "0.0.1");
+            console.log(`✅ Tree created successfully: ${treeId} for user: ${req.user?.email}`);
+            // send the new tree ID back to the client
+            res.json({tree_id: treeId});
+        } catch (error) {
+            console.error(`❌ Error creating tree for user ${req.user?.email}:`, error);
+            res.status(500).json({error: 'An error occurred while creating the tree.'});
         }
-        metadata.set("version", "0.0.1");
-        console.log("Created tree", treeId)
-        // send the new tree ID back to the client
-        res.json({tree_id: treeId});
     });
 
 
-    app.put('/api/duplicateTree', (req, res) => {
-        const originTreeId = req.body.origin_tree_id;
-        const originDoc = getYDoc(originTreeId)
-        // generate a new document ID string using uuid
-        const newDocId = crypto.randomUUID();
-        const newDoc = getYDoc(newDocId)
-        const stateOrigin = encodeStateAsUpdate(originDoc)
-        applyUpdate(newDoc, stateOrigin);
-        // return the new document ID
-        res.json({new_tree_id: newDocId});
+    // Protected tree duplication endpoint - requires authentication and tree creation permission
+    app.put('/api/duplicateTree', authenticateToken, requireCreateTreePermission, (req: AuthenticatedRequest, res) => {
+        console.log(`🌳 Tree duplication request from authenticated user: ${req.user?.email}`);
+        try {
+            const originTreeId = req.body.origin_tree_id;
+            const originDoc = getYDoc(originTreeId)
+            // generate a new document ID string using uuid
+            const newDocId = crypto.randomUUID();
+            const newDoc = getYDoc(newDocId)
+            const stateOrigin = encodeStateAsUpdate(originDoc)
+            applyUpdate(newDoc, stateOrigin);
+            console.log(`✅ Tree duplicated successfully: ${originTreeId} -> ${newDocId} for user: ${req.user?.email}`);
+            // return the new document ID
+            res.json({new_tree_id: newDocId});
+        } catch (error) {
+            console.error(`❌ Error duplicating tree for user ${req.user?.email}:`, error);
+            res.status(500).json({error: 'An error occurred while duplicating the tree.'});
+        }
     });
 
 

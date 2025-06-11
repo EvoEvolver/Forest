@@ -30,7 +30,7 @@ for port in "$@"; do
             # Read from terminal explicitly to avoid pipe interference
             read choice < /dev/tty
             if [ "$choice" = "y" ]; then
-                kill "$pid"
+                kill -9 -- "$pid" || pkill -9 -P "$pid"
                 echo "Killed PID $pid"
             else
                 echo "Skipped PID $pid"

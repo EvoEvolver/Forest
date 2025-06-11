@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import * as jwt from 'jsonwebtoken';
 const isDevelopment = process.env.NODE_ENV === 'development';
 // disable authentication before we finish the login flow
-const noAuthRequired = true
+const noAuthRequired = false
 
 // Interface for JWT claims from Supabase
 interface SupabaseJWTClaims {
@@ -106,8 +106,7 @@ export const authenticateToken = (req: AuthenticatedRequest, res: Response, next
 };
 
 /**
- * Middleware to check specific permissions (extensible for future features)
- * Currently checks basic AI usage permission
+ * Middleware to check AI permission
  */
 export const requireAIPermission = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
   if (!req.user) {
@@ -116,7 +115,7 @@ export const requireAIPermission = (req: AuthenticatedRequest, res: Response, ne
   }
 
   // For now, all authenticated users can use AI
-  // This can be extended to check user subscription, role, usage limits, etc.
+  // TODO: specify on backend
   const hasAIPermission = true; // Future: check user subscription/permissions
 
   if (!hasAIPermission) {
@@ -133,7 +132,6 @@ export const requireAIPermission = (req: AuthenticatedRequest, res: Response, ne
 
 /**
  * Future-ready permission middleware for file uploads
- * Demonstrates extensible permission system
  */
 export const requireFileUploadPermission = (maxFileSize: number = 10) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
@@ -155,4 +153,27 @@ export const requireFileUploadPermission = (maxFileSize: number = 10) => {
 
     next();
   };
-}; 
+};
+
+/**
+ * Future-ready permission middleware for file uploads
+ */
+export const requireCreateTreePermission = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      res.status(401).json({ error: 'Authentication required' });
+      return;
+    }
+    // TODO: specify on backend
+    const hasCreateTreePermission = true;
+
+    if (!hasCreateTreePermission) {
+      res.status(403).json({
+        error: 'Tree creation not available',
+        message: 'Please upgrade your subscription to create new trees'
+      });
+      return;
+    }
+
+    console.log(`✅Tree creation permission granted for user: ${req.user.email}`);
+    next();
+};
