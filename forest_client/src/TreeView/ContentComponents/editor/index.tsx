@@ -17,8 +17,9 @@ import Image from '@tiptap/extension-image'
 import {CommentExtension} from './Extensions/comment'
 import {MathExtension} from '@aarkue/tiptap-math-extension'
 import Bold from '@tiptap/extension-bold'
-import {Button, Card, Menu, TextField} from "@mui/material";
+import {Button, Card, IconButton, Menu, TextField} from "@mui/material";
 import {usePopper} from "react-popper";
+import ClearIcon from '@mui/icons-material/Clear';
 
 // get if the current environment is development or production
 // @ts-ignore
@@ -54,8 +55,11 @@ export default TiptapEditor;
 const CommentHover = ({hoveredEl, editor}) => {
     const commentId = hoveredEl.getAttribute("data-comment-id");
     const [editedComment, setEditedComment] = useState(hoveredEl.getAttribute("data-comment"));
+    const [isEditing, setIsEditing] = useState(false);
+
     const handleCommentUpdate = () => {
         editor.commands.updateComment(commentId, editedComment);
+        setIsEditing(false);
     };
 
     const removeHover = () => {
@@ -65,33 +69,41 @@ const CommentHover = ({hoveredEl, editor}) => {
 
     const handleCommentRemove = () => {
         editor.commands.unsetComment(commentId);
-        removeHover()
+        removeHover();
     };
 
     return (
         <Card sx={{width: 'fit-content', p: 1}}>
-            <TextField
-                size="small"
-                value={editedComment}
-                onChange={(e) => setEditedComment(e.target.value)}
-                onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                        handleCommentUpdate()
-                        removeHover()
-                        e.preventDefault(); // Prevents the default behavior of adding a new line
-                    }
-                }}
-                onBlur={handleCommentUpdate}
-            />
-            <Button
-                variant="contained"
-                size="small"
-                color="error"
-                onClick={handleCommentRemove}
-                sx={{ml: 1}}
-            >
-                Remove
-            </Button>
+            {isEditing ? (
+                <TextField
+                    size="small"
+                    value={editedComment}
+                    onChange={(e) => setEditedComment(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            handleCommentUpdate();
+                            removeHover();
+                            e.preventDefault();
+                        }
+                    }}
+                    onBlur={handleCommentUpdate}
+                    autoFocus
+                />
+            ) : (
+                <><span
+                    onDoubleClick={() => setIsEditing(true)}
+                    style={{padding: '8px', display: 'inline-block'}}
+                >
+                    {editedComment}
+                </span>
+                    <IconButton
+                        size="small"
+                        onClick={handleCommentRemove}
+                    >
+                        <ClearIcon/>
+                    </IconButton></>
+            )}
+
         </Card>
     );
 };
@@ -121,22 +133,22 @@ const EditorImpl = ({yXML, provider, dataLabel}) => {
     const [hoverElements, setHoverElements] = useState([]);
 
     const onCommentActivated = (commentId) => {
-            if (!commentId) {
-                setHoverElements([]);
-                return;
-            }
-            const el = editorDivRef.current?.querySelector(`[data-comment-id="${commentId}"]`);
-            console.log(el)
-            setHoverElements(prev => {
-                if (el) {
-                    return [{
-                        el: el,
-                        render: (el, editor) => <CommentHover hoveredEl={el} editor={editor}/>
-                    }];
-                }
-                return prev;
-            })
+        if (!commentId) {
+            setHoverElements([]);
+            return;
         }
+        const el = editorDivRef.current?.querySelector(`[data-comment-id="${commentId}"]`);
+        console.log(el)
+        setHoverElements(prev => {
+            if (el) {
+                return [{
+                    el: el,
+                    render: (el, editor) => <CommentHover hoveredEl={el} editor={editor}/>
+                }];
+            }
+            return prev;
+        })
+    }
 
     const commentExtension = CommentExtension.configure({
         HTMLAttributes: {
@@ -151,9 +163,17 @@ const EditorImpl = ({yXML, provider, dataLabel}) => {
     const [commentText, setCommentText] = useState('');
 
     // Add these handlers
+// Add this ref before the handleClick function
+    const commentInputRef = useRef<HTMLInputElement>(null);
+
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         setAnchorEl(event.currentTarget);
+        // Use setTimeout to ensure the menu is rendered before attempting to focus
+        setTimeout(() => {
+            commentInputRef.current?.focus();
+        }, 0);
     };
+
 
     const handleClose = () => {
         setAnchorEl(null);
@@ -170,14 +190,8 @@ const EditorImpl = ({yXML, provider, dataLabel}) => {
     editor = useEditor({
         enableContentCheck: true,
         onContentError: ({disableCollaboration}) => {
+            console.error("Content error in Tiptap editor:", disableCollaboration);
             disableCollaboration()
-        },
-        onCreate: ({editor: currentEditor}) => {
-            /*provider.on('synced', () => {
-                if (currentEditor.isEmpty) {
-                    currentEditor.commands.setContent("")
-                }
-            })*/
         },
         extensions: extensions,
     })
@@ -214,9 +228,16 @@ const EditorImpl = ({yXML, provider, dataLabel}) => {
             >
                 <div style={{padding: '16px'}}>
                     <TextField
+                        inputRef={commentInputRef}
                         size="small"
                         value={commentText}
                         onChange={(e) => setCommentText(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                handleCommentSubmit();
+                                e.preventDefault();
+                            }
+                        }}
                         placeholder="Enter your comment"
                     />
                     <Button
