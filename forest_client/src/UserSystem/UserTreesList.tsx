@@ -192,35 +192,6 @@ export const UserTreesList: React.FC<UserTreesListProps> = ({ copySuccess, onCop
                                         border: '1px solid',
                                         borderColor: 'divider'
                                     }}
-                                    secondaryAction={
-                                        <Stack direction="row" spacing={0.5}>
-                                            <Tooltip title="Open Tree">
-                                                <IconButton 
-                                                    edge="end" 
-                                                    size="small"
-                                                    onClick={() => handleOpenTree(tree.id)}
-                                                    color="primary"
-                                                >
-                                                    <LaunchIcon fontSize="small" />
-                                                </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="Delete Tree">
-                                                <IconButton 
-                                                    edge="end" 
-                                                    size="small"
-                                                    onClick={() => handleDeleteTree(tree.id)}
-                                                    disabled={deletingTreeId === tree.id}
-                                                    color="error"
-                                                >
-                                                    {deletingTreeId === tree.id ? (
-                                                        <CircularProgress size={16} />
-                                                    ) : (
-                                                        <DeleteIcon fontSize="small" />
-                                                    )}
-                                                </IconButton>
-                                            </Tooltip>
-                                        </Stack>
-                                    }
                                 >
                                     <ListItemText
                                         primary={
@@ -251,6 +222,31 @@ export const UserTreesList: React.FC<UserTreesListProps> = ({ copySuccess, onCop
                                                     label={`${tree.node_count} nodes`}
                                                     variant="outlined"
                                                 />
+                                                <Tooltip title="Open Tree">
+                                                <IconButton 
+                                                    edge="end" 
+                                                    size="small"
+                                                    onClick={() => handleOpenTree(tree.id)}
+                                                    color="primary"
+                                                >
+                                                    <LaunchIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Delete Tree">
+                                                <IconButton 
+                                                    edge="end" 
+                                                    size="small"
+                                                    onClick={() => handleDeleteTree(tree.id)}
+                                                    disabled={deletingTreeId === tree.id}
+                                                    color="error"
+                                                >
+                                                    {deletingTreeId === tree.id ? (
+                                                        <CircularProgress size={16} />
+                                                    ) : (
+                                                        <DeleteIcon fontSize="small" />
+                                                    )}
+                                                </IconButton>
+                                            </Tooltip>
                                             </Stack>
                                         }
                                         secondary={
