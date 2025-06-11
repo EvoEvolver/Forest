@@ -11,19 +11,19 @@ import {
     userAtom,
     userPermissionsAtom
 } from "./authStates";
-import { v4 as uuidv4 } from 'uuid';
-import {httpUrl} from "../appState";
-import {Node} from "../TreeState/entities";
+import { UserPanel } from './UserPanel'
 
 const AuthButton: React.FC = () => {
     const user = useAtomValue(userAtom)
     const isAuthenticated = useAtomValue(isAuthenticatedAtom)
-    const authToken = useAtomValue(authTokenAtom)
+    
     const setAuthModalOpen = useSetAtom(authModalOpenAtom)
     const setUser = useSetAtom(userAtom)
     const setAuthToken = useSetAtom(authTokenAtom)
     const setUserPermissions = useSetAtom(userPermissionsAtom)
     const supabaseClient = useAtomValue(supabaseClientAtom)
+
+    // const [showUserPanel, setShowUserPanel] = useState(false)
 
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
     const open = Boolean(anchorEl)
@@ -56,69 +56,7 @@ const AuthButton: React.FC = () => {
         }
     }
 
-    const handleCreateTree = async () => {
-        try {
-            const nodeId = uuidv4();  
-            const treeData = {
-                tree: {
-                    selectedNode: null,
-                    nodeDict: {
-                        [nodeId]: { 
-                            title: "root",
-                            tabs: { content: "" },
-                            children: [],
-                            id: nodeId,
-                            parent: null,
-                            data: {},
-                            tools: [{"Operations":"<PaperEditorSide1/>"}, {"AI assistant":"<PaperEditorSide2/>"}],
-                            other_parents: []
-                        }
-                    }
-                },
-                root_id: nodeId
-            };
-            console.log("request body:", treeData)
-            const response = await fetch(httpUrl + "/api/createTree", {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${authToken}`,
-                },
-                body: JSON.stringify(treeData)
-            });
 
-            if (response.status === 401) {
-                throw new Error("AUTHENTICATION_FAILED");
-            }
-
-            if (response.status === 403) {
-                throw new Error("PERMISSION_DENIED");
-            }
-
-            if (!response.ok) {
-                throw new Error(`HTTP_ERROR_${response.status}`);
-            }
-
-            const data = await response.json();
-            if (data.error) {
-                console.error("Error creating tree:", data.error);
-                throw new Error(data.error);
-            }
-
-            // get returned tree_id and redirect to the tree
-            const treeId = data.tree_id;
-            if (treeId) {
-                console.log(`Tree created successfully with ID: ${treeId}`);
-                window.location.href = `${window.location.origin}/?id=${treeId}`;
-            } else {
-                throw new Error("No tree_id returned from server");
-            }
-
-        } catch (error) {
-            console.error("Error creating tree:", error);
-            throw error;
-        }
-    }
 
 
     if (!isAuthenticated) {
@@ -190,9 +128,8 @@ const AuthButton: React.FC = () => {
                     <LogoutIcon sx={{mr: 1}}/>
                     Sign out
                 </MenuItem>
-                <MenuItem onClick={handleCreateTree}>
-                    {/*<LogoutIcon sx={{mr: 1}}/>*/}
-                    create test tree1
+                <MenuItem> 
+                    <UserPanel/>
                 </MenuItem>
             </Menu>
         </>
