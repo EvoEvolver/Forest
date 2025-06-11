@@ -5,7 +5,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import {Auth} from '@supabase/auth-ui-react'
 import {ThemeSupa} from '@supabase/auth-ui-shared'
 import {authModalOpenAtom, supabaseClientAtom} from "./authStates";
-import {useAtomValue} from "jotai/index";
+import {useAtomValue} from "jotai";
 
 const AuthModal: React.FC = () => {
     const [authModalOpen, setAuthModalOpen] = useAtom(authModalOpenAtom)

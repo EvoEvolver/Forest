@@ -1,10 +1,7 @@
 import React, {useEffect} from 'react'
 import {Box, Button, Container, Paper, Stack, Typography} from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import CloseIcon from '@mui/icons-material/Close'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import {useAtomValue} from "jotai/index";
-import {supabaseClientAtom} from "./authStates";
 import {setupSupabaseClient} from "./supabase";
 
 const AuthSuccessPage: React.FC = () => {

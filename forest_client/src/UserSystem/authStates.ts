@@ -1,5 +1,5 @@
 /*** Authentication related atoms ***/
-import {atom} from "jotai/index";
+import {atom} from "jotai";
 import {setupSupabaseClient} from "./supabase";
 import {WritableAtom} from "jotai";
 

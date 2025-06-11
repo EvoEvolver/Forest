@@ -3,7 +3,7 @@ import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import ArticleIcon from "@mui/icons-material/Article";
 import AuthButton from "./UserSystem/AuthButton";
 import React from "react";
-import {useAtomValue} from "jotai/index";
+import {useAtomValue} from "jotai";
 import {supabaseClientAtom} from "./UserSystem/authStates";
 
 export function getAppBar(setCurrentPage: (value: (((prevState: string) => string) | string)) => void, currentPage: string) {

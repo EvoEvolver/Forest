@@ -1,6 +1,11 @@
 import {Mark, mergeAttributes, Range} from "@tiptap/core";
 import {Mark as PMMark} from "@tiptap/pm/model";
 import "./comment.css"
+import React, {useEffect, useState} from "react";
+import {Card, IconButton, TextField} from "@mui/material";
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from "@mui/icons-material/Delete";
+
 // Update the Commands interface
 declare module "@tiptap/core" {
     interface Commands<ReturnType> {
@@ -19,7 +24,7 @@ interface MarkWithRange {
 
 interface CommentOptions {
     HTMLAttributes: Record<string, any>;
-    onCommentActivated: (commentId: string) => void;
+    onCommentActivated: (commentId: string, editor, options: any) => void;
 }
 
 interface CommentStorage {
@@ -82,7 +87,7 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
 
         if (!marks.length) {
             this.storage.activeCommentId = null;
-            this.options.onCommentActivated(this.storage.activeCommentId);
+            this.options.onCommentActivated(this.storage.activeCommentId, this.editor, null);
             return;
         }
 
@@ -92,7 +97,7 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
 
         this.storage.activeCommentId = activeCommentMark?.attrs.commentId || null;
 
-        this.options.onCommentActivated(this.storage.activeCommentId);
+        this.options.onCommentActivated(this.storage.activeCommentId, this.editor, null);
     },
 
     addStorage() {
@@ -135,7 +140,7 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
                     });
 
                     commentMarksWithRange.forEach(({mark, range}) => {
-                        const newAttrs = { ...mark.attrs, comment };
+                        const newAttrs = {...mark.attrs, comment};
                         tr.addMark(range.from, range.to, mark.type.create(newAttrs));
                     });
 
@@ -200,3 +205,94 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
+export const CommentHover = ({hoveredEl, editor, options}) => {
+
+    const commentId = hoveredEl.getAttribute("data-comment-id");
+    const commentContent = hoveredEl.getAttribute("data-comment");
+    const [editedComment, setEditedComment] = useState(commentContent);
+    const [isEditing, setIsEditing] = useState(options['inputOn'] || false);
+
+    const handleCommentUpdate = () => {
+        editor.commands.updateComment(commentId, editedComment);
+        setIsEditing(false);
+    };
+
+    const removeHover = () => {
+        const commentExtension = editor.extensionManager.extensions.find(ext => ext.name === 'comment');
+        setIsEditing(false);
+        commentExtension.options.onCommentActivated(null, editor, null);
+    }
+
+    const handleCommentRemove = () => {
+        editor.commands.unsetComment(commentId);
+        removeHover();
+    };
+
+    useEffect(() => {
+        const newCommentContent = hoveredEl.getAttribute("data-comment");
+        setEditedComment(newCommentContent);
+    }, [hoveredEl]);
+
+    return (
+        <Card sx={{width: 'fit-content', p: 0.5}} style={{padding: "0"}}>
+            {isEditing ? (
+                <TextField
+                    size="small"
+                    value={editedComment}
+                    onChange={(e) => setEditedComment(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            handleCommentUpdate();
+                            setIsEditing(false);
+                            e.preventDefault();
+                        }
+                    }}
+                    onBlur={handleCommentUpdate}
+                    autoFocus
+                />
+            ) : (
+                <><span
+                    style={{paddingLeft: '8px', display: 'inline-block'}}
+                >
+                    {editedComment}
+                </span>
+                    <IconButton
+                        size="small"
+                        onClick={() => setIsEditing(true)}
+                    >
+                        <EditIcon/>
+                    </IconButton>
+                    <IconButton
+                        size="small"
+                        onClick={handleCommentRemove}
+                    >
+                        <DeleteIcon/>
+                    </IconButton></>
+            )}
+
+        </Card>
+    );
+};
+
+export function makeOnCommentActivated(setHoverElements) {
+    return (commentId, editor, options) => {
+        let _options = options || {};
+        if (!commentId) {
+            setHoverElements([]);
+            return;
+        }
+        const el = editor.view.dom.querySelector(`[data-comment-id="${commentId}"]`);
+        const hoverElement = {
+            el: el,
+            render: (el, editor) => (
+                <CommentHover
+                    key={commentId} // Add this
+                    hoveredEl={el}
+                    editor={editor}
+                    options={{..._options}}
+                />
+            )
+        }
+        setHoverElements([hoverElement]);
+    }
+}

@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useRef, useState} from 'react'
+import React, {useContext, useEffect, useState} from 'react'
 import './style.css';
 import {useAtomValue} from "jotai";
 import {YjsProviderAtom} from "../../../TreeState/YjsConnection";
@@ -14,24 +14,15 @@ import BulletList from '@tiptap/extension-bullet-list'
 import OrderedList from '@tiptap/extension-ordered-list'
 import ListItem from '@tiptap/extension-list-item'
 import Image from '@tiptap/extension-image'
-import {CommentExtension} from './Extensions/comment'
+import {CommentExtension, makeOnCommentActivated} from './Extensions/comment'
 import {MathExtension} from '@aarkue/tiptap-math-extension'
 import Bold from '@tiptap/extension-bold'
-import {Button, Card, IconButton, Menu, TextField} from "@mui/material";
+import {Button} from "@mui/material";
 import {usePopper} from "react-popper";
-import ClearIcon from '@mui/icons-material/Clear';
-
-// get if the current environment is development or production
-// @ts-ignore
-const isDevMode = (import.meta.env.MODE === 'development');
-if (isDevMode) {
-    console.warn("This is dev mode. Experimental features are enabled.");
-}
 
 interface TiptapEditorProps {
     label?: string
 }
-
 
 const TiptapEditor = (props: TiptapEditorProps) => {
     const node = useContext(thisNodeContext)
@@ -50,67 +41,13 @@ const TiptapEditor = (props: TiptapEditorProps) => {
 
 };
 
+
 export default TiptapEditor;
 
-const CommentHover = ({hoveredEl, editor}) => {
-    const commentId = hoveredEl.getAttribute("data-comment-id");
-    const [editedComment, setEditedComment] = useState(hoveredEl.getAttribute("data-comment"));
-    const [isEditing, setIsEditing] = useState(false);
-
-    const handleCommentUpdate = () => {
-        editor.commands.updateComment(commentId, editedComment);
-        setIsEditing(false);
-    };
-
-    const removeHover = () => {
-        const commentExtension = editor.extensionManager.extensions.find(ext => ext.name === 'comment');
-        commentExtension.options.onCommentActivated(null);
-    }
-
-    const handleCommentRemove = () => {
-        editor.commands.unsetComment(commentId);
-        removeHover();
-    };
-
-    return (
-        <Card sx={{width: 'fit-content', p: 1}}>
-            {isEditing ? (
-                <TextField
-                    size="small"
-                    value={editedComment}
-                    onChange={(e) => setEditedComment(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                            handleCommentUpdate();
-                            removeHover();
-                            e.preventDefault();
-                        }
-                    }}
-                    onBlur={handleCommentUpdate}
-                    autoFocus
-                />
-            ) : (
-                <><span
-                    onDoubleClick={() => setIsEditing(true)}
-                    style={{padding: '8px', display: 'inline-block'}}
-                >
-                    {editedComment}
-                </span>
-                    <IconButton
-                        size="small"
-                        onClick={handleCommentRemove}
-                    >
-                        <ClearIcon/>
-                    </IconButton></>
-            )}
-
-        </Card>
-    );
-};
-
 const EditorImpl = ({yXML, provider, dataLabel}) => {
-    let editor = null;
-    const editorDivRef = useRef<HTMLDivElement>(null);
+    const node = useContext(thisNodeContext)
+    const [hoverElements, setHoverElements] = useState([]);
+
 
     const extensions = [
         Document,
@@ -130,64 +67,20 @@ const EditorImpl = ({yXML, provider, dataLabel}) => {
         }),
     ]
 
-    const [hoverElements, setHoverElements] = useState([]);
-
-    const onCommentActivated = (commentId) => {
-        if (!commentId) {
-            setHoverElements([]);
-            return;
-        }
-        const el = editorDivRef.current?.querySelector(`[data-comment-id="${commentId}"]`);
-        console.log(el)
-        setHoverElements(prev => {
-            if (el) {
-                return [{
-                    el: el,
-                    render: (el, editor) => <CommentHover hoveredEl={el} editor={editor}/>
-                }];
-            }
-            return prev;
-        })
-    }
-
     const commentExtension = CommentExtension.configure({
-        HTMLAttributes: {
-            class: "comment",
-        },
-        onCommentActivated: onCommentActivated,
+        HTMLAttributes: {class: "comment"},
+        onCommentActivated: makeOnCommentActivated(setHoverElements)
     })
-    // @ts-ignore
-    extensions.push(commentExtension)
-    // Inside EditorImpl component, add these state variables
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-    const [commentText, setCommentText] = useState('');
 
-    // Add these handlers
-// Add this ref before the handleClick function
-    const commentInputRef = useRef<HTMLInputElement>(null);
+    extensions.push(commentExtension)
 
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-        setAnchorEl(event.currentTarget);
-        // Use setTimeout to ensure the menu is rendered before attempting to focus
-        setTimeout(() => {
-            commentInputRef.current?.focus();
-        }, 0);
-    };
-
-
-    const handleClose = () => {
-        setAnchorEl(null);
-    };
-
-    const handleCommentSubmit = () => {
         const id = `comment-${Date.now()}`;
-        editor?.commands.setComment(id, commentText);
-        setCommentText('');
-        handleClose();
+        editor?.commands.setComment(id, "");
+        commentExtension.options.onCommentActivated(id, editor, {"inputOn": true});
     };
 
-
-    editor = useEditor({
+    const editor = useEditor({
         enableContentCheck: true,
         onContentError: ({disableCollaboration}) => {
             console.error("Content error in Tiptap editor:", disableCollaboration);
@@ -196,7 +89,7 @@ const EditorImpl = ({yXML, provider, dataLabel}) => {
         extensions: extensions,
     })
 
-    const node = useContext(thisNodeContext)
+    // Destroy the editor when the component unmounts
     useEffect(() => {
         const editorFieldName = "tiptap_editor_" + dataLabel;
         node.data[editorFieldName] = editor
@@ -204,15 +97,13 @@ const EditorImpl = ({yXML, provider, dataLabel}) => {
             editor.destroy();
         }
     }, []);
+
     if (!editor) {
         return null
     }
-
     return (
         <div className="column-half">
-            <div ref={editorDivRef}>
-                <EditorContent editor={editor} className="main-group"/>
-            </div>
+            <EditorContent editor={editor} className="main-group"/>
             <BubbleMenu editor={editor} tippyOptions={{duration: 100}}>
                 <Button
                     variant="contained"
@@ -221,40 +112,14 @@ const EditorImpl = ({yXML, provider, dataLabel}) => {
                 >
                     Bold
                 </Button>
-                <Button variant="contained" size="small" onClick={handleClick}>Comment</Button><Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleClose}
-            >
-                <div style={{padding: '16px'}}>
-                    <TextField
-                        inputRef={commentInputRef}
-                        size="small"
-                        value={commentText}
-                        onChange={(e) => setCommentText(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                handleCommentSubmit();
-                                e.preventDefault();
-                            }
-                        }}
-                        placeholder="Enter your comment"
-                    />
-                    <Button
-                        variant="contained"
-                        size="small"
-                        onClick={handleCommentSubmit}
-                        sx={{marginLeft: 1}}
-                    >Submit
-                    </Button>
-                </div>
-            </Menu>
+                <Button variant="contained" size="small" onClick={handleClick}>Comment</Button>
             </BubbleMenu>
             <HoverElements hoverElements={hoverElements} editor={editor}/>
         </div>
     )
 }
-const HoverElements = ({hoverElements, editor}) => {
+
+const HoverElement = ({el, render, editor}) => {
     const [referenceElement, setReferenceElement] = useState(null);
     const [popperElement, setPopperElement] = useState(null);
 
@@ -271,26 +136,31 @@ const HoverElements = ({hoverElements, editor}) => {
     });
 
     useEffect(() => {
-        if (hoverElements.length > 0) {
-            setReferenceElement(hoverElements[0].el);
-        }
-    }, [hoverElements]);
+        setReferenceElement(el);
+    }, [el]);
 
     return (
+        <div
+            ref={setPopperElement}
+            style={{...styles.popper, zIndex: 99}}
+            {...attributes.popper}
+        >
+            {render(el, editor)}
+        </div>
+    );
+};
+
+const HoverElements = ({hoverElements, editor}) => {
+    return (
         <>
-            {hoverElements.map((el, index) => {
-                const {render} = el;
-                return (
-                    <div
-                        ref={setPopperElement}
-                        style={{...styles.popper, zIndex: 99}}
-                        {...attributes.popper}
-                        key={index}
-                    >
-                        {render(el.el, editor)}
-                    </div>
-                );
-            })}
+            {hoverElements.map(({el, render}, index) => (
+                <HoverElement
+                    key={index}
+                    el={el}
+                    render={render}
+                    editor={editor}
+                />
+            ))}
         </>
     );
 };

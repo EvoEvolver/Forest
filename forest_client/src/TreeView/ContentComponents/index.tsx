@@ -1,5 +1,5 @@
 import {Box} from "@mui/material";
-import {atom} from "jotai/index";
+import {atom} from "jotai";
 import Tooltip from "@mui/material/Tooltip";
 import TiptapEditor from "./editor";
 import {AddChildrenButton, AddSiblingButton, GetNodeUrlButton, MoveNodeButtons} from "./treeOperations";
