@@ -176,7 +176,7 @@ export const UserPanel = ({}) => {
                     </Stack>
                 </CardContent>
                 <Stack spacing={2} sx={{ p: 2 }}>
-                    <Button variant="contained" onClick={handleCreateTree}>
+                    <Button variant="contained" onClick={handleCreateTree} size="small" sx={{ mr: 2}}>
                         Create new tree
                     </Button>
                     <FormControl>
