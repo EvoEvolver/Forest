@@ -72,16 +72,25 @@ export const MiddleContents = ({node}: { node: Node }) => {
 const NodeFrame = ({node}) => {
     let selectedNode = useAtomValue(selectedNodeAtom)
     const isSelected = selectedNode.id === node.id;
-    const divStyle = {
-        position: "absolute",
-        top: "0",
-        left: "0",
-        width: "100%",
-        height: "100%",
-        boxShadow: isSelected ? '0 0 1px 2px rgba(0,0,0,0.1)' : null,
-    }
-    return <div style={divStyle} id={"frame-" + node.id}>
-    </div>
+    const lineWidth = "3px"
+    const lineStyle = {
+        position: 'absolute' as const,
+        left: '0',
+        top: '0',
+        width: '100%',
+        height: lineWidth,
+        backgroundColor: '#dadada'
+    };
+
+    if (!isSelected)
+        return <></>
+    else
+        return <>
+            <div style={{...lineStyle, top: '0'}}></div>
+            <div style={{...lineStyle, width: lineWidth, height: '100%'}}></div>
+            <div style={{...lineStyle, width: lineWidth, height: '101%', left: `calc(100% - ${lineWidth})`}}></div>
+            <div style={{...lineStyle, top: '100%'}}></div>
+        </>
 }
 
 export const NodeContentFrame = ({children, sx}) => {
