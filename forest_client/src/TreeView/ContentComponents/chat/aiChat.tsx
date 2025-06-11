@@ -6,6 +6,7 @@ import {useAtomValue, useSetAtom} from "jotai";
 
 import {authModalOpenAtom, authTokenAtom, isAuthenticatedAtom} from "../../../UserSystem/authStates";
 import {httpUrl} from "../../../appState";
+import {Button} from "@mui/material";
 
 const devMode = import.meta.env.MODE === 'development'; // Check if in development mode
 
@@ -196,7 +197,7 @@ The user has provided the following content in the editor:
                 messages={messages}
                 messageDisabled={false}
             />
-            <button onClick={clearMessages} style={{marginBottom: '10px'}}>Clear Messages</button>
+            <Button onClick={clearMessages} style={{marginBottom: '10px'}}>Clear Messages</Button>
         </>
     );
 };

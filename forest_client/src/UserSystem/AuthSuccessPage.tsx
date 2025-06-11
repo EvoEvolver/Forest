@@ -5,7 +5,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import {useAtomValue} from "jotai/index";
 import {supabaseClientAtom} from "./authStates";
-import {setupSupabaseClient} from "../supabase";
+import {setupSupabaseClient} from "./supabase";
 
 const AuthSuccessPage: React.FC = () => {
     // Handle authentication on this page
