@@ -128,9 +128,9 @@ const AuthButton: React.FC = () => {
                     <LogoutIcon sx={{mr: 1}}/>
                     Sign out
                 </MenuItem>
-                <MenuItem> 
-                    <UserPanel/>
-                </MenuItem>
+                
+                <UserPanel/>
+                
             </Menu>
         </>
     )
