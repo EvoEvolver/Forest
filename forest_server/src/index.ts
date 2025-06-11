@@ -98,13 +98,15 @@ function main(port: number, host: string, frontendRoot: string | null): void {
             patchTree(nodeDict, tree_patch);
             // update the metadata
             const metadata = doc.getMap("metadata");
+
+            const root_title = nodeDict.toJSON()[rootId].title;
             if (rootId) {
                 metadata.set("rootId", rootId);
             }
             metadata.set("version", "0.0.1");
-            console.log(`✅ Tree created successfully: ${treeId} for user: ${req.user?.email}`);
+            console.log(`✅ Tree '${root_title}' created successfully: ${treeId} for user: ${req.user?.email}`);
             
-            treeMetadataManager.createTree(treeId, req.user!.id, "New Tree");
+            treeMetadataManager.createTree(treeId, req.user!.id, root_title);
             // console.log(`after create tree: ${JSON.stringify(treeMetadataManager.getTreeMetadata(treeId))}`);
             res.json({tree_id: treeId});
         } catch (error) {
@@ -120,12 +122,18 @@ function main(port: number, host: string, frontendRoot: string | null): void {
         try {
             const originTreeId = req.body.origin_tree_id;
             const originDoc = getYDoc(originTreeId)
+            console.log(`originDoc: ${JSON.stringify(originDoc)}`)
             // generate a new document ID string using uuid
             const newDocId = crypto.randomUUID();
             const newDoc = getYDoc(newDocId)
             const stateOrigin = encodeStateAsUpdate(originDoc)
             applyUpdate(newDoc, stateOrigin);
-            console.log(`✅ Tree duplicated successfully: ${originTreeId} -> ${newDocId} for user: ${req.user?.email}`);
+            const nodeDict = originDoc.getMap("nodeDict").toJSON();
+            const metadata = originDoc.getMap("metadata").toJSON();
+            const root_title = nodeDict[metadata.rootId].title;
+            console.log(`root_title: ${root_title}`)
+            console.log(`✅ Tree '${root_title}' duplicated successfully: ${originTreeId} -> ${newDocId} for user: ${req.user?.email}`);
+            treeMetadataManager.createTree(newDocId, req.user!.id, root_title);
             // return the new document ID
             res.json({new_tree_id: newDocId});
         } catch (error) {
