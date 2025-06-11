@@ -1,8 +1,9 @@
 import React from 'react';
 import {useAtomValue, useSetAtom} from 'jotai'
-import {Box, Card, CardContent, Typography, Avatar, Stack, Button, Paper} from '@mui/material';
+import {Box, Card, CardContent,Tooltip, IconButton, Typography, Avatar, Stack, Button, Paper} from '@mui/material';
 import { v4 as uuidv4 } from 'uuid';
 import {httpUrl} from "../appState";
+import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import {
     authModalOpenAtom,
     authTokenAtom,
@@ -11,6 +12,7 @@ import {
     userAtom,
     userPermissionsAtom
 } from "./authStates";
+import { UserTreesList } from './UserTreesList';
 export const UserPanel =  ({}) => {
     const user = useAtomValue(userAtom)
     const authToken = useAtomValue(authTokenAtom)
@@ -87,23 +89,39 @@ export const UserPanel =  ({}) => {
         >
             <Card sx={{ maxWidth: 345, m: 2 }}>
                 <CardContent>
-                    <Stack spacing={2} alignItems="center">
+                    <Stack spacing={0} alignItems="center">
                         <Avatar
                             sx={{ width: 64, height: 64 }}
                             alt="User Avatar"
                         />
                         <Typography variant="h6" component="div">
-                            place holder
+                            {user?.name}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                             {user?.email}
                         </Typography>
+                        <Stack direction="row" spacing={0.5} alignItems="center">
+                        <Typography variant="caption" color="text.secondary">
+                            {user?.id}
+                        </Typography>
+                        {user?.id && (
+                            <Tooltip title="Copy ID">
+                            <IconButton
+                                size="small"
+                                onClick={() => navigator.clipboard.writeText(user.id)}
+                            >
+                                <ContentCopyIcon fontSize="inherit" />
+                            </IconButton>
+                            </Tooltip>
+                        )}
+                        </Stack>
                     </Stack>
 
                 </CardContent>
                 <Button variant="contained" sx={{ mb: 2 }} onClick={handleCreateTree}>
                         Create new tree
                 </Button>
+                <UserTreesList />
             </Card>
         </Paper>
     );

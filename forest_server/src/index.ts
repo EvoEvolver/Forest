@@ -10,7 +10,8 @@ import {WebSocketServer} from 'ws';
 import {getYDoc, setupWSConnection} from './y-websocket/utils'
 import OpenAI from 'openai';
 import * as dotenv from 'dotenv'
-// Import authentication middleware
+import {treeMetadataManager} from './treeMetadata'
+
 import {AuthenticatedRequest, authenticateToken, requireAIPermission, requireCreateTreePermission} from './middleware/auth';
 
 dotenv.config({
@@ -45,6 +46,11 @@ function main(port: number, host: string, frontendRoot: string | null): void {
             return
         }
         console.log("ws connected:", treeId)
+
+        // update last accessed time
+        treeMetadataManager.updateLastAccessed(treeId);
+
+
         const garbageCollect = true
         const doc = getYDoc(treeId, garbageCollect)
         setupWSConnection(conn, req, {
@@ -97,7 +103,9 @@ function main(port: number, host: string, frontendRoot: string | null): void {
             }
             metadata.set("version", "0.0.1");
             console.log(`✅ Tree created successfully: ${treeId} for user: ${req.user?.email}`);
-            // send the new tree ID back to the client
+            
+            treeMetadataManager.createTree(treeId, req.user!.id, "New Tree");
+            // console.log(`after create tree: ${JSON.stringify(treeMetadataManager.getTreeMetadata(treeId))}`);
             res.json({tree_id: treeId});
         } catch (error) {
             console.error(`❌ Error creating tree for user ${req.user?.email}:`, error);
@@ -123,6 +131,54 @@ function main(port: number, host: string, frontendRoot: string | null): void {
         } catch (error) {
             console.error(`❌ Error duplicating tree for user ${req.user?.email}:`, error);
             res.status(500).json({error: 'An error occurred while duplicating the tree.'});
+        }
+    });
+
+
+    app.get('/api/user/trees', authenticateToken, (req: AuthenticatedRequest, res) => {
+        console.log(`Fetching trees for user: ${req.user?.email}:${req.user?.id}`);
+        try {
+            const userTrees = treeMetadataManager.getUserTrees(req.user!.id);
+            
+            const treesResponse = userTrees.map(({id, metadata}) => ({
+                id,
+                title: metadata.title,
+                created_at: metadata.createdAt.toISOString(),
+                last_accessed: metadata.lastAccessed.toISOString(),
+                node_count: metadata.nodeCount
+            }));
+            
+            res.json({ trees: treesResponse });
+        } catch (error) {
+            console.error(`Error fetching trees for user ${req.user?.email}:`, error);
+            res.status(500).json({ error: 'Failed to fetch trees' });
+        }
+    });
+
+
+    app.delete('/api/trees/:treeId', authenticateToken, (req: AuthenticatedRequest, res) => {
+        const treeId = req.params.treeId;
+        console.log(`🗑️ Deleting tree ${treeId} for user: ${req.user?.email}`);
+        
+        try {
+            // Check if the user is the owner of the tree
+            if (!treeMetadataManager.isOwner(treeId, req.user!.id)) {
+                res.status(403).json({error: 'You do not have permission to delete this tree.'});
+            }
+            
+            // delete tree metadata
+            const deleted = treeMetadataManager.deleteTree(treeId);
+            
+            if (deleted) {
+                // TODO: Should also clear related Yjs data, now only remove from hashmap
+                console.log(`Tree ${treeId} deleted successfully for user: ${req.user?.email}`);
+                res.json({ success: true });
+            } else {
+                res.status(404).json({ error: 'Tree not found' });
+            }
+        } catch (error) {
+            console.error(`Error deleting tree ${treeId} for user ${req.user?.email}:`, error);
+            res.status(500).json({ error: 'Failed to delete tree' });
         }
     });
 
