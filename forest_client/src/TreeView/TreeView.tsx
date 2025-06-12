@@ -58,6 +58,7 @@ export const MiddleContents = ({node}: { node: Node }) => {
         <NodeFrame node={node}/>
         <div
             onClick={handleClick}
+            id = {`node-${node.id}`}
         >
             <NodeContentTabs
                 node={node}
@@ -88,7 +89,7 @@ const NodeFrame = ({node}) => {
         return <>
             <div style={{...lineStyle, top: '0'}}></div>
             <div style={{...lineStyle, width: lineWidth, height: '100%'}}></div>
-            <div style={{...lineStyle, width: lineWidth, height: '101%', left: `calc(100% - ${lineWidth})`}}></div>
+            <div style={{...lineStyle, width: lineWidth, height: '100%', left: `calc(100% - ${lineWidth})`}}></div>
             <div style={{...lineStyle, top: '100%'}}></div>
         </>
 }

@@ -1,5 +1,5 @@
 import {Node} from './entities';
-import {Atom, atom, PrimitiveAtom, WritableAtom} from 'jotai'
+import {Atom, atom, PrimitiveAtom} from 'jotai'
 import {Array as YArray, Map as YMap} from 'yjs'
 import {YDocAtom} from "./YjsConnection";
 import {RESET} from 'jotai/utils';
@@ -16,8 +16,7 @@ export interface TreeAtomData {
 
 export const treeAtom: PrimitiveAtom<TreeAtomData> = atom(
     {
-        metadata: {
-        },
+        metadata: {},
         nodeDict: {}
     } as TreeAtomData | null)
 
@@ -60,8 +59,7 @@ function getYjsBindedAtom(yjsMapNode: YMap<any>, key: string): PrimitiveAtom<any
     let yjsAtom: PrimitiveAtom<any>;
     if (typeof yjsValue.toJSON === 'function') {
         yjsAtom = atom(yjsValue.toJSON())
-    }
-    else {
+    } else {
         console.warn(`Yjs value for key "${key}" does not have a toJSON method, using a simple atom instead.`);
     }
     yjsAtom.onMount = (set) => {
@@ -100,7 +98,7 @@ function yjsNodeToJsonNodeAtom(yjsMapNode: YMap<any>): PrimitiveAtom<Node> {
     return nodeAtom
 }
 
-export const deleteNodeAtom = atom(null, (get, set, props: {nodeId: string}) => {
+export const deleteNodeAtom = atom(null, (get, set, props: { nodeId: string }) => {
     const currTree = get(treeAtom)
     if (!currTree)
         return
@@ -151,7 +149,11 @@ export const deleteNodeAtom = atom(null, (get, set, props: {nodeId: string}) => 
 * The targetId is the id of the node that the current node should be moved relative to.
 * The shift value is the number of positions to move the current node.
 */
-export const setNodePositionAtom = atom(null, (get, set, props: { nodeId: string, targetId: string, shift: number }) => {
+export const setNodePositionAtom = atom(null, (get, set, props: {
+    nodeId: string,
+    targetId: string,
+    shift: number
+}) => {
     const currTree = get(treeAtom)
     if (!currTree)
         return
@@ -235,7 +237,7 @@ export const addNewNodeAtom = atom(null, (get, set, props: { parentId: string, p
     set(updateChildrenCountAtom, {});
 })
 
-export const addNodeToTreeAtom = atom(null, (get, set, yjsMapNode: YMap<any>) => {
+export const addNodeToNodeDictAtom = atom(null, (get, set, yjsMapNode: YMap<any>) => {
     const currTree = get(treeAtom)
     if (!currTree)
         return
@@ -251,7 +253,7 @@ export const addNodeToTreeAtom = atom(null, (get, set, yjsMapNode: YMap<any>) =>
     })
 })
 
-export const deleteNodeFromTreeAtom = atom(null, (get, set, nodeId: string) => {
+export const deleteNodeFromNodeDictAtom = atom(null, (get, set, nodeId: string) => {
     const currTree = get(treeAtom)
     if (!currTree)
         return
@@ -269,8 +271,7 @@ export const deleteNodeFromTreeAtom = atom(null, (get, set, nodeId: string) => {
 export const selectedNodeIdAtom = atom("")
 
 export const scrollToNodeFuncAtom = atom(null, (get, set, nodeId: string) => {
-    const nodeElement = document.querySelector(`#frame-${nodeId}`);
-    console.log("scrolling to node", nodeId, nodeElement);
+    const nodeElement = document.querySelector(`#node-${nodeId}`);
     if (nodeElement) {
         nodeElement.scrollIntoView({behavior: 'instant', block: 'center'});
     }
@@ -285,7 +286,6 @@ function getNodeById(nodeId, get): Node {
         return null
     return get(nodeAtom)
 }
-
 
 
 const nodesIdBeforeJumpAtom = atom<string[]>([])
@@ -309,6 +309,9 @@ export const jumpToNodeAtom = atom(null, (get, set, nodeid) => {
         return
     } else {
         nodesIdBeforeJump.push(get(selectedNodeIdAtom))
+        if (nodesIdBeforeJump.length > 15) {
+            nodesIdBeforeJump.shift() // keep the last 10 nodes
+        }
         set(lastSelectedNodeBeforeJumpIdAtom, currSelectedNodeId)
         set(selectedNodeIdAtom, nodeid)
         return

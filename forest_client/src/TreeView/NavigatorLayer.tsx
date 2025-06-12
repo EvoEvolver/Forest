@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {RichTreeView} from '@mui/x-tree-view/RichTreeView';
 import {atom, useAtom, useAtomValue, useSetAtom, useStore} from "jotai";
 import {
@@ -114,23 +114,20 @@ export const NavigatorLayer = () => {
     const navigatorItems = useAtomValue(NavigatorItemsAtom)
     const [expandedItems, setExpandedItems] = useAtom(expandedItemsAtom)
     const selectedItems = useAtomValue(selectedItemAtom)
-    //const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom)
+    const [selectedNode,] = useAtom(selectedNodeAtom)
     const apiRef = useTreeViewApiRef();
     const jumpToNode = useSetAtom(jumpToNodeAtom)
-    //const store = useStore()
     const scrollToNodeFunc = useSetAtom(scrollToNodeFuncAtom)
-    /*useEffect(() => {
-        // ensure all the ancestors are expanded
-        const ancestors = getAncestorIds(store.get, selectedNode, store.get(treeAtom).nodeDict)
+    useEffect(() => {
         const currId = selectedNode.id
         setExpandedItems((oldExpandedItems) => {
-            return [...new Set([currId, ...oldExpandedItems, ...ancestors])]
+            return [...new Set([currId, ...oldExpandedItems])]
         })
         const itemDom = apiRef.current.getItemDOMElement(selectedNode.id)
         if (itemDom) {
             itemDom.scrollIntoView({behavior: "smooth", inline: "center", block: "nearest"})
         }
-    }, [selectedNode]);*/
+    }, [selectedNode]);
 
     const handleExpandedItemsChange = (event, itemIds) => {
         setExpandedItems(itemIds)

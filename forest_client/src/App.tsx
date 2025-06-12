@@ -3,8 +3,8 @@ import {Box} from "@mui/material";
 import {ThemeProvider} from '@mui/material/styles';
 import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import {
-    addNodeToTreeAtom,
-    deleteNodeFromTreeAtom,
+    addNodeToNodeDictAtom,
+    deleteNodeFromNodeDictAtom,
     selectedNodeIdAtom,
     setTreeMetadataAtom
 } from "./TreeState/TreeState";
@@ -45,8 +45,8 @@ export default function App() {
     const setSelectedNodeId = useSetAtom(selectedNodeIdAtom)
     const [, setYjsProvider] = useAtom(YjsProviderAtom)
     const ydoc = useAtomValue(YDocAtom)
-    const addNodeToTree = useSetAtom(addNodeToTreeAtom)
-    const deleteNodeFromTree = useSetAtom(deleteNodeFromTreeAtom)
+    const addNodeToTree = useSetAtom(addNodeToNodeDictAtom)
+    const deleteNodeFromTree = useSetAtom(deleteNodeFromNodeDictAtom)
     const setTreeMetadata = useSetAtom(setTreeMetadataAtom);
     const updateChildrenCount = useSetAtom(updateChildrenCountAtom);
     const [subscription, setSubscription] = useAtom(subscriptionAtom);
