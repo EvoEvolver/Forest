@@ -86,7 +86,7 @@ const EditorImpl = ({yXML, provider, dataLabel}) => {
     };
 
     const handleClickLink = (event: React.MouseEvent<HTMLButtonElement>) => {
-        const href = `https://`
+        const href = " "
         editor?.commands.setLink({href});
         linkExtension.options.onLinkActivated(href, editor, {"inputOn": true});
     }

@@ -82,9 +82,12 @@ function main(port: number, host: string, frontendRoot: string | null): void {
         app.get('/', (_req, res) => {
             res.sendFile(path.join(__dirname, frontendRoot));
         });
-        /*app.get('/auth-success', (_req, res) => {
+        app.get('/auth-success', (_req, res) => {
             res.sendFile(path.join(__dirname, frontendRoot));
-        });*/
+        });
+        app.get('/user', (_req, res) => {
+            res.sendFile(path.join(__dirname, frontendRoot));
+        });
     } else {
         console.log("No frontend root set, assuming dev mode")
         // forward the request to the frontend server running on port 39999
