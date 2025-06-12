@@ -19,6 +19,7 @@ import {MathExtension} from '@aarkue/tiptap-math-extension'
 import Bold from '@tiptap/extension-bold'
 import {Button} from "@mui/material";
 import {usePopper} from "react-popper";
+import {LinkExtension, makeOnLinkActivated} from "./Extensions/link";
 
 interface TiptapEditorProps {
     label?: string
@@ -71,14 +72,24 @@ const EditorImpl = ({yXML, provider, dataLabel}) => {
         HTMLAttributes: {class: "comment"},
         onCommentActivated: makeOnCommentActivated(setHoverElements)
     })
-
+    const linkExtension = LinkExtension.configure({
+        HTMLAttributes: {},
+        onLinkActivated: makeOnLinkActivated(setHoverElements)
+    })
     extensions.push(commentExtension)
+    extensions.push(linkExtension)
 
-    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const handleClickComment = (event: React.MouseEvent<HTMLButtonElement>) => {
         const id = `comment-${Date.now()}`;
         editor?.commands.setComment(id, "");
         commentExtension.options.onCommentActivated(id, editor, {"inputOn": true});
     };
+
+    const handleClickLink = (event: React.MouseEvent<HTMLButtonElement>) => {
+        const href = `https://`
+        editor?.commands.setLink({href});
+        linkExtension.options.onLinkActivated(href, editor, {"inputOn": true});
+    }
 
     const editor = useEditor({
         enableContentCheck: true,
@@ -112,7 +123,8 @@ const EditorImpl = ({yXML, provider, dataLabel}) => {
                 >
                     Bold
                 </Button>
-                <Button variant="contained" size="small" onClick={handleClick}>Comment</Button>
+                <Button variant="contained" size="small" onClick={handleClickComment}>Comment</Button>
+                <Button variant="contained" size="small" onClick={handleClickLink}>Link</Button>
             </BubbleMenu>
             <HoverElements hoverElements={hoverElements} editor={editor}/>
         </div>

@@ -118,7 +118,7 @@ function main(port: number, host: string, frontendRoot: string | null): void {
                 metadata.set("version", "0.0.1");
             })
             console.log(`✅ Tree '${root_title}' created successfully: ${treeId} for user: ${req.user?.email}`);
-            treeMetadataManager.createTree(treeId, req.user!.id, root_title)
+            treeMetadataManager.createTree(treeId, req.user!.id, root_title).catch(()=>{})
             res.json({tree_id: treeId});
         } catch (error) {
             console.error(`❌ Error creating tree for user ${req.user?.email}:`, error);
@@ -144,7 +144,7 @@ function main(port: number, host: string, frontendRoot: string | null): void {
             const root_title = nodeDict[metadata.rootId].title;
             console.log(`root_title: ${root_title}`)
             console.log(`✅ Tree '${root_title}' duplicated successfully: ${originTreeId} -> ${newDocId} for user: ${req.user?.email}`);
-            treeMetadataManager.createTree(newDocId, req.user?.id || '', root_title)
+            treeMetadataManager.createTree(newDocId, req.user?.id || '', root_title).catch(()=>{})
                 .then(() => {
                     res.json({new_tree_id: newDocId});
                 })
