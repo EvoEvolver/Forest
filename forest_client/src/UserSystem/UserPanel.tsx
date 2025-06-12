@@ -1,9 +1,9 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect} from 'react';
 import {useAtomValue} from 'jotai'
-import {Alert, Avatar, Box, Button, Card, CardContent, Stack, Typography} from '@mui/material';
+import {Avatar, Box, Button, Card, CardContent, Stack, Typography} from '@mui/material';
 import {v4 as uuidv4} from 'uuid';
 import {httpUrl} from "../appState";
-import {authTokenAtom, subscriptionAtom, supabaseClientAtom, userAtom} from "./authStates";
+import {authTokenAtom, subscriptionAtom, userAtom} from "./authStates";
 import {UserTreesList} from './UserTreesList';
 import {useAtom} from "jotai/index";
 
@@ -39,7 +39,7 @@ export const UserPanel = ({}) => {
                     nodeDict: {
                         [nodeId]: {
                             title: "root",
-                            tabs: {content: ""},
+                            tabs: {content: "<PaperEditorMain/>"},
                             children: [],
                             id: nodeId,
                             parent: null,
@@ -99,12 +99,12 @@ export const UserPanel = ({}) => {
                     </Stack>
                 </CardContent>
                 <CardContent>
-                <Stack spacing={2} sx={{p: 2}}>
-                    <Button variant="contained" onClick={handleCreateTree} size="small" sx={{mr: 2}}>
-                        Create new tree
-                    </Button>
-                </Stack>
-                <UserTreesList/>
+                    <Stack spacing={2} sx={{p: 2}}>
+                        <Button variant="contained" onClick={handleCreateTree} size="small" sx={{mr: 2}}>
+                            Create new tree
+                        </Button>
+                    </Stack>
+                    <UserTreesList/>
                 </CardContent>
             </Card>
         </Box>
