@@ -27,11 +27,8 @@ interface CommentOptions {
     onCommentActivated: (commentId: string, editor, options: any) => void;
 }
 
-interface CommentStorage {
-    activeCommentId: string | null;
-}
 
-export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
+export const CommentExtension = Mark.create<CommentOptions>({
     name: "comment",
 
     addOptions() {
@@ -86,8 +83,7 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
         const marks = $from.marks();
 
         if (!marks.length) {
-            this.storage.activeCommentId = null;
-            this.options.onCommentActivated(this.storage.activeCommentId, this.editor, null);
+            this.options.onCommentActivated(null, this.editor, null);
             return;
         }
 
@@ -95,15 +91,9 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
 
         const activeCommentMark = marks.find((mark) => mark.type === commentMark);
 
-        this.storage.activeCommentId = activeCommentMark?.attrs.commentId || null;
+        const activeCommentId = activeCommentMark?.attrs.commentId || null;
 
-        this.options.onCommentActivated(this.storage.activeCommentId, this.editor, null);
-    },
-
-    addStorage() {
-        return {
-            activeCommentId: null,
-        };
+        this.options.onCommentActivated(activeCommentId, this.editor, null);
     },
 
     addCommands() {

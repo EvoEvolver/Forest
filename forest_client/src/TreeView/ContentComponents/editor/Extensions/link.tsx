@@ -20,18 +20,15 @@ declare module "@tiptap/core" {
     }
 }
 
-// 2. Define the options and storage for the extension
+// 2. Define the options for the extension
 interface LinkOptions {
     HTMLAttributes: Record<string, any>;
     onLinkActivated: (href: string | null, editor: any, options: any) => void;
 }
 
-interface LinkStorage {
-    activeLinkUrl: string | null;
-}
 
 // 3. Create the Link Extension
-export const LinkExtension = Mark.create<LinkOptions, LinkStorage>({
+export const LinkExtension = Mark.create<LinkOptions>({
     name: "link",
 
     // A link cannot be split, and you can't have other marks inside it.
@@ -47,12 +44,6 @@ export const LinkExtension = Mark.create<LinkOptions, LinkStorage>({
             },
             onLinkActivated: () => {
             },
-        };
-    },
-
-    addStorage() {
-        return {
-            activeLinkUrl: null,
         };
     },
 
@@ -112,8 +103,7 @@ export const LinkExtension = Mark.create<LinkOptions, LinkStorage>({
 
         // If there are no marks, deactivate the link
         if (!marks.length) {
-            this.storage.activeLinkUrl = null;
-            this.options.onLinkActivated(this.storage.activeLinkUrl, this.editor, null);
+            this.options.onLinkActivated(null, this.editor, null);
             return;
         }
 
@@ -122,12 +112,7 @@ export const LinkExtension = Mark.create<LinkOptions, LinkStorage>({
 
         // Find the active link's href
         const activeUrl = activeLinkMark?.attrs.href || null;
-
-        // If the active link has changed, notify the callback
-        if (this.storage.activeLinkUrl !== activeUrl) {
-            this.storage.activeLinkUrl = activeUrl;
-            this.options.onLinkActivated(this.storage.activeLinkUrl, this.editor, null);
-        }
+        this.options.onLinkActivated(activeUrl, this.editor, null);
     },
 });
 
