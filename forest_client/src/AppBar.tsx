@@ -5,8 +5,10 @@ import AuthButton from "./UserSystem/AuthButton";
 import React from "react";
 import {useAtomValue} from "jotai";
 import {supabaseClientAtom} from "./UserSystem/authStates";
+import {YjsConnectionStatusAtom} from "./TreeState/YjsConnection";
 
 export function getAppBar(setCurrentPage: (value: (((prevState: string) => string) | string)) => void, currentPage: string) {
+    const connectionStatus = useAtomValue(YjsConnectionStatusAtom)
     const supabaseClient = useAtomValue(supabaseClientAtom)
     return <AppBar position="static">
         <Toolbar variant="dense">
@@ -26,7 +28,11 @@ export function getAppBar(setCurrentPage: (value: (((prevState: string) => strin
                     <ArticleIcon/>
                 </Button>
             </Stack>
-
+            {connectionStatus !== 'connected' &&
+                <span>
+                {connectionStatus === 'connecting' ? 'Connecting...(version not saved)' : 'Disconnected'}
+                </span>
+            }
             {/* Auth button in the top right */}
             {supabaseClient && <AuthButton/>}
         </Toolbar>
