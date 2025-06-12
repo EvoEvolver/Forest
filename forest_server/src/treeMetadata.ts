@@ -1,129 +1,118 @@
+import {getMongoClient} from "./mongoConnection";
+import {Collection, Db} from "mongodb";
+
 export interface TreeMetadata {
+    treeId: string
     owner: string;
     createdAt: Date;
     lastAccessed: Date;
     title?: string;
     nodeCount?: number;
-}
-// forest_server/src/treeMetadata.ts
-
-export interface TreeMetadata {
-    owner: string;
-    createdAt: Date;
-    lastAccessed: Date;
-    title?: string;
-    nodeCount?: number;
+    deleted?: boolean; // optional field to mark if the tree is deleted
+    deletedAt?: Date; // optional field to store deletion time
 }
 
-/**
- * 
- * TODO: replace with database implementation
- */
-class TreeMetadataManager {
-    private treeMetadata: Map<string, TreeMetadata> = new Map();
+export class TreeMetadataManager {
+    private db: Db;
+    private collection: Collection
+
+    constructor() {
+        if (!getMongoClient()) {
+            throw new Error("MongoDB client is not initialized. Please call setMongoConnection() first.");
+        }
+        this.db = getMongoClient().db("treeMetaData");
+        this.collection = this.db.collection('trees');
+    }
 
     /**
      * Create new tree metadata
      */
-    createTree(treeId: string, ownerId: string, title?: string): void {
+    async createTree(treeId: string, ownerId: string, title?: string): Promise<void> {
         const metadata: TreeMetadata = {
+            treeId: treeId,
             owner: ownerId,
             createdAt: new Date(),
             lastAccessed: new Date(),
             title: title || 'Untitled Tree',
-            nodeCount: 1 
+            nodeCount: 1
         };
-        
-        this.treeMetadata.set(treeId, metadata);
-        console.log(`tree metadata created: ${treeId} for user: ${ownerId}`);
+
+        await this.collection.insertOne(metadata);
     }
 
-    /**
-     * Get tree metadata
-     */
-    getTreeMetadata(treeId: string): TreeMetadata | null {
-        return this.treeMetadata.get(treeId) || null;
+    async getTreeMetadata(treeId: string): Promise<TreeMetadata | null> {
+        const tree = await this.collection.findOne({treeId: treeId, deleted: {$ne: true}});
+        return tree ? {
+            treeId: tree.treeId,
+            owner: tree.owner,
+            createdAt: tree.createdAt,
+            lastAccessed: tree.lastAccessed,
+            title: tree.title || '',
+            nodeCount: tree.nodeCount || 0,
+            deleted: tree.deleted || false,
+            deletedAt: tree.deletedAt || null
+        } : null;
     }
 
-    /**
-     * Update last accessed time
-     */
-    updateLastAccessed(treeId: string): void {
-        const metadata = this.treeMetadata.get(treeId);
-        if (metadata) {
-            metadata.lastAccessed = new Date();
-        }
+    async updateLastAccessed(treeId: string): Promise<void> {
+        await this.collection.updateOne(
+            {treeId: treeId},
+            {$set: {lastAccessed: new Date()}}
+        );
     }
 
-    /**
-     * Get all trees of a user
-     */
-    getUserTrees(userId: string): Array<{id: string, metadata: TreeMetadata}> {
-        const userTrees: Array<{id: string, metadata: TreeMetadata}> = [];
-        
-        for (const [treeId, metadata] of this.treeMetadata.entries()) {
-            if (metadata.owner === userId) {
-                userTrees.push({ id: treeId, metadata });
+    async getUserTrees(userId: string): Promise<Array<TreeMetadata>> {
+        const trees = await this.collection
+            .find({
+                owner: userId,
+                deleted: {$ne: true}
+            })
+            .sort({lastAccessed: -1})
+            .toArray()
+        return trees.map(tree => ({
+            treeId: tree.treeId,
+            owner: tree.owner,
+            createdAt: tree.createdAt,
+            lastAccessed: tree.lastAccessed,
+            title: tree.title || '',
+            nodeCount: tree.nodeCount || 0,
+            deleted: tree.deleted || false,
+            deletedAt: tree.deletedAt || null
+        }))
+    }
+
+    async isOwner(treeId: string, userId: string): Promise<boolean> {
+        const tree = await this.collection.findOne(
+            {treeId: treeId},
+            {projection: {owner: 1}}
+        );
+        return tree ? tree.owner === userId : false;
+    }
+
+    async deleteTree(treeId: string): Promise<boolean> {
+        const result = await this.collection.updateOne(
+            {treeId: treeId},
+            {
+                $set: {
+                    deleted: true,
+                    deletedAt: new Date()
+                }
             }
-        }
-        
-        // sort by last accessed time
-        userTrees.sort((a, b) => 
-            b.metadata.lastAccessed.getTime() - a.metadata.lastAccessed.getTime()
         );
-        
-        return userTrees;
+        return result.modifiedCount === 1;
     }
 
-    /**
-     * check if the user is the owner of the tree
-     */
-    isOwner(treeId: string, userId: string): boolean {
-        const metadata = this.treeMetadata.get(treeId);
-        return metadata ? metadata.owner === userId : false;
-    }
-
-    /**
-     * delete whole tree
-     */
-    deleteTree(treeId: string): boolean {
-        return this.treeMetadata.delete(treeId);
-    }
-
-    /**
-     * Update tree title
-     */
-    updateTreeTitle(treeId: string, title: string): void {
-        const metadata = this.treeMetadata.get(treeId);
-        if (metadata) {
-            metadata.title = title;
-        }
-    }
-
-    /**
-     * Update node count
-     */
-    updateNodeCount(treeId: string, count: number): void {
-        const metadata = this.treeMetadata.get(treeId);
-        if (metadata) {
-            metadata.nodeCount = count;
-        }
-    }
-
-    /**
-     * Get info of all trees
-     */
-    getStats(): { totalTrees: number, totalUsers: number } {
-        const uniqueUsers = new Set(
-            Array.from(this.treeMetadata.values()).map(m => m.owner)
+    async updateTreeTitle(treeId: string, title: string): Promise<void> {
+        await this.collection.updateOne(
+            {treeId: treeId},
+            {$set: {title}}
         );
-        
-        return {
-            totalTrees: this.treeMetadata.size,
-            totalUsers: uniqueUsers.size
-        };
+    }
+
+    async updateNodeCount(treeId: string, count: number): Promise<void> {
+        await this.collection.updateOne(
+            {treeId: treeId},
+            {$set: {nodeCount: count}}
+        );
     }
 }
-
-
-export const treeMetadataManager = new TreeMetadataManager();

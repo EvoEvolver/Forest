@@ -10,10 +10,15 @@ import {WebSocketServer} from 'ws';
 import {getYDoc, setupWSConnection, setupYjsPersistence} from './y-websocket/utils'
 import OpenAI from 'openai';
 import * as dotenv from 'dotenv'
-import {treeMetadataManager} from './treeMetadata'
 
-import {AuthenticatedRequest, authenticateToken, requireAIPermission, requireCreateTreePermission} from './middleware/auth';
+import {
+    AuthenticatedRequest,
+    authenticateToken,
+    requireAIPermission,
+    requireCreateTreePermission
+} from './middleware/auth';
 import {setMongoConnection} from "./mongoConnection";
+import {TreeMetadataManager} from "./treeMetadata";
 
 dotenv.config({
     path: path.resolve(__dirname, '.env'),
@@ -21,6 +26,7 @@ dotenv.config({
 
 setMongoConnection()
 setupYjsPersistence()
+const treeMetadataManager = new TreeMetadataManager();
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY, // Make sure you use a secure method to store this
@@ -32,7 +38,7 @@ function check_and_upgrade(doc: Doc, treeId: string) {
         doc.getMap("metadata").set("version", "0.0.1");
     }
     if (!metadata.has("rootId")) {
-        metadata.set("rootId", treeId);
+        //metadata.set("rootId", treeId);
     }
 }
 
@@ -76,9 +82,9 @@ function main(port: number, host: string, frontendRoot: string | null): void {
         app.get('/', (_req, res) => {
             res.sendFile(path.join(__dirname, frontendRoot));
         });
-        app.get('/auth-success', (_req, res) => {
+        /*app.get('/auth-success', (_req, res) => {
             res.sendFile(path.join(__dirname, frontendRoot));
-        });
+        });*/
     } else {
         console.log("No frontend root set, assuming dev mode")
         // forward the request to the frontend server running on port 39999
@@ -97,21 +103,22 @@ function main(port: number, host: string, frontendRoot: string | null): void {
             const tree_patch = req.body.tree;
             const treeId = crypto.randomUUID();
             const rootId = req.body.root_id;
+            if (!rootId){
+                res.status(400).json({error: 'root_id is required.'});
+            }
             const doc = getYDoc(treeId)
             const nodeDict = doc.getMap("nodeDict")
             patchTree(nodeDict, tree_patch);
             // update the metadata
-            const metadata = doc.getMap("metadata");
-
-            const root_title = nodeDict.toJSON()[rootId].title;
-            if (rootId) {
+            //@ts-ignore
+            const root_title = nodeDict.get(rootId).get("title")
+            doc.transact(() => {
+                const metadata = doc.getMap("metadata");
                 metadata.set("rootId", rootId);
-            }
-            metadata.set("version", "0.0.1");
+                metadata.set("version", "0.0.1");
+            })
             console.log(`✅ Tree '${root_title}' created successfully: ${treeId} for user: ${req.user?.email}`);
-            
-            treeMetadataManager.createTree(treeId, req.user!.id, root_title);
-            // console.log(`after create tree: ${JSON.stringify(treeMetadataManager.getTreeMetadata(treeId))}`);
+            treeMetadataManager.createTree(treeId, req.user!.id, root_title)
             res.json({tree_id: treeId});
         } catch (error) {
             console.error(`❌ Error creating tree for user ${req.user?.email}:`, error);
@@ -137,9 +144,14 @@ function main(port: number, host: string, frontendRoot: string | null): void {
             const root_title = nodeDict[metadata.rootId].title;
             console.log(`root_title: ${root_title}`)
             console.log(`✅ Tree '${root_title}' duplicated successfully: ${originTreeId} -> ${newDocId} for user: ${req.user?.email}`);
-            treeMetadataManager.createTree(newDocId, req.user!.id, root_title);
-            // return the new document ID
-            res.json({new_tree_id: newDocId});
+            treeMetadataManager.createTree(newDocId, req.user?.id || '', root_title)
+                .then(() => {
+                    res.json({new_tree_id: newDocId});
+                })
+                .catch(error => {
+                    console.error('Error creating tree:', error);
+                    res.status(500).json({error: 'Failed to create tree'});
+                });
         } catch (error) {
             console.error(`❌ Error duplicating tree for user ${req.user?.email}:`, error);
             res.status(500).json({error: 'An error occurred while duplicating the tree.'});
@@ -147,23 +159,14 @@ function main(port: number, host: string, frontendRoot: string | null): void {
     });
 
 
-    app.get('/api/user/trees', authenticateToken, (req: AuthenticatedRequest, res) => {
+    app.get('/api/user/trees', authenticateToken, async (req: AuthenticatedRequest, res) => {
         console.log(`Fetching trees for user: ${req.user?.email}:${req.user?.id}`);
         try {
-            const userTrees = treeMetadataManager.getUserTrees(req.user!.id);
-            
-            const treesResponse = userTrees.map(({id, metadata}) => ({
-                id,
-                title: metadata.title,
-                created_at: metadata.createdAt.toISOString(),
-                last_accessed: metadata.lastAccessed.toISOString(),
-                node_count: metadata.nodeCount
-            }));
-            
-            res.json({ trees: treesResponse });
+            const userTrees = await treeMetadataManager.getUserTrees(req.user!.id);
+            res.json({trees: userTrees});
         } catch (error) {
             console.error(`Error fetching trees for user ${req.user?.email}:`, error);
-            res.status(500).json({ error: 'Failed to fetch trees' });
+            res.status(500).json({error: 'Failed to fetch trees'});
         }
     });
 
@@ -171,26 +174,26 @@ function main(port: number, host: string, frontendRoot: string | null): void {
     app.delete('/api/trees/:treeId', authenticateToken, (req: AuthenticatedRequest, res) => {
         const treeId = req.params.treeId;
         console.log(`🗑️ Deleting tree ${treeId} for user: ${req.user?.email}`);
-        
+
         try {
             // Check if the user is the owner of the tree
             if (!treeMetadataManager.isOwner(treeId, req.user!.id)) {
                 res.status(403).json({error: 'You do not have permission to delete this tree.'});
             }
-            
+
             // delete tree metadata
             const deleted = treeMetadataManager.deleteTree(treeId);
-            
+
             if (deleted) {
                 // TODO: Should also clear related Yjs data, now only remove from hashmap
                 console.log(`Tree ${treeId} deleted successfully for user: ${req.user?.email}`);
-                res.json({ success: true });
+                res.json({success: true});
             } else {
-                res.status(404).json({ error: 'Tree not found' });
+                res.status(404).json({error: 'Tree not found'});
             }
         } catch (error) {
             console.error(`Error deleting tree ${treeId} for user ${req.user?.email}:`, error);
-            res.status(500).json({ error: 'Failed to delete tree' });
+            res.status(500).json({error: 'Failed to delete tree'});
         }
     });
 

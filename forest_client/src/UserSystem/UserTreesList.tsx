@@ -27,7 +27,7 @@ import { authTokenAtom, userAtom } from './authStates';
 import { httpUrl } from '../appState';
 
 interface UserTree {
-    id: string;
+    treeId: string;
     title: string;
     created_at: string;
     last_accessed: string;
@@ -114,7 +114,7 @@ export const UserTreesList: React.FC<UserTreesListProps> = ({}) => {
             }
 
             // Remove the deleted tree from the list
-            setTrees(prevTrees => prevTrees.filter(tree => tree.id !== treeId));
+            setTrees(prevTrees => prevTrees.filter(tree => tree.treeId !== treeId));
             
         } catch (err) {
             console.error('Error deleting tree:', err);
@@ -183,7 +183,7 @@ export const UserTreesList: React.FC<UserTreesListProps> = ({}) => {
                 ) : (
                     <List dense>
                         {trees.map((tree, index) => (
-                            <React.Fragment key={tree.id}>
+                            <React.Fragment key={tree.treeId}>
                                 <ListItem
                                     sx={{
                                         bgcolor: 'background.paper',
@@ -209,10 +209,10 @@ export const UserTreesList: React.FC<UserTreesListProps> = ({}) => {
                                                                 '&:hover': { textDecoration: 'underline' }
                                                             }}
                                                             onClick={() => {
-                                                                navigator.clipboard.writeText(tree.id);
+                                                                navigator.clipboard.writeText(tree.treeId);
                                                             }}
                                                         >
-                                                            {tree.id.substring(0, 9)}...
+                                                            {tree.treeId.substring(0, 9)}...
                                                         </Typography>
                                                     </Tooltip>
                                                 </Typography>
@@ -225,7 +225,7 @@ export const UserTreesList: React.FC<UserTreesListProps> = ({}) => {
                                                 <IconButton 
                                                     edge="end" 
                                                     size="small"
-                                                    onClick={() => handleOpenTree(tree.id)}
+                                                    onClick={() => handleOpenTree(tree.treeId)}
                                                     color="primary"
                                                 >
                                                     <LaunchIcon fontSize="small" />
@@ -235,11 +235,11 @@ export const UserTreesList: React.FC<UserTreesListProps> = ({}) => {
                                                 <IconButton 
                                                     edge="end" 
                                                     size="small"
-                                                    onClick={() => handleDeleteTree(tree.id)}
-                                                    disabled={deletingTreeId === tree.id}
+                                                    onClick={() => handleDeleteTree(tree.treeId)}
+                                                    disabled={deletingTreeId === tree.treeId}
                                                     color="error"
                                                 >
-                                                    {deletingTreeId === tree.id ? (
+                                                    {deletingTreeId === tree.treeId ? (
                                                         <CircularProgress size={16} />
                                                     ) : (
                                                         <DeleteIcon fontSize="small" />
