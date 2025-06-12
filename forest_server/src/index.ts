@@ -59,8 +59,8 @@ function main(port: number, host: string, frontendRoot: string | null): void {
         const garbageCollect = true
         const doc = getYDoc(treeId, garbageCollect)
 
-        // update last accessed time
-        treeMetadataManager.updateLastAccessed(treeId);
+        // update last accessed time; do nothing if it fails
+        treeMetadataManager.updateLastAccessed(treeId).catch(() => {})
 
         setupWSConnection(conn, req, {
             doc: doc,

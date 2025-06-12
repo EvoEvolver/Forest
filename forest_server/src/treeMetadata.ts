@@ -18,7 +18,8 @@ export class TreeMetadataManager {
 
     constructor() {
         if (!getMongoClient()) {
-            throw new Error("MongoDB client is not initialized. Please call setMongoConnection() first.");
+            console.error("MongoDB client is not initialized. Please call setMongoConnection() first.");
+            return
         }
         this.db = getMongoClient().db("treeMetaData");
         this.collection = this.db.collection('trees');
