@@ -124,12 +124,20 @@ const AuthButton: React.FC = () => {
                     </Typography>
                 </Box>
                 <Divider/>
+                <MenuItem onClick={()=>{
+                    // redirect to user panel via react router at /user
+                    setAnchorEl(null)
+                    setAuthModalOpen(false)
+                    // setShowUserPanel(true)
+                    window.location.href = '/user'
+                }}>
+                    <AccountCircleIcon sx={{mr: 1}}/>
+                    My account
+                </MenuItem>
                 <MenuItem onClick={handleLogout}>
                     <LogoutIcon sx={{mr: 1}}/>
                     Sign out
                 </MenuItem>
-                <Divider/>
-                <UserPanel/>
             </Menu>
         </>
     )

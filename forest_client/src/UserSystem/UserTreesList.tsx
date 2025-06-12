@@ -39,7 +39,7 @@ interface UserTreesListProps {
     onCopySuccess: (success: boolean) => void;
 }
 
-export const UserTreesList: React.FC<UserTreesListProps> = ({ copySuccess, onCopySuccess }) => {
+export const UserTreesList: React.FC<UserTreesListProps> = ({}) => {
     const [trees, setTrees] = useState<UserTree[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -210,7 +210,6 @@ export const UserTreesList: React.FC<UserTreesListProps> = ({ copySuccess, onCop
                                                             }}
                                                             onClick={() => {
                                                                 navigator.clipboard.writeText(tree.id);
-                                                                onCopySuccess(true);
                                                             }}
                                                         >
                                                             {tree.id.substring(0, 9)}...
@@ -232,7 +231,7 @@ export const UserTreesList: React.FC<UserTreesListProps> = ({ copySuccess, onCop
                                                     <LaunchIcon fontSize="small" />
                                                 </IconButton>
                                             </Tooltip>
-                                            <Tooltip title="Delete Tree">
+                                            <Tooltip title="Remove from list">
                                                 <IconButton 
                                                     edge="end" 
                                                     size="small"
