@@ -1,4 +1,4 @@
-import React, {useRef} from 'react';
+import React from 'react';
 import {Card, Grid2 as Grid} from '@mui/material';
 import {Node} from "../TreeState/entities";
 import {useAtomValue, useSetAtom} from "jotai";
@@ -14,7 +14,6 @@ import {LeftColumn} from "./LeftColumn";
 const TreeView = () => {
     const leaves = useAtomValue(listOfNodesForViewAtom)
     const mobileMode = useAtomValue(isMobileModeAtom)
-    const nodesDivRef = useRef(null);
 
     if (leaves.length === 0) {
         return <></>
@@ -25,8 +24,8 @@ const TreeView = () => {
                 <RightColumn/>
             </Grid>}
             <Grid size={mobileMode ? 12 : 5} style={{height: "100%"}}>
-                <NodeContentFrame sx={{}}>
-                    <div ref={nodesDivRef}>
+                <NodeContentFrame>
+                    <div>
                         {leaves.map((n, index) => <MiddleContents node={n} key={index}/>)}
                     </div>
                 </NodeContentFrame>
@@ -58,7 +57,7 @@ export const MiddleContents = ({node}: { node: Node }) => {
         <NodeFrame node={node}/>
         <div
             onClick={handleClick}
-            id = {`node-${node.id}`}
+            id={`node-${node.id}`}
         >
             <NodeContentTabs
                 node={node}
@@ -94,7 +93,7 @@ const NodeFrame = ({node}) => {
         </>
 }
 
-export const NodeContentFrame = ({children, sx}) => {
+export const NodeContentFrame = ({children}) => {
     const sxDefault = {
         width: "100%",
         height: "100%",
@@ -104,10 +103,7 @@ export const NodeContentFrame = ({children, sx}) => {
         backgroundColor: '#f4f4f4'
     }
     return <>
-        <Card sx={{
-            ...sxDefault,
-            ...sx
-        }}>
+        <Card sx={sxDefault}>
             <CardContent>
                 {children}
             </CardContent>
