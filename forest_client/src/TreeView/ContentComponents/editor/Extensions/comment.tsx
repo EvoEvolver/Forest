@@ -255,11 +255,15 @@ export function makeOnCommentActivated(setHoverElements) {
     return (commentId, editor, options) => {
         let _options = options || {};
         if (!commentId) {
-            setHoverElements([]);
+            setHoverElements(prev => {
+                // Filter out the comment hover elements
+                return prev.filter(el => el.source !== "comment");
+            })
             return;
         }
         const el = editor.view.dom.querySelector(`[data-comment-id="${commentId}"]`);
         const hoverElement = {
+            source: "comment",
             el: el,
             render: (el, editor) => (
                 <CommentHover

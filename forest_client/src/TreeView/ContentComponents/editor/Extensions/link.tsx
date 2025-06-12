@@ -199,7 +199,7 @@ export function makeOnLinkActivated(setHoverElements) {
 
         // If href is null, it means no link is active, so we clear the hover elements
         if (!href) {
-            setHoverElements([]);
+            setHoverElements(prev => {return prev.filter(el => el.source !== "link")})
             return;
         }
 
@@ -216,13 +216,14 @@ export function makeOnLinkActivated(setHoverElements) {
             if (foundEl) {
                 el = foundEl;
             } else {
-                setHoverElements([]);
+                setHoverElements(prev => {return prev.filter(el => el.source !== "link")})
                 return;
             }
         }
 
         // Create the hover element object to be rendered
         const hoverElement = {
+            source: 'link',
             el: el,
             render: (el, editor) => (
                 <LinkHover
