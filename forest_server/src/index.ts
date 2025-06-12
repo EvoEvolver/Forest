@@ -7,16 +7,20 @@ import crypto from 'crypto';
 import {patchTree, ServerData} from "./nodeFactory";
 import {applyUpdate, Doc, encodeStateAsUpdate} from 'yjs';
 import {WebSocketServer} from 'ws';
-import {getYDoc, setupWSConnection} from './y-websocket/utils'
+import {getYDoc, setupWSConnection, setupYjsPersistence} from './y-websocket/utils'
 import OpenAI from 'openai';
 import * as dotenv from 'dotenv'
 import {treeMetadataManager} from './treeMetadata'
 
 import {AuthenticatedRequest, authenticateToken, requireAIPermission, requireCreateTreePermission} from './middleware/auth';
+import {setMongoConnection} from "./mongoConnection";
 
 dotenv.config({
     path: path.resolve(__dirname, '.env'),
 })
+
+setMongoConnection()
+setupYjsPersistence()
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY, // Make sure you use a secure method to store this

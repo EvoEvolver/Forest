@@ -17,8 +17,10 @@ import {Redis} from "ioredis";
 import * as path from 'path'
 // Read dotenv variables
 import * as dotenv from 'dotenv'
+import {getMongoClient} from "../mongoConnection";
+
 dotenv.config({
-  path: path.resolve(__dirname, '.env'),
+    path: path.resolve(__dirname, '.env'),
 })
 
 
@@ -56,11 +58,17 @@ export const setPersistence = persistence_ => {
  */
 export const getPersistence = () => persistence
 
-//
-let mongoUrl = process.env.Y_PERSISTENCE_MONGO_URL || null
-if (mongoUrl) {
+export const setupYjsPersistence = () => {//
+    const client = getMongoClient()
+    if (!client) {
+        console.warn("MongoDB client not initialized. Skipping Yjs persistence setup.")
+        return
+    }
     console.log("Connecting to MongoDB because a Y_PERSISTENCE_MONGO_URL is set")
-    const mdb = new MongodbPersistence(mongoUrl, {
+    const mdb = new MongodbPersistence({
+        client: client,
+        db: client.db('treeStates'), // use a specific database for Yjs persistence
+    }, {
         collectionName: 'transactions',
         flushSize: 100,
         multipleCollections: true,
@@ -92,23 +100,18 @@ if (mongoUrl) {
             });
         },
     })
-
-}
-else{
-    console.log("Not connecting to MongoDB because no Y_PERSISTENCE_MONGO_URL is set")
 }
 
-const redisUrl = process.env.Y_STREAM_REDIS_URL || null
-export var redisClient: Redis | null = null
-if (redisUrl) {
-    console.log("Connecting to Redis because a Y_STREAM_REDIS_URL is set")
-    redisClient = new Redis(redisUrl)
+const setYjsRedisConnections = () => {
+    const redisUrl = process.env.Y_STREAM_REDIS_URL || null
+    let redisClient: Redis | null = null
+    if (redisUrl) {
+        console.log("Connecting to Redis because a Y_STREAM_REDIS_URL is set")
+        redisClient = new Redis(redisUrl)
+    } else {
+        console.log("Not connecting to Redis because no Y_STREAM_REDIS_URL is set")
+    }
 }
-else {
-    console.log("Not connecting to Redis because no Y_STREAM_REDIS_URL is set")
-}
-
-
 
 /**
  * @type {Map<string,WSSharedDoc>}
@@ -292,7 +295,7 @@ const pingTimeout = 30000
 
 
 export const setupWSConnection = (conn: WebSocket, req: IncomingMessage, options) => {
-    const {doc, gc}=options
+    const {doc, gc} = options
     conn.binaryType = 'arraybuffer'
     // get doc, initialize if it does not exist yet
     doc.conns.set(conn, new Set())

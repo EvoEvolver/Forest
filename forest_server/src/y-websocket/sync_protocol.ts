@@ -5,7 +5,6 @@
 import * as encoding from 'lib0/encoding'
 import * as decoding from 'lib0/decoding'
 import * as Y from 'yjs'
-import {redisClient} from "./utils";
 
 /**
  * @typedef {Map<number, number>} StateMap
