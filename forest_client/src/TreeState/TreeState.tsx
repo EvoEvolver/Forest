@@ -5,6 +5,7 @@ import {YDocAtom} from "./YjsConnection";
 import {RESET} from 'jotai/utils';
 import {v4 as uuidv4} from 'uuid';
 import {updateChildrenCountAtom} from "./childrenCount";
+import {treeId} from "../appState";
 
 export interface TreeAtomData {
     metadata: {
@@ -270,7 +271,7 @@ export const deleteNodeFromNodeDictAtom = atom(null, (get, set, nodeId: string) 
 
 export const selectedNodeIdAtom = atom("")
 
-export const scrollToNodeFuncAtom = atom(null, (get, set, nodeId: string) => {
+export const scrollToNodeAtom = atom(null, (get, set, nodeId: string) => {
     const nodeElement = document.querySelector(`#node-${nodeId}`);
     if (nodeElement) {
         nodeElement.scrollIntoView({behavior: 'instant', block: 'center'});
@@ -292,11 +293,12 @@ const nodesIdBeforeJumpAtom = atom<string[]>([])
 
 export const lastSelectedNodeBeforeJumpIdAtom = atom("")
 
-export const jumpToNodeAtom = atom(null, (get, set, nodeid) => {
+export const jumpToNodeAtom = atom(null, (get, set, nodeid: string) => {
     const currSelectedNodeId = get(selectedNodeIdAtom)
     if (currSelectedNodeId === nodeid) {
         return
     }
+    localStorage.setItem(`${treeId}_selectedNodeId`, nodeid)
     const nodesIdBeforeJump = get(nodesIdBeforeJumpAtom)
     const lastSelectedNodeId = get(lastSelectedNodeBeforeJumpIdAtom)
 
@@ -340,12 +342,8 @@ export const selectedNodeAtom = atom(
         const currTree = get(treeAtom)
         if (!currTree)
             return
-        const currentSelected = getNodeById(get(selectedNodeIdAtom), get)
-        if (!currentSelected) {
-            set(selectedNodeIdAtom, newSelectedNodeId)
-            return
-        }
         set(selectedNodeIdAtom, newSelectedNodeId)
+        localStorage.setItem(`${treeId}_selectedNodeId`, newSelectedNodeId)
     }
 )
 

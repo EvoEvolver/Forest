@@ -4,7 +4,7 @@ import {atom, useAtom, useAtomValue, useSetAtom, useStore} from "jotai";
 import {
     jumpToNodeAtom,
     lastSelectedNodeBeforeJumpIdAtom,
-    scrollToNodeFuncAtom,
+    scrollToNodeAtom,
     selectedNodeAtom,
     treeAtom
 } from "../TreeState/TreeState";
@@ -117,7 +117,7 @@ export const NavigatorLayer = () => {
     const [selectedNode,] = useAtom(selectedNodeAtom)
     const apiRef = useTreeViewApiRef();
     const jumpToNode = useSetAtom(jumpToNodeAtom)
-    const scrollToNodeFunc = useSetAtom(scrollToNodeFuncAtom)
+    const scrollToNode = useSetAtom(scrollToNodeAtom)
     useEffect(() => {
         const currId = selectedNode.id
         setExpandedItems((oldExpandedItems) => {
@@ -135,9 +135,9 @@ export const NavigatorLayer = () => {
 
     const handleNewSelectedItemChange = (event, newItemId) => {
         jumpToNode(newItemId)
-        if (scrollToNodeFunc) {
+        if (scrollToNode) {
             setTimeout(() => {
-                scrollToNodeFunc(newItemId)
+                scrollToNode(newItemId)
             }, 100)
         }
     }

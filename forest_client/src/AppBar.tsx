@@ -7,7 +7,7 @@ import {useAtomValue} from "jotai";
 import {supabaseClientAtom} from "./UserSystem/authStates";
 import {YjsConnectionStatusAtom} from "./TreeState/YjsConnection";
 
-export function getAppBar(setCurrentPage: (value: (((prevState: string) => string) | string)) => void, currentPage: string) {
+export function getAppBar(setCurrentPage: any, currentPage: string) {
     const connectionStatus = useAtomValue(YjsConnectionStatusAtom)
     const supabaseClient = useAtomValue(supabaseClientAtom)
     return <AppBar position="static">
