@@ -1,12 +1,14 @@
 /*** Authentication related atoms ***/
-import {atom} from "jotai";
+import {atom, WritableAtom} from "jotai";
 import {setupSupabaseClient} from "./supabase";
-import {WritableAtom} from "jotai";
+import {YjsProviderAtom} from "../TreeState/YjsConnection";
+import {getPastelHexFromUsername, getRandomAnimal} from "./helper";
 
 // Authentication related atoms
 export interface User {
     id: string
     email: string
+
     [key: string]: any
 }
 
@@ -53,6 +55,7 @@ export const subscriptionAtom: WritableAtom<any, any, any> = atom((get) => {
     if (!supabaseClient) {
         return
     }
+    const awareness = get(YjsProviderAtom)?.awareness
     // Get current session on app startup (CRITICAL for session restoration)
     const initializeSession = async () => {
         try {
@@ -85,7 +88,14 @@ export const subscriptionAtom: WritableAtom<any, any, any> = atom((get) => {
     }
 
     // Initialize session immediately
-    initializeSession()
+    initializeSession().then(() => {
+        if (awareness) {
+            const userEmail = get(userAtom)?.email || '';
+            console.log('Setting awareness user state for:', userEmail);
+            const username = userEmail?.split('@')[0] || 'Annonymous ' + getRandomAnimal(awareness.clientID)
+            awareness.setLocalStateField("user", {"name": username, "color": getPastelHexFromUsername(username)});
+        }
+    })
 
     // Set up auth state change listener
     const {data: {subscription}} = supabaseClient.auth.onAuthStateChange(async (event, session) => {

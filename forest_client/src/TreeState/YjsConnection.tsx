@@ -7,7 +7,7 @@ import {
     addNodeToNodeDictAtom,
     deleteNodeFromNodeDictAtom,
     scrollToNodeAtom,
-    selectedNodeIdAtom,
+    selectedNodeAtom,
     setTreeMetadataAtom
 } from "./TreeState";
 import {updateChildrenCountAtom} from "./childrenCount";
@@ -68,7 +68,7 @@ export const initSelectedNodeAtom = atom(null, (get, set) => {
     // observe the nodeDict for changes
     const observer = (ymapEvent) => {
         if (ymapEvent.keys.has(nodeId)) {
-            set(selectedNodeIdAtom, nodeId);
+            set(selectedNodeAtom, nodeId);
             setTimeout(() => {
                 set(scrollToNodeAtom, nodeId)
             }, 500);
@@ -79,6 +79,8 @@ export const initSelectedNodeAtom = atom(null, (get, set) => {
     nodeDict.observe(observer)
     // unobserve the nodeDict after 10 seconds
     setTimeout(() => {
-        nodeDict.unobserve(observer);
+        try {
+            nodeDict.unobserve(observer);
+        } catch {}
     }, 10000);
 })

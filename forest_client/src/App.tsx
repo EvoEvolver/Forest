@@ -9,7 +9,7 @@ import LinearView from "./LinearView";
 import AuthModal from './UserSystem/AuthModal';
 import {themeOptions} from "./theme";
 import {subscriptionAtom, supabaseClientAtom} from "./UserSystem/authStates";
-import {getAppBar} from "./AppBar";
+import {MyAppBar} from "./AppBar";
 import {treeId} from "./appState";
 
 
@@ -42,10 +42,10 @@ export default function App() {
             <ThemeProvider theme={themeOptions}>
                 <Box sx={{display: 'flex', flexDirection: 'column', width: '100%', height: '100vh'}}>
                     <Box sx={{width: '100%'}}>
-                        {getAppBar(setCurrentPage, currentPage)}
+                        <MyAppBar setCurrentPage={setCurrentPage} currentPage={currentPage}/>
                     </Box>
                     <Box sx={{height: 'calc(100% - 48px)', boxSizing: 'border-box', 'paddingTop': '4px'}}>
-                        {renderSelectedPage(currentPage)}
+                        <TheSelectedPage currentPage={currentPage}/>
                     </Box>
                 </Box>
                 {/* Auth Modal */}
@@ -68,7 +68,7 @@ const LinearViewPage = () => (
     </Box>
 );
 
-const renderSelectedPage = (currentPage) => {
+const TheSelectedPage = ({currentPage}) => {
     switch (currentPage) {
         case 'tree':
             return <TreeViewPage/>;

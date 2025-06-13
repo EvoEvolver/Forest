@@ -1,7 +1,7 @@
 import {Node} from './entities';
 import {Atom, atom, PrimitiveAtom} from 'jotai'
 import {Array as YArray, Map as YMap} from 'yjs'
-import {YDocAtom} from "./YjsConnection";
+import {YDocAtom, YjsProviderAtom} from "./YjsConnection";
 import {RESET} from 'jotai/utils';
 import {v4 as uuidv4} from 'uuid';
 import {updateChildrenCountAtom} from "./childrenCount";
@@ -298,7 +298,6 @@ export const jumpToNodeAtom = atom(null, (get, set, nodeid: string) => {
     if (currSelectedNodeId === nodeid) {
         return
     }
-    localStorage.setItem(`${treeId}_selectedNodeId`, nodeid)
     const nodesIdBeforeJump = get(nodesIdBeforeJumpAtom)
     const lastSelectedNodeId = get(lastSelectedNodeBeforeJumpIdAtom)
 
@@ -307,7 +306,7 @@ export const jumpToNodeAtom = atom(null, (get, set, nodeid: string) => {
         let newLastSelectedNodeId = nodesIdBeforeJump[nodesIdBeforeJump.length - 1]
         newLastSelectedNodeId = newLastSelectedNodeId ? newLastSelectedNodeId : ""
         set(lastSelectedNodeBeforeJumpIdAtom, newLastSelectedNodeId)
-        set(selectedNodeIdAtom, nodeid)
+        set(selectedNodeAtom, nodeid)
         return
     } else {
         nodesIdBeforeJump.push(get(selectedNodeIdAtom))
@@ -315,7 +314,7 @@ export const jumpToNodeAtom = atom(null, (get, set, nodeid: string) => {
             nodesIdBeforeJump.shift() // keep the last 10 nodes
         }
         set(lastSelectedNodeBeforeJumpIdAtom, currSelectedNodeId)
-        set(selectedNodeIdAtom, nodeid)
+        set(selectedNodeAtom, nodeid)
         return
     }
 
@@ -344,6 +343,10 @@ export const selectedNodeAtom = atom(
             return
         set(selectedNodeIdAtom, newSelectedNodeId)
         localStorage.setItem(`${treeId}_selectedNodeId`, newSelectedNodeId)
+        const awareness = get(YjsProviderAtom)?.awareness
+        if (awareness) {
+            awareness.setLocalStateField("selectedNodeId", newSelectedNodeId)
+        }
     }
 )
 

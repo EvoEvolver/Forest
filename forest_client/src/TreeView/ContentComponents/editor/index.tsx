@@ -5,7 +5,7 @@ import {YjsProviderAtom} from "../../../TreeState/YjsConnection";
 import {XmlFragment} from 'yjs';
 import {thisNodeContext} from "../../NodeContentTab";
 import Collaboration from '@tiptap/extension-collaboration'
-import CollaborationCursor from '@tiptap/extension-collaboration-cursor'
+import {CollaborationCursor} from './Extensions/collaboration-cursor'
 import {BubbleMenu, EditorContent, useEditor} from '@tiptap/react'
 import Document from '@tiptap/extension-document'
 import Paragraph from '@tiptap/extension-paragraph'
