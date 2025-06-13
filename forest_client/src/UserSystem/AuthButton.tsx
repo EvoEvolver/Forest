@@ -11,19 +11,16 @@ import {
     userAtom,
     userPermissionsAtom
 } from "./authStates";
-import { UserPanel } from './UserPanel'
 
 const AuthButton: React.FC = () => {
     const user = useAtomValue(userAtom)
     const isAuthenticated = useAtomValue(isAuthenticatedAtom)
-    
+
     const setAuthModalOpen = useSetAtom(authModalOpenAtom)
     const setUser = useSetAtom(userAtom)
     const setAuthToken = useSetAtom(authTokenAtom)
     const setUserPermissions = useSetAtom(userPermissionsAtom)
     const supabaseClient = useAtomValue(supabaseClientAtom)
-
-    // const [showUserPanel, setShowUserPanel] = useState(false)
 
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
     const open = Boolean(anchorEl)
@@ -55,8 +52,6 @@ const AuthButton: React.FC = () => {
             console.error('Error signing out:', error)
         }
     }
-
-
 
 
     if (!isAuthenticated) {
@@ -124,7 +119,7 @@ const AuthButton: React.FC = () => {
                     </Typography>
                 </Box>
                 <Divider/>
-                <MenuItem onClick={()=>{
+                <MenuItem onClick={() => {
                     // redirect to user panel via react router at /user
                     setAnchorEl(null)
                     setAuthModalOpen(false)

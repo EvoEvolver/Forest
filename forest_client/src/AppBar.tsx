@@ -7,6 +7,7 @@ import {useAtomValue, useSetAtom} from "jotai";
 import {supabaseClientAtom} from "./UserSystem/authStates";
 import {YjsConnectionStatusAtom, YjsProviderAtom} from "./TreeState/YjsConnection";
 import {jumpToNodeAtom, scrollToNodeAtom} from "./TreeState/TreeState";
+import Tooltip from "@mui/material/Tooltip";
 
 export const MyAppBar = ({setCurrentPage, currentPage}: { setCurrentPage: any, currentPage: string }) => {
     const connectionStatus = useAtomValue(YjsConnectionStatusAtom)
@@ -140,13 +141,14 @@ const AwarenessStatus = () => {
     return (
         <Stack direction="row" spacing={1} sx={{marginRight: "10px"}}>
             {otherUsers.map(user => (
-                <Avatar
-                    key={user.clientId}
-                    sx={{width: 24, height: 24, bgcolor: user.color + transparency, cursor: "pointer"}}
-                    onClick={() => handleClickUser(user.clientId)}
-                >
-                    {user.name.at(0)}
-                </Avatar>
+                <Tooltip key={user.clientId} title={user.name} arrow>
+                    <Avatar
+                        sx={{width: 24, height: 24, bgcolor: user.color + transparency, cursor: "pointer"}}
+                        onClick={() => handleClickUser(user.clientId)}
+                    >
+                        {user.name.at(0)}
+                    </Avatar>
+                </Tooltip>
             ))}
         </Stack>
     );
