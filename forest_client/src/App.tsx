@@ -2,9 +2,8 @@ import React, {useEffect, useState} from 'react';
 import {Box} from "@mui/material";
 import {ThemeProvider} from '@mui/material/styles';
 import {useAtom, useAtomValue, useSetAtom} from "jotai";
-import {setTreeMetadataAtom} from "./TreeState/TreeState";
 import TreeView from "./TreeView/TreeView";
-import {initSelectedNodeAtom, setupYDocAtom} from "./TreeState/YjsConnection";
+import {setupYDocAtom} from "./TreeState/YjsConnection";
 import LinearView from "./LinearView";
 import AuthModal from './UserSystem/AuthModal';
 import {themeOptions} from "./theme";
@@ -14,8 +13,6 @@ import {treeId} from "./appState";
 
 
 export default function App() {
-    const initSelectedNode = useSetAtom(initSelectedNodeAtom)
-    const setTreeMetadata = useSetAtom(setTreeMetadataAtom);
     const [subscription, setSubscription] = useAtom(subscriptionAtom);
     const [currentPage, setCurrentPage] = useState('tree');
     const supabaseClient = useAtomValue(supabaseClientAtom)
@@ -25,10 +22,6 @@ export default function App() {
         document.body.style.overflow = 'hidden';
         if (treeId) {
             setupYDoc()
-            initSelectedNode();
-            setTreeMetadata({
-                treeId: treeId
-            })
         }
         setSubscription()
         return () => {

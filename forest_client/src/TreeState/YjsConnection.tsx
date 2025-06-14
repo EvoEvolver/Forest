@@ -33,12 +33,26 @@ export const setupYDocAtom = atom(null, (get, set) => {
     wsProvider.on('sync', isSynced => {
         if (isSynced) {
             const treeMetadata = ydoc.getMap("metadata").toJSON()
+            treeMetadata["treeId"] = treeId;
             console.log('Yjs sync completed', treeMetadata)
             // Set up the metadata map
             //setTreeMetadata(treeMetadata)
             set(setTreeMetadataAtom, treeMetadata);
             set(YjsConnectionStatusAtom, "connected");
             set(updateChildrenCountAtom, {});
+            const nodeDict = ydoc.getMap("nodeDict") as YMap<any>;
+            const rootId = treeMetadata["rootId"];
+            if (!rootId || !nodeDict.has(rootId)) {
+                for (let node of nodeDict.values()) {
+                    if (node.get("parent") === null) {
+                        const newRootId = node.get("id");
+                        ydoc.getMap("metadata").set("rootId", newRootId);
+                        treeMetadata["rootId"] = newRootId;
+                        set(setTreeMetadataAtom, treeMetadata);
+                    }
+                }
+            }
+            set(initSelectedNodeAtom)
         }
     })
     let nodeDictyMap: YMap<YMap<any>> = ydoc.getMap("nodeDict")
@@ -81,6 +95,7 @@ export const initSelectedNodeAtom = atom(null, (get, set) => {
     setTimeout(() => {
         try {
             nodeDict.unobserve(observer);
-        } catch {}
+        } catch {
+        }
     }, 10000);
 })
