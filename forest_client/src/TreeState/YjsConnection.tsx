@@ -42,7 +42,9 @@ export const setupYDocAtom = atom(null, (get, set) => {
             set(updateChildrenCountAtom, {});
             const nodeDict = ydoc.getMap("nodeDict") as YMap<any>;
             const rootId = treeMetadata["rootId"];
+            // fix for missing rootId
             if (!rootId || !nodeDict.has(rootId)) {
+                console.warn("No rootId found in metadata or nodeDict. Searching for rootId.");
                 for (let node of nodeDict.values()) {
                     if (node.get("parent") === null) {
                         const newRootId = node.get("id");
@@ -74,12 +76,32 @@ export const setupYDocAtom = atom(null, (get, set) => {
 
 export const initSelectedNodeAtom = atom(null, (get, set) => {
     const ydoc = get(YDocAtom);
+    /*
+    Priority for selected node:
+    1. URL parameter "n"
+    2. Local storage for selected node
+    3. Root node from metadata
+     */
     let nodeId = new URLSearchParams(window.location.search).get("n");
+    if (nodeId) {
+        // remove the nodeId from the URL to prevent it from being used again
+        const url = new URL(window.location.href);
+        url.searchParams.delete("n");
+        window.history.replaceState({}, document.title, url.toString());
+    }
+    // Earlier registration of observer
     const nodeDict = ydoc.getMap("nodeDict") as YMap<any>;
-    if (!nodeId && treeId) nodeId = localStorage.getItem(`${treeId}_selectedNodeId`) || null;
+    if (!nodeId) nodeId = localStorage.getItem(`${treeId}_selectedNodeId`) || null;
     if (!nodeId) nodeId = ydoc.getMap("metadata").get("rootId") || null;
     if (!nodeId) return;
+
+    set(selectedNodeAtom, nodeId);
+    setTimeout(() => {
+        set(scrollToNodeAtom, nodeId)
+    }, 500);
+
     // observe the nodeDict for changes
+    // Todo - investigate why this is not working as expected
     const observer = (ymapEvent) => {
         if (ymapEvent.keys.has(nodeId)) {
             set(selectedNodeAtom, nodeId);
@@ -94,7 +116,7 @@ export const initSelectedNodeAtom = atom(null, (get, set) => {
     // unobserve the nodeDict after 10 seconds
     setTimeout(() => {
         try {
-            nodeDict.unobserve(observer);
+            //nodeDict.unobserve(observer);
         } catch {
         }
     }, 10000);
