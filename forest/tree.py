@@ -7,9 +7,12 @@ from fibers.tree import Node
 
 
 def push_tree(root: Node, host="http://0.0.0.0:29999"):
-    url = f'{host}/api/createTree'
     tree_data = Renderer().render_to_json(root)
-    root_id = root.node_id
+    push_tree_data(tree_data, host)
+
+def push_tree_data(tree_data, host="http://0.0.0.0:29999"):
+    url = f'{host}/api/createTree'
+    root_id = tree_data["rootId"]
     payload = json.dumps({
         "tree": tree_data,
         "root_id": str(root_id),

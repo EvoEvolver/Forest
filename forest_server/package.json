@@ -32,6 +32,7 @@
     "lib0": "^0.2.98",
     "lodash.debounce": "^4.0.8",
     "minimist": "^1.2.8",
+    "minio": "^8.0.5",
     "mongodb": "^6.16.0",
     "openai": "^4.103.0",
     "socket.io": "^4.8.1",
