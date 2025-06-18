@@ -1,6 +1,7 @@
 import {AppBar, Avatar, Button, Stack, Toolbar} from "@mui/material";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import ArticleIcon from "@mui/icons-material/Article";
+import FunctionsIcon from "@mui/icons-material/Functions";
 import AuthButton from "@forest/user-system/src/AuthButton";
 import React, {useState} from "react";
 import {useAtomValue, useSetAtom} from "jotai";
@@ -21,27 +22,31 @@ export const MyAppBar = ({setCurrentPage, currentPage}: { setCurrentPage: any, c
     const connectionStatus = useAtomValue(YjsConnectionStatusAtom)
     const supabaseClient = useAtomValue(supabaseClientAtom)
     const [settingsOpen, setSettingsOpen] = useState(false);
-    return <AppBar position="fixed">
+    return <AppBar position="static" color={"transparent"} style={{borderBottom: '1px solid #c6c6c6'}} elevation={0}>
         <Toolbar variant="dense">
             <Stack direction="row" spacing={2} sx={{flexGrow: 1}}>
                 <Button
-                    color="inherit"
                     onClick={() => setCurrentPage('tree')}
                     variant={currentPage === 'tree' ? 'outlined' : 'text'}
                 >
                     <AccountTreeIcon/>
                 </Button>
                 <Button
-                    color="inherit"
                     onClick={() => setCurrentPage('linear')}
-                    variant={currentPage === 'second' ? 'outlined' : 'text'}
+                    variant={currentPage === 'linear' ? 'outlined' : 'text'}
                 >
                     <ArticleIcon/>
                 </Button>
                 <Button
+                    onClick={() => setCurrentPage('latex')}
+                    variant={currentPage === 'latex' ? 'outlined' : 'text'}
+                >
+                    <FunctionsIcon/>
+                </Button>
+                <Button
                     color="inherit"
                     onClick={() => setCurrentPage('flow')}
-                    variant={currentPage === 'second' ? 'outlined' : 'text'}
+                    variant={currentPage === 'flow' ? 'outlined' : 'text'}
                 >
                     <SchemaRoundedIcon/>
                 </Button>

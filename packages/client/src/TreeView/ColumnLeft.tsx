@@ -10,12 +10,9 @@ export function ColumnLeft() {
         return null
     return <>
         <div style={{height: "100%", width: "100%"}}>
-            <div style={{height: "5%", width: "100%"}}><NavigatorButtons/></div>
-            <div style={{height: "95%", width: "100%"}}>
-                <NodeContentFrame>
-                    <NavigatorLayer/>
-                </NodeContentFrame>
-            </div>
+            <NodeContentFrame>
+                <NavigatorLayer/>
+            </NodeContentFrame>
         </div>
     </>;
 }

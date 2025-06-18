@@ -34,44 +34,61 @@ const TreeView = () => {
                     <div>
                         {leaves.map((n, _) => <MiddleContents node={n} key={n.id}/>)}
                     </div>
-                </NodeContentFrame>
+                    {!mobileMode && (
+                        <div style={{backgroundColor: '#fafafa', height: '100%'}}>
+                            <LeftColumn/>
+                        </div>
+                    )}
+                </Allotment>
             </Grid>
+<<<<<<< HEAD:packages/client/src/TreeView/TreeView.tsx
             {!mobileMode && <Grid style={{height: "100%"}} size={3.5} className={"hide-mobile"}>
                 <ColumnRight/>
             </Grid>}
         </Grid>
+=======
+        </Box>
+
+>>>>>>> 2a7af02 (dev: beautify interface):forest_client/src/TreeView/TreeView.tsx
     );
 };
 
 export const MiddleContents = ({node}: { node: NodeVM }) => {
     let setSelectedNode = useSetAtom(selectedNodeAtom)
 
+<<<<<<< HEAD:packages/client/src/TreeView/TreeView.tsx
     const handleClick = () => {
         //console.log(event.target)
+=======
+    const handleClick = (event) => {
+>>>>>>> 2a7af02 (dev: beautify interface):forest_client/src/TreeView/TreeView.tsx
         setSelectedNode(node.id)
     }
 
     return <div
         style={{
-            padding: "2px",
-            paddingLeft: '10px',
-            paddingRight: '10px',
+            display: 'flex',
+            flexDirection: 'column',
             position: "relative",
+            color: 'black',
         }}
     >
         <NodeBorder node={node}/>
         <div
             onClick={handleClick}
-            id={`node-${node.id}`}
+            // id={`node-${node.id}`}
         >
             <thisNodeContext.Provider value={node}>
             <NodeTitle
                 node={node}
             />
+<<<<<<< HEAD:packages/client/src/TreeView/TreeView.tsx
             {node.nodeType.render(node)}
             </thisNodeContext.Provider>
+=======
+            <NodeButtons node={node}/>
+>>>>>>> 2a7af02 (dev: beautify interface):forest_client/src/TreeView/TreeView.tsx
         </div>
-        <NodeButtons node={node}/>
     </div>
 }
 
@@ -86,9 +103,7 @@ const NodeBorder = ({node}) => {
         left: '0',
         top: '0',
         width: '100%',
-        height: lineWidth,
-        backgroundColor: '#dadada'
-    };
+        height: lineWidth};
 
     if (!isSelected)
         return <></>
@@ -101,23 +116,7 @@ const NodeBorder = ({node}) => {
         </>
 }
 
-export const NodeContentFrame = ({children}) => {
-    const sxDefault = {
-        width: "100%",
-        height: "100%",
-        overflowY: 'auto',
-        overflowX: 'hidden',
-        wordBreak: "break-word",
-        backgroundColor: '#f4f4f4'
-    }
-    return <>
-        <Card sx={sxDefault}>
-            <CardContent>
-                {children}
-            </CardContent>
-        </Card>
-    </>
-}
+
 
 
 export default TreeView;
