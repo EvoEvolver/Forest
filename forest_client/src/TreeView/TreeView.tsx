@@ -1,5 +1,5 @@
 import React from 'react';
-import {Card, Grid2 as Grid} from '@mui/material';
+import {Box, Card, Grid2 as Grid} from '@mui/material';
 import {Node} from "../TreeState/entities";
 import {useAtomValue, useSetAtom} from "jotai";
 import {listOfNodesForViewAtom, selectedNodeAtom} from "../TreeState/TreeState";
@@ -9,6 +9,9 @@ import {NodeButtons} from "./NodeButtons";
 import {isMobileModeAtom} from "../appState";
 import {RightColumn} from "./RightColumn";
 import {LeftColumn} from "./LeftColumn";
+import {Allotment} from "allotment";
+import "allotment/dist/style.css";
+
 
 
 const TreeView = () => {
@@ -18,22 +21,52 @@ const TreeView = () => {
     if (leaves.length === 0) {
         return <></>
     }
+    // @ts-ignore
     return (
-        <Grid style={{height: "100%", width: "100%"}} container spacing={1}>
-            {!mobileMode && <Grid size={3.5} style={{height: "100%"}}>
-                <RightColumn/>
-            </Grid>}
-            <Grid size={mobileMode ? 12 : 5} style={{height: "100%"}}>
-                <NodeContentFrame>
-                    <div>
+        <Box style={{display: 'flex', flexDirection: 'row', width: '100%', height: '100%'}} >
+            {!mobileMode &&
+                <Grid
+                    sx={{
+                        position: 'absolute',
+                        left: 0,
+                        height: 'calc(100% - 24px)',
+                        width: '18vw',
+                        paddingLeft: '24px',
+                        paddingTop: '24px'
+                    }}
+                >
+                    <RightColumn/>
+                </Grid>
+            }
+
+            <Grid
+                style={{
+                    position: 'absolute',
+                    top: '0',
+                    left: '20vw',
+                    width: '80vw',
+                    height: '100%',
+                }}
+            >
+                <Allotment defaultSizes={[70, 30]}>
+                    <div
+                        style={{
+                        overflowY: 'auto',
+                        height: '100%',
+                        boxSizing: 'border-box',
+                        padding: '48px'
+                        }}>
                         {leaves.map((n, index) => <MiddleContents node={n} key={index}/>)}
                     </div>
-                </NodeContentFrame>
+                    {!mobileMode && (
+                        <div style={{backgroundColor: '#fafafa', height: '100%'}}>
+                            <LeftColumn/>
+                        </div>
+                    )}
+                </Allotment>
             </Grid>
-            {!mobileMode && <Grid style={{height: "100%"}} size={3.5} className={"hide-mobile"}>
-                <LeftColumn/>
-            </Grid>}
-        </Grid>
+        </Box>
+
     );
 };
 
@@ -42,30 +75,29 @@ export const MiddleContents = ({node}: { node: Node }) => {
     let setSelectedNode = useSetAtom(selectedNodeAtom)
 
     const handleClick = (event) => {
-        //console.log(event.target)
         setSelectedNode(node.id)
     }
 
     return <div
         style={{
-            padding: "2px",
-            paddingLeft: '10px',
-            paddingRight: '10px',
+            display: 'flex',
+            flexDirection: 'column',
             position: "relative",
+            color: 'black',
         }}
     >
         <NodeFrame node={node}/>
         <div
             onClick={handleClick}
-            id={`node-${node.id}`}
+            // id={`node-${node.id}`}
         >
             <NodeContentTabs
                 node={node}
                 tabDict={node.tabs}
                 titleAtom={node.title}
             />
+            <NodeButtons node={node}/>
         </div>
-        <NodeButtons node={node}/>
     </div>
 }
 
@@ -78,9 +110,7 @@ const NodeFrame = ({node}) => {
         left: '0',
         top: '0',
         width: '100%',
-        height: lineWidth,
-        backgroundColor: '#dadada'
-    };
+        height: lineWidth};
 
     if (!isSelected)
         return <></>
@@ -93,23 +123,7 @@ const NodeFrame = ({node}) => {
         </>
 }
 
-export const NodeContentFrame = ({children}) => {
-    const sxDefault = {
-        width: "100%",
-        height: "100%",
-        overflowY: 'auto',
-        overflowX: 'hidden',
-        wordBreak: "break-word",
-        backgroundColor: '#f4f4f4'
-    }
-    return <>
-        <Card sx={sxDefault}>
-            <CardContent>
-                {children}
-            </CardContent>
-        </Card>
-    </>
-}
+
 
 
 export default TreeView;

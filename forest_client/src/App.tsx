@@ -19,7 +19,6 @@ export default function App() {
     const setupYDoc = useSetAtom(setupYDocAtom);
 
     useEffect(() => {
-        document.body.style.overflow = 'hidden';
         if (treeId) {
             setupYDoc()
         }
@@ -37,7 +36,7 @@ export default function App() {
                     <Box sx={{width: '100%'}}>
                         <MyAppBar setCurrentPage={setCurrentPage} currentPage={currentPage}/>
                     </Box>
-                    <Box sx={{height: 'calc(100% - 48px)', boxSizing: 'border-box', 'paddingTop': '4px'}}>
+                    <Box sx={{boxSizing: 'border-box', height: '100%', position: 'relative'}}>
                         <TheSelectedPage currentPage={currentPage}/>
                     </Box>
                 </Box>
@@ -50,7 +49,7 @@ export default function App() {
 
 
 const TreeViewPage = () => (
-    <Box style={{width: "100vw", height: "100%", flexGrow: 1, boxSizing: "border-box"}}>
+    <Box style={{width: "100vw", height: "100%", flexGrow: 1, overflow: 'auto', boxSizing: "border-box"}}>
         <TreeView/>
     </Box>
 );

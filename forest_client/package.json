@@ -50,6 +50,7 @@
     "@tiptap/extension-underline": "^2.12.0",
     "@tiptap/pm": "^2.12.0",
     "@tiptap/react": "^2.12.0",
+    "allotment": "^1.20.4",
     "html-react-parser": "^5.0.11",
     "jotai": "^2.10.3",
     "jotai-scope": "^0.7.3",

@@ -47,8 +47,6 @@ export const NodeButtons = (props: { node: Node }) => {
             height: '2rem',
             paddingLeft: '10px',
             paddingRight: '10px',
-            paddingBottom: '5px',
-            marginBottom: '10px',
             position: 'relative'
         }}
     >

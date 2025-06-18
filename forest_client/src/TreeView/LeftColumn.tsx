@@ -2,22 +2,20 @@ import {Node} from "../TreeState/entities";
 import React from "react";
 import { useAtomValue } from "jotai";
 import { selectedNodeAtom } from "../TreeState/TreeState";
-import {NodeContentFrame } from "./TreeView";
 import { NodeContentTabs } from "./NodeContentTab";
+import {NodeContentFrame} from "./RightColumn";
+import {Allotment} from "allotment";
+import "allotment/dist/style.css";
 
 export function LeftColumn(){
     const node = useAtomValue(selectedNodeAtom)
 
-    return <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
-        <div style={{flex: 0.9, height: '50%', marginBottom: '2%'}}>
-            <NodeContentFrame>
-                <NodeContentTabs node={node} tabDict={node.tools[0]} title=""/>
-            </NodeContentFrame>
-        </div>
-        <div style={{flex: 0.9, height: '50%'}}>
-            <NodeContentFrame>
-                <NodeContentTabs node={node} tabDict={node.tools[1]} title=""/>
-            </NodeContentFrame>
-        </div>
-    </div>;
+    return <Allotment vertical={true}>
+        <Allotment.Pane minSize={200}>
+            <NodeContentTabs node={node} tabDict={node.tools[0]} titleAtom=""/>
+        </Allotment.Pane>
+        <Allotment.Pane snap>
+            <NodeContentTabs node={node} tabDict={node.tools[1]} titleAtom=""/>
+        </Allotment.Pane>
+    </Allotment>
 }

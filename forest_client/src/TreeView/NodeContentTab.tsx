@@ -40,7 +40,7 @@ const renderTabs = (tabs, node) => {
                 </TabList>}
             </Box>}
             {Object.keys(tabs).map((tab, i) => (
-                <TabPanel key={i} value={i.toString()} sx={{padding: "5px 10px"}}>
+                <TabPanel key={i} value={i.toString()} sx={{padding: "0"}}>
                     <Box sx={{overflowX: "auto", fontFamily: 'Verdana, sans-serif'}}>
                         {renderContent(tabs[tab], node)}
                     </Box>
@@ -125,7 +125,7 @@ export const NodeContentTabs = ({node, tabDict, titleAtom}) => {
                     />
                 ) : (
                     <Typography
-                        variant="h5"
+                        variant="h3"
                         onDoubleClick={handleDoubleClick}
                         style={{"paddingBottom": "5px", "cursor": "pointer"}}
                     >

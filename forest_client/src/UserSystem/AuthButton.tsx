@@ -61,6 +61,7 @@ const AuthButton: React.FC = () => {
                 onClick={handleLoginClick}
                 startIcon={<AccountCircleIcon sx={{color: 'white'}}/>}
                 sx={{
+                    backgroundColor: '#5c88bb',
                     color: 'white',
                     textTransform: 'none',
                     '&:hover': {
@@ -79,6 +80,7 @@ const AuthButton: React.FC = () => {
                 color="inherit"
                 onClick={handleUserMenuClick}
                 sx={{
+                    backgroundColor: '#5c88bb',
                     color: 'white',
                     textTransform: 'none',
                     display: 'flex',

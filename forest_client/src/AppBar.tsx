@@ -12,18 +12,16 @@ import Tooltip from "@mui/material/Tooltip";
 export const MyAppBar = ({setCurrentPage, currentPage}: { setCurrentPage: any, currentPage: string }) => {
     const connectionStatus = useAtomValue(YjsConnectionStatusAtom)
     const supabaseClient = useAtomValue(supabaseClientAtom)
-    return <AppBar position="static">
+    return <AppBar position="static" color={"transparent"} style={{borderBottom: '1px solid #c6c6c6'}} elevation={0}>
         <Toolbar variant="dense">
             <Stack direction="row" spacing={2} sx={{flexGrow: 1}}>
                 <Button
-                    color="inherit"
                     onClick={() => setCurrentPage('tree')}
                     variant={currentPage === 'tree' ? 'outlined' : 'text'}
                 >
                     <AccountTreeIcon/>
                 </Button>
                 <Button
-                    color="inherit"
                     onClick={() => setCurrentPage('linear')}
                     variant={currentPage === 'second' ? 'outlined' : 'text'}
                 >
