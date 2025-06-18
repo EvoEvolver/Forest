@@ -76,7 +76,6 @@ function main(port: number, host: string, frontendRoot: string | null): void {
     app.use(express.json({limit: '50mb'}));
     app.use(express.urlencoded({limit: '50mb'}));
 
-    const data: ServerData = new ServerData();
     console.log(`serving with frontendRoot: ${frontendRoot}`)
     if (frontendRoot) {
         app.use(express.static(path.join(__dirname, path.dirname(frontendRoot))));
