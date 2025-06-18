@@ -59,7 +59,7 @@ const TreeView = () => {
                         {leaves.map((n, index) => <MiddleContents node={n} key={index}/>)}
                     </div>
                     {!mobileMode && (
-                        <div style={{backgroundColor: '#fafafa', height: '100%'}}>
+                        <div style={{height: '100%'}}>
                             <LeftColumn/>
                         </div>
                     )}
