@@ -27,7 +27,7 @@ export interface AuthenticatedRequest extends Request {
     };
 }
 
-const TREER_ADMIN_TOKEN = process.env.TREER_ADMIN_TOKEN
+const FOREST_ADMIN_TOKEN = process.env.FOREST_ADMIN_TOKEN
 /**
  * Middleware to authenticate Supabase JWT tokens
  * Verifies the token signature using SUPABASE_JWT_SECRET
@@ -66,7 +66,7 @@ export const authenticateToken = (req: AuthenticatedRequest, res: Response, next
             return;
         }
 
-        if (token === TREER_ADMIN_TOKEN) {
+        if (token === FOREST_ADMIN_TOKEN) {
             console.log('Permission granted to admin user');
             req.user = {
                 id: 'admin-user',

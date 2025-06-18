@@ -6,11 +6,11 @@ from fibers.gui.renderer import Renderer
 from fibers.tree import Node
 
 
-def push_tree(root: Node, host="http://0.0.0.0:29999"):
+def push_tree(root: Node, host="http://0.0.0.0:29999", token=None):
     tree_data = Renderer().render_to_json(root)
-    push_tree_data(tree_data, host)
+    push_tree_data(tree_data, host, token)
 
-def push_tree_data(tree_data, host="http://0.0.0.0:29999"):
+def push_tree_data(tree_data, host="http://0.0.0.0:29999", token=None):
     url = f'{host}/api/createTree'
     root_id = tree_data["rootId"]
     payload = json.dumps({
@@ -20,6 +20,8 @@ def push_tree_data(tree_data, host="http://0.0.0.0:29999"):
     headers = {
         'Content-Type': 'application/json'
     }
+    if token is not None:
+        headers['Authorization'] = f'Bearer {token}'
     response = requests.request("PUT", url, headers=headers, data=payload)
     response.raise_for_status()
     # get tree_id from response
