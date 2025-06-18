@@ -10,13 +10,15 @@ export function LeftColumn(){
     const node = useAtomValue(selectedNodeAtom)
 
     return <Allotment vertical={true}>
-        <Allotment.Pane minSize={200}>
+        <Allotment.Pane minSize={200} >
             <NodeContentFrame>
                 <NodeContentTabs node={node} tabDict={node.tools[0]} titleAtom=""/>
             </NodeContentFrame>
         </Allotment.Pane>
         <Allotment.Pane snap>
-            <NodeContentTabs node={node} tabDict={node.tools[1]} titleAtom=""/>
+            <NodeContentFrame>
+                <NodeContentTabs node={node} tabDict={node.tools[1]} titleAtom=""/>
+            </NodeContentFrame>
         </Allotment.Pane>
     </Allotment>
 }

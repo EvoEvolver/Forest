@@ -5,12 +5,14 @@ import React from "react";
 
 export const NodeContentFrame = ({children}) => {
     const sxDefault = {
+        position: "relative",
         width: "100%",
         height: "100%",
-        overflowY: 'auto',
         overflowX: 'hidden',
         wordBreak: "break-word",
         boxShadow: "none",
+        display: "flex",
+        flexDirection: "column",
     }
     return <>
         <Card sx={sxDefault}>
@@ -26,7 +28,10 @@ export const NodeContentFrame = ({children}) => {
                     Header
                 </Typography>
             </CardContent>
-            <CardContent sx={{paddingTop: '0'}}>
+            <CardContent sx={{
+                overflowY: 'scroll',
+                height: '100%'
+            }}>
                 {children}
             </CardContent>
         </Card>
