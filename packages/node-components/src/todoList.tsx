@@ -63,8 +63,13 @@ export function TodoApp({node}: {node: NodeVM}) {
     const sortedTodos = [...todos].sort((a, b) => Number(a.done) - Number(b.done));
 
     return (
-        <div style={{marginTop:"20px"}}>
+        <div>
             <TextField
+                InputProps={{
+                    sx: {
+                        borderRadius: '10px'
+                    }
+                }}
                 label="New Todo"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
