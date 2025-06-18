@@ -22,7 +22,7 @@ export const MyAppBar = ({setCurrentPage, currentPage}: { setCurrentPage: any, c
     const connectionStatus = useAtomValue(YjsConnectionStatusAtom)
     const supabaseClient = useAtomValue(supabaseClientAtom)
     const [settingsOpen, setSettingsOpen] = useState(false);
-    return <AppBar position="static" color={"transparent"} style={{borderBottom: '1px solid #c6c6c6'}} elevation={0}>
+    return <AppBar position="static" sx={{borderBottom: '1px solid #c6c6c6', backgroundColor: '#fafafa'}} elevation={0}>
         <Toolbar variant="dense">
             <Stack direction="row" spacing={2} sx={{flexGrow: 1}}>
                 <Button
