@@ -41,7 +41,7 @@ export const setupYDocAtom = atom(null, (get, set) => {
             set(YjsConnectionStatusAtom, "connected");
             set(updateChildrenCountAtom, {});
             const nodeDict = ydoc.getMap("nodeDict") as YMap<any>;
-            const rootId = treeMetadata["rootId"];
+            let rootId = treeMetadata["rootId"];
             // fix for missing rootId
             if (!rootId || !nodeDict.has(rootId)) {
                 console.warn("No rootId found in metadata or nodeDict. Searching for rootId.");
@@ -49,12 +49,18 @@ export const setupYDocAtom = atom(null, (get, set) => {
                     if (node.get("parent") === null) {
                         const newRootId = node.get("id");
                         ydoc.getMap("metadata").set("rootId", newRootId);
+                        rootId = newRootId
                         treeMetadata["rootId"] = newRootId;
                         set(setTreeMetadataAtom, treeMetadata);
                     }
                 }
             }
             set(initSelectedNodeAtom)
+            if (rootId) {
+                const rootNode = nodeDict.get(rootId);
+                const rootName = rootNode ? rootNode.get("title") : "Tree";
+                setWindowTitle(rootName)
+            }
         }
     })
     let nodeDictyMap: YMap<YMap<any>> = ydoc.getMap("nodeDict")
@@ -73,6 +79,10 @@ export const setupYDocAtom = atom(null, (get, set) => {
         })
     })
 })
+
+function setWindowTitle(title: string) {
+    document.title = title;
+}
 
 export const initSelectedNodeAtom = atom(null, (get, set) => {
     const ydoc = get(YDocAtom);
