@@ -58,7 +58,7 @@ export const setupYDocAtom = atom(null, (get, set) => {
             set(initSelectedNodeAtom)
             if (rootId) {
                 const rootNode = nodeDict.get(rootId);
-                const rootName = rootNode ? rootNode.get("title") : "Tree";
+                const rootName = rootNode ? (rootNode.get("title") || "Treer") : "Treer";
                 setWindowTitle(rootName)
             }
         }
