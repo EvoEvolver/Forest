@@ -109,7 +109,7 @@
 	 margin: 0;
 }
  .tiptap p {
-	 word-break: break-all;
+	 word-break: normal;
 }
  .tiptap .collaboration-cursor__caret {
 	 border-left: 1px solid #0d0d0d;
