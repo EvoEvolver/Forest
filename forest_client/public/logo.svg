@@ -1,18 +1,1 @@
-<svg width="300" height="300" xmlns="http://www.w3.org/2000/svg">
- <!-- Created with Method Draw - http://github.com/duopixel/Method-Draw/ -->
-
- <g>
-  <title>background</title>
-  <rect fill="#2e75b6" id="canvas_background" height="302" width="302" y="-1" x="-1"/>
-  <g display="none" overflow="visible" y="0" x="0" height="100%" width="100%" id="canvasGrid">
-   <rect fill="url(#gridpattern)" stroke-width="0" y="0" x="0" height="100%" width="100%" id="svg_2"/>
-  </g>
- </g>
- <g>
-  <title>Layer 1</title>
-  <rect stroke="#ffffff" id="svg_1" height="9.27833" width="150.51516" y="96.34863" x="123.84615" stroke-width="1.5" fill="#fff"/>
-  <rect stroke="#ffffff" id="svg_3" height="158.76258" width="29.89685" y="106.65789" x="99.65031" fill-opacity="null" stroke-opacity="null" stroke-width="1.5" fill="#fff"/>
-  <rect stroke="#ffffff" id="svg_4" height="19.58759" width="110.30906" y="173.66807" x="143.9492" fill-opacity="null" stroke-opacity="null" stroke-width="1.5" fill="#fff"/>
-  <rect stroke="#ffffff" id="svg_6" height="22.89569" width="145.36056" y="257.17306" x="127.45438" fill-opacity="null" stroke-opacity="null" stroke-width="1.5" fill="#fff"/>
- </g>
-</svg>
+<svg width="1080" height="1080" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" overflow="hidden"><path fill="#4273b1" d="M2 4h1079v1079H2z"/><path fill="#F2F2F2" d="M340 315h691v125H340z"/><path fill="#F2F2F2" d="M623 403h125v634H623z"/></svg>
