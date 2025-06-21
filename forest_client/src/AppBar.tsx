@@ -8,7 +8,7 @@ import {supabaseClientAtom} from "./UserSystem/authStates";
 import {YjsConnectionStatusAtom, YjsProviderAtom} from "./TreeState/YjsConnection";
 import {jumpToNodeAtom, scrollToNodeAtom} from "./TreeState/TreeState";
 import Tooltip from "@mui/material/Tooltip";
-
+import SchemaRoundedIcon from '@mui/icons-material/SchemaRounded';
 export const MyAppBar = ({setCurrentPage, currentPage}: { setCurrentPage: any, currentPage: string }) => {
     const connectionStatus = useAtomValue(YjsConnectionStatusAtom)
     const supabaseClient = useAtomValue(supabaseClientAtom)
@@ -28,6 +28,13 @@ export const MyAppBar = ({setCurrentPage, currentPage}: { setCurrentPage: any, c
                     variant={currentPage === 'second' ? 'outlined' : 'text'}
                 >
                     <ArticleIcon/>
+                </Button>
+                <Button
+                    color="inherit"
+                    onClick={() => setCurrentPage('flow')}
+                    variant={currentPage === 'second' ? 'outlined' : 'text'}
+                >
+                    <SchemaRoundedIcon/>
                 </Button>
             </Stack>
             {/* Awareness status */}

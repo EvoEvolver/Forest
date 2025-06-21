@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {lazy, Suspense, useEffect, useState} from 'react';
 import {Box} from "@mui/material";
 import {ThemeProvider} from '@mui/material/styles';
 import {useAtom, useAtomValue, useSetAtom} from "jotai";
@@ -10,6 +10,8 @@ import {themeOptions} from "./theme";
 import {subscriptionAtom, supabaseClientAtom} from "./UserSystem/authStates";
 import {MyAppBar} from "./AppBar";
 import {treeId} from "./appState";
+
+const FlowVisualizer = lazy(() => import('./FlowView'));
 
 
 export default function App() {
@@ -66,7 +68,13 @@ const TheSelectedPage = ({currentPage}) => {
         case 'tree':
             return <TreeViewPage/>;
         case 'linear':
-            return <LinearViewPage/>;
+            return <Suspense fallback={<div>Loading...</div>}>
+                <LinearViewPage/>
+            </Suspense>
+        case 'flow':
+            return <Suspense fallback={<div>Loading...</div>}>
+                <FlowVisualizer/>
+            </Suspense>
         default:
             return <TreeViewPage/>;
     }
