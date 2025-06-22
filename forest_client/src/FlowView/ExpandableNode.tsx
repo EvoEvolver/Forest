@@ -1,10 +1,11 @@
 import React, {memo} from 'react';
 import {Handle, NodeProps, Position} from 'reactflow';
-import {useSetAtom} from 'jotai';
+import {useAtomValue, useSetAtom} from 'jotai';
 import {nodeStateAtom} from './nodeStateAtom';
 import {Typography, IconButton, Paper, Box} from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import {treeAtom} from "../TreeState/TreeState";
 
 const ExpandableNode = ({id, data}: NodeProps) => {
     const setNodeState = useSetAtom(nodeStateAtom(id));
@@ -12,6 +13,11 @@ const ExpandableNode = ({id, data}: NodeProps) => {
     const toggleCollapse = () => {
         setNodeState((prev) => ({...prev, isCollapsed: !prev.isCollapsed}));
     };
+    const tree = useAtomValue(treeAtom)
+    const nodeDict = tree.nodeDict
+    const nodeAtom = nodeDict[id]
+    const node = useAtomValue(nodeAtom)
+    const nodeTitle = useAtomValue(node.title)
 
     return (
         <Paper
@@ -38,7 +44,7 @@ const ExpandableNode = ({id, data}: NodeProps) => {
                     fontWeight={600}
                     sx={{flexGrow: 1, color: '#1976d2'}}
                 >
-                    {data.label}
+                    {nodeTitle}
                 </Typography>
                 {data.isExpandable && (
                     <IconButton
