@@ -379,7 +379,11 @@ export const setToNodeChildrenAtom = atom(null, (get, set, nodeid) => {
     set(selectedNodeIdAtom, nodeid)
     const currNode = get(selectedNodeAtom)
     if (!currNode || get(currNode.children).length == 0) return
-    set(selectedNodeAtom, get(currNode.children)[0])
+    const firstChild = get(currNode.children)[0]
+    set(selectedNodeAtom, firstChild)
+    setTimeout(() => {
+        set(scrollToNodeAtom, firstChild)
+    })
 })
 
 
