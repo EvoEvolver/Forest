@@ -63,7 +63,7 @@ const flowDataAtom = atom((get) => {
 
     const nodeWidth = 300;
     const nodeHeight = 100;
-    const treeLayout = d3.tree().nodeSize([nodeHeight , nodeWidth + 100]); // Add more spacing
+    const treeLayout = d3.tree().nodeSize([nodeHeight, nodeWidth + 100]); // Add more spacing
 
     const layoutRoot = treeLayout(root);
 
@@ -139,18 +139,10 @@ const FlowVisualizer = () => {
         setEdges(flowData.edges);
     }, [flowData, setNodes, setEdges]);
 
-    // This effect is crucial. It ensures that any interaction with a node
-    // that might change its state (like collapsing) triggers a re-calculation
-    // of the layout. The dependency on `nodeStateAtom` is implicit via `flowDataAtom`.
-    /*React.useEffect(() => {
-        recomputeFlowData();
-    }, [recomputeFlowData]);*/
-
-
     if (nodes.length === 0) return null;
 
     return (
-        <div style={{width: '80vw', height: '100vh'}}>
+        <div style={{width: '100vw', height: '100vh'}}>
             <ReactFlow
                 nodes={nodes}
                 edges={edges}
