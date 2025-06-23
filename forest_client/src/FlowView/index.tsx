@@ -61,9 +61,9 @@ const flowDataAtom = atom((get) => {
 
     const root = d3.hierarchy(buildHierarchy(rootNodeData.id));
 
-    const nodeWidth = 300;
-    const nodeHeight = 100;
-    const treeLayout = d3.tree().nodeSize([nodeHeight, nodeWidth + 100]); // Add more spacing
+    const nodeWidth = 200;
+    const nodeHeight = 50;
+    const treeLayout = d3.tree().nodeSize([nodeHeight, nodeWidth + 70]); // Add more spacing
 
     const layoutRoot = treeLayout(root);
 
@@ -153,9 +153,9 @@ const FlowVisualizer = () => {
                 fitView
                 proOptions={{hideAttribution: true}}
             >
-                <Background/>
+                {/*<Background/>*/}
+                {/*<MiniMap/>*/}
                 <Controls/>
-                <MiniMap/>
             </ReactFlow>
         </div>
     );
