@@ -12,7 +12,7 @@ import SchemaRoundedIcon from '@mui/icons-material/SchemaRounded';
 export const MyAppBar = ({setCurrentPage, currentPage}: { setCurrentPage: any, currentPage: string }) => {
     const connectionStatus = useAtomValue(YjsConnectionStatusAtom)
     const supabaseClient = useAtomValue(supabaseClientAtom)
-    return <AppBar position="static">
+    return <AppBar position="fixed">
         <Toolbar variant="dense">
             <Stack direction="row" spacing={2} sx={{flexGrow: 1}}>
                 <Button

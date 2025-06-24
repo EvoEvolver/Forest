@@ -1,5 +1,5 @@
 import React, {lazy, Suspense, useEffect, useState} from 'react';
-import {Box} from "@mui/material";
+import {Box, CssBaseline} from "@mui/material";
 import {ThemeProvider} from '@mui/material/styles';
 import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import TreeView from "./TreeView/TreeView";
@@ -32,14 +32,25 @@ export default function App() {
         }
     }, []);
 
+    const appBarHeight = 64;
+
     return (
         <>
             <ThemeProvider theme={themeOptions}>
-                <Box sx={{display: 'flex', flexDirection: 'column', width: '100%', height: '100vh'}}>
+                <Box sx={{display: 'flex', flexDirection: 'column', height: '100vh'}}>
+                    <CssBaseline/>
                     <Box sx={{width: '100%'}}>
                         <MyAppBar setCurrentPage={setCurrentPage} currentPage={currentPage}/>
                     </Box>
-                    <Box sx={{height: 'calc(100% - 48px)', boxSizing: 'border-box', 'paddingTop': '4px'}}>
+                    <Box
+                        flexGrow={1}
+                        overflow="auto"
+                        p={2}
+                        pt={`${appBarHeight}px`}
+                        bgcolor="background.default"
+                        sx={{overflowX: 'hidden'}}
+                    >
+
                         <TheSelectedPage currentPage={currentPage}/>
                     </Box>
                 </Box>
