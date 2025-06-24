@@ -32,7 +32,7 @@ export default function App() {
         }
     }, []);
 
-    const appBarHeight = 64;
+    const appBarHeight = 55;
 
     return (
         <>
