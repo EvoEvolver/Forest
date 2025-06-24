@@ -142,7 +142,7 @@ const FlowVisualizer = () => {
     if (nodes.length === 0) return null;
 
     return (
-        <div style={{width: '100vw', height: '100vh'}}>
+        <div style={{width: '100vw', height: '100%'}}>
             <ReactFlow
                 nodes={nodes}
                 edges={edges}
@@ -153,8 +153,8 @@ const FlowVisualizer = () => {
                 fitView
                 proOptions={{hideAttribution: true}}
             >
-                {/*<Background/>*/}
-                {/*<MiniMap/>*/}
+                <Background/>
+                <MiniMap/>
                 <Controls/>
             </ReactFlow>
         </div>

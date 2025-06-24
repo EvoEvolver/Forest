@@ -61,17 +61,17 @@ export default function LinearView(props) {
             flexDirection: 'column',
             alignItems: 'center',
             width: '100%',
-            height: '100vh', // Set container height to viewport height
+            height: '100%', // Set container height to viewport height
         }}>
             <Paper
                 elevation={1}
                 sx={{
                     maxWidth: '800px',
                     width: '100%',
-                    margin: '20px',
-                    padding: '20px',
+                    margin: '10px',
+                    padding: '10px',
                     bgcolor: '#f4f4f4',
-                    maxHeight: 'calc(100vh - 40px)', // Account for margins
+                    maxHeight: '100%', // Account for margins
                     overflowY: 'auto', // Enable vertical scrolling
                 }}
             >
