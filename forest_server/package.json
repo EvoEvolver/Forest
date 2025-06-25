@@ -6,7 +6,7 @@
   "scripts": {
     "test": "NODE_ENV=test nodemon src/index.ts --BackendPort=29999 --noFrontend",
     "start": "node dist/index.js",
-    "dev": "NODE_ENV=development nodemon src/index.ts --BackendPort=29999 --noFrontend=true",
+    "dev": "nodemon src/index.ts --BackendPort=29999 --noFrontend=true",
     "build": "node build.js"
   },
   "author": "",

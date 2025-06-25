@@ -6,7 +6,7 @@ import {httpUrl} from "../appState";
 import {authTokenAtom, subscriptionAtom, userAtom} from "./authStates";
 import {UserTreesList} from './UserTreesList';
 import {useAtom} from "jotai/index";
-
+import {VisitedTreesList} from './VisitedTreesList';
 
 export const UserPanel = ({}) => {
     const [, setSubscription] = useAtom(subscriptionAtom);
@@ -98,13 +98,18 @@ export const UserPanel = ({}) => {
                         </Typography>
                     </Stack>
                 </CardContent>
-                <CardContent>
+                <CardContent
+                  sx={{
+                    maxHeight: 500, 
+                    overflow: 'auto',
+                  }}>
                     <Stack spacing={2} sx={{p: 2}}>
                         <Button variant="contained" onClick={handleCreateTree} size="small" sx={{mr: 2}}>
                             Create new tree
                         </Button>
                     </Stack>
                     <UserTreesList/>
+                    <VisitedTreesList/>
                 </CardContent>
             </Card>
         </Box>
