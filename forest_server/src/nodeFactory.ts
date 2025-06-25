@@ -8,18 +8,6 @@ class TreeData {
     }
 }
 
-export class ServerData {
-    trees: { [key: string]: TreeData };
-    tree: TreeData | null
-    tree_id: string | null
-
-    constructor() {
-        this.trees = {}
-        this.tree = null
-        this.tree_id = null
-    }
-}
-
 export function nodeToMap(node: any): Y.Map<any> {
     const ymapForNode = new Y.Map()
     for (let key in node) {

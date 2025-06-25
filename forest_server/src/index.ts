@@ -1,11 +1,11 @@
-import express from 'express';
+import express, {Response} from 'express';
 import path from 'path';
 import minimist from 'minimist'
 import http from 'http';
 import cors from 'cors';
 import crypto from 'crypto';
-import {patchTree, ServerData} from "./nodeFactory";
-import {applyUpdate, Doc, encodeStateAsUpdate} from 'yjs';
+import {patchTree} from "./nodeFactory";
+import {applyUpdate, Doc, encodeStateAsUpdate, Map as YMap} from 'yjs';
 import {WebSocketServer} from 'ws';
 import {getYDoc, setupWSConnection, setupYjsPersistence} from './y-websocket/utils'
 import OpenAI from 'openai';
@@ -20,7 +20,6 @@ import {
 import {setMongoConnection} from "./mongoConnection";
 import {TreeMetadataManager} from "./treeMetadata";
 import {TreeVisitManager} from "./treeVisitTracker";
-import {Response} from 'express';
 
 dotenv.config({
     path: path.resolve(__dirname, '.env'),
@@ -42,7 +41,16 @@ function check_and_upgrade(doc: Doc, treeId: string) {
     }
     if (!metadata.has("rootId")) {
         //metadata.set("rootId", treeId);
+    } else {
+        const rootId = metadata.get("rootId") as string
+        const nodeDict = doc.getMap("nodeDict")
+        const rootNode = nodeDict.get(rootId) as YMap<any>
+        if (rootNode) {
+            const title = rootNode.get("title")
+            treeMetadataManager.updateTreeTitle(treeId, title)
+        }
     }
+
 }
 
 
@@ -240,22 +248,22 @@ function main(port: number, host: string, frontendRoot: string | null): void {
     app.post('/api/recordTreeVisit', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
         console.log(`Recording tree visit for user: ${req.user?.id}`);
         try {
-            const { treeId } = req.body;
-            
+            const {treeId} = req.body;
+
             // Validate required parameters
             if (!treeId) {
-                res.status(400).json({ error: 'treeId is required.' });
+                res.status(400).json({error: 'treeId is required.'});
                 return;
             }
 
             // Record the visit using TreeVisitManager
             await treeVisitManager.recordTreeVisit(req.user!.id, treeId);
-            
+
             console.log(`Successfully recorded visit to tree ${treeId} for user: ${req.user?.email}`);
-            res.json({ success: true });
+            res.json({success: true});
         } catch (error) {
             console.error(`Error recording tree visit for user ${req.user?.email}:`, error);
-            res.status(500).json({ error: 'Failed to record tree visit' });
+            res.status(500).json({error: 'Failed to record tree visit'});
         }
     });
 
@@ -265,7 +273,7 @@ function main(port: number, host: string, frontendRoot: string | null): void {
         try {
             // Get visited tree IDs with last visit times
             const visitedTrees = await treeVisitManager.getVisitedTrees(req.user!.id);
-            
+
             // Get metadata for each visited tree
             const treesWithMetadata = await Promise.all(
                 visitedTrees.map(async (visit) => {
@@ -286,16 +294,16 @@ function main(port: number, host: string, frontendRoot: string | null): void {
                     return null;
                 })
             );
-            
+
             // Filter out null results (trees that no longer exist) and sort by last visit
             const validTrees = treesWithMetadata
                 .filter(tree => tree !== null)
                 .sort((a, b) => new Date(b.lastVisited).getTime() - new Date(a.lastVisited).getTime());
-            
-            res.json({ trees: validTrees });
+
+            res.json({trees: validTrees});
         } catch (error) {
             console.error(`Error fetching visited trees for user ${req.user?.email}:`, error);
-            res.status(500).json({ error: 'Failed to fetch visited trees' });
+            res.status(500).json({error: 'Failed to fetch visited trees'});
         }
     });
 
@@ -303,16 +311,16 @@ function main(port: number, host: string, frontendRoot: string | null): void {
     app.delete('/api/user/visitedTrees/:treeId', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
         console.log(`Removing tree ${req.params.treeId} from visit history for user: ${req.user?.email}`);
         try {
-            const { treeId } = req.params;
-            
+            const {treeId} = req.params;
+
             // Remove the visit record using TreeVisitManager
             await treeVisitManager.removeTreeVisit(req.user!.id, treeId);
-            
+
             console.log(`Successfully removed tree ${treeId} from visit history for user: ${req.user?.email}`);
-            res.json({ success: true });
+            res.json({success: true});
         } catch (error) {
             console.error(`Error removing tree from visit history for user ${req.user?.email}:`, error);
-            res.status(500).json({ error: 'Failed to remove tree from visit history' });
+            res.status(500).json({error: 'Failed to remove tree from visit history'});
         }
     });
 

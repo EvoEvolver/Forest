@@ -37,7 +37,6 @@ export class TreeMetadataManager {
             title: title || 'Untitled Tree',
             nodeCount: 1
         };
-
         await this.collection.insertOne(metadata);
     }
 

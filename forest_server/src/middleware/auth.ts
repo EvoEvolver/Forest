@@ -4,6 +4,7 @@ import * as jwt from 'jsonwebtoken';
 const isDevelopment = process.env.NODE_ENV === 'development';
 // disable authentication before we finish the login flow
 const noAuthRequired = false
+console.log("Development mode, auth node needed")
 
 // Interface for JWT claims from Supabase
 interface SupabaseJWTClaims {
@@ -149,7 +150,7 @@ export const requireAIPermission = (req: AuthenticatedRequest, res: Response, ne
  */
 export const requireFileUploadPermission = (maxFileSize: number = 10) => {
     return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
-        if (!req.user) {
+        if (!req.user && !noAuthRequired) {
             res.status(401).json({error: 'Authentication required'});
             return;
         }
@@ -173,7 +174,7 @@ export const requireFileUploadPermission = (maxFileSize: number = 10) => {
  * Future-ready permission middleware for file uploads
  */
 export const requireCreateTreePermission = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
-    if (!req.user) {
+    if (!req.user && !noAuthRequired) {
         res.status(401).json({error: 'Authentication required'});
         return;
     }
