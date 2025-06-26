@@ -7,8 +7,10 @@ RUN npm install -g pnpm
 # Set working directory
 WORKDIR /app
 
-# Copy package files first for better cache
-COPY package.json pnpm-workspace.yaml* ./
+# Copy workspace files
+COPY pnpm-workspace.yaml ./
+COPY package.json ./
+COPY packages/*/package.json ./packages/*/
 
 # Install dependencies
 RUN pnpm install
@@ -20,7 +22,7 @@ COPY . .
 RUN mkdir -p forest
 
 # Make build.sh executable and run it
-RUN chmod +x build.sh && ./build.sh
+RUN pnpm run build
 
 # Set the working directory to the final application
 WORKDIR /app/forest
