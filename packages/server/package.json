@@ -1,19 +1,10 @@
 {
   "name": "@forest/server",
   "version": "1.0.0",
-  "description": "",
   "main": "src/index.ts",
   "scripts": {
     "dev": "nodemon src/index.ts --BackendPort=29999 --noFrontend=true",
     "build": "node build.js"
-  },
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "esbuild": "^0.24.0",
-    "nodemon": "^3.1.7",
-    "ts-node": "^10.9.2",
-    "y-websocket": "^2.1.0"
   },
   "dependencies": {
     "@types/cors": "^2.8.17",
@@ -35,5 +26,11 @@
     "y-mongodb-provider": "^0.2.1",
     "y-protocols": "^1.0.6",
     "yjs": "13.6.20"
+  },
+    "devDependencies": {
+    "esbuild": "^0.24.0",
+    "nodemon": "^3.1.7",
+    "ts-node": "^10.9.2",
+    "y-websocket": "^2.1.0"
   }
 }
