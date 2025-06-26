@@ -6,9 +6,9 @@ import TabList from "@mui/lab/TabList";
 import Tab from "@mui/material/Tab";
 import TabPanel from "@mui/lab/TabPanel";
 import Typography from "@mui/material/Typography";
-import {envComponentAtom} from "./ContentComponents";
 import {useAtomValue} from "jotai";
 import {Node} from "../TreeState/entities"
+import {envComponentAtom} from "@forest/node-type-custom"
 
 export const thisNodeContext: Context<Node> = createContext(null)
 

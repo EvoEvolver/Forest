@@ -1,1 +1,1 @@
-pnpm -r run dev
+pnpm -r --stream run dev

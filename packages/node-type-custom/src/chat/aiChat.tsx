@@ -1,13 +1,14 @@
 import React, {useContext, useState} from "react";
-import {thisNodeContext} from "../../NodeContentTab";
 import {ChatViewImpl} from "./index";
 import {XmlElement, XmlText} from "yjs";
 import {useAtomValue, useSetAtom} from "jotai";
 
-import {authModalOpenAtom, authTokenAtom, isAuthenticatedAtom} from "../../../UserSystem/authStates";
-import {httpUrl} from "../../../appState";
+import {authModalOpenAtom, authTokenAtom, isAuthenticatedAtom} from "@forest/client/src/UserSystem/authStates";
+import {httpUrl} from "@forest/client/src/appState";
 import {Button} from "@mui/material";
+import { thisNodeContext } from "@forest/client";
 
+// @ts-ignore
 const devMode = import.meta.env.MODE === 'development'; // Check if in development mode
 
 interface Message {

@@ -1,11 +1,10 @@
-import {Node} from "../TreeState/entities";
 import React from "react";
-import { useAtomValue } from "jotai";
-import { selectedNodeAtom } from "../TreeState/TreeState";
-import {NodeContentFrame } from "./TreeView";
-import { NodeContentTabs } from "./NodeContentTab";
+import {useAtomValue} from "jotai";
+import {selectedNodeAtom} from "../TreeState/TreeState";
+import {NodeContentFrame} from "./TreeView";
+import {NodeContentTabs} from "./NodeContentTab";
 
-export function LeftColumn(){
+export function LeftColumn() {
     const node = useAtomValue(selectedNodeAtom)
 
     return <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>

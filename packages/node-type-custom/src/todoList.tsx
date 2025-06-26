@@ -2,7 +2,7 @@ import React from 'react';
 import { TextField, Button, List, ListItem, ListItemText, Checkbox } from '@mui/material';
 import { Array as YArray } from 'yjs';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { thisNodeContext } from "../NodeContentTab";
+import { thisNodeContext } from "@forest/client";
 
 
 interface Todo {

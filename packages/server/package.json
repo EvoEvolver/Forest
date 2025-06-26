@@ -1,11 +1,9 @@
 {
-  "name": "forest_server",
+  "name": "@forest/server",
   "version": "1.0.0",
   "description": "",
   "main": "src/index.ts",
   "scripts": {
-    "test": "NODE_ENV=test nodemon src/index.ts --BackendPort=29999 --noFrontend",
-    "start": "node dist/index.js",
     "dev": "nodemon src/index.ts --BackendPort=29999 --noFrontend=true",
     "build": "node build.js"
   },
@@ -15,7 +13,6 @@
     "esbuild": "^0.24.0",
     "nodemon": "^3.1.7",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.2",
     "y-websocket": "^2.1.0"
   },
   "dependencies": {
@@ -32,10 +29,8 @@
     "lib0": "^0.2.98",
     "lodash.debounce": "^4.0.8",
     "minimist": "^1.2.8",
-    "minio": "^8.0.5",
     "mongodb": "^6.16.0",
     "openai": "^4.103.0",
-    "socket.io": "^4.8.1",
     "ws": "^8.18.0",
     "y-mongodb-provider": "^0.2.1",
     "y-protocols": "^1.0.6",

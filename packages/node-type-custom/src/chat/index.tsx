@@ -4,7 +4,7 @@ import {Box, Button, Card, CardContent, Paper, Stack, TextField, Typography,} fr
 import SendIcon from '@mui/icons-material/Send';
 import {useAtom} from "jotai";
 import {atomWithStorage} from 'jotai/utils'
-import {thisNodeContext} from "../../NodeContentTab";
+import { thisNodeContext } from "@forest/client";
 
 interface ChatViewProps {
     label?: string; // The ? makes it optional

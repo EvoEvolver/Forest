@@ -1,9 +1,9 @@
 import React, {useContext, useEffect, useState} from 'react'
 import './style.css';
 import {useAtomValue} from "jotai";
-import {YjsProviderAtom} from "../../../TreeState/YjsConnection";
+import {YjsProviderAtom} from "@forest/client/src/TreeState/YjsConnection";
 import {XmlFragment} from 'yjs';
-import {thisNodeContext} from "../../NodeContentTab";
+import {thisNodeContext} from "@forest/client";
 import Collaboration from '@tiptap/extension-collaboration'
 import {CollaborationCursor} from './Extensions/collaboration-cursor'
 import {BubbleMenu, EditorContent, useEditor} from '@tiptap/react'

@@ -1,7 +1,7 @@
 import Latex from "react-latex-next";
 import React from "react";
 import {useSetAtom} from "jotai";
-import {jumpToNodeAtom} from "../../TreeState/TreeState";
+import {jumpToNodeAtom} from "@forest/client/src/TreeState/TreeState";
 import {Accordion, AccordionDetails, AccordionSummary, Typography} from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import Zoom from "react-medium-image-zoom";
