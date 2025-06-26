@@ -3,8 +3,12 @@ import * as jwt from 'jsonwebtoken';
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 // disable authentication before we finish the login flow
-const noAuthRequired = false
-console.log("Development mode, auth node needed")
+let noAuthRequired = false
+if (isDevelopment) {
+    noAuthRequired = true
+    console.log("Development mode, auth node not needed")
+}
+
 
 // Interface for JWT claims from Supabase
 interface SupabaseJWTClaims {
@@ -37,7 +41,7 @@ const FOREST_ADMIN_TOKEN = process.env.FOREST_ADMIN_TOKEN
 export const authenticateToken = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     try {
         // Always grant permission in development mode
-        if (isDevelopment || noAuthRequired) {
+        if (noAuthRequired) {
             console.log('⚠️ Development mode: AI permission automatically granted');
             req.user = {
                 id: 'dev-user',
@@ -150,7 +154,9 @@ export const requireAIPermission = (req: AuthenticatedRequest, res: Response, ne
  */
 export const requireFileUploadPermission = (maxFileSize: number = 10) => {
     return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
-        if (!req.user && !noAuthRequired) {
+        if (noAuthRequired)
+            next()
+        if (!req.user) {
             res.status(401).json({error: 'Authentication required'});
             return;
         }
@@ -174,7 +180,9 @@ export const requireFileUploadPermission = (maxFileSize: number = 10) => {
  * Future-ready permission middleware for file uploads
  */
 export const requireCreateTreePermission = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
-    if (!req.user && !noAuthRequired) {
+    if (noAuthRequired)
+        next()
+    if (!req.user) {
         res.status(401).json({error: 'Authentication required'});
         return;
     }
