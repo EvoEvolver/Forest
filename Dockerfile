@@ -7,16 +7,11 @@ RUN npm install -g pnpm
 # Set working directory
 WORKDIR /app
 
-# Copy workspace files
-COPY pnpm-workspace.yaml ./
-COPY package.json ./
-COPY packages/*/package.json ./packages/*/
+# Copy the rest of the application files
+COPY . .
 
 # Install dependencies
 RUN pnpm install
-
-# Copy the rest of the application files
-COPY . .
 
 # Create forest directory
 RUN mkdir -p forest
