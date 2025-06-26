@@ -1,29 +1,26 @@
+# Use Node.js 20 as the base image
 FROM node:20
+
+# Install pnpm globally
+RUN npm install -g pnpm
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY forest_server/package*.json forest_server/
-COPY forest_client/package*.json forest_client/
+# Copy package files first for better cache
+COPY package.json pnpm-lock.yaml* ./
 
 # Install dependencies
-RUN cd forest_server && npm install
-RUN cd forest_client && npm install
+RUN pnpm install
 
-# Copy source code
-COPY forest_server forest_server/
-COPY forest_client forest_client/
+# Copy the rest of the application files
+COPY . .
 
 # Create forest directory
 RUN mkdir -p forest
 
-# Build applications and organize files (following build.sh logic)
-RUN npm run --prefix forest_server build && \
-    cp -r forest_server/dist forest && \
-    npm run --prefix forest_client build && \
-    cp -r forest_client/dist forest/dist && \
-    mv forest/dist/dist forest/dist/public
+# Make build.sh executable and run it
+RUN chmod +x build.sh && ./build.sh
 
 # Set the working directory to the final application
 WORKDIR /app/forest
