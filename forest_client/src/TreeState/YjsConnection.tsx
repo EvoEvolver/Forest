@@ -11,8 +11,7 @@ import {
     setTreeMetadataAtom
 } from "./TreeState";
 import {updateChildrenCountAtom} from "./childrenCount";
-import { supabaseClientAtom } from "../UserSystem/authStates";
-import { recordTreeVisit } from "./treeVisitService";
+import {supabaseClientAtom} from "../UserSystem/authStates";
 
 export const YjsProviderAtom: PrimitiveAtom<WebsocketProvider> = atom();
 export const YDocAtom = atom(new Y.Doc());
@@ -26,8 +25,6 @@ export const setupYDocAtom = atom(null, (get, set) => {
     wsProvider.on('status', event => {
         if (event.status === 'connected') {
             set(YjsConnectionStatusAtom, "connected");
-            // Record visit when connection is established
-            recordTreeVisit(treeId, supabaseClient);
         } else if (event.status === 'disconnected') {
             set(YjsConnectionStatusAtom, "disconnected");
         } else if (event.status === 'connecting') {

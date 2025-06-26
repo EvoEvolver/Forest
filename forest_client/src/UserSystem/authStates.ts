@@ -3,6 +3,8 @@ import {atom, WritableAtom} from "jotai";
 import {setupSupabaseClient} from "./supabase";
 import {YjsProviderAtom} from "../TreeState/YjsConnection";
 import {getPastelHexFromUsername, getRandomAnimal} from "./helper";
+import {recordTreeVisit} from "../TreeState/treeVisitService";
+import {treeId} from "../appState";
 
 // Authentication related atoms
 export interface User {
@@ -95,6 +97,9 @@ export const subscriptionAtom: WritableAtom<any, any, any> = atom((get) => {
             const username = userEmail?.split('@')[0] || 'Annonymous ' + getRandomAnimal(awareness.clientID)
             awareness.setLocalStateField("user", {"name": username, "color": getPastelHexFromUsername(username)});
         }
+    }).then(() => {
+        // Record visit when connection is established
+        recordTreeVisit(treeId, supabaseClient);
     })
 
     // Set up auth state change listener
