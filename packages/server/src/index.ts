@@ -47,10 +47,11 @@ function check_and_upgrade(doc: Doc, treeId: string) {
         const rootNode = nodeDict.get(rootId) as YMap<any>
         if (rootNode) {
             const title = rootNode.get("title")
+            const nodeCount = nodeDict.size
             treeMetadataManager.updateTreeTitle(treeId, title)
+            treeMetadataManager.updateNodeCount(treeId, nodeCount).catch(() => {})
         }
     }
-
 }
 
 
@@ -70,8 +71,12 @@ function main(port: number, host: string, frontendRoot: string | null): void {
         const garbageCollect = true
         const doc = getYDoc(treeId, garbageCollect)
 
-        // update last accessed time; do nothing if it fails
-        treeMetadataManager.updateLastAccessed(treeId).catch(() => {
+        // Calculate node count from the document
+        const nodeDict = doc.getMap("nodeDict")
+        const nodeCount = nodeDict.size
+
+        // Update last accessed time and node count; do nothing if it fails
+        treeMetadataManager.updateLastAccessedAndNodeCount(treeId, nodeCount).catch(() => {
         })
 
         setupWSConnection(conn, req, {
@@ -176,11 +181,19 @@ function main(port: number, host: string, frontendRoot: string | null): void {
     app.put('/api/duplicateTree', (req, res) => {
         const originTreeId = req.body.origin_tree_id;
         const originDoc = getYDoc(originTreeId)
+        
+        // Calculate node count from the original document
+        const nodeDict = originDoc.getMap("nodeDict")
+        const nodeCount = nodeDict.size
+        
         // generate a new document ID string using uuid
         const newDocId = crypto.randomUUID();
         const newDoc = getYDoc(newDocId)
         const stateOrigin = encodeStateAsUpdate(originDoc)
         applyUpdate(newDoc, stateOrigin);
+        
+        console.log(`Tree duplicated: ${originTreeId} -> ${newDocId} with ${nodeCount} nodes`);
+        
         // return the new document ID
         res.json({new_tree_id: newDocId});
     });

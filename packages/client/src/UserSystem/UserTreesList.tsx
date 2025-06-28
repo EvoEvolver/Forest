@@ -17,7 +17,6 @@ import {
 } from '@mui/material';
 import {
     Delete as DeleteIcon,
-    Launch as LaunchIcon,
     Refresh as RefreshIcon
 } from '@mui/icons-material';
 import {v4 as uuidv4} from 'uuid';
@@ -201,7 +200,7 @@ export const UserTreesList = ({}) => {
 
     if (loading) {
         return (
-            <Box sx={{ width: 700, height: 250 }}>
+            <Box sx={{ width: 650, height: 250 }}>
                 <DashboardCard title="My Trees">
                     <Box display="flex" justifyContent="center" p={2}>
                         <CircularProgress size={20}/>
@@ -213,7 +212,7 @@ export const UserTreesList = ({}) => {
 
     if (error) {
         return (
-            <Box sx={{ width: 700, height: 250 }}>
+            <Box sx={{ width: 650, height: 250 }}>
                 <DashboardCard title="My Trees">
                     <Alert severity="error" sx={{m: 1}}>
                         {error}
@@ -227,7 +226,7 @@ export const UserTreesList = ({}) => {
     }
 
     return (
-        <Box sx={{ width: 700, height: 250 }}>
+        <Box sx={{ width: 550, height: 250 }}>
             <DashboardCard 
                 title={`My Trees (${trees.length})`}
                 action={
@@ -272,11 +271,6 @@ export const UserTreesList = ({}) => {
                                 <TableRow>
                                     <TableCell sx={{ py: 1 }}>
                                         <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
-                                            Tree ID
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell sx={{ py: 1 }}>
-                                        <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
                                             Details
                                         </Typography>
                                     </TableCell>
@@ -301,25 +295,20 @@ export const UserTreesList = ({}) => {
                                 {trees.map((tree) => (
                                     <TableRow key={tree.treeId} sx={{ '&:hover': { backgroundColor: 'action.hover' } }}>
                                         <TableCell sx={{ py: 0.5 }}>
-                                            <Tooltip title="Click to copy ID">
-                                                <Typography
-                                                    sx={{
-                                                        fontSize: "0.75rem",
-                                                        fontWeight: "500",
-                                                        cursor: 'pointer',
-                                                        '&:hover': {textDecoration: 'underline'}
-                                                    }}
-                                                    onClick={() => {
-                                                        navigator.clipboard.writeText(tree.treeId);
-                                                    }}
-                                                >
-                                                    {tree.treeId.substring(0, 8)}...
-                                                </Typography>
-                                            </Tooltip>
-                                        </TableCell>
-                                        <TableCell sx={{ py: 0.5 }}>
                                             <Box>
-                                                <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
+                                                <Typography 
+                                                    variant="subtitle2" 
+                                                    fontWeight={600} 
+                                                    fontSize="0.8rem"
+                                                    sx={{
+                                                        cursor: 'pointer',
+                                                        color: 'primary.main',
+                                                        '&:hover': {
+                                                            textDecoration: 'underline'
+                                                        }
+                                                    }}
+                                                    onClick={() => handleOpenTree(tree.treeId)}
+                                                >
                                                     {tree.title}
                                                 </Typography>
                                                 <Typography
@@ -351,33 +340,21 @@ export const UserTreesList = ({}) => {
                                             />
                                         </TableCell>
                                         <TableCell align="right" sx={{ py: 0.5 }}>
-                                            <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-                                                <Tooltip title="Open Tree">
-                                                    <IconButton
-                                                        size="small"
-                                                        onClick={() => handleOpenTree(tree.treeId)}
-                                                        color="primary"
-                                                        sx={{ p: 0.5 }}
-                                                    >
-                                                        <LaunchIcon fontSize="small"/>
-                                                    </IconButton>
-                                                </Tooltip>
-                                                <Tooltip title="Delete Tree">
-                                                    <IconButton
-                                                        size="small"
-                                                        onClick={() => handleDeleteTree(tree.treeId)}
-                                                        disabled={deletingTreeId === tree.treeId}
-                                                        color="error"
-                                                        sx={{ p: 0.5 }}
-                                                    >
-                                                        {deletingTreeId === tree.treeId ? (
-                                                            <CircularProgress size={14}/>
-                                                        ) : (
-                                                            <DeleteIcon fontSize="small"/>
-                                                        )}
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </Box>
+                                            <Tooltip title="Delete Tree">
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => handleDeleteTree(tree.treeId)}
+                                                    disabled={deletingTreeId === tree.treeId}
+                                                    color="error"
+                                                    sx={{ p: 0.5 }}
+                                                >
+                                                    {deletingTreeId === tree.treeId ? (
+                                                        <CircularProgress size={14}/>
+                                                    ) : (
+                                                        <DeleteIcon fontSize="small"/>
+                                                    )}
+                                                </IconButton>
+                                            </Tooltip>
                                         </TableCell>
                                     </TableRow>
                                 ))}

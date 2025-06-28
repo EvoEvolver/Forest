@@ -61,6 +61,18 @@ export class TreeMetadataManager {
         );
     }
 
+    async updateLastAccessedAndNodeCount(treeId: string, nodeCount: number): Promise<void> {
+        await this.collection.updateOne(
+            {treeId: treeId},
+            {
+                $set: {
+                    lastAccessed: new Date(),
+                    nodeCount: nodeCount
+                }
+            }
+        );
+    }
+
     async getUserTrees(userId: string): Promise<Array<TreeMetadata>> {
         const trees = await this.collection
             .find({

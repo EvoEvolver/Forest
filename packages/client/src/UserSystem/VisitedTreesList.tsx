@@ -16,7 +16,6 @@ import {
     Typography
 } from '@mui/material';
 import {
-    Launch as LaunchIcon,
     RemoveCircleOutline as RemoveIcon,
     Refresh as RefreshIcon
 } from '@mui/icons-material';
@@ -136,7 +135,7 @@ export const VisitedTreesList = () => {
 
     if (loading) {
         return (
-            <Box sx={{ width: 750, height: 250 }}>
+            <Box sx={{ width: 650, height: 250 }}>
                 <DashboardCard title="Recently Visited Trees">
                     <Box display="flex" justifyContent="center" p={2}>
                         <CircularProgress size={20}/>
@@ -148,7 +147,7 @@ export const VisitedTreesList = () => {
 
     if (error) {
         return (
-            <Box sx={{ width: 750, height: 250 }}>
+            <Box sx={{ width: 650, height: 250 }}>
                 <DashboardCard title="Recently Visited Trees">
                     <Alert severity="error" sx={{m: 1}}>
                         {error}
@@ -162,7 +161,7 @@ export const VisitedTreesList = () => {
     }
 
     return (
-        <Box sx={{ width: 650, height: 250 }}>
+        <Box sx={{ width: 550, height: 250 }}>
             <DashboardCard 
                 title={`Recently Visited Trees (${trees.length})`}
                 action={
@@ -197,11 +196,6 @@ export const VisitedTreesList = () => {
                                 <TableRow>
                                     <TableCell sx={{ py: 1 }}>
                                         <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
-                                            Tree ID
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell sx={{ py: 1 }}>
-                                        <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
                                             Details
                                         </Typography>
                                     </TableCell>
@@ -226,26 +220,21 @@ export const VisitedTreesList = () => {
                                 {trees.map((tree) => (
                                     <TableRow key={tree.treeId} sx={{ '&:hover': { backgroundColor: 'action.hover' } }}>
                                         <TableCell sx={{ py: 0.5 }}>
-                                            <Tooltip title="Click to copy ID">
-                                                <Typography
-                                                    sx={{
-                                                        fontSize: "0.75rem",
-                                                        fontWeight: "500",
-                                                        cursor: 'pointer',
-                                                        '&:hover': {textDecoration: 'underline'}
-                                                    }}
-                                                    onClick={() => {
-                                                        navigator.clipboard.writeText(tree.treeId);
-                                                    }}
-                                                >
-                                                    {tree.treeId.substring(0, 8)}...
-                                                </Typography>
-                                            </Tooltip>
-                                        </TableCell>
-                                        <TableCell sx={{ py: 0.5 }}>
                                             <Box>
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                    <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
+                                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                    <Typography 
+                                                        variant="subtitle2" 
+                                                        fontWeight={600} 
+                                                        fontSize="0.8rem"
+                                                        sx={{
+                                                            cursor: 'pointer',
+                                                            color: 'primary.main',
+                                                            '&:hover': {
+                                                                textDecoration: 'underline'
+                                                            }
+                                                        }}
+                                                        onClick={() => handleOpenTree(tree.treeId)}
+                                                    >
                                                         {tree.title}
                                                     </Typography>
                                                     <Chip
@@ -254,7 +243,8 @@ export const VisitedTreesList = () => {
                                                             backgroundColor: "primary.main",
                                                             color: "#fff",
                                                             fontSize: "0.6rem",
-                                                            height: 16
+                                                            height: 16,
+                                                            ml: 1
                                                         }}
                                                         size="small"
                                                         label={`${tree.nodeCount}`}
@@ -289,33 +279,21 @@ export const VisitedTreesList = () => {
                                             />
                                         </TableCell>
                                         <TableCell align="right" sx={{ py: 0.5 }}>
-                                            <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-                                                <Tooltip title="Open Tree">
-                                                    <IconButton
-                                                        size="small"
-                                                        onClick={() => handleOpenTree(tree.treeId)}
-                                                        color="primary"
-                                                        sx={{ p: 0.5 }}
-                                                    >
-                                                        <LaunchIcon fontSize="small"/>
-                                                    </IconButton>
-                                                </Tooltip>
-                                                <Tooltip title="Remove from history">
-                                                    <IconButton
-                                                        size="small"
-                                                        onClick={() => handleRemoveFromHistory(tree.treeId)}
-                                                        disabled={removingTreeId === tree.treeId}
-                                                        color="error"
-                                                        sx={{ p: 0.5 }}
-                                                    >
-                                                        {removingTreeId === tree.treeId ? (
-                                                            <CircularProgress size={14}/>
-                                                        ) : (
-                                                            <RemoveIcon fontSize="small"/>
-                                                        )}
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </Box>
+                                            <Tooltip title="Remove from history">
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => handleRemoveFromHistory(tree.treeId)}
+                                                    disabled={removingTreeId === tree.treeId}
+                                                    color="error"
+                                                    sx={{ p: 0.5 }}
+                                                >
+                                                    {removingTreeId === tree.treeId ? (
+                                                        <CircularProgress size={14}/>
+                                                    ) : (
+                                                        <RemoveIcon fontSize="small"/>
+                                                    )}
+                                                </IconButton>
+                                            </Tooltip>
                                         </TableCell>
                                     </TableRow>
                                 ))}

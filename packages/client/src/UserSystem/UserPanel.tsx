@@ -48,7 +48,7 @@ export const UserPanel = ({}) => {
                     </DashboardCard>
                 </Grid>
 
-                {/* Quick Actions Section */}
+                {/* Right Side - Trees Lists */}
                 <Grid
                     size={{
                         xs: 12,
@@ -59,16 +59,10 @@ export const UserPanel = ({}) => {
                         <Grid size={12}>
                             <VisitedTreesList/>
                         </Grid>
+                        <Grid size={12}>
+                            <UserTreesList/>
+                        </Grid>
                     </Grid>
-                </Grid>
-
-                {/* Main Trees List */}
-                <Grid
-                    size={{
-                        xs: 12
-                    }}
-                >
-                    <UserTreesList/>
                 </Grid>
             </Grid>
         </Box>
