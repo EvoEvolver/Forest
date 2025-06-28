@@ -111,6 +111,7 @@ export const subscriptionAtom: WritableAtom<any, any, any> = atom((get) => {
             set(userAtom, {
                 id: session.user.id,
                 email: session.user.email || '',
+                user_metadata: session.user.user_metadata,
                 ...session.user.user_metadata
             });
             // @ts-ignore
