@@ -4,27 +4,25 @@ import {
     Alert,
     Box,
     Button,
-    Card,
-    CardContent,
     Chip,
     CircularProgress,
-    Divider,
     IconButton,
-    List,
-    ListItem,
-    ListItemText,
-    Stack,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableRow,
     Tooltip,
     Typography
 } from '@mui/material';
 import {
-    AccessTime as AccessTimeIcon,
-    History as HistoryIcon,
     Launch as LaunchIcon,
-    RemoveCircleOutline as RemoveIcon
+    RemoveCircleOutline as RemoveIcon,
+    Refresh as RefreshIcon
 } from '@mui/icons-material';
 import {authTokenAtom, userAtom} from './authStates';
 import {httpUrl} from '../appState';
+import DashboardCard from './DashboardCard';
 
 interface VisitedTree {
     treeId: string;
@@ -86,7 +84,6 @@ export const VisitedTreesList = () => {
         try {
             setRemovingTreeId(treeId);
 
-            // Call the remove API endpoint (we'll need to implement this)
             const response = await fetch(`${httpUrl}/api/user/visitedTrees/${treeId}`, {
                 method: 'DELETE',
                 headers: {
@@ -103,7 +100,6 @@ export const VisitedTreesList = () => {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
 
-            // Remove the tree from the list
             setTrees(prevTrees => prevTrees.filter(tree => tree.treeId !== treeId));
 
         } catch (err) {
@@ -126,145 +122,188 @@ export const VisitedTreesList = () => {
         });
     };
 
+    const getOwnershipColor = (owner: string) => {
+        return owner === user?.id ? "success.main" : "warning.main";
+    };
+
+    const getOwnershipLabel = (owner: string) => {
+        return owner === user?.id ? "Owned" : "Shared";
+    };
+
     useEffect(() => {
         fetchVisitedTrees();
     }, [authToken, user]);
 
     if (loading) {
         return (
-            <Box display="flex" justifyContent="center" p={2}>
-                <CircularProgress size={24}/>
-            </Box>
+            <DashboardCard title="Recently Visited Trees">
+                <Box display="flex" justifyContent="center" p={2}>
+                    <CircularProgress size={20}/>
+                </Box>
+            </DashboardCard>
         );
     }
 
     if (error) {
         return (
-            <Alert severity="error" sx={{m: 1}}>
-                {error}
-                <Button size="small" onClick={fetchVisitedTrees} sx={{ml: 1}}>
-                    Retry
-                </Button>
-            </Alert>
+            <DashboardCard title="Recently Visited Trees">
+                <Alert severity="error" sx={{m: 1}}>
+                    {error}
+                    <Button size="small" onClick={fetchVisitedTrees} sx={{ml: 1}}>
+                        Retry
+                    </Button>
+                </Alert>
+            </DashboardCard>
         );
     }
 
     return (
-        <Card sx={{mt: 2}}>
-            <CardContent>
-                <Stack direction="row" alignItems="center" spacing={1} mb={2}>
-                    <HistoryIcon color="primary"/>
-                    <Typography variant="h6" component="div">
-                        Recently Visited Trees ({trees.length})
-                    </Typography>
-                    <Button
+        <DashboardCard 
+            title={`Recently Visited Trees (${trees.length})`}
+            action={
+                <Tooltip title="Refresh">
+                    <IconButton size="small" onClick={fetchVisitedTrees}>
+                        <RefreshIcon fontSize="small" />
+                    </IconButton>
+                </Tooltip>
+            }
+        >
+            {trees.length === 0 ? (
+                <Typography variant="body2" color="text.secondary" textAlign="center" py={3} fontSize="0.8rem">
+                    No visited trees yet. Start exploring to see your visit history!
+                </Typography>
+            ) : (
+                <Box sx={{ 
+                    height: 200, 
+                    overflow: 'auto',
+                    '& .MuiTable-root': {
+                        fontSize: '0.8rem'
+                    }
+                }}>
+                    <Table
+                        aria-label="visited trees table"
                         size="small"
-                        onClick={fetchVisitedTrees}
-                        sx={{ml: 'auto'}}
+                        sx={{
+                            whiteSpace: "nowrap"
+                        }}
                     >
-                        Refresh
-                    </Button>
-                </Stack>
-
-                {trees.length === 0 ? (
-                    <Typography variant="body2" color="text.secondary" textAlign="center" py={2}>
-                        No visited trees yet. Start exploring to see your visit history!
-                    </Typography>
-                ) : (
-                    <List dense>
-                        {trees.map((tree, index) => (
-                            <React.Fragment key={tree.treeId}>
-                                <ListItem
-                                    sx={{
-                                        bgcolor: 'background.paper',
-                                        borderRadius: 1,
-                                        mb: 1,
-                                        border: '1px solid',
-                                        borderColor: 'divider'
-                                    }}
-                                >
-                                    <ListItemText
-                                        primary={
-                                            <Stack direction="row" alignItems="center" spacing={1}>
-                                                <Typography variant="subtitle2" component="span">
-                                                    {tree.title}
-                                                    <Tooltip title="Click to copy ID">
-                                                        <Typography
-                                                            component="span"
-                                                            variant="caption"
-                                                            color="text.secondary"
-                                                            sx={{
-                                                                ml: 1,
-                                                                cursor: 'pointer',
-                                                                '&:hover': {textDecoration: 'underline'}
-                                                            }}
-                                                            onClick={() => {
-                                                                navigator.clipboard.writeText(tree.treeId);
-                                                            }}
-                                                        >
-                                                            {tree.treeId.substring(0, 9)}...
-                                                        </Typography>
-                                                    </Tooltip>
-                                                </Typography>
-                                                <Chip
+                        <TableHead>
+                            <TableRow>
+                                <TableCell sx={{ py: 1 }}>
+                                    <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
+                                        Tree ID
+                                    </Typography>
+                                </TableCell>
+                                <TableCell sx={{ py: 1 }}>
+                                    <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
+                                        Details
+                                    </Typography>
+                                </TableCell>
+                                <TableCell sx={{ py: 1 }}>
+                                    <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
+                                        Last Visited
+                                    </Typography>
+                                </TableCell>
+                                <TableCell sx={{ py: 1 }}>
+                                    <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
+                                        Ownership
+                                    </Typography>
+                                </TableCell>
+                                <TableCell align="right" sx={{ py: 1 }}>
+                                    <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
+                                        Actions
+                                    </Typography>
+                                </TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {trees.map((tree) => (
+                                <TableRow key={tree.treeId} sx={{ '&:hover': { backgroundColor: 'action.hover' } }}>
+                                    <TableCell sx={{ py: 0.5 }}>
+                                        <Tooltip title="Click to copy ID">
+                                            <Typography
+                                                sx={{
+                                                    fontSize: "0.75rem",
+                                                    fontWeight: "500",
+                                                    cursor: 'pointer',
+                                                    '&:hover': {textDecoration: 'underline'}
+                                                }}
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(tree.treeId);
+                                                }}
+                                            >
+                                                {tree.treeId.substring(0, 8)}...
+                                            </Typography>
+                                        </Tooltip>
+                                    </TableCell>
+                                    <TableCell sx={{ py: 0.5 }}>
+                                        <Box>
+                                            <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
+                                                {tree.title}
+                                            </Typography>
+                                            <Typography
+                                                color="textSecondary"
+                                                sx={{
+                                                    fontSize: "0.7rem",
+                                                }}
+                                            >
+                                                {tree.nodeCount} nodes • Created: {formatDate(tree.createdAt)}
+                                            </Typography>
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell sx={{ py: 0.5 }}>
+                                        <Typography color="textSecondary" variant="subtitle2" fontWeight={400} fontSize="0.75rem">
+                                            {formatDate(tree.lastVisited)}
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell sx={{ py: 0.5 }}>
+                                        <Chip
+                                            sx={{
+                                                px: "4px",
+                                                backgroundColor: getOwnershipColor(tree.owner),
+                                                color: "#fff",
+                                                fontSize: "0.65rem",
+                                                height: 20
+                                            }}
+                                            size="small"
+                                            label={getOwnershipLabel(tree.owner)}
+                                        />
+                                    </TableCell>
+                                    <TableCell align="right" sx={{ py: 0.5 }}>
+                                        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                                            <Tooltip title="Open Tree">
+                                                <IconButton
                                                     size="small"
-                                                    label={`${tree.nodeCount} nodes`}
-                                                    variant="outlined"
-                                                />
-                                                {tree.owner !== user?.id && (
-                                                    <Chip
-                                                        size="small"
-                                                        label="Not owned"
-                                                        variant="outlined"
-                                                        color="secondary"
-                                                    />
-                                                )}
-                                                <Tooltip title="Open Tree">
-                                                    <IconButton
-                                                        edge="end"
-                                                        size="small"
-                                                        onClick={() => handleOpenTree(tree.treeId)}
-                                                        color="primary"
-                                                    >
-                                                        <LaunchIcon fontSize="small"/>
-                                                    </IconButton>
-                                                </Tooltip>
-                                                <Tooltip title="Remove from history">
-                                                    <IconButton
-                                                        edge="end"
-                                                        size="small"
-                                                        onClick={() => handleRemoveFromHistory(tree.treeId)}
-                                                        disabled={removingTreeId === tree.treeId}
-                                                        color="error"
-                                                    >
-                                                        {removingTreeId === tree.treeId ? (
-                                                            <CircularProgress size={16}/>
-                                                        ) : (
-                                                            <RemoveIcon fontSize="small"/>
-                                                        )}
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </Stack>
-                                        }
-                                        secondary={
-                                            <Stack spacing={0.5} mt={0.5}>
-                                                <Typography variant="caption" display="flex" alignItems="center">
-                                                    <AccessTimeIcon fontSize="inherit" sx={{mr: 0.5}}/>
-                                                    Last visited: {formatDate(tree.lastVisited)}
-                                                </Typography>
-                                                <Typography variant="caption" color="text.secondary">
-                                                    Created: {formatDate(tree.createdAt)}
-                                                </Typography>
-                                            </Stack>
-                                        }
-                                    />
-                                </ListItem>
-                                {index < trees.length - 1 && <Divider/>}
-                            </React.Fragment>
-                        ))}
-                    </List>
-                )}
-            </CardContent>
-        </Card>
+                                                    onClick={() => handleOpenTree(tree.treeId)}
+                                                    color="primary"
+                                                    sx={{ p: 0.5 }}
+                                                >
+                                                    <LaunchIcon fontSize="small"/>
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Remove from history">
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => handleRemoveFromHistory(tree.treeId)}
+                                                    disabled={removingTreeId === tree.treeId}
+                                                    color="error"
+                                                    sx={{ p: 0.5 }}
+                                                >
+                                                    {removingTreeId === tree.treeId ? (
+                                                        <CircularProgress size={14}/>
+                                                    ) : (
+                                                        <RemoveIcon fontSize="small"/>
+                                                    )}
+                                                </IconButton>
+                                            </Tooltip>
+                                        </Box>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </Box>
+            )}
+        </DashboardCard>
     );
 }; 

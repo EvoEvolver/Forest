@@ -1,12 +1,13 @@
 import React, {useEffect} from 'react';
 import {useAtomValue} from 'jotai'
-import {Avatar, Box, Button, Card, CardContent, Stack, Typography} from '@mui/material';
+import {Avatar, Box, Button, Card, CardContent, Grid2 as Grid, Stack, Typography} from '@mui/material';
 import {v4 as uuidv4} from 'uuid';
 import {httpUrl} from "../appState";
 import {authTokenAtom, subscriptionAtom, userAtom} from "./authStates";
 import {UserTreesList} from './UserTreesList';
 import {useAtom} from "jotai/index";
 import {VisitedTreesList} from './VisitedTreesList';
+import DashboardCard from './DashboardCard';
 
 export const UserPanel = ({}) => {
     const [, setSubscription] = useAtom(subscriptionAtom);
@@ -73,45 +74,70 @@ export const UserPanel = ({}) => {
         }
     };
 
-
     return (
         <Box
             sx={{
                 margin: 'auto',
-                maxWidth: 800,
+                maxWidth: 1200,
                 width: '100vw',
-                padding: "15px"
+                padding: "20px"
             }}
         >
-            <Card>
-                <CardContent>
-                    <Stack spacing={0} alignItems="center">
-                        <Avatar
-                            sx={{width: 64, height: 64}}
-                            alt="User Avatar"
-                        />
-                        <Typography variant="h6" component="div">
-                            {user?.name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            {user?.email}
-                        </Typography>
-                    </Stack>
-                </CardContent>
-                <CardContent
-                  sx={{
-                    maxHeight: 500, 
-                    overflow: 'auto',
-                  }}>
-                    <Stack spacing={2} sx={{p: 2}}>
-                        <Button variant="contained" onClick={handleCreateTree} size="small" sx={{mr: 2}}>
-                            Create new tree
-                        </Button>
-                    </Stack>
+            <Grid container spacing={3}>
+                {/* User Profile Section */}
+                <Grid
+                    size={{
+                        xs: 12,
+                        lg: 4
+                    }}
+                >
+                    <DashboardCard title="Profile">
+                        <Box sx={{ textAlign: 'center', py: 2 }}>
+                            <Avatar
+                                sx={{ width: 80, height: 80, margin: '0 auto 16px' }}
+                                alt="User Avatar"
+                            />
+                            <Typography variant="h5" component="div" gutterBottom>
+                                {user?.name}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" gutterBottom>
+                                {user?.email}
+                            </Typography>
+                            <Button 
+                                variant="contained" 
+                                onClick={handleCreateTree} 
+                                size="large"
+                                sx={{ mt: 2, minWidth: 200 }}
+                            >
+                                Create New Tree
+                            </Button>
+                        </Box>
+                    </DashboardCard>
+                </Grid>
+
+                {/* Quick Actions Section */}
+                <Grid
+                    size={{
+                        xs: 12,
+                        lg: 8
+                    }}
+                >
+                    <Grid container spacing={3}>
+                        <Grid size={12}>
+                            <VisitedTreesList/>
+                        </Grid>
+                    </Grid>
+                </Grid>
+
+                {/* Main Trees List */}
+                <Grid
+                    size={{
+                        xs: 12
+                    }}
+                >
                     <UserTreesList/>
-                    <VisitedTreesList/>
-                </CardContent>
-            </Card>
+                </Grid>
+            </Grid>
         </Box>
     );
 };
