@@ -136,174 +136,194 @@ export const VisitedTreesList = () => {
 
     if (loading) {
         return (
-            <DashboardCard title="Recently Visited Trees">
-                <Box display="flex" justifyContent="center" p={2}>
-                    <CircularProgress size={20}/>
-                </Box>
-            </DashboardCard>
+            <Box sx={{ width: 750, height: 250 }}>
+                <DashboardCard title="Recently Visited Trees">
+                    <Box display="flex" justifyContent="center" p={2}>
+                        <CircularProgress size={20}/>
+                    </Box>
+                </DashboardCard>
+            </Box>
         );
     }
 
     if (error) {
         return (
-            <DashboardCard title="Recently Visited Trees">
-                <Alert severity="error" sx={{m: 1}}>
-                    {error}
-                    <Button size="small" onClick={fetchVisitedTrees} sx={{ml: 1}}>
-                        Retry
-                    </Button>
-                </Alert>
-            </DashboardCard>
+            <Box sx={{ width: 750, height: 250 }}>
+                <DashboardCard title="Recently Visited Trees">
+                    <Alert severity="error" sx={{m: 1}}>
+                        {error}
+                        <Button size="small" onClick={fetchVisitedTrees} sx={{ml: 1}}>
+                            Retry
+                        </Button>
+                    </Alert>
+                </DashboardCard>
+            </Box>
         );
     }
 
     return (
-        <DashboardCard 
-            title={`Recently Visited Trees (${trees.length})`}
-            action={
-                <Tooltip title="Refresh">
-                    <IconButton size="small" onClick={fetchVisitedTrees}>
-                        <RefreshIcon fontSize="small" />
-                    </IconButton>
-                </Tooltip>
-            }
-        >
-            {trees.length === 0 ? (
-                <Typography variant="body2" color="text.secondary" textAlign="center" py={3} fontSize="0.8rem">
-                    No visited trees yet. Start exploring to see your visit history!
-                </Typography>
-            ) : (
-                <Box sx={{ 
-                    height: 200, 
-                    overflow: 'auto',
-                    '& .MuiTable-root': {
-                        fontSize: '0.8rem'
-                    }
-                }}>
-                    <Table
-                        aria-label="visited trees table"
-                        size="small"
-                        sx={{
-                            whiteSpace: "nowrap"
-                        }}
-                    >
-                        <TableHead>
-                            <TableRow>
-                                <TableCell sx={{ py: 1 }}>
-                                    <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
-                                        Tree ID
-                                    </Typography>
-                                </TableCell>
-                                <TableCell sx={{ py: 1 }}>
-                                    <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
-                                        Details
-                                    </Typography>
-                                </TableCell>
-                                <TableCell sx={{ py: 1 }}>
-                                    <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
-                                        Last Visited
-                                    </Typography>
-                                </TableCell>
-                                <TableCell sx={{ py: 1 }}>
-                                    <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
-                                        Ownership
-                                    </Typography>
-                                </TableCell>
-                                <TableCell align="right" sx={{ py: 1 }}>
-                                    <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
-                                        Actions
-                                    </Typography>
-                                </TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {trees.map((tree) => (
-                                <TableRow key={tree.treeId} sx={{ '&:hover': { backgroundColor: 'action.hover' } }}>
-                                    <TableCell sx={{ py: 0.5 }}>
-                                        <Tooltip title="Click to copy ID">
-                                            <Typography
-                                                sx={{
-                                                    fontSize: "0.75rem",
-                                                    fontWeight: "500",
-                                                    cursor: 'pointer',
-                                                    '&:hover': {textDecoration: 'underline'}
-                                                }}
-                                                onClick={() => {
-                                                    navigator.clipboard.writeText(tree.treeId);
-                                                }}
-                                            >
-                                                {tree.treeId.substring(0, 8)}...
-                                            </Typography>
-                                        </Tooltip>
-                                    </TableCell>
-                                    <TableCell sx={{ py: 0.5 }}>
-                                        <Box>
-                                            <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
-                                                {tree.title}
-                                            </Typography>
-                                            <Typography
-                                                color="textSecondary"
-                                                sx={{
-                                                    fontSize: "0.7rem",
-                                                }}
-                                            >
-                                                {tree.nodeCount} nodes • Created: {formatDate(tree.createdAt)}
-                                            </Typography>
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell sx={{ py: 0.5 }}>
-                                        <Typography color="textSecondary" variant="subtitle2" fontWeight={400} fontSize="0.75rem">
-                                            {formatDate(tree.lastVisited)}
+        <Box sx={{ width: 650, height: 250 }}>
+            <DashboardCard 
+                title={`Recently Visited Trees (${trees.length})`}
+                action={
+                    <Tooltip title="Refresh">
+                        <IconButton size="small" onClick={fetchVisitedTrees}>
+                            <RefreshIcon fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
+                }
+            >
+                {trees.length === 0 ? (
+                    <Typography variant="body2" color="text.secondary" textAlign="center" py={3} fontSize="0.8rem">
+                        No visited trees yet. Start exploring to see your visit history!
+                    </Typography>
+                ) : (
+                    <Box sx={{ 
+                        height: 180, 
+                        width: '100%',
+                        overflow: 'auto',
+                        '& .MuiTable-root': {
+                            fontSize: '0.8rem'
+                        }
+                    }}>
+                        <Table
+                            aria-label="visited trees table"
+                            size="small"
+                            sx={{
+                                whiteSpace: "nowrap"
+                            }}
+                        >
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell sx={{ py: 1 }}>
+                                        <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
+                                            Tree ID
                                         </Typography>
                                     </TableCell>
-                                    <TableCell sx={{ py: 0.5 }}>
-                                        <Chip
-                                            sx={{
-                                                px: "4px",
-                                                backgroundColor: getOwnershipColor(tree.owner),
-                                                color: "#fff",
-                                                fontSize: "0.65rem",
-                                                height: 20
-                                            }}
-                                            size="small"
-                                            label={getOwnershipLabel(tree.owner)}
-                                        />
+                                    <TableCell sx={{ py: 1 }}>
+                                        <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
+                                            Details
+                                        </Typography>
                                     </TableCell>
-                                    <TableCell align="right" sx={{ py: 0.5 }}>
-                                        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-                                            <Tooltip title="Open Tree">
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => handleOpenTree(tree.treeId)}
-                                                    color="primary"
-                                                    sx={{ p: 0.5 }}
-                                                >
-                                                    <LaunchIcon fontSize="small"/>
-                                                </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="Remove from history">
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => handleRemoveFromHistory(tree.treeId)}
-                                                    disabled={removingTreeId === tree.treeId}
-                                                    color="error"
-                                                    sx={{ p: 0.5 }}
-                                                >
-                                                    {removingTreeId === tree.treeId ? (
-                                                        <CircularProgress size={14}/>
-                                                    ) : (
-                                                        <RemoveIcon fontSize="small"/>
-                                                    )}
-                                                </IconButton>
-                                            </Tooltip>
-                                        </Box>
+                                    <TableCell sx={{ py: 1 }}>
+                                        <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
+                                            Last Visited
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell sx={{ py: 1 }}>
+                                        <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
+                                            Ownership
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell align="right" sx={{ py: 1 }}>
+                                        <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
+                                            Actions
+                                        </Typography>
                                     </TableCell>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </Box>
-            )}
-        </DashboardCard>
+                            </TableHead>
+                            <TableBody>
+                                {trees.map((tree) => (
+                                    <TableRow key={tree.treeId} sx={{ '&:hover': { backgroundColor: 'action.hover' } }}>
+                                        <TableCell sx={{ py: 0.5 }}>
+                                            <Tooltip title="Click to copy ID">
+                                                <Typography
+                                                    sx={{
+                                                        fontSize: "0.75rem",
+                                                        fontWeight: "500",
+                                                        cursor: 'pointer',
+                                                        '&:hover': {textDecoration: 'underline'}
+                                                    }}
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(tree.treeId);
+                                                    }}
+                                                >
+                                                    {tree.treeId.substring(0, 8)}...
+                                                </Typography>
+                                            </Tooltip>
+                                        </TableCell>
+                                        <TableCell sx={{ py: 0.5 }}>
+                                            <Box>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
+                                                        {tree.title}
+                                                    </Typography>
+                                                    <Chip
+                                                        sx={{
+                                                            px: "3px",
+                                                            backgroundColor: "primary.main",
+                                                            color: "#fff",
+                                                            fontSize: "0.6rem",
+                                                            height: 16
+                                                        }}
+                                                        size="small"
+                                                        label={`${tree.nodeCount}`}
+                                                    />
+                                                </Box>
+                                                <Typography
+                                                    color="textSecondary"
+                                                    sx={{
+                                                        fontSize: "0.7rem",
+                                                    }}
+                                                >
+                                                    Created: {formatDate(tree.createdAt)}
+                                                </Typography>
+                                            </Box>
+                                        </TableCell>
+                                        <TableCell sx={{ py: 0.5 }}>
+                                            <Typography color="textSecondary" variant="subtitle2" fontWeight={400} fontSize="0.75rem">
+                                                {formatDate(tree.lastVisited)}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell sx={{ py: 0.5 }}>
+                                            <Chip
+                                                sx={{
+                                                    px: "4px",
+                                                    backgroundColor: getOwnershipColor(tree.owner),
+                                                    color: "#fff",
+                                                    fontSize: "0.65rem",
+                                                    height: 20
+                                                }}
+                                                size="small"
+                                                label={getOwnershipLabel(tree.owner)}
+                                            />
+                                        </TableCell>
+                                        <TableCell align="right" sx={{ py: 0.5 }}>
+                                            <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                                                <Tooltip title="Open Tree">
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => handleOpenTree(tree.treeId)}
+                                                        color="primary"
+                                                        sx={{ p: 0.5 }}
+                                                    >
+                                                        <LaunchIcon fontSize="small"/>
+                                                    </IconButton>
+                                                </Tooltip>
+                                                <Tooltip title="Remove from history">
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => handleRemoveFromHistory(tree.treeId)}
+                                                        disabled={removingTreeId === tree.treeId}
+                                                        color="error"
+                                                        sx={{ p: 0.5 }}
+                                                    >
+                                                        {removingTreeId === tree.treeId ? (
+                                                            <CircularProgress size={14}/>
+                                                        ) : (
+                                                            <RemoveIcon fontSize="small"/>
+                                                        )}
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </Box>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </Box>
+                )}
+            </DashboardCard>
+        </Box>
     );
 }; 
