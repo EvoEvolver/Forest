@@ -6,6 +6,7 @@ import {v4 as uuidv4} from 'uuid';
 import {updateChildrenCountAtom} from "./childrenCount";
 import {treeId} from "../appState";
 import {TreeM, TreeVM} from "@forest/schema"
+import {supportedNodeTypes} from "../TreeView/registerNodeType";
 
 const treeValueAtom: PrimitiveAtom<TreeVM> = atom()
 
@@ -15,6 +16,7 @@ export const treeAtom = atom(
     },
     (get, set, treeM: TreeM) => {
         const treeVM = new TreeVM(treeM, get, set)
+        treeVM.supportedNodesTypes = supportedNodeTypes
         set(treeValueAtom, treeVM)
     }
 )
@@ -219,7 +221,13 @@ export const selectedNodeAtom = atom(
             }
             return get(rootNodeAtom)
         }
-        return get(currTree.nodeDict[selectedNodeId])
+        const selectedNodeAtom = currTree.nodeDict[selectedNodeId]
+        if (selectedNodeAtom) {
+            return get(selectedNodeAtom)
+        }
+        else {
+            return null
+        }
     },
     (get, set, newSelectedNodeId: string) => {
         if (get(selectedNodeIdAtom) === newSelectedNodeId)

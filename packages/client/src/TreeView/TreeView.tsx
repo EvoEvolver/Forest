@@ -2,7 +2,6 @@ import React from 'react';
 import {Card, Grid2 as Grid} from '@mui/material';
 import {useAtomValue, useSetAtom} from "jotai";
 import {listOfNodesForViewAtom, selectedNodeAtom} from "../TreeState/TreeState";
-import {renderTabs} from "./NodeContent";
 import CardContent from "@mui/material/CardContent";
 import {NodeButtons} from "./NodeButtons";
 import {isMobileModeAtom} from "../appState";
@@ -10,6 +9,7 @@ import {ColumnLeft} from "./ColumnLeft";
 import {ColumnRight} from "./ColumnRight";
 import {NodeVM} from "@forest/schema"
 import {NodeTitle} from "./NodeTitle";
+import { thisNodeContext } from './NodeContext';
 
 const TreeView = () => {
     const leaves = useAtomValue(listOfNodesForViewAtom)
@@ -37,7 +37,6 @@ const TreeView = () => {
     );
 };
 
-
 export const MiddleContents = ({node}: { node: NodeVM }) => {
     let setSelectedNode = useSetAtom(selectedNodeAtom)
 
@@ -54,21 +53,23 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
             position: "relative",
         }}
     >
-        <NodeFrame node={node}/>
+        <NodeBorder node={node}/>
         <div
             onClick={handleClick}
             id={`node-${node.id}`}
         >
+            <thisNodeContext.Provider value={node}>
             <NodeTitle
                 node={node}
             />
-            {renderTabs(node.tabs, node)}
+            {node.nodeType.render(node)}
+            </thisNodeContext.Provider>
         </div>
         <NodeButtons node={node}/>
     </div>
 }
 
-const NodeFrame = ({node}) => {
+const NodeBorder = ({node}) => {
     let selectedNode = useAtomValue(selectedNodeAtom)
     const isSelected = selectedNode.id === node.id;
     const lineWidth = "3px"

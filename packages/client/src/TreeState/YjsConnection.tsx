@@ -88,7 +88,6 @@ export const initSelectedNodeAtom = atom(null, (get, set) => {
     console.log("Init selected node", nodeId)
     set(selectedNodeAtom, nodeId);
     setTimeout(() => {
-        console.log("Scrolled to selected node", nodeId)
         set(scrollToNodeAtom, nodeId)
     }, 500);
 

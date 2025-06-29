@@ -102,7 +102,6 @@ export class TreeVM {
                 if (change.action === 'add') {
                     let newNode = new NodeM(nodeDictyMap.get(key), key)
                     this.addNode(newNode)
-                    console.log("added", newNode.id)
                 } else if (change.action === 'update') {
                     let newNode = new NodeM(nodeDictyMap.get(key), key)
                     this.deleteNode(key)
@@ -228,10 +227,12 @@ export class NodeVM {
     children: PrimitiveAtom<string[]>
     data: any
     ydata?: Y.Map<string>
+    vdata: any
     nodeTypeName: string
     nodeType: NodeType
     nodeM: NodeM
 
+    // legacy properties
     tabs: any
     tools: any
 
@@ -244,20 +245,42 @@ export class NodeVM {
         this.parent = nodeM.parent()
         this.other_parents = nodeM.other_parents()
         this.children = childrenAtom;
-        this.ydata = nodeM.ydata()
         this.data = nodeM.data()
+        this.ydata = nodeM.ydata()
+        this.vdata = {}
+
         this.nodeTypeName = nodeM.nodeTypeName()
         this.nodeType = null; // TODO: init the nodeType
         this.nodeM = nodeM
 
         this.tabs = yjsMapNode.get("tabs")
         this.tools = yjsMapNode.get("tools")
+
+        this.assignNodeType(supportedNodesTypes)
+
+    }
+
+    assignNodeType(supportedNodesTypes: SupportedNodeTypesMap){
+        if (!this.nodeTypeName){
+            if(this.tabs["content"]===`<PaperEditorMain/>`){
+                this.nodeTypeName = "EditorNodeType"
+            }
+            else{
+                this.nodeTypeName = "CustomNodeType"
+            }
+        }
+        const nodeType = supportedNodesTypes[this.nodeTypeName]
+        if (!nodeType){
+            console.warn("unsupported node type", this.nodeTypeName)
+            return
+        }
+        this.nodeType = nodeType
     }
 
 }
 
 export interface SupportedNodeTypesMap {
-    [key: string]: typeof NodeType
+    [key: string]: NodeType
 }
 
 export abstract class NodeType {

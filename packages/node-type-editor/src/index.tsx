@@ -1,27 +1,36 @@
-import {NodeM, NodeType} from "@forest/schema"
+import {AiChat} from "@forest/node-components/src/chat/aiChat";
+import {TodoApp} from "@forest/node-components/src/todoList";
+import {NodeType, NodeVM} from "@forest/schema"
 import React from "react";
+import TiptapEditor from "./editor";
 
 interface EditorNodeData {
 
 }
 
-class EditorNode extends NodeType {
-    render(node: NodeM<EditorNodeData>): React.ReactNode {
-        return super.render(node);
+export class EditorNodeType extends NodeType {
+    render(node: NodeVM): React.ReactNode {
+        return <>
+            <TiptapEditor label="paperEditor"/>
+        </>
     }
 
-    renderTool1(node: NodeM<any>): React.ReactNode {
+    renderTool1(node: NodeVM): React.ReactNode {
+        return <>
+            <TodoApp/>
+        </>
     }
 
-    renderTool2(node: NodeM<any>): React.ReactNode {
+    renderTool2(node: NodeVM): React.ReactNode {
+        return <>
+            <AiChat/>
+        </>
     }
 
-    renderPrompt(node: NodeM<EditorNodeData>): string {
-        return super.renderPrompt(node);
+    renderPrompt(node: NodeVM): string {
+        return ""
     }
 
-    ydataInitialize(node: NodeM<any>) {
-        super.ydataInitialize(node);
+    ydataInitialize(node: NodeVM) {
     }
-
 }

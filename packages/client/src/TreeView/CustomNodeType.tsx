@@ -1,4 +1,4 @@
-import {NodeVM, NodeType} from "@forest/schema"
+import {NodeType, NodeVM} from "@forest/schema"
 import React, {ReactNode} from "react";
 import JsxParser from "react-jsx-parser";
 import {envComponentAtom} from "../../../node-components";
@@ -7,8 +7,6 @@ import {Box} from "@mui/material";
 import TabList from "@mui/lab/TabList";
 import Tab from "@mui/material/Tab";
 import TabPanel from "@mui/lab/TabPanel";
-import {thisNodeContext} from "./NodeContent";
-
 
 
 const renderTabs = (tabs, node: NodeVM) => {
@@ -22,12 +20,13 @@ const renderTabs = (tabs, node: NodeVM) => {
             <div style={{color: "red"}}>{error.error.toString()}</div>
             <div>{content}</div>
         </>)
-        return <thisNodeContext.Provider value={node}>
+        return <>
             <JsxParser
                 components={envComponent}
                 jsx={content}
                 renderError={handleRenderError}
-            /></thisNodeContext.Provider>
+            />
+        </>
     }
     if (!tabs) return <></>
     return <>
@@ -55,31 +54,31 @@ interface CustomNodeData {
     tools: Record<string, string>[]
 }
 
-export class CustomNode extends NodeType {
+export class CustomNodeType extends NodeType {
     render(node: NodeVM): ReactNode {
-        const data = node.data as CustomNodeData
-        const tabs = data.tabs
+        //const data = node.data as CustomNodeData
+        const tabs = node.tabs
         return renderTabs(tabs, node)
     }
 
     renderTool1(node: NodeVM): ReactNode {
-        const data = node.data as CustomNodeData
-        const tabs = data.tools[0]
+        //const data = node.data as CustomNodeData
+        const tabs = node.tools[0]
         return renderTabs(tabs, node)
     }
 
     renderTool2(node: NodeVM): ReactNode {
-        const data = node.data as CustomNodeData
-        const tabs = data.tools[1]
+        //const data = node.data as CustomNodeData
+        const tabs = node.tools[1]
         return renderTabs(tabs, node)
     }
 
     renderPrompt(node: NodeVM): string {
-        return super.renderPrompt(node);
+        return ""
     }
 
     ydataInitialize(node: NodeVM) {
-        super.ydataInitialize(node);
+
     }
 
 }

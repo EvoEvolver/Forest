@@ -1,6 +1,8 @@
 import {SupportedNodeTypesMap} from "@forest/schema"
-import {CustomNode} from "./CustomNode";
+import {CustomNodeType} from "./CustomNodeType";
+import { EditorNodeType } from "@forest/node-type-editor";
 
 export const supportedNodeTypes: SupportedNodeTypesMap = {
-    "CustomNode": CustomNode
+    "CustomNodeType": new CustomNodeType(),
+    "EditorNodeType": new EditorNodeType()
 }
