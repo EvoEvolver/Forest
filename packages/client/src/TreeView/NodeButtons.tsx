@@ -1,4 +1,3 @@
-import {Node} from "../TreeState/entities";
 import {useAtomValue, useSetAtom} from "jotai";
 import {
     addNewNodeAtom,
@@ -20,8 +19,9 @@ import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import InsertLinkIcon from '@mui/icons-material/InsertLink';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
+import {NodeVM} from "@forest/schema";
 
-export const NodeButtons = (props: { node: Node }) => {
+export const NodeButtons = (props: { node: NodeVM }) => {
 
     const setToNodeChildren = useSetAtom(setToNodeChildrenAtom)
     const setToNodeParent = useSetAtom(setToNodeParentAtom)
@@ -85,9 +85,8 @@ export const NodeButtons = (props: { node: Node }) => {
 }
 
 
-const DropDownOperationButton = (props) => {
+const DropDownOperationButton = ({node}: { node: NodeVM }) => {
 
-    const node = props.node;
     const theme = useTheme();
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
@@ -122,12 +121,12 @@ const DropDownOperationButton = (props) => {
     const nodeChildren = useAtomValue(node.children)
     const nodeId: string = node.id;
     const tree = useAtomValue(treeAtom)
-    const treeId = tree.metadata.treeId
+    const treeMetadata = useAtomValue(tree.metadata)
     const parentId = node.parent;
     let currentUrl = window.location.href;
     // remove all the query parameters
     currentUrl = currentUrl.split('?')[0];
-    const nodeUrl = `${currentUrl}?id=${treeId}&n=${nodeId}`;
+    const nodeUrl = `${currentUrl}?id=${treeMetadata.treeId}&n=${nodeId}`;
 
     return (
         <>
@@ -154,8 +153,7 @@ const DropDownOperationButton = (props) => {
                     addNewNode({
                         parentId: nodeId,
                         positionId: null,
-                        tabs: {...node.tabs},
-                        tools: [{...node.tools[0]}, {...node.tools[1]}]
+                        nodeTypeName: node.nodeTypeName
                     })
                     handleClose();
                 }}><ListItemIcon>
@@ -166,8 +164,7 @@ const DropDownOperationButton = (props) => {
                     addNewNode({
                         parentId: parentId,
                         positionId: nodeId,
-                        tabs: {...node.tabs},
-                        tools: [{...node.tools[0]}, {...node.tools[1]}]
+                        nodeTypeName: node.nodeTypeName
                     })
                     handleClose();
                 }}><ListItemIcon>

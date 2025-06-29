@@ -9,6 +9,11 @@ interface EditorNodeData {
 }
 
 export class EditorNodeType extends NodeType {
+
+    allowMoving = true
+
+    allowAddingChildren = true
+
     render(node: NodeVM): React.ReactNode {
         return <>
             <TiptapEditor label="paperEditor"/>

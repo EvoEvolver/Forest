@@ -1,8 +1,13 @@
 import {NavigatorButtons, NavigatorLayer} from "./NavigatorLayer";
 import React from "react";
 import {NodeContentFrame} from "./TreeView";
+import {useAtom} from "jotai/index";
+import {selectedNodeAtom} from "../TreeState/TreeState";
 
 export function ColumnLeft() {
+    const [selectedNode,] = useAtom(selectedNodeAtom)
+    if(!selectedNode)
+        return null
     return <>
         <div style={{height: "100%", width: "100%"}}>
             <div style={{height: "5%", width: "100%"}}><NavigatorButtons/></div>

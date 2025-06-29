@@ -1,11 +1,10 @@
 import {atom, PrimitiveAtom} from 'jotai'
-import {Array as YArray, Map as YMap} from 'yjs'
-import {YDocAtom, YjsProviderAtom} from "./YjsConnection";
+import {YjsProviderAtom} from "./YjsConnection";
 import {RESET} from 'jotai/utils';
 import {v4 as uuidv4} from 'uuid';
 import {updateChildrenCountAtom} from "./childrenCount";
 import {treeId} from "../appState";
-import {TreeM, TreeVM} from "@forest/schema"
+import {NodeM, TreeM, TreeVM} from "@forest/schema"
 import {supportedNodeTypes} from "../TreeView/NodeTypes";
 
 const treeValueAtom: PrimitiveAtom<TreeVM> = atom()
@@ -114,44 +113,27 @@ export const setNodePositionAtom = atom(null, (get, set, props: {
 })
 
 
-export const addNewNodeAtom = atom(null, (get, set, props: { parentId: string, positionId: string, tabs, tools }) => {
+export const addNewNodeAtom = atom(null, (get, set, props: {
+    parentId: string,
+    positionId: string,
+    nodeTypeName: string
+}) => {
     const currTree = get(treeAtom)
     if (!currTree)
         return
-    const nodeDict = currTree.nodeDict
-    const parentNodeAtom = nodeDict[props.parentId]
-    const parentNode = get(parentNodeAtom)
-    const yArrayChildren = parentNode.nodeM.ymap.get("children")
-    const newNode = {
+    const treeM = currTree.treeM
+
+    const newNodeJson = {
         id: uuidv4(),
-        title: "new node",//new YText("new node"),
+        title: "new node",
         parent: props.parentId,
         other_parents: [],
-        tabs: props.tabs,
-        children: new YArray(),
-        ydata: new YMap(),
+        children: [],
         data: {},
-        tools: props.tools,
+        nodeTypeName: props.nodeTypeName
     }
-    const nodeDictyMap: YMap<YMap<any>> = get(YDocAtom).getMap("nodeDict")
-    const ymapForNode = new YMap()
-    for (let key in newNode) {
-        ymapForNode.set(key, newNode[key])
-    }
-    nodeDictyMap.set(newNode.id, ymapForNode)
-
-    // find the position of the node with positionId in yArrayChildren
-    let positionIdx = -1
-    if (props.positionId) {
-        positionIdx = get(parentNode.children).indexOf(props.positionId) + 1
-        if (positionIdx === -1) {
-            console.warn(`Position ID ${props.positionId} not found in parent with id ${props.parentId}`)
-            positionIdx = yArrayChildren.length // append to the end
-        }
-    } else {
-        positionIdx = yArrayChildren.length // append to the end
-    }
-    yArrayChildren.insert(positionIdx, [newNode.id])
+    const newNodeM = NodeM.fromNodeJson(newNodeJson)
+    treeM.insertNode(newNodeM, props.parentId, props.positionId)
 
     set(updateChildrenCountAtom, {});
 })
@@ -224,8 +206,7 @@ export const selectedNodeAtom = atom(
         const selectedNodeAtom = currTree.nodeDict[selectedNodeId]
         if (selectedNodeAtom) {
             return get(selectedNodeAtom)
-        }
-        else {
+        } else {
             return null
         }
     },
@@ -254,7 +235,7 @@ export const currNodeParentIdAtom = atom((get) => {
 export const listOfNodesForViewAtom = atom(
     (get) => {
         const tree = get(treeAtom)
-        if (!tree){
+        if (!tree) {
             return []
         }
 

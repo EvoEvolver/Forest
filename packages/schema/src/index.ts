@@ -24,8 +24,8 @@ export interface NodeJson {
     children: string[]
     data: any
     nodeTypeName: string
-    tabs: any
-    tools: any
+    tabs?: any
+    tools?: any
 }
 
 
@@ -67,6 +67,26 @@ export class TreeM {
 
     addNode(node: NodeM) {
         this.nodeDict.set(node.id, node.ymap)
+    }
+
+    insertNode(node: NodeM, parentId: string, positionId: string) {
+        this.ydoc.transact(() => {
+            this.addNode(node)
+            const parentChildrenArray = this.nodeDict.get(parentId).get("children")
+            const childrenJson = parentChildrenArray.toJSON()
+            // find the position of the node with positionId in parentChildrenArray
+            let positionIdx = -1
+            if (positionId) {
+                positionIdx = childrenJson.indexOf(positionId) + 1
+                if (positionIdx === -1) {
+                    console.warn(`Position ID ${positionId} not found in parent with id ${parentId}`)
+                    positionIdx = parentChildrenArray.length // append to the end
+                }
+            } else {
+                positionIdx = parentChildrenArray.length // append to the end
+            }
+            parentChildrenArray.insert(positionIdx, [node.id])
+        })
     }
 
     deleteNode(nodeId: string) {
@@ -253,24 +273,25 @@ export class NodeVM {
         this.nodeType = null; // TODO: init the nodeType
         this.nodeM = nodeM
 
-        this.tabs = yjsMapNode.get("tabs")
-        this.tools = yjsMapNode.get("tools")
+        if (yjsMapNode.has("tabs"))
+            this.tabs = yjsMapNode.get("tabs")
+        if (yjsMapNode.has("tools"))
+            this.tools = yjsMapNode.get("tools")
 
         this.assignNodeType(supportedNodesTypes)
 
     }
 
-    assignNodeType(supportedNodesTypes: SupportedNodeTypesMap){
-        if (!this.nodeTypeName){
-            if(this.tabs["content"]===`<PaperEditorMain/>`){
+    assignNodeType(supportedNodesTypes: SupportedNodeTypesMap) {
+        if (!this.nodeTypeName) {
+            if (this.tabs["content"] === `<PaperEditorMain/>`) {
                 this.nodeTypeName = "EditorNodeType"
-            }
-            else{
+            } else {
                 this.nodeTypeName = "CustomNodeType"
             }
         }
         const nodeType = supportedNodesTypes[this.nodeTypeName]
-        if (!nodeType){
+        if (!nodeType) {
             console.warn("unsupported node type", this.nodeTypeName)
             return
         }
@@ -285,6 +306,10 @@ export interface SupportedNodeTypesMap {
 
 export abstract class NodeType {
     name: string
+
+    allowAddingChildren: boolean = false
+
+    allowMoving: boolean = false
 
     abstract render(node: NodeVM): React.ReactNode
 

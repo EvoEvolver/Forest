@@ -14,6 +14,7 @@ import { thisNodeContext } from './NodeContext';
 const TreeView = () => {
     const leaves = useAtomValue(listOfNodesForViewAtom)
     const mobileMode = useAtomValue(isMobileModeAtom)
+    console.log("TreeView render")
 
     if (leaves.length === 0) {
         return <></>
@@ -26,7 +27,7 @@ const TreeView = () => {
             <Grid size={mobileMode ? 12 : 5} style={{height: "100%"}}>
                 <NodeContentFrame>
                     <div>
-                        {leaves.map((n, index) => <MiddleContents node={n} key={index}/>)}
+                        {leaves.map((n, index) => <MiddleContents node={n} key={n.id}/>)}
                     </div>
                 </NodeContentFrame>
             </Grid>
