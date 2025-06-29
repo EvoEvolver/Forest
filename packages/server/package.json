@@ -25,7 +25,8 @@
     "ws": "^8.18.0",
     "y-mongodb-provider": "^0.2.1",
     "y-protocols": "^1.0.6",
-    "yjs": "13.6.20"
+    "yjs": "13.6.27",
+    "@forest/schema": "workspace:*"
   },
     "devDependencies": {
     "esbuild": "^0.24.0",

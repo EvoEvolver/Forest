@@ -2,6 +2,7 @@ import json
 
 import requests
 
+from fibers.gui.forest_connector.forest_connector import TreeData
 from fibers.gui.renderer import Renderer
 from fibers.tree import Node
 
@@ -10,9 +11,9 @@ def push_tree(root: Node, host="http://0.0.0.0:29999", token=None):
     tree_data = Renderer().render_to_json(root)
     push_tree_data(tree_data, host, token)
 
-def push_tree_data(tree_data, host="http://0.0.0.0:29999", token=None):
+def push_tree_data(tree_data: TreeData, host="http://0.0.0.0:29999", token=None):
     url = f'{host}/api/createTree'
-    root_id = tree_data["rootId"]
+    root_id = tree_data["metadata"]["rootId"]
     payload = json.dumps({
         "tree": tree_data,
         "root_id": str(root_id),

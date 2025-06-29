@@ -16,6 +16,7 @@ export const renderTabs = (tabs, node) => {
     const handleChange = (event, newValue) => setValue(newValue);
     const envComponent = envComponentAtom
 
+    // @ts-ignore
     const renderContent = (content, node) => (
         <thisNodeContext.Provider value={node}>
             <JsxParser

@@ -13,7 +13,7 @@ export const YjsConnectionStatusAtom = atom("connecting");
 
 export const setupYDocAtom = atom(null, (get, set) => {
     const ydoc = get(YDocAtom);
-    const treeM = new TreeM(ydoc)
+    const treeM = new TreeM(ydoc, treeId)
     set(treeAtom, treeM)
     const currTree = get(treeAtom)
     let wsProvider = new WebsocketProvider(wsUrl, treeId, ydoc)
@@ -31,11 +31,8 @@ export const setupYDocAtom = atom(null, (get, set) => {
     wsProvider.on('sync', isSynced => {
         if (isSynced) {
             const treeMetadata = ydoc.getMap("metadata").toJSON()
-            treeMetadata["treeId"] = treeId;
             console.log('Yjs sync completed', treeMetadata)
             // Set up the metadata map
-            //setTreeMetadata(treeMetadata)
-            set(currTree.metadata, treeMetadata);
             set(YjsConnectionStatusAtom, "connected");
             set(updateChildrenCountAtom, {});
             const nodeDict = ydoc.getMap("nodeDict") as YMap<any>;
@@ -82,31 +79,34 @@ export const initSelectedNodeAtom = atom(null, (get, set) => {
         url.searchParams.delete("n");
         window.history.replaceState({}, document.title, url.toString());
     }
+    const rootId = treeVM.treeM.metadata.get("rootId")
     // Earlier registration of observer
     if (!nodeId) nodeId = localStorage.getItem(`${treeId}_selectedNodeId`) || null;
-    if (!nodeId) nodeId = get(treeVM.metadata).rootId || null;
+    if (!nodeId) nodeId = rootId || null;
     if (!nodeId) return;
 
+    console.log("Init selected node", nodeId)
     set(selectedNodeAtom, nodeId);
     setTimeout(() => {
+        console.log("Scrolled to selected node", nodeId)
         set(scrollToNodeAtom, nodeId)
     }, 500);
 
     // observe the nodeDict for changes
     // Todo - investigate why this is not working as expected
-    // const nodeDict = treeVM.treeM.nodeDict()
-    // const observer = (ymapEvent) => {
-    //     if (ymapEvent.keys.has(nodeId)) {
-    //         set(selectedNodeAtom, nodeId);
-    //         setTimeout(() => {
-    //             set(scrollToNodeAtom, nodeId)
-    //         }, 500);
-    //         // unobserve the nodeDict after setting the selected node
-    //         nodeDict.unobserve(observer);
-    //     }
-    // }
-    // nodeDict.observe(observer)
-    // unobserve the nodeDict after 10 seconds
+    const nodeDict = treeVM.treeM.nodeDict
+    const observer = (ymapEvent) => {
+        if (ymapEvent.keys.has(nodeId)) {
+            set(selectedNodeAtom, nodeId);
+            setTimeout(() => {
+                set(scrollToNodeAtom, nodeId)
+            }, 500);
+            // unobserve the nodeDict after setting the selected node
+            nodeDict.unobserve(observer);
+        }
+    }
+    nodeDict.observe(observer)
+    //unobserve the nodeDict after 10 seconds
     setTimeout(() => {
         try {
             set(selectedNodeAtom, nodeId);

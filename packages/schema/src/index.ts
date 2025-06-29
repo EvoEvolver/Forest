@@ -5,28 +5,72 @@ import {PrimitiveAtom} from "jotai";
 import {atom} from "jotai/index";
 import {getYjsBindedAtom, nodeMToNodeVMAtom} from "./node";
 
-export interface TreeMetaData {
+
+export interface TreeJson {
+    metadata: TreeMetadata,
+    nodeDict: { [key: string]: NodeJson };
+}
+
+export interface TreeMetadata {
     rootId: string,
     treeId?: string,
 }
+
+export interface NodeJson {
+    id: string
+    title: string
+    parent: string
+    other_parents: string[]
+    children: string[]
+    data: any
+    nodeTypeName: string
+    tabs: any
+    tools: any
+}
+
 
 /*
 The data type shared between backend and frontend
  */
 export class TreeM {
     ydoc: YDoc
+    nodeDict: YMap<YMap<any>>
+    metadata: YMap<any>
 
-    constructor(ydoc: YDoc) {
+    constructor(ydoc: YDoc, treeId: string) {
         this.ydoc = ydoc
+        this.metadata = this.ydoc.getMap("metadata")
+        this.nodeDict = this.ydoc.getMap("nodeDict")
+        this.metadata.set("treeId", treeId)
     }
 
-    nodeDict(): YMap<YMap<any>> {
-        return this.ydoc.getMap("nodeDict")
+    patchFromTreeJson(treeJson: TreeJson) {
+        this.ydoc.transact(() => {
+            // Update metadata
+            const metadata = treeJson.metadata;
+            Object.entries(metadata).forEach(([key, value]) => {
+                this.metadata.set(key, value);
+            });
+
+            // Update nodeDict
+            const nodeDictJson = treeJson.nodeDict;
+            Object.entries(nodeDictJson).forEach(([key, nodeJson]) => {
+                const nodeM = NodeM.fromNodeJson(nodeJson);
+                this.addNode(nodeM)
+            });
+        })
     }
 
-    metadata(): YMap<any> {
-        // @ts-ignore
-        return this.ydoc.getMap("metadata")
+    id(): string {
+        return this.metadata.get("treeId")
+    }
+
+    addNode(node: NodeM) {
+        this.nodeDict.set(node.id, node.ymap)
+    }
+
+    deleteNode(nodeId: string) {
+        this.nodeDict.delete(nodeId)
     }
 }
 
@@ -34,13 +78,16 @@ export class TreeM {
 The data type hold only by the frontend as ViewModel (VM) for components to consume
  */
 export class TreeVM {
-    metadata: PrimitiveAtom<TreeMetaData>
+    metadata: PrimitiveAtom<TreeMetadata>
     nodeDict: Record<string, PrimitiveAtom<NodeVM>>
     supportedNodesTypes: SupportedNodeTypesMap
     treeM: TreeM
     get: any
     set: any
     reRenderFlag = atom(false)
+
+    didSelectedNodeInit = false
+
     /*
     The constructor links the TreeVM to the TreeM
      */
@@ -49,15 +96,15 @@ export class TreeVM {
         this.set = set
         this.treeM = treeM
         this.nodeDict = {}
-        let nodeDictyMap: YMap<YMap<any>> = treeM.nodeDict()
+        let nodeDictyMap: YMap<YMap<any>> = treeM.nodeDict
         nodeDictyMap.observe((ymapEvent) => {
             ymapEvent.changes.keys.forEach((change, key) => {
                 if (change.action === 'add') {
-                    let newNode = new NodeM(nodeDictyMap.get(key))
+                    let newNode = new NodeM(nodeDictyMap.get(key), key)
                     this.addNode(newNode)
-                    console.log("added")
+                    console.log("added", newNode.id)
                 } else if (change.action === 'update') {
-                    let newNode = new NodeM(nodeDictyMap.get(key))
+                    let newNode = new NodeM(nodeDictyMap.get(key), key)
                     this.deleteNode(key)
                     this.addNode(newNode)
                 } else if (change.action === 'delete') {
@@ -65,7 +112,7 @@ export class TreeVM {
                 }
             })
         })
-        let metadataMap: YMap<any> = treeM.metadata();
+        let metadataMap: YMap<any> = treeM.metadata;
         // Initialize atom with current metadata
         this.metadata = atom({
             rootId: metadataMap.get("rootId") || "",
@@ -73,12 +120,14 @@ export class TreeVM {
         });
         this.metadata.onMount = (set) => {
             const observer = (event) => {
-                set({
+                const newMetadata = {
                     rootId: metadataMap.get("rootId") || "",
                     treeId: metadataMap.get("treeId"),
-                });
+                }
+                console.log(newMetadata)
+                set(newMetadata);
             }
-            metadataMap.observe(observer);
+            metadataMap.observeDeep(observer);
             return () => {
                 metadataMap.unobserve(observer);
             }
@@ -86,7 +135,7 @@ export class TreeVM {
     }
 
     addNode(newNode: NodeM) {
-        this.nodeDict[newNode.id()] = nodeMToNodeVMAtom(newNode, this.supportedNodesTypes)
+        this.nodeDict[newNode.id] = nodeMToNodeVMAtom(newNode, this.supportedNodesTypes)
         this.set(this.reRenderFlag, !this.get(this.reRenderFlag))
     }
 
@@ -95,16 +144,48 @@ export class TreeVM {
         this.set(this.reRenderFlag, !this.get(this.reRenderFlag))
     }
 
+    initSelectedNode() {
+
+    }
+
 }
+
 
 /*
 The data type shared between backend and frontend
  */
 export class NodeM {
     ymap: YMap<any>;
+    id: string
 
-    constructor(ymap: YMap<any>) {
-        this.ymap = ymap;
+    static fromNodeJson(nodeJson: NodeJson): NodeM {
+        const ymap = new YMap<any>();
+        ymap.set("id", nodeJson.id);
+        ymap.set("title", nodeJson.title);
+        ymap.set("parent", nodeJson.parent);
+
+        // Convert arrays to Y.Array
+        const childrenArray = new Y.Array<string>();
+        childrenArray.insert(0, nodeJson.children);
+        ymap.set("children", childrenArray);
+
+        ymap.set("other_parents", nodeJson.other_parents);
+
+        ymap.set("data", nodeJson.data);
+        ymap.set("nodeTypeName", nodeJson.nodeTypeName);
+
+        // Optionally, initialize ydata as empty Y.Map
+        ymap.set("ydata", new YMap<any>());
+
+        ymap.set("tabs", nodeJson.tabs)
+        ymap.set("tools", nodeJson.tools)
+
+        return new NodeM(ymap, nodeJson.id)
+    }
+
+    constructor(ymap: YMap<any>, nodeId: string) {
+        this.id = nodeId
+        this.ymap = ymap
     }
 
     title(): string {
@@ -127,16 +208,12 @@ export class NodeM {
         return this.ymap.get("data");
     }
 
-    ydata(): Y.Map<string> | undefined {
+    ydata(): Y.Map<any> | undefined {
         return this.ymap.get("ydata");
     }
 
     nodeTypeName(): string {
         return this.ymap.get("nodeTypeName");
-    }
-
-    id(): string {
-        return this.ymap.get("id");
     }
 }
 
@@ -161,15 +238,15 @@ export class NodeVM {
     constructor(nodeM: NodeM, supportedNodesTypes: SupportedNodeTypesMap) {
         const yjsMapNode = nodeM.ymap;
         const childrenAtom = getYjsBindedAtom(yjsMapNode, "children");
-        const titleAtom = atom(yjsMapNode.get("title"));
-        this.id = yjsMapNode.get("id");
+        const titleAtom = atom(nodeM.title());
+        this.id = nodeM.id
         this.title = titleAtom;
-        this.parent = yjsMapNode.get("parent");
-        this.other_parents = yjsMapNode.get("other_parents");
+        this.parent = nodeM.parent()
+        this.other_parents = nodeM.other_parents()
         this.children = childrenAtom;
-        this.ydata = yjsMapNode.get("ydata");
-        this.data = yjsMapNode.get("data");
-        this.nodeTypeName = yjsMapNode.get("nodeTypeName");
+        this.ydata = nodeM.ydata()
+        this.data = nodeM.data()
+        this.nodeTypeName = nodeM.nodeTypeName()
         this.nodeType = null; // TODO: init the nodeType
         this.nodeM = nodeM
 

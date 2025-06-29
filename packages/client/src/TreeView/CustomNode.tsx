@@ -24,9 +24,6 @@ const renderTabs = (tabs, node: NodeVM) => {
         </>)
         return <thisNodeContext.Provider value={node}>
             <JsxParser
-                bindings={{
-                    node: node
-                }}
                 components={envComponent}
                 jsx={content}
                 renderError={handleRenderError}

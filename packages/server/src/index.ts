@@ -4,7 +4,7 @@ import minimist from 'minimist'
 import http from 'http';
 import cors from 'cors';
 import crypto from 'crypto';
-import {patchTree} from "./nodeFactory";
+import {createNewTree} from "./createTree";
 import {applyUpdate, Doc, encodeStateAsUpdate, Map as YMap} from 'yjs';
 import {WebSocketServer} from 'ws';
 import {getYDoc, setupWSConnection, setupYjsPersistence} from './y-websocket/utils'
@@ -20,6 +20,7 @@ import {
 import {setMongoConnection} from "./mongoConnection";
 import {TreeMetadataManager} from "./treeMetadata";
 import {TreeVisitManager} from "./treeVisitTracker";
+import {TreeJson, TreeM} from '@forest/schema';
 
 dotenv.config({
     path: path.resolve(__dirname, '.env'),
@@ -119,27 +120,21 @@ function main(port: number, host: string, frontendRoot: string | null): void {
     app.put('/api/createTree', authenticateToken, requireCreateTreePermission, (req: AuthenticatedRequest, res) => {
         console.log(`🌳 Tree creation request from authenticated user: ${req.user?.email}`);
         try {
-            const tree_patch = req.body.tree;
-            const treeId = crypto.randomUUID();
-            const rootId = req.body.root_id;
-            if (!rootId) {
-                res.status(400).json({error: 'root_id is required.'});
-            }
-            const doc = getYDoc(treeId)
-            const nodeDict = doc.getMap("nodeDict")
-            patchTree(nodeDict, tree_patch);
+            const treeJson = req.body.tree as TreeJson
+            const rootId = treeJson.metadata.rootId
+            const tree: TreeM = createNewTree(treeJson);
+
             // update the metadata
             //@ts-ignore
-            const root_title = nodeDict.get(rootId).get("title")
-            doc.transact(() => {
-                const metadata = doc.getMap("metadata");
-                metadata.set("rootId", rootId);
+            const root_title = tree.nodeDict.get(rootId).get("title")
+            tree.ydoc.transact(() => {
+                const metadata = tree.ydoc.getMap("metadata");
                 metadata.set("version", "0.0.1");
             })
-            console.log(`✅ Tree '${root_title}' created successfully: ${treeId} for user: ${req.user?.email}`);
-            treeMetadataManager.createTree(treeId, req.user!.id, root_title).catch(() => {
+            console.log(`✅ Tree '${root_title}' created successfully: ${tree.id()} for user: ${req.user?.email}`);
+            treeMetadataManager.createTree(tree.id(), req.user!.id, root_title).catch(() => {
             })
-            res.json({tree_id: treeId});
+            res.json({tree_id: tree.id()});
         } catch (error) {
             console.error(`❌ Error creating tree for user ${req.user?.email}:`, error);
             res.status(500).json({error: 'An error occurred while creating the tree.'});
