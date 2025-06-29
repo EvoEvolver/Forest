@@ -27,7 +27,8 @@
     "uuid": "^9.0.1",
     "y-websocket": "^2.0.4",
     "yjs": "^13.6.20",
-    "@forest/node-type-custom": "workspace:*"
+    "@forest/node-components": "workspace:*",
+    "@forest/schema": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.10.4",

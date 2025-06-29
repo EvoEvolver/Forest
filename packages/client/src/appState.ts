@@ -2,6 +2,7 @@ import {atom} from "jotai";
 
 export const darkModeAtom = atom(false)
 
+// @ts-ignore
 export const isDevMode = (import.meta.env.MODE === 'development');
 
 export const isMobileModeAtom = atom(false)

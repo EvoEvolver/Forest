@@ -6,7 +6,7 @@ import ChatView from "./chat";
 import {Code, Expandable, FigureBox, HTMLContent, NodeNavigator, TeX, TextSpan} from "./inline";
 import {PaperEditorMain, PaperEditorSide1, PaperEditorSide2} from "./integrated/paperEditor";
 
-export const envComponentAtom = atom({
+export const envComponentAtom = {
     Code,
     TeX,
     NodeNavigator,
@@ -21,4 +21,4 @@ export const envComponentAtom = atom({
     PaperEditorSide1,
     PaperEditorSide2,
     HTMLContent
-})
+}

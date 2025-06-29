@@ -1,103 +1,23 @@
-import {Node} from './entities';
-import {Atom, atom, PrimitiveAtom} from 'jotai'
+import {atom, PrimitiveAtom} from 'jotai'
 import {Array as YArray, Map as YMap} from 'yjs'
 import {YDocAtom, YjsProviderAtom} from "./YjsConnection";
 import {RESET} from 'jotai/utils';
 import {v4 as uuidv4} from 'uuid';
 import {updateChildrenCountAtom} from "./childrenCount";
 import {treeId} from "../appState";
+import {TreeM, TreeVM} from "@forest/schema"
 
-export interface TreeAtomData {
-    metadata: {
-        rootId?: string, // The root node id of the tree
-        treeId?: string, // The id of the tree
+const treeValueAtom: PrimitiveAtom<TreeVM> = atom()
+
+export const treeAtom = atom(
+    (get): TreeVM => {
+        return get(treeValueAtom)
+    },
+    (get, set, treeM: TreeM) => {
+        const treeVM = new TreeVM(treeM, get, set)
+        set(treeValueAtom, treeVM)
     }
-    nodeDict: Record<string, Atom<Node>>
-}
-
-export const treeAtom: PrimitiveAtom<TreeAtomData> = atom(
-    {
-        metadata: {},
-        nodeDict: {}
-    } as TreeAtomData | null)
-
-export const setTreeMetadataAtom = atom(null, (get, set, metadata: Record<string, any>) => {
-    const currTree = get(treeAtom)
-    if (!currTree)
-        return
-    set(treeAtom, {
-        ...currTree,
-        metadata: {
-            ...currTree.metadata,
-            ...metadata
-        }
-    })
-})
-
-function yjsNodeToJsonNode(yjsMapNode: YMap<any>): Node {
-
-    //const titleAtom = atom(yjsMapNode.get("title").toJSON())
-    const childrenAtom = getYjsBindedAtom(yjsMapNode, "children")
-    const titleAtom = atom(yjsMapNode.get("title"))
-    const node: Node = {
-        id: yjsMapNode.get("id"),
-        title: titleAtom,
-        parent: yjsMapNode.get("parent"),
-        other_parents: yjsMapNode.get("other_parents"),
-        tabs: yjsMapNode.get("tabs"),
-        children: childrenAtom,
-        ydata: yjsMapNode.get("ydata"),
-        data: yjsMapNode.get("data"),
-        tools: yjsMapNode.get("tools"),
-        ymapForNode: yjsMapNode,
-    }
-    return node
-}
-
-function getYjsBindedAtom(yjsMapNode: YMap<any>, key: string): PrimitiveAtom<any> {
-    const yjsValue = yjsMapNode.get(key)
-    // check if yjsValue has a toJSON method, if not, return a simple atom
-    let yjsAtom: PrimitiveAtom<any>;
-    if (typeof yjsValue.toJSON === 'function') {
-        yjsAtom = atom(yjsValue.toJSON())
-    } else {
-        console.warn(`Yjs value for key "${key}" does not have a toJSON method, using a simple atom instead.`);
-    }
-    yjsAtom.onMount = (set) => {
-        const observeFunc = (ymapEvent) => {
-            set(yjsValue.toJSON())
-        }
-        yjsValue.observe(observeFunc)
-        set(yjsValue.toJSON())
-        return () => {
-            yjsValue.unobserve(observeFunc)
-        }
-    }
-    return yjsAtom
-}
-
-function yjsNodeToJsonNodeAtom(yjsMapNode: YMap<any>): PrimitiveAtom<Node> {
-    const node: Node = yjsNodeToJsonNode(yjsMapNode)
-    const nodeAtom = atom(node)
-    nodeAtom.onMount = (set) => {
-        const observeFunc = (ymapEvent) => {
-            ymapEvent.changes.keys.forEach((change, key) => {
-                if (change.action !== 'update') {
-                    throw Error(`Property "${key}" was ${change.action}, which is not supported.`)
-                }
-            })
-            const newNode: Node = yjsNodeToJsonNode(yjsMapNode)
-            set(newNode)
-        }
-        yjsMapNode.observe(observeFunc)
-        const newNode: Node = yjsNodeToJsonNode(yjsMapNode)
-        set(newNode)
-        return () => {
-            yjsMapNode.unobserve(observeFunc)
-        }
-    }
-    return nodeAtom
-}
+)
 
 export const deleteNodeAtom = atom(null, (get, set, props: { nodeId: string }) => {
     const currTree = get(treeAtom)
@@ -112,7 +32,7 @@ export const deleteNodeAtom = atom(null, (get, set, props: { nodeId: string }) =
     const parentId = nodeToRemove.parent
     const parentNodeAtom = nodeDict[parentId]
     const parentNode = get(parentNodeAtom)
-    const yArrayChildren = parentNode.ymapForNode.get("children")
+    const yArrayChildren = parentNode.nodeM.ymap.get("children")
     const Idx = yArrayChildren.toJSON().indexOf(props.nodeId)
     if (Idx === -1) {
         console.warn(`Node with id ${props.nodeId} not found in parent with id ${parentId}`)
@@ -121,14 +41,10 @@ export const deleteNodeAtom = atom(null, (get, set, props: { nodeId: string }) =
     // remove the node from the parent's children
     yArrayChildren.delete(Idx, 1)
     // delete the node from the nodeDict
+    // @ts-ignore
     set(nodeToRemoveAtom, RESET)
-    delete nodeDict[props.nodeId]
-    set(treeAtom, {
-        ...currTree,
-        nodeDict: {
-            ...nodeDict
-        }
-    })
+    currTree.deleteNode(props.nodeId)
+
     if (get(selectedNodeIdAtom) === props.nodeId) {
         // if the deleted node was selected, set the selectedNodeId to the parent
         const newChildrenList = yArrayChildren.toJSON()
@@ -167,7 +83,7 @@ export const setNodePositionAtom = atom(null, (get, set, props: {
     const parentId = nodeToMove.parent
     const parentNodeAtom = nodeDict[parentId]
     const parentNode = get(parentNodeAtom)
-    const yArrayChildren = parentNode.ymapForNode.get("children")
+    const yArrayChildren = parentNode.nodeM.ymap.get("children")
 
     // Find current position of the node
     const currentIdx = get(parentNode.children).indexOf(props.nodeId)
@@ -203,7 +119,7 @@ export const addNewNodeAtom = atom(null, (get, set, props: { parentId: string, p
     const nodeDict = currTree.nodeDict
     const parentNodeAtom = nodeDict[props.parentId]
     const parentNode = get(parentNodeAtom)
-    const yArrayChildren = parentNode.ymapForNode.get("children")
+    const yArrayChildren = parentNode.nodeM.ymap.get("children")
     const newNode = {
         id: uuidv4(),
         title: "new node",//new YText("new node"),
@@ -236,36 +152,6 @@ export const addNewNodeAtom = atom(null, (get, set, props: { parentId: string, p
     yArrayChildren.insert(positionIdx, [newNode.id])
 
     set(updateChildrenCountAtom, {});
-})
-
-export const addNodeToNodeDictAtom = atom(null, (get, set, yjsMapNode: YMap<any>) => {
-    const currTree = get(treeAtom)
-    if (!currTree)
-        return
-    const nodeDict = currTree.nodeDict
-    const nodeId = yjsMapNode.get("id")
-    let nodeAtom: PrimitiveAtom<Node> = yjsNodeToJsonNodeAtom(yjsMapNode)
-    set(treeAtom, {
-        ...currTree,
-        nodeDict: {
-            ...nodeDict,
-            [nodeId]: nodeAtom
-        }
-    })
-})
-
-export const deleteNodeFromNodeDictAtom = atom(null, (get, set, nodeId: string) => {
-    const currTree = get(treeAtom)
-    if (!currTree)
-        return
-    const nodeDict = currTree.nodeDict
-    delete nodeDict[nodeId]
-    set(treeAtom, {
-        ...currTree,
-        nodeDict: {
-            ...nodeDict
-        }
-    })
 })
 
 
@@ -327,7 +213,7 @@ export const selectedNodeAtom = atom(
             return null
         const selectedNodeId = get(selectedNodeIdAtom)
         if (!selectedNodeId) {
-            const rootNodeAtom = currTree.nodeDict[currTree.metadata.rootId]
+            const rootNodeAtom = currTree.nodeDict[get(currTree.metadata).rootId]
             if (!rootNodeAtom) {
                 return null
             }
@@ -357,23 +243,30 @@ export const currNodeParentIdAtom = atom((get) => {
 })
 
 
-export const listOfNodesForViewAtom = atom<Node[]>((get) => {
-    const tree = get(treeAtom)
-    if (Object.keys(tree.nodeDict).length === 0) {
-        return []; // If there are no nodes, return an empty array
-    }
-    const parentNodeId = get(currNodeParentIdAtom)
-    if (!parentNodeId) {
-        const rootNodeAtom = tree.nodeDict[tree.metadata.rootId]
-        if (!rootNodeAtom) {
-            return []; // If there's no root node, return an empty array
+export const listOfNodesForViewAtom = atom(
+    (get) => {
+        const tree = get(treeAtom)
+        if (!tree){
+            return []
         }
-        return [get(tree.nodeDict[tree.metadata.rootId])]; // If there's no parent, return the root
+
+        const f = get(tree.reRenderFlag)
+        if (Object.keys(tree.nodeDict).length === 0) {
+            return []; // If there are no nodes, return an empty array
+        }
+        const parentNodeId = get(currNodeParentIdAtom)
+        if (!parentNodeId) {
+            const rootNodeAtom = tree.nodeDict[get(tree.metadata).rootId]
+            if (!rootNodeAtom) {
+                return []; // If there's no root node, return an empty array
+            }
+            return [get(tree.nodeDict[get(tree.metadata).rootId])]; // If there's no parent, return the root
+        }
+        const parentNodeAtom = tree.nodeDict[parentNodeId]
+        const parentNode = get(parentNodeAtom)
+        return get(parentNode.children).map((id) => get(tree.nodeDict[id]));
     }
-    const parentNodeAtom = tree.nodeDict[parentNodeId]
-    const parentNode = get(parentNodeAtom)
-    return get(parentNode.children).map((id) => get(tree.nodeDict[id]));
-})
+)
 
 export const setToNodeChildrenAtom = atom(null, (get, set, nodeid) => {
     set(selectedNodeIdAtom, nodeid)

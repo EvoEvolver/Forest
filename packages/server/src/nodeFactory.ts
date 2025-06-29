@@ -23,9 +23,6 @@ export function nodeToMap(node: any): Y.Map<any> {
             yarrayForChildren.insert(0, node["children"])
             ymapForNode.set("children", yarrayForChildren)
         } else if (key == "title") {
-            let ystringForTitle = new Y.Text()
-            ystringForTitle.insert(0, node["title"])
-            //ymapForNode.set("title", ystringForTitle)
             ymapForNode.set("title", node["title"])
         } else {
             ymapForNode.set(key, node[key])

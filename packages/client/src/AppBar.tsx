@@ -9,6 +9,7 @@ import {YjsConnectionStatusAtom, YjsProviderAtom} from "./TreeState/YjsConnectio
 import {jumpToNodeAtom, scrollToNodeAtom} from "./TreeState/TreeState";
 import Tooltip from "@mui/material/Tooltip";
 import SchemaRoundedIcon from '@mui/icons-material/SchemaRounded';
+
 export const MyAppBar = ({setCurrentPage, currentPage}: { setCurrentPage: any, currentPage: string }) => {
     const connectionStatus = useAtomValue(YjsConnectionStatusAtom)
     const supabaseClient = useAtomValue(supabaseClientAtom)

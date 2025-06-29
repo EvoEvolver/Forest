@@ -1,15 +1,15 @@
 import React from 'react';
 import {Card, Grid2 as Grid} from '@mui/material';
-import {Node} from "../TreeState/entities";
 import {useAtomValue, useSetAtom} from "jotai";
 import {listOfNodesForViewAtom, selectedNodeAtom} from "../TreeState/TreeState";
-import {NodeContentTabs} from "./NodeContentTab";
+import {renderTabs} from "./NodeContent";
 import CardContent from "@mui/material/CardContent";
 import {NodeButtons} from "./NodeButtons";
 import {isMobileModeAtom} from "../appState";
-import {RightColumn} from "./RightColumn";
-import {LeftColumn} from "./LeftColumn";
-
+import {ColumnLeft} from "./ColumnLeft";
+import {ColumnRight} from "./ColumnRight";
+import {NodeVM} from "@forest/schema"
+import {NodeTitle} from "./NodeTitle";
 
 const TreeView = () => {
     const leaves = useAtomValue(listOfNodesForViewAtom)
@@ -21,7 +21,7 @@ const TreeView = () => {
     return (
         <Grid style={{height: "100%", width: "100%"}} container spacing={1}>
             {!mobileMode && <Grid size={3.5} style={{height: "100%"}}>
-                <RightColumn/>
+                <ColumnLeft/>
             </Grid>}
             <Grid size={mobileMode ? 12 : 5} style={{height: "100%"}}>
                 <NodeContentFrame>
@@ -31,14 +31,14 @@ const TreeView = () => {
                 </NodeContentFrame>
             </Grid>
             {!mobileMode && <Grid style={{height: "100%"}} size={3.5} className={"hide-mobile"}>
-                <LeftColumn/>
+                <ColumnRight/>
             </Grid>}
         </Grid>
     );
 };
 
 
-export const MiddleContents = ({node}: { node: Node }) => {
+export const MiddleContents = ({node}: { node: NodeVM }) => {
     let setSelectedNode = useSetAtom(selectedNodeAtom)
 
     const handleClick = (event) => {
@@ -59,11 +59,10 @@ export const MiddleContents = ({node}: { node: Node }) => {
             onClick={handleClick}
             id={`node-${node.id}`}
         >
-            <NodeContentTabs
+            <NodeTitle
                 node={node}
-                tabDict={node.tabs}
-                titleAtom={node.title}
             />
+            {renderTabs(node.tabs, node)}
         </div>
         <NodeButtons node={node}/>
     </div>

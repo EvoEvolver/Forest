@@ -1,0 +1,11 @@
+{
+  "name": "@forest/schema",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "scripts": {},
+  "dependencies": {
+    "react": "^18.2.0",
+    "yjs": "^13.6.27",
+    "jotai": "^2.10.3"
+  }
+}

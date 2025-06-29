@@ -1,0 +1,11 @@
+{
+  "name": "@forest/node-type-editor",
+  "version": "1.0.0",
+  "main": "src/index.tsx",
+  "scripts": {
+  },
+  "dependencies": {
+    "@forest/schema": "workspace:*",
+    "react": "^18.2.0"
+  }
+}

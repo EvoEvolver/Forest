@@ -8,20 +8,20 @@ import {
     selectedNodeAtom,
     treeAtom
 } from "../TreeState/TreeState";
-import {Node} from '../TreeState/entities';
 import {useTreeViewApiRef} from "@mui/x-tree-view";
 import {Button} from "@mui/material";
 import UnfoldLessIcon from '@mui/icons-material/UnfoldLess';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { NodeVM } from '@forest/schema';
 
 export const NavigatorItemsAtom = atom((get) => {
         const tree = get(treeAtom)
-        let root: Node
-        if (tree.metadata.rootId) {
+        let root: NodeVM
+        if (get(tree.metadata).rootId) {
             // if rootId is set, use it to find the root node
-            root = get(tree.nodeDict[tree.metadata.rootId])
+            root = get(tree.nodeDict[get(tree.metadata).rootId])
         } else {
-            console.error("No rootId set in tree metadata, trying to find root node by parent == null. This may imply a bug.")
+            console.error("No rootId set in tree metadata. This may imply a bug.")
         }
         if (!root) {
             return []

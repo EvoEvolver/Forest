@@ -1,5 +1,5 @@
 {
-  "name": "@forest/node-type-custom",
+  "name": "@forest/node-components",
   "version": "1.0.0",
   "main": "src/index.tsx",
   "scripts": {

@@ -1,8 +1,8 @@
 import React from 'react';
-import {NodeContentTabs} from "../TreeView/NodeContentTab";
 import {atom, useAtomValue} from "jotai";
 import {treeAtom} from "../TreeState/TreeState";
 import { Paper } from '@mui/material';
+import {NodeTitle} from "../TreeView/NodeTitle";
 
 
 
@@ -45,7 +45,7 @@ export default function LinearView(props) {
             </div>;
         }
         return (
-            <NodeContentTabs
+            <NodeTitle
                 key={node.id}
                 node={node}
                 tabDict={node.tabs}
