@@ -3,7 +3,7 @@ import Tooltip from "@mui/material/Tooltip";
 import ChatView from "./chat";
 import {Code, Expandable, FigureBox, HTMLContent, NodeNavigator, TeX, TextSpan} from "./inline";
 
-export const envComponentAtom = {
+export const componentsForCustomNode = {
     Code,
     TeX,
     NodeNavigator,

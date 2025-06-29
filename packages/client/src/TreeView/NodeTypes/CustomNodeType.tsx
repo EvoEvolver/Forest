@@ -1,18 +1,18 @@
 import {NodeType, NodeVM} from "@forest/schema"
 import React, {ReactNode} from "react";
 import JsxParser from "react-jsx-parser";
-import {envComponentAtom} from "../../../node-components";
 import TabContext from "@mui/lab/TabContext";
 import {Box} from "@mui/material";
 import TabList from "@mui/lab/TabList";
 import Tab from "@mui/material/Tab";
 import TabPanel from "@mui/lab/TabPanel";
+import { componentsForCustomNode } from "@forest/node-components";
 
 
 const renderTabs = (tabs, node: NodeVM) => {
     const [value, setValue] = React.useState('0');
     const handleChange = (event, newValue) => setValue(newValue);
-    const envComponent = envComponentAtom
+    const envComponent = componentsForCustomNode
 
     // @ts-ignore
     const renderContent = (content, node) => {
@@ -21,6 +21,7 @@ const renderTabs = (tabs, node: NodeVM) => {
             <div>{content}</div>
         </>)
         return <>
+            {/* @ts-expect-error */}
             <JsxParser
                 components={envComponent}
                 jsx={content}
