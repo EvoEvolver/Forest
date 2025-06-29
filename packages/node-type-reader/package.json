@@ -1,0 +1,14 @@
+{
+  "name": "@forest/node-type-reader",
+  "version": "1.0.0",
+  "main": "src/index.tsx",
+  "scripts": {
+  },
+  "dependencies": {
+    "jotai": "^2.10.3",
+    "@forest/schema": "workspace:*",
+    "@forest/node-components": "workspace:*",
+    "react": "^18.2.0",
+    "@forest/client": "workspace:*"
+  }
+}
