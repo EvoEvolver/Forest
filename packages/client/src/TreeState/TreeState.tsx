@@ -6,7 +6,7 @@ import {v4 as uuidv4} from 'uuid';
 import {updateChildrenCountAtom} from "./childrenCount";
 import {treeId} from "../appState";
 import {TreeM, TreeVM} from "@forest/schema"
-import {supportedNodeTypes} from "../TreeView/registerNodeType";
+import {supportedNodeTypes} from "../TreeView/NodeTypes";
 
 const treeValueAtom: PrimitiveAtom<TreeVM> = atom()
 
