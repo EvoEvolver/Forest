@@ -149,7 +149,7 @@ const DropDownOperationButton = ({node}: { node: NodeVM }) => {
                 open={open}
                 onClose={handleClose}
             >
-                <MenuItem onClick={() => {
+                {node.nodeType.allowAddingChildren && <MenuItem onClick={() => {
                     addNewNode({
                         parentId: nodeId,
                         positionId: null,
@@ -159,8 +159,8 @@ const DropDownOperationButton = ({node}: { node: NodeVM }) => {
                 }}><ListItemIcon>
                     <AddIcon/>
                 </ListItemIcon>
-                    <ListItemText>Add Children</ListItemText></MenuItem>
-                <MenuItem onClick={() => {
+                    <ListItemText>Add Children</ListItemText></MenuItem>}
+                {node.nodeType.allowAddingChildren && <MenuItem onClick={() => {
                     addNewNode({
                         parentId: parentId,
                         positionId: nodeId,
@@ -170,8 +170,8 @@ const DropDownOperationButton = ({node}: { node: NodeVM }) => {
                 }}><ListItemIcon>
                     <AddIcon/>
                 </ListItemIcon>
-                    <ListItemText>Add Sibling</ListItemText></MenuItem>
-                <MenuItem onClick={() => {
+                    <ListItemText>Add Sibling</ListItemText></MenuItem>}
+                {node.nodeType.allowMoving && <><MenuItem onClick={() => {
                     moveUp();
                     handleClose();
                 }}>
@@ -180,15 +180,15 @@ const DropDownOperationButton = ({node}: { node: NodeVM }) => {
                     </ListItemIcon>
                     Move Up
                 </MenuItem>
-                <MenuItem onClick={() => {
-                    moveDown();
-                    handleClose();
-                }}>
-                    <ListItemIcon>
-                        <ArrowDownwardIcon/>
-                    </ListItemIcon>
-                    <ListItemText>Move Down</ListItemText>
-                </MenuItem>
+                    <MenuItem onClick={() => {
+                        moveDown();
+                        handleClose();
+                    }}>
+                        <ListItemIcon>
+                            <ArrowDownwardIcon/>
+                        </ListItemIcon>
+                        <ListItemText>Move Down</ListItemText>
+                    </MenuItem></>}
                 <Divider/>
                 <MenuItem onClick={() => {
                     deleteNode({nodeId: nodeId});
