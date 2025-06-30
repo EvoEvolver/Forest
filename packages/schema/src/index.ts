@@ -309,7 +309,7 @@ export abstract class NodeType {
 
     allowAddingChildren: boolean = false
 
-    allowMoving: boolean = false
+    allowReshape: boolean = false
 
     allowEditTitle: boolean = false
 

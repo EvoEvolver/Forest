@@ -171,7 +171,7 @@ const DropDownOperationButton = ({node}: { node: NodeVM }) => {
                     <AddIcon/>
                 </ListItemIcon>
                     <ListItemText>Add Sibling</ListItemText></MenuItem>}
-                {node.nodeType.allowMoving && <><MenuItem onClick={() => {
+                {node.nodeType.allowReshape && <><MenuItem onClick={() => {
                     moveUp();
                     handleClose();
                 }}>
@@ -190,17 +190,18 @@ const DropDownOperationButton = ({node}: { node: NodeVM }) => {
                         <ListItemText>Move Down</ListItemText>
                     </MenuItem></>}
                 <Divider/>
-                <MenuItem onClick={() => {
-                    deleteNode({nodeId: nodeId});
-                    handleClose();
-                }}
-                          disabled={nodeChildren.length > 0 || node.parent === null}
-                >
-                    <ListItemIcon>
-                        <DeleteIcon/>
-                    </ListItemIcon>
-                    <ListItemText>Delete node</ListItemText>
-                </MenuItem>
+                {node.nodeType.allowReshape &&
+                    <MenuItem onClick={() => {
+                        deleteNode({nodeId: nodeId});
+                        handleClose();
+                    }}
+                              disabled={nodeChildren.length > 0 || node.parent === null}
+                    >
+                        <ListItemIcon>
+                            <DeleteIcon/>
+                        </ListItemIcon>
+                        <ListItemText>Delete node</ListItemText>
+                    </MenuItem>}
                 <MenuItem onClick={() => {
                     if (navigator.clipboard) {
                         navigator.clipboard.writeText(nodeUrl);

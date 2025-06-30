@@ -10,7 +10,7 @@ interface EditorNodeData {
 
 export class EditorNodeType extends NodeType {
 
-    allowMoving = true
+    allowReshape = true
 
     allowAddingChildren = true
 
