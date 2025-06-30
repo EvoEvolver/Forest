@@ -135,7 +135,7 @@ export const VisitedTreesList = () => {
 
     if (loading) {
         return (
-            <Box sx={{ width: 650, height: 250 }}>
+            <Box>
                 <DashboardCard title="Recently Visited Trees">
                     <Box display="flex" justifyContent="center" p={2}>
                         <CircularProgress size={20}/>
@@ -147,7 +147,7 @@ export const VisitedTreesList = () => {
 
     if (error) {
         return (
-            <Box sx={{ width: 650, height: 250 }}>
+            <Box>
                 <DashboardCard title="Recently Visited Trees">
                     <Alert severity="error" sx={{m: 1}}>
                         {error}
@@ -161,7 +161,7 @@ export const VisitedTreesList = () => {
     }
 
     return (
-        <Box sx={{ width: 550, height: 250 }}>
+        <Box>
             <DashboardCard 
                 title={`Recently Visited Trees (${trees.length})`}
                 action={
@@ -177,8 +177,7 @@ export const VisitedTreesList = () => {
                         No visited trees yet. Start exploring to see your visit history!
                     </Typography>
                 ) : (
-                    <Box sx={{ 
-                        height: 180, 
+                    <Box sx={{
                         width: '100%',
                         overflow: 'auto',
                         '& .MuiTable-root': {

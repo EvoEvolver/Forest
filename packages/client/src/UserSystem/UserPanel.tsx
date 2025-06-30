@@ -1,23 +1,22 @@
-import React, {useEffect, useState, useRef} from 'react';
-import {useAtomValue} from 'jotai'
+import React, {useEffect, useRef, useState} from 'react';
 import {
-    Avatar, 
-    Box, 
-    Grid2 as Grid, 
-    Typography, 
-    IconButton, 
-    Dialog, 
-    DialogTitle, 
-    DialogContent, 
-    DialogActions, 
-    TextField, 
-    Button,
     Alert,
+    Avatar,
+    Box,
+    Button,
     CircularProgress,
-    Tooltip
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Grid2 as Grid,
+    IconButton,
+    TextField,
+    Tooltip,
+    Typography
 } from '@mui/material';
 import {Edit as EditIcon, PhotoCamera as PhotoCameraIcon} from '@mui/icons-material';
-import {authTokenAtom, subscriptionAtom, userAtom} from "./authStates";
+import {subscriptionAtom, userAtom} from "./authStates";
 import {UserTreesList} from './UserTreesList';
 import {useAtom} from "jotai/index";
 import {VisitedTreesList} from './VisitedTreesList';
@@ -75,8 +74,8 @@ export const UserPanel = ({}) => {
             setIsUpdating(true);
             setUpdateError(null);
 
-            const { data, error } = await supabase.auth.updateUser({
-                data: { 
+            const {data, error} = await supabase.auth.updateUser({
+                data: {
                     display_name: newDisplayName.trim(),
                     name: newDisplayName.trim() // Also update name for consistency
                 }
@@ -100,7 +99,7 @@ export const UserPanel = ({}) => {
                 };
                 setUser(updatedUser);
             }
-            
+
             setUpdateSuccess(true);
             setTimeout(() => {
                 setEditDialogOpen(false);
@@ -153,7 +152,7 @@ export const UserPanel = ({}) => {
         }
 
         // Check if user is authenticated
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        const {data: {user: currentUser}} = await supabase.auth.getUser();
         if (!currentUser) {
             setAvatarUploadError('User not authenticated');
             return;
@@ -169,7 +168,7 @@ export const UserPanel = ({}) => {
             const filePath = `${user?.id}/${fileName}`;
 
             // Upload file to Supabase Storage
-            const { data: uploadData, error: uploadError } = await supabase.storage
+            const {data: uploadData, error: uploadError} = await supabase.storage
                 .from('avatars')
                 .upload(filePath, file, {
                     cacheControl: '3600',
@@ -181,7 +180,7 @@ export const UserPanel = ({}) => {
             }
 
             // Get public URL
-            const { data: urlData } = supabase.storage
+            const {data: urlData} = supabase.storage
                 .from('avatars')
                 .getPublicUrl(filePath);
 
@@ -189,8 +188,8 @@ export const UserPanel = ({}) => {
 
             // Update user metadata with avatar URL
             console.log('Updating user metadata with avatar URL:', avatarUrl);
-            const { data: updateData, error: updateError } = await supabase.auth.updateUser({
-                data: { 
+            const {data: updateData, error: updateError} = await supabase.auth.updateUser({
+                data: {
                     avatar_url: avatarUrl
                 }
             });
@@ -201,9 +200,9 @@ export const UserPanel = ({}) => {
             }
 
             console.log('User metadata updated successfully:', updateData);
-            
+
             // Verify the update by getting fresh user data
-            const { data: { user: updatedUser }, error: getUserError } = await supabase.auth.getUser();
+            const {data: {user: updatedUser}, error: getUserError} = await supabase.auth.getUser();
             if (getUserError) {
                 console.error('Error getting updated user:', getUserError);
             } else {
@@ -213,7 +212,7 @@ export const UserPanel = ({}) => {
 
             // Update local state immediately
             setAvatarUrl(avatarUrl);
-            
+
             // Update the user atom with the new avatar URL
             if (user) {
                 const updatedUser = {
@@ -226,7 +225,7 @@ export const UserPanel = ({}) => {
                 };
                 setUser(updatedUser);
             }
-            
+
             // Show success message briefly - no need to refresh immediately
             // The UI is already updated with the new avatar
 
@@ -246,28 +245,28 @@ export const UserPanel = ({}) => {
         <Box
             sx={{
                 margin: 'auto',
-                maxWidth: 1200,
-                width: '100vw',
-                padding: "20px"
+                padding: "20px",
+                height: "100vh"
             }}
         >
-            <Grid container spacing={3}>
+            <Grid container spacing={3} sx={{width: '100vw', margin: 'auto'}}>
                 {/* User Profile Section */}
                 <Grid
                     size={{
                         xs: 12,
-                        lg: 4
+                        md: 2,
+                        lg: 2
                     }}
                 >
                     <DashboardCard title="Profile">
-                        <Box sx={{ textAlign: 'center', py: 2 }}>
-                            <Box sx={{ position: 'relative', display: 'inline-block', mb: 2 }}>
+                        <Box sx={{textAlign: 'center', py: 2}}>
+                            <Box sx={{position: 'relative', display: 'inline-block', mb: 2}}>
                                 <Tooltip title="Click to change avatar">
                                     <Avatar
                                         src={avatarUrl || undefined}
-                                        sx={{ 
-                                            width: 80, 
-                                            height: 80, 
+                                        sx={{
+                                            width: 80,
+                                            height: 80,
                                             cursor: isUploadingAvatar ? 'default' : 'pointer',
                                             '&:hover': {
                                                 opacity: isUploadingAvatar ? 1 : 0.8
@@ -294,7 +293,7 @@ export const UserPanel = ({}) => {
                                             borderRadius: '50%'
                                         }}
                                     >
-                                        <CircularProgress size={24} sx={{ color: 'white' }} />
+                                        <CircularProgress size={24} sx={{color: 'white'}}/>
                                     </Box>
                                 )}
                                 <IconButton
@@ -314,26 +313,26 @@ export const UserPanel = ({}) => {
                                     onClick={handleAvatarClick}
                                     disabled={isUploadingAvatar}
                                 >
-                                    <PhotoCameraIcon fontSize="small" />
+                                    <PhotoCameraIcon fontSize="small"/>
                                 </IconButton>
                             </Box>
-                            
+
                             {avatarUploadError && (
-                                <Alert severity="error" sx={{ mb: 2, fontSize: '0.75rem' }}>
+                                <Alert severity="error" sx={{mb: 2, fontSize: '0.75rem'}}>
                                     {avatarUploadError}
                                 </Alert>
                             )}
-                            
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 2 }}>
+
+                            <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 2}}>
                                 <Typography variant="h5" component="div">
                                     {user?.name}
                                 </Typography>
-                                <IconButton 
-                                    size="small" 
+                                <IconButton
+                                    size="small"
                                     onClick={handleEditClick}
-                                    sx={{ p: 0.5 }}
+                                    sx={{p: 0.5}}
                                 >
-                                    <EditIcon fontSize="small" />
+                                    <EditIcon fontSize="small"/>
                                 </IconButton>
                             </Box>
                             <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -345,7 +344,7 @@ export const UserPanel = ({}) => {
                                 ref={fileInputRef}
                                 type="file"
                                 accept="image/jpeg,image/jpg,image/png,image/webp"
-                                style={{ display: 'none' }}
+                                style={{display: 'none'}}
                                 onChange={handleAvatarUpload}
                             />
                         </Box>
@@ -356,23 +355,24 @@ export const UserPanel = ({}) => {
                 <Grid
                     size={{
                         xs: 12,
-                        lg: 8
+                        md: 10,
+                        lg: 10
                     }}
                 >
                     <Grid container spacing={3}>
-                        <Grid size={12}>
-                            <VisitedTreesList/>
-                        </Grid>
-                        <Grid size={12}>
+                        <Grid size={12} sx={{height: '50vh', overflow: 'auto', margin: "5px"}}>
                             <UserTreesList/>
+                        </Grid>
+                        <Grid size={12} sx={{height: '50vh', overflow: 'auto', margin: "5px"}}>
+                            <VisitedTreesList/>
                         </Grid>
                     </Grid>
                 </Grid>
             </Grid>
 
             {/* Edit Display Name Dialog */}
-            <Dialog 
-                open={editDialogOpen} 
+            <Dialog
+                open={editDialogOpen}
                 onClose={handleDialogClose}
                 maxWidth="sm"
                 fullWidth
@@ -389,31 +389,31 @@ export const UserPanel = ({}) => {
                         value={newDisplayName}
                         onChange={(e) => setNewDisplayName(e.target.value)}
                         disabled={isUpdating}
-                        sx={{ mt: 2 }}
+                        sx={{mt: 2}}
                     />
                     {updateError && (
-                        <Alert severity="error" sx={{ mt: 2 }}>
+                        <Alert severity="error" sx={{mt: 2}}>
                             {updateError}
                         </Alert>
                     )}
                     {updateSuccess && (
-                        <Alert severity="success" sx={{ mt: 2 }}>
+                        <Alert severity="success" sx={{mt: 2}}>
                             Display name updated successfully! Refreshing...
                         </Alert>
                     )}
                 </DialogContent>
                 <DialogActions>
-                    <Button 
-                        onClick={handleDialogClose} 
+                    <Button
+                        onClick={handleDialogClose}
                         disabled={isUpdating}
                     >
                         Cancel
                     </Button>
-                    <Button 
-                        onClick={handleUpdateDisplayName} 
+                    <Button
+                        onClick={handleUpdateDisplayName}
                         variant="contained"
                         disabled={isUpdating || !newDisplayName.trim()}
-                        startIcon={isUpdating ? <CircularProgress size={16} /> : null}
+                        startIcon={isUpdating ? <CircularProgress size={16}/> : null}
                     >
                         {isUpdating ? 'Updating...' : 'Update'}
                     </Button>

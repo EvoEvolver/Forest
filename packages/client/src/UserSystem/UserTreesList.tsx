@@ -226,7 +226,7 @@ export const UserTreesList = ({}) => {
     }
 
     return (
-        <Box sx={{ width: 550, height: 250 }}>
+        <Box>
             <DashboardCard 
                 title={`My Trees (${trees.length})`}
                 action={
@@ -252,8 +252,7 @@ export const UserTreesList = ({}) => {
                         You haven't created any trees yet. Click "Create new tree" to get started!
                     </Typography>
                 ) : (
-                    <Box sx={{ 
-                        height: 180, 
+                    <Box sx={{
                         width: '100%',
                         overflow: 'auto',
                         '& .MuiTable-root': {
