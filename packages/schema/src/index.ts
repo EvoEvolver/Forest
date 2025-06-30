@@ -311,6 +311,8 @@ export abstract class NodeType {
 
     allowMoving: boolean = false
 
+    allowEditTitle: boolean = false
+
     abstract render(node: NodeVM): React.ReactNode
 
     abstract renderTool1(node: NodeVM): React.ReactNode

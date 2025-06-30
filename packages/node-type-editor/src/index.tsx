@@ -14,6 +14,8 @@ export class EditorNodeType extends NodeType {
 
     allowAddingChildren = true
 
+    allowEditTitle = true
+
     render(node: NodeVM): React.ReactNode {
         return <>
             <TiptapEditor label="paperEditor"/>

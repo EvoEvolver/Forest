@@ -2,9 +2,11 @@ import React, {useEffect, useState} from "react";
 import {useAtomValue} from "jotai/index";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { NodeVM } from "@forest/schema";
+import {NodeVM} from "@forest/schema";
 
 export const NodeTitle = ({node}: { node: NodeVM }) => {
+    const editable = node.nodeType.allowEditTitle
+
     const [isEditing, setIsEditing] = useState(false);
     const titleAtom = node.title
     const title = useAtomValue(node.title);
@@ -60,7 +62,7 @@ export const NodeTitle = ({node}: { node: NodeVM }) => {
                         value={editedTitle}
                         onChange={handleChange}
                         onBlur={handleBlur}
-                        onKeyPress={handleKeyPress}
+                        onKeyUp={handleKeyPress}
                         variant="standard"
                         fullWidth
                         autoFocus
@@ -76,8 +78,9 @@ export const NodeTitle = ({node}: { node: NodeVM }) => {
                 ) : (
                     <Typography
                         variant="h5"
-                        onDoubleClick={handleDoubleClick}
-                        style={{"paddingBottom": "5px", "cursor": "pointer"}}
+                        onDoubleClick={editable ? handleDoubleClick : () => {
+                        }}
+                        style={{"paddingBottom": "5px", "cursor": editable ? "pointer" : "default"}}
                     >
                         {title}
                     </Typography>
