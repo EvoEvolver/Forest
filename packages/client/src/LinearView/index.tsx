@@ -1,9 +1,10 @@
 import React from 'react';
 import {atom, useAtomValue} from "jotai";
 import {treeAtom} from "../TreeState/TreeState";
-import { Paper } from '@mui/material';
+import {Paper} from '@mui/material';
 import {NodeTitle} from "../TreeView/NodeTitle";
-
+import {NodeVM} from '@forest/schema';
+import {thisNodeContext} from '../TreeView/NodeContext';
 
 
 const linearNodeListAtom = atom((get) => {
@@ -14,26 +15,21 @@ const linearNodeListAtom = atom((get) => {
     const rootNode = get(Object.values(nodeDict).find(node => get(node).parent === null))
     // use get(node.children) to get children of root node
     // do a depth-first traversal to get all node in a linear list
-    const traverse = (node) => {
+    const traverse = (node: NodeVM) => {
         const children = get(node.children) as string[];
         if (children.length === 0) {
             return [node];
         }
         return [node, ...children.flatMap(childId => traverse(get(nodeDict[childId])))]
     };
-    const linearNodes = traverse(rootNode);
+    const linearNodes: NodeVM[] = traverse(rootNode);
     return linearNodes;
 })
 
 
 export default function LinearView(props) {
-    const nodes = useAtomValue(linearNodeListAtom);
-    const renderNode = (node: {
-        id: string;
-        children: any; // or more specific atom type if available
-        title: string;
-        tabs?: any; // specify the correct type for tabs if known
-    }) => {
+    const nodes: NodeVM[] = useAtomValue(linearNodeListAtom);
+    const renderNode = (node: NodeVM) => {
         const children = useAtomValue(node.children) as string[];
         const title = useAtomValue(node.title);
         if (!children) {
@@ -45,12 +41,10 @@ export default function LinearView(props) {
             </div>;
         }
         return (
-            <NodeTitle
-                key={node.id}
-                node={node}
-                tabDict={node.tabs}
-                titleAtom={node.title}
-            />
+            <thisNodeContext.Provider value={node}>
+                <NodeTitle node={node}/>
+                {node.nodeType.render(node)}
+            </thisNodeContext.Provider>
         );
     };
 
