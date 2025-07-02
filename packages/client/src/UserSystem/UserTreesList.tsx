@@ -15,14 +15,12 @@ import {
     Tooltip,
     Typography
 } from '@mui/material';
-import {
-    Delete as DeleteIcon,
-    Refresh as RefreshIcon
-} from '@mui/icons-material';
+import {Delete as DeleteIcon, Refresh as RefreshIcon} from '@mui/icons-material';
 import {v4 as uuidv4} from 'uuid';
 import {authTokenAtom, userAtom} from './authStates';
 import {httpUrl} from '../appState';
 import DashboardCard from './DashboardCard';
+import {NodeJson, TreeJson, TreeMetadata} from '@forest/schema';
 
 interface UserTree {
     treeId: string;
@@ -55,27 +53,27 @@ export const UserTreesList = ({}) => {
     };
 
     const handleCreateTree = async () => {
-        try {
-            const nodeId = uuidv4();
-            const treeData = {
-                tree: {
-                    selectedNode: null,
-                    nodeDict: {
-                        [nodeId]: {
-                            title: "root",
-                            tabs: {content: "<PaperEditorMain/>"},
-                            children: [],
-                            id: nodeId,
-                            parent: null,
-                            data: {},
-                            tools: [{"Operations": "<PaperEditorSide1/>"}, {"AI assistant": "<PaperEditorSide2/>"}],
-                            other_parents: []
-                        }
-                    }
-                },
-                root_id: nodeId
-            };
+        const nodeId = uuidv4()
+        const newRootJson: NodeJson = {
+            title: "Root",
+            children: [],
+            id: nodeId,
+            parent: null,
+            data: {},
+            other_parents: [],
+            nodeTypeName: "EditorNodeType"
+        }
+        const newTreeMetadata: TreeMetadata = {
+            rootId: newRootJson.id
+        }
+        const newTreeJson: TreeJson = {
+            nodeDict: {
+                [nodeId]: newRootJson
+            },
+            metadata: newTreeMetadata
+        }
 
+        try {
             const data = await handleApiResponse(
                 await fetch(httpUrl + "/api/createTree", {
                     method: "PUT",
@@ -83,11 +81,10 @@ export const UserTreesList = ({}) => {
                         "Content-Type": "application/json",
                         "Authorization": `Bearer ${authToken}`,
                     },
-                    body: JSON.stringify(treeData)
+                    body: JSON.stringify({"tree": newTreeJson})
                 }),
                 "create tree"
             );
-
             if (!data.tree_id) throw new Error("No tree_id returned from server");
             window.location.href = `${window.location.origin}/?id=${data.tree_id}`;
 
@@ -200,7 +197,7 @@ export const UserTreesList = ({}) => {
 
     if (loading) {
         return (
-            <Box sx={{ width: 650, height: 250 }}>
+            <Box sx={{width: 650, height: 250}}>
                 <DashboardCard title="My Trees">
                     <Box display="flex" justifyContent="center" p={2}>
                         <CircularProgress size={20}/>
@@ -212,7 +209,7 @@ export const UserTreesList = ({}) => {
 
     if (error) {
         return (
-            <Box sx={{ width: 650, height: 250 }}>
+            <Box sx={{width: 650, height: 250}}>
                 <DashboardCard title="My Trees">
                     <Alert severity="error" sx={{m: 1}}>
                         {error}
@@ -227,21 +224,21 @@ export const UserTreesList = ({}) => {
 
     return (
         <Box>
-            <DashboardCard 
+            <DashboardCard
                 title={`My Trees (${trees.length})`}
                 action={
-                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                        <Button 
-                            variant="contained" 
-                            onClick={handleCreateTree} 
+                    <Box sx={{display: 'flex', gap: 1, alignItems: 'center'}}>
+                        <Button
+                            variant="contained"
+                            onClick={handleCreateTree}
                             size="small"
-                            sx={{ fontSize: '0.75rem', py: 0.5, px: 1 }}
+                            sx={{fontSize: '0.75rem', py: 0.5, px: 1}}
                         >
                             Create New Tree
                         </Button>
                         <Tooltip title="Refresh">
                             <IconButton size="small" onClick={fetchUserTrees}>
-                                <RefreshIcon fontSize="small" />
+                                <RefreshIcon fontSize="small"/>
                             </IconButton>
                         </Tooltip>
                     </Box>
@@ -268,22 +265,22 @@ export const UserTreesList = ({}) => {
                         >
                             <TableHead>
                                 <TableRow>
-                                    <TableCell sx={{ py: 1 }}>
+                                    <TableCell sx={{py: 1}}>
                                         <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
                                             Details
                                         </Typography>
                                     </TableCell>
-                                    <TableCell sx={{ py: 1 }}>
+                                    <TableCell sx={{py: 1}}>
                                         <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
                                             Last Accessed
                                         </Typography>
                                     </TableCell>
-                                    <TableCell sx={{ py: 1 }}>
+                                    <TableCell sx={{py: 1}}>
                                         <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
                                             Size
                                         </Typography>
                                     </TableCell>
-                                    <TableCell align="right" sx={{ py: 1 }}>
+                                    <TableCell align="right" sx={{py: 1}}>
                                         <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
                                             Actions
                                         </Typography>
@@ -292,12 +289,12 @@ export const UserTreesList = ({}) => {
                             </TableHead>
                             <TableBody>
                                 {trees.map((tree) => (
-                                    <TableRow key={tree.treeId} sx={{ '&:hover': { backgroundColor: 'action.hover' } }}>
-                                        <TableCell sx={{ py: 0.5 }}>
+                                    <TableRow key={tree.treeId} sx={{'&:hover': {backgroundColor: 'action.hover'}}}>
+                                        <TableCell sx={{py: 0.5}}>
                                             <Box>
-                                                <Typography 
-                                                    variant="subtitle2" 
-                                                    fontWeight={600} 
+                                                <Typography
+                                                    variant="subtitle2"
+                                                    fontWeight={600}
                                                     fontSize="0.8rem"
                                                     sx={{
                                                         cursor: 'pointer',
@@ -320,12 +317,13 @@ export const UserTreesList = ({}) => {
                                                 </Typography>
                                             </Box>
                                         </TableCell>
-                                        <TableCell sx={{ py: 0.5 }}>
-                                            <Typography color="textSecondary" variant="subtitle2" fontWeight={400} fontSize="0.75rem">
+                                        <TableCell sx={{py: 0.5}}>
+                                            <Typography color="textSecondary" variant="subtitle2" fontWeight={400}
+                                                        fontSize="0.75rem">
                                                 {formatDate(tree.lastAccessed)}
                                             </Typography>
                                         </TableCell>
-                                        <TableCell sx={{ py: 0.5 }}>
+                                        <TableCell sx={{py: 0.5}}>
                                             <Chip
                                                 sx={{
                                                     px: "4px",
@@ -338,14 +336,14 @@ export const UserTreesList = ({}) => {
                                                 label={`${getNodeCountLabel(tree.nodeCount)} (${tree.nodeCount})`}
                                             />
                                         </TableCell>
-                                        <TableCell align="right" sx={{ py: 0.5 }}>
+                                        <TableCell align="right" sx={{py: 0.5}}>
                                             <Tooltip title="Delete Tree">
                                                 <IconButton
                                                     size="small"
                                                     onClick={() => handleDeleteTree(tree.treeId)}
                                                     disabled={deletingTreeId === tree.treeId}
                                                     color="error"
-                                                    sx={{ p: 0.5 }}
+                                                    sx={{p: 0.5}}
                                                 >
                                                     {deletingTreeId === tree.treeId ? (
                                                         <CircularProgress size={14}/>
