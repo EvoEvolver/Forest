@@ -41,7 +41,7 @@ export const NavigatorItemsAtom = atom((get) => {
             item.children = children.map((child) => {
                 return {
                     id: child.id,
-                    label: get(child.title),
+                    label: get(child.title) || "(Untitled)",
                     children: [],
                 }
             })

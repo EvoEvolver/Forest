@@ -55,36 +55,38 @@ export const NodeTitle = ({node}: { node: NodeVM }) => {
     }, [isEditing]);
 
     return (
-        <>{
-            title && (
-                isEditing ? (
-                    <TextField
-                        value={editedTitle}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        onKeyUp={handleKeyPress}
-                        variant="standard"
-                        fullWidth
-                        autoFocus
-                        sx={{
-                            '& .MuiInputBase-input': {
-                                fontSize: '1.5rem',
-                                fontWeight: 400,
-                                lineHeight: 1.334,
-                                letterSpacing: '0em',
-                            }
-                        }}
-                    />
-                ) : (
-                    <Typography
-                        variant="h5"
-                        onDoubleClick={editable ? handleDoubleClick : () => {
-                        }}
-                        style={{"paddingBottom": "5px", "cursor": editable ? "pointer" : "default"}}
-                    >
-                        {title}
-                    </Typography>
-                )
+        <>
+            {isEditing ? (
+                <TextField
+                    value={editedTitle}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    onKeyUp={handleKeyPress}
+                    variant="standard"
+                    fullWidth
+                    autoFocus
+                    placeholder="(Untitled)"
+                    sx={{
+                        '& .MuiInputBase-input': {
+                            fontSize: '1.5rem',
+                            fontWeight: 400,
+                            lineHeight: 1.334,
+                            letterSpacing: '0em',
+                        }
+                    }}
+                />
+            ) : (
+                <Typography
+                    variant="h5"
+                    onDoubleClick={editable ? handleDoubleClick : () => {
+                    }}
+                    style={{paddingBottom: "5px", cursor: editable ? "pointer" : "default"}}
+                >
+                    {title
+                        ? title
+                        : <span style={{color: "#888"}}>(Untitled)</span>
+                    }
+                </Typography>
             )}
         </>
     );

@@ -4,7 +4,7 @@ import {RESET} from 'jotai/utils';
 import {v4 as uuidv4} from 'uuid';
 import {updateChildrenCountAtom} from "./childrenCount";
 import {treeId} from "../appState";
-import {NodeM, TreeM, TreeVM} from "@forest/schema"
+import {NodeJson, NodeM, TreeM, TreeVM} from "@forest/schema"
 import {supportedNodeTypes} from "../TreeView/NodeTypes";
 
 const treeValueAtom: PrimitiveAtom<TreeVM> = atom()
@@ -123,9 +123,9 @@ export const addNewNodeAtom = atom(null, (get, set, props: {
         return
     const treeM = currTree.treeM
 
-    const newNodeJson = {
+    const newNodeJson: NodeJson = {
         id: uuidv4(),
-        title: "new node",
+        title: "",
         parent: props.parentId,
         other_parents: [],
         children: [],

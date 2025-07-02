@@ -14,7 +14,6 @@ import { thisNodeContext } from './NodeContext';
 const TreeView = () => {
     const leaves = useAtomValue(listOfNodesForViewAtom)
     const mobileMode = useAtomValue(isMobileModeAtom)
-    console.log("TreeView render")
 
     if (leaves.length === 0) {
         return <></>
