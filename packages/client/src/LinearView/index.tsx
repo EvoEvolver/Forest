@@ -69,7 +69,11 @@ export default function LinearView(props) {
                     overflowY: 'auto', // Enable vertical scrolling
                 }}
             >
-                {nodes.map(renderNode)}
+                {nodes.map(node => (
+                    <React.Fragment key={node.id}>
+                        {renderNode(node)}
+                    </React.Fragment>
+                ))}
             </Paper>
         </div>
     );
