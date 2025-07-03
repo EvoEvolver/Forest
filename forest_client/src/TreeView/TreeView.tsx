@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {Box, Card, Grid2 as Grid} from '@mui/material';
 import {Node} from "../TreeState/entities";
 import {useAtomValue, useSetAtom} from "jotai";
@@ -23,16 +23,17 @@ const TreeView = () => {
     }
     // @ts-ignore
     return (
-        <Box style={{display: 'flex', flexDirection: 'row', width: '100%', height: '100%'}} >
+        <Box style={{display: 'flex', flexDirection: 'row', width: '100%', height: '100%', backgroundColor: '#fafafa'}} >
             {!mobileMode &&
                 <Grid
                     sx={{
                         position: 'absolute',
                         left: 0,
-                        height: 'calc(100% - 24px)',
+                        height: 'calc(100% - 24px - 64px)',
                         width: '18vw',
                         paddingLeft: '24px',
-                        paddingTop: '24px'
+                        paddingTop: '24px',
+                        marginTop: '64px'
                     }}
                 >
                     <RightColumn/>
@@ -51,15 +52,15 @@ const TreeView = () => {
                 <Allotment defaultSizes={[70, 30]}>
                     <div
                         style={{
-                        overflowY: 'auto',
-                        height: '100%',
-                        boxSizing: 'border-box',
-                        padding: '48px'
+                            overflowY: 'auto',
+                            height: '100%',
+                            boxSizing: 'border-box',
+                            padding: '48px'
                         }}>
                         {leaves.map((n, index) => <MiddleContents node={n} key={index}/>)}
                     </div>
                     {!mobileMode && (
-                        <div style={{height: '100%'}}>
+                        <div style={{height: '100%', marginTop: '240px'}}>
                             <LeftColumn/>
                         </div>
                     )}
@@ -73,6 +74,7 @@ const TreeView = () => {
 
 export const MiddleContents = ({node}: { node: Node }) => {
     let setSelectedNode = useSetAtom(selectedNodeAtom)
+    const [isHovered, setIsHovered] = useState(false);
 
     const handleClick = (event) => {
         setSelectedNode(node.id)
@@ -80,24 +82,34 @@ export const MiddleContents = ({node}: { node: Node }) => {
 
     return <div
         style={{
+            padding: '24px',
+            marginBottom: '24px',
+            borderRadius: '24px',
             display: 'flex',
             flexDirection: 'column',
             position: "relative",
             color: 'black',
+            backgroundColor: 'white',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            border: '1px solid #c6c6c6',
         }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
     >
         <NodeFrame node={node}/>
         <div
             onClick={handleClick}
-            // id={`node-${node.id}`}
+            id={`node-${node.id}`}
         >
             <NodeContentTabs
                 node={node}
                 tabDict={node.tabs}
                 titleAtom={node.title}
             />
-            <NodeButtons node={node}/>
         </div>
+
+        {/* Side panel that appears on hover */}
+        <NodeButtons node={node} isVisible={isHovered} />
     </div>
 }
 

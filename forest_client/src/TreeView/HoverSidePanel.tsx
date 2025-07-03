@@ -104,7 +104,7 @@ export const NodeButtons = (props: { node: Node, isVisible: boolean }) => {
         <div
             style={{
                 position: 'absolute',
-                right: '-60px',
+                right: '-40px',
                 top: '50%',
                 transform: 'translateY(-50%)',
                 backgroundColor: theme.palette.background.paper,
@@ -115,7 +115,7 @@ export const NodeButtons = (props: { node: Node, isVisible: boolean }) => {
                 gap: '4px',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                 border: `1px solid ${theme.palette.divider}`,
-                zIndex: 1000,
+                zIndex: 9999,
                 minWidth: '48px'
             }}
         >

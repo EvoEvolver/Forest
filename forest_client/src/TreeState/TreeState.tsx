@@ -274,7 +274,7 @@ export const selectedNodeIdAtom = atom("")
 export const scrollToNodeAtom = atom(null, (get, set, nodeId: string) => {
     const nodeElement = document.querySelector(`#node-${nodeId}`);
     if (nodeElement) {
-        nodeElement.scrollIntoView({behavior: 'instant', block: 'center'});
+        nodeElement.scrollIntoView({behavior: 'instant', block: 'start'});
     }
 })
 

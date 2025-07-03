@@ -9,38 +9,68 @@ import {YjsConnectionStatusAtom, YjsProviderAtom} from "./TreeState/YjsConnectio
 import {jumpToNodeAtom, scrollToNodeAtom} from "./TreeState/TreeState";
 import Tooltip from "@mui/material/Tooltip";
 
-export const MyAppBar = ({setCurrentPage, currentPage}: { setCurrentPage: any, currentPage: string }) => {
-    const connectionStatus = useAtomValue(YjsConnectionStatusAtom)
-    const supabaseClient = useAtomValue(supabaseClientAtom)
-    return <AppBar position="static" sx={{borderBottom: '1px solid #c6c6c6', backgroundColor: '#fafafa'}} elevation={0}>
-        <Toolbar variant="dense">
-            <Stack direction="row" spacing={2} sx={{flexGrow: 1}}>
-                <Button
-                    onClick={() => setCurrentPage('tree')}
-                    variant={currentPage === 'tree' ? 'outlined' : 'text'}
-                >
-                    <AccountTreeIcon/>
-                </Button>
-                <Button
-                    onClick={() => setCurrentPage('linear')}
-                    variant={currentPage === 'second' ? 'outlined' : 'text'}
-                >
-                    <ArticleIcon/>
-                </Button>
-            </Stack>
-            {/* Awareness status */}
+// Left side component - navigation buttons
+export const AppBarLeft = ({setCurrentPage, currentPage}) => {
+    return (
+        <Stack
+            direction="row"
+            spacing={2}
+            sx={{
+                backgroundColor: '#fafafa',
+                border: '1px solid #c6c6c6',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                minHeight: '48px',
+                alignItems: 'center',
+                margin: '8px'
+            }}
+        >
+            <Button
+                onClick={() => setCurrentPage('tree')}
+                variant={currentPage === 'tree' ? 'outlined' : 'text'}
+            >
+                <AccountTreeIcon/>
+            </Button>
+            <Button
+                onClick={() => setCurrentPage('linear')}
+                variant={currentPage === 'linear' ? 'outlined' : 'text'}
+            >
+                <ArticleIcon/>
+            </Button>
+        </Stack>
+    );
+};
+
+// Right side component - status and auth
+export const AppBarRight = () => {
+    const connectionStatus = useAtomValue(YjsConnectionStatusAtom);
+    const supabaseClient = useAtomValue(supabaseClientAtom);
+
+    return (
+        <Stack
+            direction="row"
+            spacing={2}
+            alignItems="center"
+            sx={{
+                backgroundColor: '#fafafa',
+                border: '1px solid #c6c6c6',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                minHeight: '48px',
+                alignItems: 'center',
+                margin: '8px'
+            }}
+        >
             <AwarenessStatus/>
-            {/* Connection status */}
             {connectionStatus !== 'connected' &&
                 <span>
-                {connectionStatus === 'connecting' ? 'Connecting...(version not saved)' : 'Disconnected'}
+                    {connectionStatus === 'connecting' ? 'Connecting...(version not saved)' : 'Disconnected'}
                 </span>
             }
-            {/* Auth button in the top right */}
             {supabaseClient && <AuthButton/>}
-        </Toolbar>
-    </AppBar>;
-}
+        </Stack>
+    );
+};
 
 interface User {
     clientId: number;
@@ -137,7 +167,7 @@ const AwarenessStatus = () => {
     }
     const transparency = "80";
     return (
-        <Stack direction="row" spacing={1} sx={{marginRight: "10px"}}>
+        <Stack direction="row" spacing={1}>
             {otherUsers.map(user => (
                 <Tooltip key={user.clientId} title={user.name} arrow>
                     <Avatar
