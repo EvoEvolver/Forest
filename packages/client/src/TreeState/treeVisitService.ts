@@ -2,8 +2,6 @@ import {httpUrl} from "../appState";
 
 // Record tree visit if user is authenticated
 export async function recordTreeVisit(treeId: string, supabaseClient: any): Promise<void> {
-    console.log("Recording tree visit for treeId:", treeId);
-    console.log("Supabase client:", supabaseClient);
     if (!supabaseClient) return;
 
     try {
@@ -12,10 +10,8 @@ export async function recordTreeVisit(treeId: string, supabaseClient: any): Prom
             console.error('Error getting session:', error);
             return;
         }
-        console.log("Session:", session);
-        if (!session) return;
 
-        console.log("Session found:", session.user.email);
+        if (!session) return;
 
         await fetch(`${httpUrl}/api/recordTreeVisit`, {
             method: 'POST',

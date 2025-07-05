@@ -17,10 +17,6 @@ export function setupSupabaseClient() {
                 flowType: 'pkce'
             }
         })
-
-        if (import.meta.env.MODE === 'development') {
-            console.log('Supabase client initialized with session persistence enabled')
-        }
         return supabase
     }
     return null
