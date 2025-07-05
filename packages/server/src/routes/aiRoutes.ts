@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { AuthenticatedRequest, authenticateToken, requireAIPermission } from '../middleware/auth';
-import { aiService } from '../services/aiService';
+import { aiService } from '../services';
 
 export function createAIRouter(): Router {
     const router = Router();
