@@ -5,7 +5,6 @@ import {PrimitiveAtom} from "jotai";
 import {atom} from "jotai/index";
 import {getYjsBindedAtom, nodeMToNodeVMAtom} from "./node";
 
-
 export interface TreeJson {
     metadata: TreeMetadata,
     nodeDict: { [key: string]: NodeJson };
@@ -42,6 +41,11 @@ export class TreeM {
         this.metadata = this.ydoc.getMap("metadata")
         this.nodeDict = this.ydoc.getMap("nodeDict")
         this.metadata.set("treeId", treeId)
+    }
+    
+    static newTree(){
+        const ydoc = new Y.Doc()
+        return new TreeM(ydoc, null)
     }
 
     patchFromTreeJson(treeJson: TreeJson) {

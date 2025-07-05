@@ -4,8 +4,9 @@
   "main": "src/index.ts",
   "scripts": {},
   "dependencies": {
+    "jotai": "^2.10.3",
     "react": "^18.2.0",
-    "yjs": "^13.6.27",
-    "jotai": "^2.10.3"
+    "uuid": "^9.0.1",
+    "yjs": "^13.6.27"
   }
 }
