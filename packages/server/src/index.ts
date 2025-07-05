@@ -31,9 +31,10 @@ setupYjsPersistence()
 const treeMetadataManager = new TreeMetadataManager();
 const treeVisitManager = new TreeVisitManager();
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY, // Make sure you use a secure method to store this
-});
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY
+const openai = OPENAI_API_KEY ? new OpenAI({
+    apiKey: OPENAI_API_KEY, // Make sure you use a secure method to store this
+}) : null;
 
 function check_and_upgrade(doc: Doc, treeId: string) {
     const metadata = doc.getMap("metadata");
@@ -235,6 +236,14 @@ function main(port: number, host: string, frontendRoot: string | null): void {
     // Protected AI endpoint - requires authentication and AI permission
     app.post('/api/llm', authenticateToken, requireAIPermission, async (req: AuthenticatedRequest, res) => {
         console.log(`🤖 AI request from authenticated user: ${req.user?.email}`);
+        
+        // Check if OpenAI service is available
+        if (!openai) {
+            console.log(`❌ OpenAI service not available - no API key configured`);
+            res.status(503).send({error: 'AI service is not available. Please configure OpenAI API key.'});
+            return;
+        }
+        
         try {
             const messages = req.body.messages
             const response = await openai.chat.completions.create({
