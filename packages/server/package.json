@@ -7,6 +7,7 @@
     "build": "node build.js"
   },
   "dependencies": {
+    "@forest/schema": "workspace:*",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/jsonwebtoken": "^9.0.9",
@@ -25,10 +26,9 @@
     "ws": "^8.18.0",
     "y-mongodb-provider": "^0.2.1",
     "y-protocols": "^1.0.6",
-    "yjs": "13.6.27",
-    "@forest/schema": "workspace:*"
+    "yjs": "13.6.27"
   },
-    "devDependencies": {
+  "devDependencies": {
     "esbuild": "^0.24.0",
     "nodemon": "^3.1.7",
     "ts-node": "^10.9.2",

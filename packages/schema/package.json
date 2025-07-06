@@ -1,26 +1,12 @@
 {
   "name": "@forest/schema",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Core schema and data models for Forest collaborative tree editor",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist",
-    "README.md"
-  ],
-  "scripts": {
-    "build": "tsc",
-    "prepublishOnly": "npm run build",
-    "clean": "rm -rf dist"
-  },
+  "main": "src/index.ts",
   "keywords": [
     "forest",
     "tree-editor",
-    "collaborative",
-    "yjs",
-    "jotai",
-    "react",
-    "schema"
+    "collaborative"
   ],
   "author": "doomspec <doomspec@outlook.com>",
   "license": "MIT",
