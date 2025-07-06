@@ -1,5 +1,5 @@
 import {Collection, Db} from "mongodb";
-import {getMongoClient} from "./mongoConnection";
+import {getMongoClient} from "../mongoConnection.ts";
 
 export interface TreeVisitRecord {
     userId: string;

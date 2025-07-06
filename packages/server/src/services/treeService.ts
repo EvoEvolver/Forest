@@ -1,9 +1,8 @@
 import crypto from 'crypto';
 import { applyUpdate, Doc, encodeStateAsUpdate } from 'yjs';
 import { getYDoc } from '../y-websocket/utils';
-import { createNewTree } from '../createTree';
 import { TreeJson, TreeM } from '@forest/schema';
-import { TreeMetadataManager } from '../treeMetadata';
+import { TreeMetadataManager } from './treeMetadata';
 
 export class TreeService {
     constructor(private treeMetadataManager: TreeMetadataManager) {}
@@ -61,4 +60,13 @@ export class TreeService {
     getTreeMetadata(treeId: string) {
         return this.treeMetadataManager.getTreeMetadata(treeId);
     }
-} 
+}
+
+function createNewTree(treeJson: TreeJson): TreeM {
+    const treeId = crypto.randomUUID();
+    const doc = getYDoc(treeId)
+    // @ts-ignore
+    const tree = new TreeM(doc, treeId)
+    tree.patchFromTreeJson(treeJson)
+    return tree
+}

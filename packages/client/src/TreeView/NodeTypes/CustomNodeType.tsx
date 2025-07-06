@@ -1,4 +1,4 @@
-import {NodeType, NodeVM} from "@forest/schema"
+import {NodeM, NodeType, NodeVM} from "@forest/schema"
 import React, {ReactNode} from "react";
 import JsxParser from "react-jsx-parser";
 import TabContext from "@mui/lab/TabContext";
@@ -74,7 +74,7 @@ export class CustomNodeType extends NodeType {
         return renderTabs(tabs, node)
     }
 
-    renderPrompt(node: NodeVM): string {
+    renderPrompt(node: NodeM): string {
         return ""
     }
 

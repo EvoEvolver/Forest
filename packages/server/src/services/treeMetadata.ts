@@ -1,4 +1,4 @@
-import {getMongoClient} from "./mongoConnection";
+import {getMongoClient} from "../mongoConnection.ts";
 import {Collection, Db} from "mongodb";
 
 export interface TreeMetadata {

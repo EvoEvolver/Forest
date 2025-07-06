@@ -9,8 +9,8 @@ import {TreeM, TreeVM} from "@forest/schema";
 export const YjsProviderAtom: PrimitiveAtom<WebsocketProvider> = atom();
 export const YjsConnectionStatusAtom = atom("connecting");
 
-export const setupYDocAtom = atom(null, (get, set) => {
-    const [treeM, wsProvider] = TreeM.treeFromWs(wsUrl, treeId)
+export const setupYDocAtom = atom(null, async (get, set) => {
+    const [treeM, wsProvider] = await TreeM.treeFromWs(wsUrl, treeId)
     set(treeAtom, treeM)
     const currTree = get(treeAtom)
     set(YjsProviderAtom, wsProvider)

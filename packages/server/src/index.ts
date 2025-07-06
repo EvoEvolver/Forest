@@ -25,8 +25,8 @@ import { WebSocketHandler } from './websocket/websocketHandler';
 // Import existing modules
 import { setMongoConnection } from './mongoConnection';
 import { setupYjsPersistence } from './y-websocket/utils';
-import { TreeMetadataManager } from './treeMetadata';
-import { TreeVisitManager } from './treeVisitTracker';
+import { TreeMetadataManager } from './services/treeMetadata.ts';
+import { TreeVisitManager } from './services/treeVisitTracker.ts';
 
 // Initialize services and connections
 setMongoConnection();

@@ -1,13 +1,51 @@
 {
   "name": "@forest/schema",
   "version": "1.0.0",
-  "main": "src/index.ts",
-  "scripts": {},
+  "description": "Core schema and data models for Forest collaborative tree editor",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "forest",
+    "tree-editor",
+    "collaborative",
+    "yjs",
+    "jotai",
+    "react",
+    "schema"
+  ],
+  "author": "doomspec <doomspec@outlook.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/doomspec/Forest.git",
+    "directory": "packages/schema"
+  },
+  "bugs": {
+    "url": "https://github.com/doomspec/Forest/issues"
+  },
+  "homepage": "https://github.com/doomspec/Forest#readme",
   "dependencies": {
     "jotai": "^2.10.3",
     "react": "^18.2.0",
     "uuid": "^9.0.1",
     "y-websocket": "^3.0.0",
     "yjs": "^13.6.27"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/uuid": "^9.0.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0"
   }
 }

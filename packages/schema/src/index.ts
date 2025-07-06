@@ -42,12 +42,25 @@ export class TreeM {
         this.nodeDict = this.ydoc.getMap("nodeDict")
         this.metadata.set("treeId", treeId)
     }
-    
+
     static treeFromWs(wsUrl: string, treeId: string): [TreeM, WebsocketProvider] {
         const ydoc = new Y.Doc()
         const treeM = new TreeM(ydoc, treeId)
         let wsProvider = new WebsocketProvider(wsUrl, treeId, ydoc)
         return [treeM, wsProvider]
+    }
+
+    static treeFromWsWait(wsUrl: string, treeId: string): Promise<TreeM> {
+        return new Promise((resolve) => {
+            const ydoc = new Y.Doc()
+            const treeM = new TreeM(ydoc, treeId)
+            const wsProvider = new WebsocketProvider(wsUrl, treeId, ydoc)
+            wsProvider.on('sync', (isSynced: boolean) => {
+                if (isSynced) {
+                    resolve(treeM)
+                }
+            })
+        })
     }
 
     patchFromTreeJson(treeJson: TreeJson) {
@@ -65,6 +78,31 @@ export class TreeM {
                 this.addNode(nodeM)
             });
         })
+    }
+
+    getChildren(nodeM: NodeM): NodeM[] {
+        const childrenArray = nodeM.children()
+        const childrenIds = childrenArray.toJSON()
+        const childrenNodes: NodeM[] = []
+        childrenIds.forEach((childId) => {
+            const childNode = this.getNode(childId)
+            if (childNode) {
+                childrenNodes.push(childNode)
+            }
+        })
+        return childrenNodes
+    }
+
+    getNode(nodeId: string):NodeM | undefined {
+        const nodeYMap = this.nodeDict.get(nodeId)
+        if (!nodeYMap) return undefined
+        return new NodeM(nodeYMap, nodeId)
+    }
+
+    getRoot(): NodeM | undefined {
+        const rootId = this.metadata.get("rootId")
+        if (!rootId) return undefined
+        return this.getNode(rootId)
     }
 
     id(): string {
@@ -288,14 +326,18 @@ export class NodeVM {
                 this.nodeTypeName = "CustomNodeType"
             }
         }
-        const nodeType = supportedNodesTypes[this.nodeTypeName]
-        if (!nodeType) {
-            console.warn("unsupported node type", this.nodeTypeName)
-            return
-        }
-        this.nodeType = nodeType
+        this.nodeType = getNodeType(this.nodeTypeName, supportedNodesTypes)
     }
 
+}
+
+export function getNodeType(nodeTypeName: string, supportedNodesTypes: SupportedNodeTypesMap): NodeType {
+    const nodeType = supportedNodesTypes[nodeTypeName]
+    if (!nodeType) {
+        console.warn("unsupported node type", this.nodeTypeName)
+        return
+    }
+    return nodeType
 }
 
 export interface SupportedNodeTypesMap {
@@ -317,7 +359,7 @@ export abstract class NodeType {
 
     abstract renderTool2(node: NodeVM): React.ReactNode
 
-    abstract renderPrompt(node: NodeVM): string
+    abstract renderPrompt(node: NodeM): string
 
-    abstract ydataInitialize(node: NodeVM): void
+    ydataInitialize(node: NodeVM): void{}
 }

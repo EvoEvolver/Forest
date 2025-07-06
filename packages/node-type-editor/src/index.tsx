@@ -1,6 +1,6 @@
 import {AiChat} from "@forest/node-components/src/chat/aiChat";
 import {TodoApp} from "@forest/node-components/src/todoList";
-import {NodeType, NodeVM} from "@forest/schema"
+import {NodeM, NodeType, NodeVM} from "@forest/schema"
 import React from "react";
 import TiptapEditor from "./editor";
 
@@ -34,7 +34,7 @@ export class EditorNodeType extends NodeType {
         </>
     }
 
-    renderPrompt(node: NodeVM): string {
+    renderPrompt(node: NodeM): string {
         return ""
     }
 

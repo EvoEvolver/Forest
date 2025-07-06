@@ -29,6 +29,7 @@
     "yjs": "^13.6.27",
     "@forest/node-components": "workspace:*",
     "@forest/node-type-editor": "workspace:*",
+    "@forest/node-type-reader": "workspace:*",
     "@forest/schema": "workspace:*"
   },
   "devDependencies": {

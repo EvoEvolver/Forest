@@ -1,13 +1,16 @@
 import React from "react";
-import {NodeType, NodeVM} from "@forest/schema"
+import {NodeM, NodeType, NodeVM} from "@forest/schema"
+import TurndownService from 'turndown'
 
 interface ReaderNodeData {
-    htmlContent: string
+    htmlContent: string,
+    htmlOriginalContent: string,
 }
 
 export class ReaderNodeType extends NodeType {
     render(node: NodeVM): React.ReactNode {
-        const htmlContent = node.data.content
+        const data: ReaderNodeData = node.data
+        const htmlContent = data.htmlContent
         return <>
             <span dangerouslySetInnerHTML={{__html: htmlContent}}/>
         </>
@@ -19,14 +22,21 @@ export class ReaderNodeType extends NodeType {
     }
 
     renderTool2(node: NodeVM): React.ReactNode {
+        const data: ReaderNodeData = node.data
+        const htmlOriginalContent = data.htmlOriginalContent
+        if(!htmlOriginalContent){
+            return null
+        }
         return <>
+            <span dangerouslySetInnerHTML={{__html: htmlOriginalContent}}/>
         </>
     }
 
-    renderPrompt(node: NodeVM): string {
-        return ""
-    }
-
-    ydataInitialize(node: NodeVM) {
+    renderPrompt(node: NodeM): string {
+        const data: ReaderNodeData = node.data()
+        const htmlContent = data.htmlContent
+        //const htmlOriginalContent = data.htmlOriginalContent
+        const turndownService = new TurndownService()
+        return turndownService.turndown(htmlContent)
     }
 }

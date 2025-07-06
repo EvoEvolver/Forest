@@ -1,7 +1,7 @@
 import { WebSocketServer } from 'ws';
 import { Doc, Map as YMap } from 'yjs';
 import { getYDoc, setupWSConnection } from '../y-websocket/utils';
-import { TreeMetadataManager } from '../treeMetadata';
+import { TreeMetadataManager } from '../services/treeMetadata.ts';
 
 export class WebSocketHandler {
     private wss: WebSocketServer;
