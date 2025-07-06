@@ -26,7 +26,7 @@ const TreeView = () => {
             <Grid size={mobileMode ? 12 : 5} style={{height: "100%"}}>
                 <NodeContentFrame>
                     <div>
-                        {leaves.map((n, index) => <MiddleContents node={n} key={n.id}/>)}
+                        {leaves.map((n, _) => <MiddleContents node={n} key={n.id}/>)}
                     </div>
                 </NodeContentFrame>
             </Grid>
@@ -40,7 +40,7 @@ const TreeView = () => {
 export const MiddleContents = ({node}: { node: NodeVM }) => {
     let setSelectedNode = useSetAtom(selectedNodeAtom)
 
-    const handleClick = (event) => {
+    const handleClick = () => {
         //console.log(event.target)
         setSelectedNode(node.id)
     }

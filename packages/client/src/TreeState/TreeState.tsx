@@ -148,17 +148,6 @@ export const scrollToNodeAtom = atom(null, (get, set, nodeId: string) => {
     }
 })
 
-function getNodeById(nodeId, get): Node {
-    const currTree = get(treeAtom)
-    if (!currTree)
-        return null
-    let nodeAtom = currTree.nodeDict[nodeId]
-    if (!nodeAtom)
-        return null
-    return get(nodeAtom)
-}
-
-
 const nodesIdBeforeJumpAtom = atom<string[]>([])
 
 export const lastSelectedNodeBeforeJumpIdAtom = atom("")
@@ -239,7 +228,7 @@ export const listOfNodesForViewAtom = atom(
             return []
         }
 
-        const f = get(tree.reRenderFlag)
+        get(tree.reRenderFlag)
         if (Object.keys(tree.nodeDict).length === 0) {
             return []; // If there are no nodes, return an empty array
         }

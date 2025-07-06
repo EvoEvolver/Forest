@@ -74,7 +74,7 @@ export const UserPanel = ({}) => {
             setIsUpdating(true);
             setUpdateError(null);
 
-            const {data, error} = await supabase.auth.updateUser({
+            const {error} = await supabase.auth.updateUser({
                 data: {
                     display_name: newDisplayName.trim(),
                     name: newDisplayName.trim() // Also update name for consistency

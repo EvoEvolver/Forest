@@ -26,7 +26,7 @@ export const isAuthenticatedAtom = atom((get) => {
     return user !== null && token !== null
 })
 // Supabase client atom (will be initialized in App.tsx)
-export const supabaseClientAtom: Atom<SupabaseClient> = atom<any>(null)
+export const supabaseClientAtom: Atom<any> = atom<any>(null)
 // Auth modal open state
 export const authModalOpenAtom = atom(false)
 
@@ -54,6 +54,7 @@ export const subscriptionAtom: WritableAtom<any, any, any> = atom((get) => {
     // Initialize Supabase client in atom
     // @ts-ignore
     const supabaseClient = setupSupabaseClient()
+    // @ts-ignore
     set(supabaseClientAtom, supabaseClient);
     if (!supabaseClient) {
         return

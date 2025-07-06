@@ -27,7 +27,7 @@ const linearNodeListAtom = atom((get) => {
 })
 
 
-export default function LinearView(props) {
+export default function LinearView() {
     const nodes: NodeVM[] = useAtomValue(linearNodeListAtom);
     const renderNode = (node: NodeVM) => {
         const children = useAtomValue(node.children) as string[];
