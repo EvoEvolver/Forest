@@ -4,6 +4,7 @@ import {Doc as YDoc, Map as YMap} from 'yjs'
 import {PrimitiveAtom} from "jotai";
 import {atom} from "jotai/index";
 import {getYjsBindedAtom, nodeMToNodeVMAtom} from "./node";
+import {WebsocketProvider} from "y-websocket";
 
 export interface TreeJson {
     metadata: TreeMetadata,
@@ -43,9 +44,11 @@ export class TreeM {
         this.metadata.set("treeId", treeId)
     }
     
-    static newTree(){
+    static treeFromWs(wsUrl: string, treeId: string): [TreeM, WebsocketProvider] {
         const ydoc = new Y.Doc()
-        return new TreeM(ydoc, null)
+        const treeM = new TreeM(ydoc, treeId)
+        let wsProvider = new WebsocketProvider(wsUrl, treeId, ydoc)
+        return [treeM, wsProvider]
     }
 
     patchFromTreeJson(treeJson: TreeJson) {

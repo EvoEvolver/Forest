@@ -4,18 +4,22 @@
   "description": "Test applications for Forest project",
   "main": "index.js",
   "scripts": {
-    "create": "ts-node treeOps.ts"
+    "create": "ts-node scripts/newTree.ts",
+    "duplicate": "ts-node scripts/duplicateTree.ts"
   },
   "dependencies": {
-    "axios": "^1.6.0"
+    "axios": "^1.6.0",
+    "dotenv": "^16.6.1",
+    "uuid": "^9.0.1",
+    "yjs": "^13.6.27"
   },
   "devDependencies": {
+    "@forest/schema": "workspace:*",
     "@types/node": "^20.0.0",
-    "typescript": "^5.0.0",
     "ts-node": "^10.9.0",
-    "@forest/schema": "workspace:*"
+    "typescript": "^5.0.0"
   },
   "keywords": [],
   "author": "",
   "license": "ISC"
-} 
+}

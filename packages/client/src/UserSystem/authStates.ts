@@ -1,10 +1,11 @@
 /*** Authentication related atoms ***/
-import {atom, WritableAtom} from "jotai";
+import {Atom, atom, WritableAtom} from "jotai";
 import {setupSupabaseClient} from "./supabase";
 import {YjsProviderAtom} from "../TreeState/YjsConnection";
 import {getPastelHexFromUsername, getRandomAnimal} from "./helper";
 import {recordTreeVisit} from "../TreeState/treeVisitService";
 import {treeId} from "../appState";
+import {SupabaseClient} from "@supabase/supabase-js";
 
 // Authentication related atoms
 export interface User {
@@ -15,9 +16,9 @@ export interface User {
 }
 
 // User authentication state
-export const userAtom: WritableAtom<User | null, [User | null], void> = atom<User | null>(null)
+export const userAtom  = atom<User | null>(null)
 // Auth token (JWT from Supabase)
-export const authTokenAtom: WritableAtom<string | null, [string | null], void> = atom<string | null>(null)
+export const authTokenAtom = atom<string | null>(null)
 // Authentication status
 export const isAuthenticatedAtom = atom((get) => {
     const user = get(userAtom)
@@ -25,7 +26,7 @@ export const isAuthenticatedAtom = atom((get) => {
     return user !== null && token !== null
 })
 // Supabase client atom (will be initialized in App.tsx)
-export const supabaseClientAtom = atom<any>(null)
+export const supabaseClientAtom: Atom<SupabaseClient> = atom<any>(null)
 // Auth modal open state
 export const authModalOpenAtom = atom(false)
 

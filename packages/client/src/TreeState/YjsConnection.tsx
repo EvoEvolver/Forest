@@ -1,4 +1,3 @@
-import * as Y from "yjs";
 import {Map as YMap} from "yjs";
 import {atom, PrimitiveAtom} from "jotai";
 import {WebsocketProvider} from "y-websocket";
@@ -8,16 +7,14 @@ import {updateChildrenCountAtom} from "./childrenCount";
 import {TreeM, TreeVM} from "@forest/schema";
 
 export const YjsProviderAtom: PrimitiveAtom<WebsocketProvider> = atom();
-export const YDocAtom = atom(new Y.Doc());
 export const YjsConnectionStatusAtom = atom("connecting");
 
 export const setupYDocAtom = atom(null, (get, set) => {
-    const ydoc = get(YDocAtom);
-    const treeM = new TreeM(ydoc, treeId)
+    const [treeM, wsProvider] = TreeM.treeFromWs(wsUrl, treeId)
     set(treeAtom, treeM)
     const currTree = get(treeAtom)
-    let wsProvider = new WebsocketProvider(wsUrl, treeId, ydoc)
     set(YjsProviderAtom, wsProvider)
+    const ydoc = treeM.ydoc
     wsProvider.on('status', event => {
         if (event.status === 'connected') {
             set(YjsConnectionStatusAtom, "connected");
@@ -67,7 +64,7 @@ function setWindowTitle(title: string) {
 export const initSelectedNodeAtom = atom(null, (get, set) => {
     const treeVM: TreeVM = get(treeAtom);
     /*
-    Priority for selected node:
+    Priority for the selected node:
     1. URL parameter "n"
     2. Local storage for selected node
     3. Root node from metadata
