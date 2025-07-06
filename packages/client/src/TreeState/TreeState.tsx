@@ -181,19 +181,27 @@ export const jumpToNodeAtom = atom(null, (get, set, nodeid: string) => {
 export const selectedNodeAtom = atom(
     (get) => {
         const currTree = get(treeAtom)
+        const selectedNodeId = get(selectedNodeIdAtom)
+        // Add dependency on reRenderFlag to ensure updates when tree structure changes
+        if (currTree) {
+            get(currTree.reRenderFlag)
+        }
+
         if (!currTree || Object.keys(currTree.nodeDict).length === 0)
             return null
-        const selectedNodeId = get(selectedNodeIdAtom)
+
         if (!selectedNodeId) {
-            const rootNodeAtom = currTree.nodeDict[get(currTree.metadata).rootId]
+            const metadata = get(currTree.metadata)
+            const rootNodeAtom = currTree.nodeDict[metadata.rootId]
             if (!rootNodeAtom) {
                 return null
             }
             return get(rootNodeAtom)
         }
-        const selectedNodeAtom = currTree.nodeDict[selectedNodeId]
-        if (selectedNodeAtom) {
-            return get(selectedNodeAtom)
+
+        const currSelectedNodeAtom = currTree.nodeDict[selectedNodeId]
+        if (currSelectedNodeAtom) {
+            return get(currSelectedNodeAtom)
         } else {
             return null
         }

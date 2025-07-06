@@ -71,6 +71,8 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
 
 const NodeBorder = ({node}) => {
     let selectedNode = useAtomValue(selectedNodeAtom)
+    if (!selectedNode)
+        return null
     const isSelected = selectedNode.id === node.id;
     const lineWidth = "3px"
     const lineStyle = {
