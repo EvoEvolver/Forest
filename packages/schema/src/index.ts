@@ -20,7 +20,6 @@ export interface NodeJson {
     id: string
     title: string
     parent: string
-    other_parents: string[]
     children: string[]
     data: any
     nodeTypeName: string
@@ -195,8 +194,6 @@ export class NodeM {
         childrenArray.insert(0, nodeJson.children);
         ymap.set("children", childrenArray);
 
-        ymap.set("other_parents", nodeJson.other_parents);
-
         ymap.set("data", nodeJson.data);
         ymap.set("nodeTypeName", nodeJson.nodeTypeName);
 
@@ -220,10 +217,6 @@ export class NodeM {
 
     parent(): string {
         return this.ymap.get("parent");
-    }
-
-    other_parents(): string[] {
-        return this.ymap.get("other_parents");
     }
 
     children(): Y.Array<string> {
@@ -250,7 +243,6 @@ export class NodeVM {
     id: string
     title: PrimitiveAtom<string>
     parent: string
-    other_parents: string[]
     children: PrimitiveAtom<string[]>
     data: any
     ydata?: Y.Map<string>
@@ -270,7 +262,6 @@ export class NodeVM {
         this.id = nodeM.id
         this.title = titleAtom;
         this.parent = nodeM.parent()
-        this.other_parents = nodeM.other_parents()
         this.children = childrenAtom;
         this.data = nodeM.data()
         this.ydata = nodeM.ydata()

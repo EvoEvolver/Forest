@@ -60,7 +60,6 @@ export async function createNewTree(host: string = 'http://0.0.0.0:29999',
         id: nodeId,
         parent: null,
         data: {},
-        other_parents: [],
         nodeTypeName: "EditorNodeType"
     }
     const newTreeMetadata: TreeMetadata = {

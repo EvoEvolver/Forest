@@ -60,7 +60,6 @@ export const UserTreesList = ({}) => {
             id: nodeId,
             parent: null,
             data: {},
-            other_parents: [],
             nodeTypeName: "EditorNodeType"
         }
         const newTreeMetadata: TreeMetadata = {

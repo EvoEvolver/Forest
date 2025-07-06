@@ -27,4 +27,5 @@ const devTheme = {
 }
 
 
-export const themeOptions: ThemeOptions = createTheme(isDevMode? normalTheme : normalTheme)
+// @ts-ignore
+export const themeOptions: ThemeOptions = createTheme(normalTheme)

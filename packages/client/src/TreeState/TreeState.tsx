@@ -127,7 +127,6 @@ export const addNewNodeAtom = atom(null, (get, set, props: {
         id: uuidv4(),
         title: "",
         parent: props.parentId,
-        other_parents: [],
         children: [],
         data: {},
         nodeTypeName: props.nodeTypeName

@@ -2,14 +2,14 @@ import React from "react";
 import {NodeType, NodeVM} from "@forest/schema"
 
 interface ReaderNodeData {
-
+    htmlContent: string
 }
 
 export class ReaderNodeType extends NodeType {
     render(node: NodeVM): React.ReactNode {
-        const html = ""
+        const htmlContent = node.data.content
         return <>
-            <span dangerouslySetInnerHTML={{__html: html}}/>
+            <span dangerouslySetInnerHTML={{__html: htmlContent}}/>
         </>
     }
 
