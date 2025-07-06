@@ -13,7 +13,7 @@ const rl = readline.createInterface({
 });
 
 rl.question('Enter source ID: ', (sourceId) => {
-    duplicateTree(sourceId, "https://treer.ai", "https://treer.ai", FOREST_ADMIN_TOKEN)
+    duplicateTree(sourceId, "https://treer.ai", "http://localhost:29999", FOREST_ADMIN_TOKEN)
         .then(console.log)
         .catch(console.error)
         .finally(() => {
