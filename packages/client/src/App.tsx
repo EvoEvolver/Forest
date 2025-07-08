@@ -3,13 +3,15 @@ import {Box, CssBaseline} from "@mui/material";
 import {ThemeProvider} from '@mui/material/styles';
 import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import TreeView from "./TreeView/TreeView";
-import {setupYDocAtom} from "./TreeState/YjsConnection";
+import {setupYDocAtom, YjsProviderAtom} from "./TreeState/YjsConnection";
 import LinearView from "./LinearView";
 import AuthModal from '../../user-system/src/AuthModal';
 import {themeOptions} from "./theme";
-import {subscriptionAtom, supabaseClientAtom} from "../../user-system/src/authStates";
+import {subscriptionAtom, supabaseClientAtom, userAtom} from "../../user-system/src/authStates";
 import {MyAppBar} from "./AppBar";
 import {treeId} from "./appState";
+import {getPastelHexFromUsername, getRandomAnimal} from "@forest/user-system/src/helper";
+import {recordTreeVisit} from "./TreeState/treeVisitService";
 
 // @ts-ignore
 const FlowVisualizer = lazy(() => import('./FlowView'));
@@ -57,6 +59,7 @@ export default function App() {
                 </Box>
                 {/* Auth Modal */}
                 {supabaseClient && <AuthModal/>}
+                <SideEffects/>
             </ThemeProvider>
         </>
     );
@@ -90,4 +93,28 @@ const TheSelectedPage = ({currentPage}) => {
         default:
             return <TreeViewPage/>;
     }
+};
+
+
+const SideEffects = () => {
+    const user = useAtomValue(userAtom)
+    const supabaseClient = useAtomValue(supabaseClientAtom)
+    const provider = useAtomValue(YjsProviderAtom)
+
+    useEffect(() => {
+        const awareness = provider?.awareness
+        if (awareness) {
+            const userEmail = user?.email || '';
+            console.log('Setting awareness user state for:', userEmail);
+            const username = userEmail?.split('@')[0] || 'Annonymous ' + getRandomAnimal(awareness.clientID)
+            awareness.setLocalStateField("user", {"name": username, "color": getPastelHexFromUsername(username)});
+        }
+        recordTreeVisit(treeId, supabaseClient);
+    }, [user]);
+
+
+    return (
+        <>
+        </>
+    );
 };

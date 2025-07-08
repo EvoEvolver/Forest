@@ -11,7 +11,7 @@ import {
   DialogContent,
   DialogTitle,
   FormControl,
-  Grid,
+  Grid2 as Grid,
   IconButton,
   MenuItem,
   Select,
