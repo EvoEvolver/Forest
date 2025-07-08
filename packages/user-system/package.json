@@ -1,5 +1,5 @@
 {
-  "name": "client",
+  "name": "@forest/user-system",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,18 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@emotion/styled": "^11.11.0",
-    "@mui/icons-material": "^6.4.2",
-    "@mui/lab": "5.0.0-alpha.162",
-    "@mui/material": "^6.4.12",
-    "@mui/system": "^5.15.20",
-    "@mui/x-tree-view": "^7.26.0",
-    "@mui/x-data-grid": "^8.7.0",
-    "@mui/x-date-pickers": "^8.7.0",
-    "axios": "^1.10.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^7.6.3"
+    "@forest/client": "workspace:*",
+    "@supabase/auth-ui-react": "^0.4.7",
+    "@supabase/auth-ui-shared": "^0.1.8",
+    "@supabase/supabase-js": "^2.50.3",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",

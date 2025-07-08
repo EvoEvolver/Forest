@@ -5,9 +5,9 @@ import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import TreeView from "./TreeView/TreeView";
 import {setupYDocAtom} from "./TreeState/YjsConnection";
 import LinearView from "./LinearView";
-import AuthModal from './UserSystem/AuthModal';
+import AuthModal from '../../user-system/src/AuthModal';
 import {themeOptions} from "./theme";
-import {subscriptionAtom, supabaseClientAtom} from "./UserSystem/authStates";
+import {subscriptionAtom, supabaseClientAtom} from "../../user-system/src/authStates";
 import {MyAppBar} from "./AppBar";
 import {treeId} from "./appState";
 

@@ -14,8 +14,6 @@
     "@mui/material": "^6.4.12",
     "@mui/system": "^5.15.20",
     "@mui/x-tree-view": "^7.26.0",
-    "@supabase/auth-ui-react": "^0.4.7",
-    "@supabase/auth-ui-shared": "^0.1.8",
     "@supabase/supabase-js": "^2.49.10",
     "d3-hierarchy": "^3.1.2",
     "jotai": "^2.10.3",
@@ -30,7 +28,9 @@
     "@forest/node-components": "workspace:*",
     "@forest/node-type-editor": "workspace:*",
     "@forest/node-type-reader": "workspace:*",
-    "@forest/schema": "workspace:*"
+    "@forest/schema": "workspace:*",
+    "@forest/user-system": "workspace:*",
+    "@forest/user-panel": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.10.4",

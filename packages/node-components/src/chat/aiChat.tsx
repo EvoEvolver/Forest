@@ -3,7 +3,7 @@ import {ChatViewImpl} from "./index";
 import {XmlElement, XmlText} from "yjs";
 import {useAtomValue, useSetAtom} from "jotai";
 
-import {authModalOpenAtom, authTokenAtom, isAuthenticatedAtom} from "@forest/client/src/UserSystem/authStates";
+import {authModalOpenAtom, authTokenAtom, isAuthenticatedAtom} from "@forest/user-system/src/authStates";
 import {httpUrl} from "@forest/client/src/appState";
 import {Button} from "@mui/material";
 import { thisNodeContext } from "@forest/client";

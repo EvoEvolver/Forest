@@ -17,8 +17,8 @@ import {
 } from '@mui/material';
 import {Delete as DeleteIcon, Refresh as RefreshIcon} from '@mui/icons-material';
 import {v4 as uuidv4} from 'uuid';
-import {authTokenAtom, userAtom} from './authStates';
-import {httpUrl} from '../appState';
+import {authTokenAtom, userAtom} from '../../user-system/src/authStates';
+import {httpUrl} from '../../client/src/appState';
 import DashboardCard from './DashboardCard';
 import {NodeJson, TreeJson, TreeMetadata} from '@forest/schema';
 

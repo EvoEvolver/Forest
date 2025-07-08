@@ -1,11 +1,10 @@
 /*** Authentication related atoms ***/
 import {Atom, atom, WritableAtom} from "jotai";
 import {setupSupabaseClient} from "./supabase";
-import {YjsProviderAtom} from "../TreeState/YjsConnection";
+import {YjsProviderAtom} from "@forest/client/src/TreeState/YjsConnection";
 import {getPastelHexFromUsername, getRandomAnimal} from "./helper";
-import {recordTreeVisit} from "../TreeState/treeVisitService";
-import {treeId} from "../appState";
-import {SupabaseClient} from "@supabase/supabase-js";
+import {recordTreeVisit} from "@forest/client/src/TreeState/treeVisitService";
+import {treeId} from "@forest/client/src/appState";
 
 // Authentication related atoms
 export interface User {
@@ -16,7 +15,7 @@ export interface User {
 }
 
 // User authentication state
-export const userAtom  = atom<User | null>(null)
+export const userAtom = atom<User | null>(null)
 // Auth token (JWT from Supabase)
 export const authTokenAtom = atom<string | null>(null)
 // Authentication status

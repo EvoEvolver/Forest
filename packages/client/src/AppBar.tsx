@@ -1,10 +1,10 @@
 import {AppBar, Avatar, Button, Stack, Toolbar} from "@mui/material";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import ArticleIcon from "@mui/icons-material/Article";
-import AuthButton from "./UserSystem/AuthButton";
+import AuthButton from "@forest/user-system/src/AuthButton";
 import React, {useState} from "react";
 import {useAtomValue, useSetAtom} from "jotai";
-import {supabaseClientAtom} from "./UserSystem/authStates";
+import {supabaseClientAtom} from "@forest/user-system/src/authStates";
 import {YjsConnectionStatusAtom, YjsProviderAtom} from "./TreeState/YjsConnection";
 import {jumpToNodeAtom, scrollToNodeAtom} from "./TreeState/TreeState";
 import Tooltip from "@mui/material/Tooltip";

@@ -1,5 +1,5 @@
 import React from 'react';
-import {Card, Grid2 as Grid} from '@mui/material';
+import {Card, Grid} from '@mui/material';
 import {useAtomValue, useSetAtom} from "jotai";
 import {listOfNodesForViewAtom, selectedNodeAtom} from "../TreeState/TreeState";
 import CardContent from "@mui/material/CardContent";

@@ -19,8 +19,8 @@ import {
     RemoveCircleOutline as RemoveIcon,
     Refresh as RefreshIcon
 } from '@mui/icons-material';
-import {authTokenAtom, userAtom} from './authStates';
-import {httpUrl} from '../appState';
+import {authTokenAtom, userAtom} from '../../user-system/src/authStates';
+import {httpUrl} from '../../client/src/appState';
 import DashboardCard from './DashboardCard';
 
 interface VisitedTree {

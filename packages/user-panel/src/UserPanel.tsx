@@ -9,19 +9,19 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
-    Grid2 as Grid,
+    Grid,
     IconButton,
     TextField,
     Tooltip,
     Typography
 } from '@mui/material';
 import {Edit as EditIcon, PhotoCamera as PhotoCameraIcon} from '@mui/icons-material';
-import {subscriptionAtom, userAtom} from "./authStates";
+import {subscriptionAtom, userAtom} from "@forest/user-system/src/authStates";
 import {UserTreesList} from './UserTreesList';
 import {useAtom} from "jotai/index";
 import {VisitedTreesList} from './VisitedTreesList';
 import DashboardCard from './DashboardCard';
-import {setupSupabaseClient} from './supabase';
+import {setupSupabaseClient} from '@forest/user-system/src/supabase';
 
 export const UserPanel = ({}) => {
     const [, setSubscription] = useAtom(subscriptionAtom);

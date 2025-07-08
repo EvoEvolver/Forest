@@ -4,8 +4,8 @@ import App from './App';
 import './index.css';
 import {Provider} from "jotai";
 import { BrowserRouter, Routes, Route } from "react-router";
-import AuthSuccessPage from "./UserSystem/AuthSuccessPage";
-import {UserPanel} from "./UserSystem/UserPanel";
+import AuthSuccessPage from "@forest/user-system/src/AuthSuccessPage";
+import {UserPanel} from "@forest/user-panel/src/UserPanel";
 
 const rootElement = document.getElementById('root');
 
