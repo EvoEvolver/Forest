@@ -12,6 +12,7 @@
   "dependencies": {
     "@forest/schema": "workspace:*",
     "@forest/user-system": "workspace:*",
+    "@forest/client": "workspace:*",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

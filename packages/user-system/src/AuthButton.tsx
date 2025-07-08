@@ -10,7 +10,7 @@ import {
     supabaseClientAtom,
     userAtom,
     userPermissionsAtom
-} from "./authStates";
+} from "./authStates.ts";
 
 const AuthButton: React.FC = () => {
     const user = useAtomValue(userAtom)

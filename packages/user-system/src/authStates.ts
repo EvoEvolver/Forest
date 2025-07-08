@@ -1,10 +1,7 @@
 /*** Authentication related atoms ***/
 import {Atom, atom, WritableAtom} from "jotai";
-import {setupSupabaseClient} from "./supabase";
-import {YjsProviderAtom} from "@forest/client/src/TreeState/YjsConnection";
-import {getPastelHexFromUsername, getRandomAnimal} from "./helper";
-import {recordTreeVisit} from "@forest/client/src/TreeState/treeVisitService";
-import {treeId} from "@forest/client/src/appState";
+import {setupSupabaseClient} from "./supabase.ts";
+
 
 // Authentication related atoms
 export interface User {
@@ -58,7 +55,6 @@ export const subscriptionAtom: WritableAtom<any, any, any> = atom((get) => {
     if (!supabaseClient) {
         return
     }
-    const awareness = get(YjsProviderAtom)?.awareness
     // Get current session on app startup (CRITICAL for session restoration)
     const initializeSession = async () => {
         try {
@@ -89,19 +85,6 @@ export const subscriptionAtom: WritableAtom<any, any, any> = atom((get) => {
             console.error('Error initializing session:', error)
         }
     }
-
-    // Initialize session immediately
-    initializeSession().then(() => {
-        if (awareness) {
-            const userEmail = get(userAtom)?.email || '';
-            console.log('Setting awareness user state for:', userEmail);
-            const username = userEmail?.split('@')[0] || 'Annonymous ' + getRandomAnimal(awareness.clientID)
-            awareness.setLocalStateField("user", {"name": username, "color": getPastelHexFromUsername(username)});
-        }
-    }).then(() => {
-        // Record visit when connection is established
-        recordTreeVisit(treeId, supabaseClient);
-    })
 
     // Set up auth state change listener
     const {data: {subscription}} = supabaseClient.auth.onAuthStateChange(async (event, session) => {

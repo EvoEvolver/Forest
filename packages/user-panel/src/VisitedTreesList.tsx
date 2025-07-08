@@ -19,9 +19,11 @@ import {
     RemoveCircleOutline as RemoveIcon,
     Refresh as RefreshIcon
 } from '@mui/icons-material';
-import {authTokenAtom, userAtom} from '../../user-system/src/authStates';
-import {httpUrl} from '../../client/src/appState';
+import {authTokenAtom, userAtom} from '@forest/user-system/src/authStates';
 import DashboardCard from './DashboardCard';
+import {currentPort} from "@forest/client/src/appState.js";
+
+const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort}`
 
 interface VisitedTree {
     treeId: string;
@@ -43,7 +45,7 @@ export const VisitedTreesList = () => {
     const user = useAtomValue(userAtom);
 
     const fetchVisitedTrees = async () => {
-        if (!authToken || !user) return;
+        if (!authToken || !user) setLoading(false);
 
         try {
             setLoading(true);

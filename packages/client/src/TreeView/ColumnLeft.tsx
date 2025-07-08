@@ -3,9 +3,10 @@ import React from "react";
 import {NodeContentFrame} from "./TreeView";
 import {useAtom} from "jotai/index";
 import {selectedNodeAtom} from "../TreeState/TreeState";
+import {useAtomValue} from "jotai";
 
 export function ColumnLeft() {
-    const [selectedNode,] = useAtom(selectedNodeAtom)
+    const selectedNode = useAtomValue(selectedNodeAtom)
     if(!selectedNode)
         return null
     return <>

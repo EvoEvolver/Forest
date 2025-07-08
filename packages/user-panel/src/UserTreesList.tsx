@@ -17,10 +17,11 @@ import {
 } from '@mui/material';
 import {Delete as DeleteIcon, Refresh as RefreshIcon} from '@mui/icons-material';
 import {v4 as uuidv4} from 'uuid';
-import {authTokenAtom, userAtom} from '../../user-system/src/authStates';
-import {httpUrl} from '../../client/src/appState';
+import {authTokenAtom, userAtom} from '@forest/user-system/src/authStates';
+const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort}`
 import DashboardCard from './DashboardCard';
 import {NodeJson, TreeJson, TreeMetadata} from '@forest/schema';
+import {currentPort} from "@forest/client/src/appState.js";
 
 interface UserTree {
     treeId: string;
@@ -94,8 +95,7 @@ export const UserTreesList = ({}) => {
     };
 
     const fetchUserTrees = async () => {
-        if (!authToken || !user) return;
-
+        if (!authToken || !user) setLoading(false);
         try {
             setLoading(true);
             setError(null);
