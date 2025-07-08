@@ -21,9 +21,8 @@ import {
 } from '@mui/icons-material';
 import {authTokenAtom, userAtom} from '@forest/user-system/src/authStates';
 import DashboardCard from './DashboardCard';
-import {currentPort} from "@forest/client/src/appState.js";
 
-const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort}`
+const httpUrl = `${window.location.protocol}//${location.hostname}:${window.location.port}`
 
 interface VisitedTree {
     treeId: string;

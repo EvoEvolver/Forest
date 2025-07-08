@@ -15,7 +15,6 @@ isMobileModeAtom.onMount = (set) => {
     };
 }
 
-export const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
 const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
-export const wsUrl = `${wsProtocol}://${location.hostname}:${currentPort}`
+export const wsUrl = `${wsProtocol}://${location.hostname}:${window.location.port}`
 export const treeId = new URLSearchParams(window.location.search).get("id");

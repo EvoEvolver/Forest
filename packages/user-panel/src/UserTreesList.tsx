@@ -18,10 +18,9 @@ import {
 import {Delete as DeleteIcon, Refresh as RefreshIcon} from '@mui/icons-material';
 import {v4 as uuidv4} from 'uuid';
 import {authTokenAtom, userAtom} from '@forest/user-system/src/authStates';
-const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort}`
+const httpUrl = `${window.location.protocol}//${location.hostname}:${window.location.port}`
 import DashboardCard from './DashboardCard';
 import {NodeJson, TreeJson, TreeMetadata} from '@forest/schema';
-import {currentPort} from "@forest/client/src/appState.js";
 
 interface UserTree {
     treeId: string;

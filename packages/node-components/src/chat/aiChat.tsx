@@ -4,10 +4,9 @@ import {XmlElement, XmlText} from "yjs";
 import {useAtomValue, useSetAtom} from "jotai";
 
 import {authModalOpenAtom, authTokenAtom, isAuthenticatedAtom} from "@forest/user-system/src/authStates";
-const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort}`
+const httpUrl = `${window.location.protocol}//${location.hostname}:${window.location.port}`
 import {Button} from "@mui/material";
 import { thisNodeContext } from "@forest/client";
-import {currentPort} from "@forest/client/src/appState";
 
 // @ts-ignore
 const devMode = import.meta.env.MODE === 'development'; // Check if in development mode
