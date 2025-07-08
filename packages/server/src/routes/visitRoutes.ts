@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { Response } from 'express';
 import { AuthenticatedRequest, authenticateToken } from '../middleware/auth';
-import { TreeVisitManager } from '../services/treeVisitTracker.ts';
-import { TreeMetadataManager } from '../services/treeMetadata.ts';
+import { TreeVisitManager } from '../services/treeVisitTracker';
+import { TreeMetadataManager } from '../services/treeMetadata';
 
 export function createVisitRouter(
     treeVisitManager: TreeVisitManager,

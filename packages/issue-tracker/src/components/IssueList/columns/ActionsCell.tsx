@@ -1,7 +1,7 @@
 import React from 'react';
 import {IconButton, Tooltip} from '@mui/material';
 import {Delete as DeleteIcon, Edit as EditIcon} from '@mui/icons-material';
-import type {Issue} from '../../../types/Issue.ts';
+import type {Issue} from '../../../types/Issue';
 
 interface ActionsCellProps {
     row: Issue;

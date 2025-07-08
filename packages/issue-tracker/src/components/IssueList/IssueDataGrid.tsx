@@ -1,14 +1,14 @@
 import React from 'react';
 import type {GridColDef, GridRenderCellParams} from '@mui/x-data-grid';
 import {DataGrid} from '@mui/x-data-grid';
-import type {Issue} from '../../types/Issue.ts';
-import TitleCell from './columns/TitleCell.tsx';
-import StatusCell from './columns/StatusCell.tsx';
-import PriorityCell from './columns/PriorityCell.tsx';
-import AssigneesCell from './columns/AssigneesCell.tsx';
-import TagsCell from './columns/TagsCell.tsx';
-import DueDateCell from './columns/DueDateCell.tsx';
-import ActionsCell from './columns/ActionsCell.tsx';
+import type {Issue} from '../../types/Issue';
+import TitleCell from './columns/TitleCell';
+import StatusCell from './columns/StatusCell';
+import PriorityCell from './columns/PriorityCell';
+import AssigneesCell from './columns/AssigneesCell';
+import TagsCell from './columns/TagsCell';
+import DueDateCell from './columns/DueDateCell';
+import ActionsCell from './columns/ActionsCell';
 
 interface IssueDataGridProps {
     issues: Issue[];

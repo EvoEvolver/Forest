@@ -18,7 +18,8 @@ import {
 import {Delete as DeleteIcon, Refresh as RefreshIcon} from '@mui/icons-material';
 import {v4 as uuidv4} from 'uuid';
 import {authTokenAtom, userAtom} from '@forest/user-system/src/authStates';
-const httpUrl = `${window.location.protocol}//${location.hostname}:${window.location.port}`
+const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
+const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort}`
 import DashboardCard from './DashboardCard';
 import {NodeJson, TreeJson, TreeMetadata} from '@forest/schema';
 

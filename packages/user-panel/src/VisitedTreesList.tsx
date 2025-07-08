@@ -22,7 +22,8 @@ import {
 import {authTokenAtom, userAtom} from '@forest/user-system/src/authStates';
 import DashboardCard from './DashboardCard';
 
-const httpUrl = `${window.location.protocol}//${location.hostname}:${window.location.port}`
+const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
+const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort}`
 
 interface VisitedTree {
     treeId: string;

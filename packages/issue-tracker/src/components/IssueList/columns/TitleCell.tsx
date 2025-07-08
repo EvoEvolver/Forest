@@ -1,6 +1,6 @@
 import React from 'react';
 import {Chip} from '@mui/material';
-import type {Issue} from '../../../types/Issue.ts';
+import type {Issue} from '../../../types/Issue';
 
 interface TitleCellProps {
     value: string;

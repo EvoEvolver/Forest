@@ -1,11 +1,11 @@
 import React, {useEffect, useState} from 'react';
 import {Alert, Box, Button, Snackbar, Typography,} from '@mui/material';
 import {Add as AddIcon,} from '@mui/icons-material';
-import type {CreateIssueRequest, Issue, UpdateIssueRequest} from '../../types/Issue.ts';
-import issueService from '../../services/issueService.ts';
-import CreateIssueDialog from './CreateIssueDialog.tsx';
-import IssueDetail from '../IssueDetail/IssueDetail.tsx';
-import IssueDataGrid from './IssueDataGrid.tsx';
+import type {CreateIssueRequest, Issue, UpdateIssueRequest} from '../../types/Issue';
+import issueService from '../../services/issueService';
+import CreateIssueDialog from './CreateIssueDialog';
+import IssueDetail from '../IssueDetail/IssueDetail';
+import IssueDataGrid from './IssueDataGrid';
 
 interface IssueListProps {
     treeId: string;

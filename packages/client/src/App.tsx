@@ -11,6 +11,7 @@ import {subscriptionAtom, supabaseClientAtom} from "../../user-system/src/authSt
 import {MyAppBar} from "./AppBar";
 import {treeId} from "./appState";
 
+// @ts-ignore
 const FlowVisualizer = lazy(() => import('./FlowView'));
 
 

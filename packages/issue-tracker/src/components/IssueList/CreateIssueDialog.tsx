@@ -20,8 +20,8 @@ import {
   Typography,
 } from '@mui/material';
 import {Add as AddIcon, Close as CloseIcon,} from '@mui/icons-material';
-import type {CreateIssueRequest} from '../../types/Issue.ts';
-import UserSelector, {type User} from '../UserSelector.tsx';
+import type {CreateIssueRequest} from '../../types/Issue';
+import UserSelector, {type User} from '../UserSelector';
 
 interface CreateIssueDialogProps {
     open: boolean;

@@ -4,7 +4,8 @@ import {XmlElement, XmlText} from "yjs";
 import {useAtomValue, useSetAtom} from "jotai";
 
 import {authModalOpenAtom, authTokenAtom, isAuthenticatedAtom} from "@forest/user-system/src/authStates";
-const httpUrl = `${window.location.protocol}//${location.hostname}:${window.location.port}`
+const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
+const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort}`
 import {Button} from "@mui/material";
 import { thisNodeContext } from "@forest/client";
 
