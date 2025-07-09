@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router";
 import AuthSuccessPage from "@forest/user-system/src/AuthSuccessPage";
 import {UserPanel} from "@forest/user-panel/src/UserPanel";
 import {IssuePanel} from "@forest/issue-tracker"
+import TreeInvitePage from './treeInvitePage';
 
 const rootElement = document.getElementById('root');
 
@@ -20,6 +21,7 @@ if (rootElement) {
                         <Route path="/auth-success" element={<AuthSuccessPage />} />
                         <Route path="/user" element={<UserPanel/>} />
                         <Route path="/issues" element={<IssuePanel/>} />
+                        <Route path="/tree-invite" element={<TreeInvitePage />} />
                     </Routes>
                 </React.StrictMode>
             </Provider>

@@ -9,6 +9,7 @@ export function createTreePermissionRouter() {
     // Grant permission
     router.post('/grant', async (req: AuthenticatedRequest, res: Response) => {
         const {treeId, userId, permissionType} = req.body;
+        console.log('grant permission', treeId, userId, permissionType);
         if (!treeId || !userId || !permissionType) {
             res.status(400).json({error: 'treeId, userId, and permissionType are required'});
             return;
@@ -36,19 +37,8 @@ export function createTreePermissionRouter() {
         }
     });
 
-    // Get a user's permission for a tree
-    router.get('/:treeId/:userId', async (req: AuthenticatedRequest, res: Response) => {
-        const {treeId, userId} = req.params;
-        try {
-            const perm = await manager.getPermission(treeId, userId);
-            res.json({permission: perm});
-        } catch (err) {
-            res.status(500).json({error: 'Failed to get permission', details: err});
-        }
-    });
-
-    // List all users and their permissions for a tree
-    router.get('/tree/:treeId', async (req: AuthenticatedRequest, res: Response) => {
+// List all users and their permissions for a tree
+    router.get('/tree/:treeId', async (req, res: Response) => {
         console.log('list permissions for tree');
         const {treeId} = req.params;
         try {
@@ -59,8 +49,21 @@ export function createTreePermissionRouter() {
         }
     });
 
+// Get a user's permission for a tree
+    router.get('/:treeId/:userId', async (req: AuthenticatedRequest, res: Response) => {
+        console.log('list permissions for tree user');
+        const {treeId, userId} = req.params;
+        try {
+            const perm = await manager.getPermission(treeId, userId);
+            res.json({permission: perm});
+        } catch (err) {
+            res.status(500).json({error: 'Failed to get permission', details: err});
+        }
+    });
+
     // List all trees a user has access to
     router.get('/user/:userId', async (req: AuthenticatedRequest, res: Response) => {
+        console.log('list permissions for user');
         const {userId} = req.params;
         try {
             const perms = await manager.listPermissionsForUser(userId);

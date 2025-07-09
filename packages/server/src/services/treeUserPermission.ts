@@ -57,6 +57,7 @@ export class TreeUserPermissionManager {
      */
     async listPermissionsForTree(treeId: string): Promise<TreeUserPermission[]> {
         const perms = await this.collection.find({ treeId }).toArray();
+        console.log(123)
         return perms.map(perm => ({
             treeId: perm.treeId,
             userId: perm.userId,
