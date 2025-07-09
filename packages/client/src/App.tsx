@@ -53,7 +53,7 @@ export default function App() {
 
     return (
         <>
-            <ThemeProvider theme={themeOptions}>
+
                 <Box sx={{display: 'flex', flexDirection: 'column', height: '100dvh'}}>
                     <CssBaseline/>
                     <Box sx={{width: '100%'}}>
@@ -73,7 +73,6 @@ export default function App() {
                 </Box>
                 {/* Auth Modal */}
                 {supabaseClient && <AuthModal/>}
-            </ThemeProvider>
         </>
     );
 }

@@ -8,12 +8,15 @@ import AuthSuccessPage from "@forest/user-system/src/AuthSuccessPage";
 import {UserPanel} from "@forest/user-panel/src/UserPanel";
 import {IssuePanel} from "@forest/issue-tracker"
 import TreeInvitePage from './treeInvitePage';
+import {ThemeProvider} from "@mui/material/styles";
+import {themeOptions} from "./theme";
 
 const rootElement = document.getElementById('root');
 
 if (rootElement) {
     ReactDOM.createRoot(rootElement).render(
         <BrowserRouter>
+            <ThemeProvider theme={themeOptions}>
             <Provider>
                 <React.StrictMode>
                     <Routes>
@@ -25,6 +28,7 @@ if (rootElement) {
                     </Routes>
                 </React.StrictMode>
             </Provider>
+            </ThemeProvider>
         </BrowserRouter>
     );
 } else {
