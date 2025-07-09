@@ -30,7 +30,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
     const columns: GridColDef[] = simple ? [
         {
             field: 'title',
-            headerName: 'Title',
+            headerName: 'Issue',
             width: 200,
             minWidth: 200,
             flex: 1,
@@ -50,7 +50,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
     ] : [
         {
             field: 'title',
-            headerName: 'Title',
+            headerName: 'Issue',
             width: 200,
             minWidth: 200,
             flex: 1,

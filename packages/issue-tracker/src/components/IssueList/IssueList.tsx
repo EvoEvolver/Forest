@@ -133,19 +133,8 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
     };
 
     return (
-        <Box sx={{height: 600, width: '100%'}}>
-            <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2}}>
-                <Button
-                    variant="contained"
-                    startIcon={<AddIcon/>}
-                    onClick={() => {
-                        setIsCreatingNew(true);
-                        setSelectedIssue(createEmptyIssue());
-                    }}
-                >
-                    Create Issue
-                </Button>
-            </Box>
+        <Box sx={{height: 300, width: '100%'}}>
+
 
             <IssueDataGrid
                 issues={issues}
@@ -155,7 +144,19 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
                 onIssueEdit={handleEditIssue}
                 onIssueDelete={handleDeleteIssue}
             />
-
+            <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2}}>
+                <Button
+                    variant="contained"
+                    size="small"
+                    startIcon={<AddIcon/>}
+                    onClick={() => {
+                        setIsCreatingNew(true);
+                        setSelectedIssue(createEmptyIssue());
+                    }}
+                >
+                    Create Issue
+                </Button>
+            </Box>
             {/* Issue Detail Dialog */}
             <IssueDetail
                 issue={selectedIssue}
