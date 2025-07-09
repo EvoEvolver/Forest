@@ -201,9 +201,9 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
                 {isEditing ? (
                     <TextField
                         fullWidth
-                        type="datetime-local"
-                        value={editData.dueDate || ''}
-                        onChange={(e) => onEditDataChange({dueDate: e.target.value})}
+                        type="date"
+                        value={editData.dueDate ? editData.dueDate.split('T')[0] : ''}
+                        onChange={(e) => onEditDataChange({dueDate: e.target.value + 'T00:00:00'})}
                         variant="outlined"
                         size="small"
                         InputLabelProps={{
