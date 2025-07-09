@@ -51,20 +51,18 @@ const CreateIssueDialog: React.FC<CreateIssueDialogProps> = ({
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({
         title: false,
-        description: false,
     });
 
     const handleSubmit = async () => {
         // Check for required fields
         const newErrors = {
             title: !formData.title.trim(),
-            description: !formData.description.trim(),
         };
 
         setErrors(newErrors);
 
         // If there are errors, don't submit
-        if (newErrors.title || newErrors.description) {
+        if (newErrors.title) {
             return;
         }
 
@@ -228,7 +226,7 @@ const CreateIssueDialog: React.FC<CreateIssueDialogProps> = ({
                             {/* Description Section */}
                             <Box sx={{mb: 4}}>
                                 <Typography variant="body2" sx={{mb: 1, fontWeight: 500, color: '#24292f'}}>
-                                    Description *
+                                    Description
                                 </Typography>
                                 <TextField
                                     fullWidth
@@ -238,14 +236,8 @@ const CreateIssueDialog: React.FC<CreateIssueDialogProps> = ({
                                     value={formData.description}
                                     onChange={(e) => {
                                         setFormData({...formData, description: e.target.value});
-                                        if (e.target.value.trim() && errors.description) {
-                                            setErrors({...errors, description: false});
-                                        }
                                     }}
                                     variant="outlined"
-                                    required
-                                    error={errors.description}
-                                    helperText={errors.description ? 'Description is required' : ''}
                                     sx={{
                                         '& .MuiOutlinedInput-root': {
                                             borderRadius: 1,

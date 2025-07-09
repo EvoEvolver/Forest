@@ -46,18 +46,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
             renderCell: (params: GridRenderCellParams) => (
                 <AssigneesCell value={params.value}/>
             ),
-        },
-        {
-            field: 'actions',
-            headerName: 'Actions',
-            width: 140,
-            minWidth: 140,
-            sortable: false,
-            disableColumnMenu: true,
-            renderCell: (params: GridRenderCellParams) => (
-                <ActionsCell row={params.row} onEdit={onIssueEdit} onDelete={onIssueDelete}/>
-            ),
-        },
+        }
     ] : [
         {
             field: 'title',

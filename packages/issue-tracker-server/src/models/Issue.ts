@@ -37,8 +37,7 @@ const IssueSchema = new Schema<IssueDocument>({
     required: true 
   },
   description: { 
-    type: String, 
-    required: true 
+    type: String
   },
   status: {
     type: String,
