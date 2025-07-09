@@ -19,5 +19,6 @@ export const config = {
     express: {
         jsonLimit: '50mb',
         urlencodedLimit: '50mb'
-    }
+    },
+    postgresDbUrl: process.env.POSTGRES_DB_URL,
 }; 

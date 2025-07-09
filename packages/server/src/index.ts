@@ -19,6 +19,7 @@ import {createTreeRouter} from './routes/treeRoutes';
 import {createAIRouter} from './routes/aiRoutes';
 import {createVisitRouter} from './routes/visitRoutes';
 import {issueRoutes} from '@forest/issue-tracker-server'
+import { createUserRouter } from './routes/userRoutes';
 
 // Import WebSocket handler
 import {WebSocketHandler} from './websocket/websocketHandler';
@@ -61,6 +62,7 @@ function main(): void {
     app.use('/api', createVisitRouter(treeVisitManager, treeMetadataManager));
     app.use('/api/issues', issueRoutes)
     app.use('/api/tree-permission', createTreePermissionRouter())
+    app.use('/api/user', createUserRouter());
 
     // Start server
     server.listen(config.port, config.host, () => {

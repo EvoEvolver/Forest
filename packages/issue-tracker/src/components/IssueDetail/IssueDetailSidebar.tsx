@@ -344,6 +344,7 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
                 variant="detail"
                 title="Assignees"
                 disabled={loading}
+                treeId={issue.treeId}
             />
 
             <Divider sx={{my: 2}}/>

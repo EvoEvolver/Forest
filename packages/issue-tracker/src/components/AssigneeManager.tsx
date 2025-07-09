@@ -1,6 +1,10 @@
 import React, {useEffect, useState} from 'react';
-import {Avatar, Box, Button, Chip, IconButton, Stack, TextField, Tooltip, Typography,} from '@mui/material';
-import {Add as AddIcon, Cancel as CancelIcon, Edit as EditIcon, Person as PersonIcon, Save as SaveIcon,} from '@mui/icons-material';
+import {Avatar, Box, Chip, IconButton, Stack, Tooltip, Typography,} from '@mui/material';
+import {Cancel as CancelIcon, Edit as EditIcon, Person as PersonIcon, Save as SaveIcon,} from '@mui/icons-material';
+import UserSelector from './UserSelector';
+
+const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
+export const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort}`
 
 interface User {
     userId: string;
@@ -18,6 +22,7 @@ interface AssigneeManagerProps {
     showTitle?: boolean;
     title?: string;
     disabled?: boolean;
+    treeId: string; // <-- Add treeId prop
 }
 
 const AssigneeManager: React.FC<AssigneeManagerProps> = ({
@@ -29,58 +34,82 @@ const AssigneeManager: React.FC<AssigneeManagerProps> = ({
                                                              showTitle = true,
                                                              title = 'Assignees',
                                                              disabled = false,
+                                                             treeId,
                                                          }) => {
     const [isEditing, setIsEditing] = useState(false);
-    const [editingAssignees, setEditingAssignees] = useState<string[]>([]);
-    const [newAssignee, setNewAssignee] = useState('');
+    const [editingAssignees, setEditingAssignees] = useState<User[]>([]);
+    const [treeMembers, setTreeMembers] = useState<User[]>([]);
+    const [loadingMembers, setLoadingMembers] = useState(false);
+
+    // Fetch tree members with permission and enrich with user details
+    useEffect(() => {
+        async function fetchTreeMembers() {
+            setLoadingMembers(true);
+            try {
+                const res = await fetch(`${httpUrl}/api/tree-permission/tree/${treeId}`, {
+                    credentials: 'include',
+                    headers: {'Content-Type': 'application/json'},
+                });
+                const data = await res.json();
+                const permissions = data.permissions || [];
+                const userIds = permissions.map((p: any) => p.userId);
+                if (userIds.length === 0) {
+                    setTreeMembers([]);
+                    setLoadingMembers(false);
+                    return;
+                }
+                // Fetch user details from our user metadata API
+                const userDetails: User[] = await Promise.all(userIds.map(async (id: string) => {
+                    try {
+                        const res = await fetch(`${httpUrl}/api/user/metadata/${id}`);
+                        if (!res.ok) throw new Error('User not found');
+                        const meta = await res.json();
+                        // meta may be a stringified object, parse if needed
+                        const userMeta = typeof meta === 'string' ? JSON.parse(meta) : meta;
+                        return {
+                            userId: id,
+                            username: userMeta.preferred_username || userMeta.user_name || userMeta.email?.split('@')[0] || id,
+                            email: userMeta.email || undefined,
+                            avatar: userMeta.avatar_url || null,
+                        };
+                    } catch {
+                        return {userId: id, username: id};
+                    }
+                }));
+                setTreeMembers(userDetails);
+            } catch (e) {
+                setTreeMembers([]);
+            } finally {
+                setLoadingMembers(false);
+            }
+        }
+
+        if (isEditing) fetchTreeMembers();
+    }, [treeId, isEditing]);
 
     useEffect(() => {
-        setEditingAssignees(assignees.map(a => a.username || a.userId));
+        setEditingAssignees(assignees);
     }, [assignees]);
 
     const handleStartEdit = () => {
         setIsEditing(true);
-        setEditingAssignees(assignees.map(a => a.username || a.userId));
+        setEditingAssignees(assignees);
     };
 
     const handleCancelEdit = () => {
         setIsEditing(false);
-        setEditingAssignees(assignees.map(a => a.username || a.userId));
-        setNewAssignee('');
+        setEditingAssignees(assignees);
     };
 
     const handleSaveEdit = () => {
         if (onAssigneesChange) {
-            const assigneeUsers = editingAssignees.map(username => ({
-                userId: username,
-                username: username
-            }));
-            onAssigneesChange(assigneeUsers);
+            onAssigneesChange(editingAssignees);
         }
         setIsEditing(false);
-        setNewAssignee('');
-    };
-
-    const handleAddAssignee = () => {
-        if (newAssignee.trim() && !editingAssignees.includes(newAssignee.trim())) {
-            setEditingAssignees([...editingAssignees, newAssignee.trim()]);
-            setNewAssignee('');
-        }
-    };
-
-    const handleRemoveAssignee = (assigneeToRemove: string) => {
-        setEditingAssignees(editingAssignees.filter(assignee => assignee !== assigneeToRemove));
-    };
-
-    const handleKeyPress = (event: React.KeyboardEvent) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            handleAddAssignee();
-        }
     };
 
     const getUserDisplayName = (user: User) => {
-        return user.username || user.userId;
+        return user.username || user.email || user.userId;
     };
 
     // List variant - compact display for table rows
@@ -137,12 +166,7 @@ const AssigneeManager: React.FC<AssigneeManagerProps> = ({
                 <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1}}>
                     <Typography
                         variant="subtitle2"
-                        sx={{
-                            fontWeight: 600,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1
-                        }}
+                        sx={{fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1}}
                     >
                         <PersonIcon fontSize="small"/>
                         {title}
@@ -167,46 +191,21 @@ const AssigneeManager: React.FC<AssigneeManagerProps> = ({
 
             {isEditing ? (
                 <Box>
-                    <Stack direction="row" spacing={1} alignItems="center" sx={{mb: 2}}>
-                        <TextField
-                            size="small"
-                            placeholder="Add assignee"
-                            value={newAssignee}
-                            onChange={(e) => setNewAssignee(e.target.value)}
-                            onKeyPress={handleKeyPress}
-                            sx={{flexGrow: 1}}
+                    {loadingMembers ? (
+                        <Typography variant="body2">Loading members...</Typography>
+                    ) : (
+                        <UserSelector
+                            selectedUsers={editingAssignees}
+                            onUsersChange={setEditingAssignees}
+                            label="Select assignees"
+                            placeholder="Search tree members..."
+                            disabled={disabled}
+                            maxUsers={undefined}
+                            // Only allow selection from treeMembers
+                            // UserSelector will only show these as options
+                            // (UserSelector uses options from selectedUsers + mockUsers, so we override options prop)
+                            options={treeMembers}
                         />
-                        <Button
-                            variant="outlined"
-                            size="small"
-                            onClick={handleAddAssignee}
-                            startIcon={<AddIcon/>}
-                            disabled={!newAssignee.trim()}
-                        >
-                            Add
-                        </Button>
-                    </Stack>
-
-                    {editingAssignees.length > 0 && (
-                        <Box>
-                            <Stack direction="row" spacing={1} flexWrap="wrap">
-                                {editingAssignees.map((assignee, index) => (
-                                    <Chip
-                                        key={index}
-                                        label={assignee}
-                                        onDelete={() => handleRemoveAssignee(assignee)}
-                                        size="small"
-                                        sx={{
-                                            bgcolor: '#e3f2fd',
-                                            color: '#1976d2',
-                                            '& .MuiChip-deleteIcon': {
-                                                color: '#1976d2',
-                                            },
-                                        }}
-                                    />
-                                ))}
-                            </Stack>
-                        </Box>
                     )}
                 </Box>
             ) : (
