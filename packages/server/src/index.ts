@@ -28,6 +28,7 @@ import {setMongoConnection} from './mongoConnection';
 import {setupYjsPersistence} from './y-websocket/utils';
 import {TreeMetadataManager} from './services/treeMetadata';
 import {TreeVisitManager} from './services/treeVisitTracker';
+import {createTreePermissionRouter} from "./routes";
 
 // Initialize services and connections
 setMongoConnection();
@@ -59,6 +60,7 @@ function main(): void {
     app.use('/api', createAIRouter());
     app.use('/api', createVisitRouter(treeVisitManager, treeMetadataManager));
     app.use('/api/issues', issueRoutes)
+    app.use('/api/tree-permission', createTreePermissionRouter())
 
     // Start server
     server.listen(config.port, config.host, () => {
