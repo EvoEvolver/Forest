@@ -9,10 +9,18 @@ import {YjsConnectionStatusAtom, YjsProviderAtom} from "./TreeState/YjsConnectio
 import {jumpToNodeAtom, scrollToNodeAtom} from "./TreeState/TreeState";
 import Tooltip from "@mui/material/Tooltip";
 import SchemaRoundedIcon from '@mui/icons-material/SchemaRounded';
+import SettingsIcon from '@mui/icons-material/Settings';
+import IconButton from '@mui/material/IconButton';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import SettingsDialog from "./SettingsDialog";
 
 export const MyAppBar = ({setCurrentPage, currentPage}: { setCurrentPage: any, currentPage: string }) => {
     const connectionStatus = useAtomValue(YjsConnectionStatusAtom)
     const supabaseClient = useAtomValue(supabaseClientAtom)
+    const [settingsOpen, setSettingsOpen] = useState(false);
     return <AppBar position="fixed">
         <Toolbar variant="dense">
             <Stack direction="row" spacing={2} sx={{flexGrow: 1}}>
@@ -48,6 +56,10 @@ export const MyAppBar = ({setCurrentPage, currentPage}: { setCurrentPage: any, c
             }
             {/* Auth button in the top right */}
             {supabaseClient && <AuthButton/>}
+            <IconButton color="inherit" onClick={() => setSettingsOpen(true)}>
+                <SettingsIcon/>
+            </IconButton>
+            <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
         </Toolbar>
     </AppBar>;
 }
