@@ -9,6 +9,7 @@
     "@forest/schema": "workspace:*",
     "@forest/user-system": "workspace:*",
     "@mui/icons-material": "^7.2.0",
+    "@mui/material": "^7.2.0",
     "jotai": "^2.10.3",
     "uuid": "^9.0.1"
   },
