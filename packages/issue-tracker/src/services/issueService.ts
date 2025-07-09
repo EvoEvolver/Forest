@@ -2,14 +2,13 @@ import axios from 'axios';
 import type {AddCommentRequest, CreateIssueRequest, Issue, UpdateIssueRequest} from '../types/Issue';
 import {atom} from "jotai";
 import {userAtom} from "@forest/user-system/src/authStates";
+import {httpUrl} from "../components/AssigneeManager";
 
-// @ts-ignore
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:29999';
 
 const apiAtom = atom((get)=>{
     const authToken = get(userAtom)?.token;
     return axios.create({
-    baseURL: `${API_BASE_URL}/api`,
+    baseURL: `${httpUrl}/api`,
     headers: {
         'Content-Type': 'application/json',
         "Authorization": authToken ? `Bearer ${authToken}` : ""
