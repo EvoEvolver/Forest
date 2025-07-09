@@ -24,19 +24,6 @@ const AuthSuccessPage: React.FC = () => {
         handleAuthCallback(supabaseClient)
     }, [])
 
-    const handleCloseWindow = () => {
-        try {
-            window.close()
-
-            // Fallback for stubborn windows
-            setTimeout(() => {
-                window.open('', '_self').close()
-            }, 100)
-
-        } catch (error) {
-            console.error('Error closing window:', error)
-        }
-    }
 
     const handleGoBack = () => {
         try {
