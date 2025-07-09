@@ -1,23 +1,29 @@
 import express from 'express';
 import path from 'path';
-import { config } from '../config/app';
+import {config} from '../config/app';
 
 export function setupStaticFiles(app: express.Application): void {
     console.log(`serving with frontendRoot: ${config.frontendRoot}`);
-    
+
     if (config.frontendRoot) {
         app.use(express.static(path.join(__dirname, path.dirname(config.frontendRoot))));
-        
+
         // Serve the main app for various routes
         app.get('/', (_req, res) => {
             res.sendFile(path.join(__dirname, config.frontendRoot));
         });
-        
+
         app.get('/auth-success', (_req, res) => {
             res.sendFile(path.join(__dirname, config.frontendRoot));
         });
-        
+
         app.get('/user', (_req, res) => {
+            res.sendFile(path.join(__dirname, config.frontendRoot));
+        });
+        app.get('/tree-invite', (_req, res) => {
+            res.sendFile(path.join(__dirname, config.frontendRoot));
+        });
+        app.get('/issues', (_req, res) => {
             res.sendFile(path.join(__dirname, config.frontendRoot));
         });
     } else {
