@@ -13,6 +13,7 @@ interface IssueDetailProps {
     onUpdate: (issueId: string, updates: UpdateIssueRequest) => Promise<void>;
     onAddComment?: (issueId: string, comment: { userId: string; content: string }) => Promise<void>;
     onRefreshIssue?: (issueId: string) => Promise<Issue>;
+    isCreatingNew?: boolean;
 }
 
 const IssueDetail: React.FC<IssueDetailProps> = ({
@@ -22,8 +23,9 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
                                                      onUpdate,
                                                      onAddComment,
                                                      onRefreshIssue,
+                                                     isCreatingNew = false,
                                                  }) => {
-    const [isEditing, setIsEditing] = useState(false);
+    const [isEditing, setIsEditing] = useState(isCreatingNew);
     const [editData, setEditData] = useState<UpdateIssueRequest>({});
     const [newComment, setNewComment] = useState('');
     const [loading, setLoading] = useState(false);
@@ -32,6 +34,10 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
     React.useEffect(() => {
         setCurrentIssue(issue);
     }, [issue]);
+
+    React.useEffect(() => {
+        setIsEditing(isCreatingNew);
+    }, [isCreatingNew]);
 
     React.useEffect(() => {
         if (currentIssue) {
@@ -51,7 +57,7 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
         }
     }, [currentIssue]);
 
-    if (!currentIssue) return null;
+    if (!currentIssue && !isCreatingNew) return null;
 
     const handleStartEdit = () => {
         setIsEditing(true);
@@ -77,11 +83,15 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
     const handleSaveEdit = async () => {
         setLoading(true);
         try {
-            await onUpdate(currentIssue._id, editData);
-            setIsEditing(false);
-            if (onRefreshIssue) {
-                const refreshedIssue = await onRefreshIssue(currentIssue._id);
-                setCurrentIssue(refreshedIssue);
+            if (isCreatingNew) {
+                await onUpdate('', editData);
+            } else if (currentIssue) {
+                await onUpdate(currentIssue._id, editData);
+                setIsEditing(false);
+                if (onRefreshIssue) {
+                    const refreshedIssue = await onRefreshIssue(currentIssue._id);
+                    setCurrentIssue(refreshedIssue);
+                }
             }
         } catch (error) {
             console.error('Failed to update issue:', error);
@@ -106,13 +116,20 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
             assignees: assigneeUpdates
         });
 
-        // Directly save assignees changes to backend
+        // For new issues, just update the edit data
+        if (isCreatingNew) {
+            return;
+        }
+
+        // Directly save assignees changes to backend for existing issues
         setLoading(true);
         try {
-            await onUpdate(currentIssue._id, {assignees: assigneeUpdates});
-            if (onRefreshIssue) {
-                const refreshedIssue = await onRefreshIssue(currentIssue._id);
-                setCurrentIssue(refreshedIssue);
+            if (currentIssue) {
+                await onUpdate(currentIssue._id, {assignees: assigneeUpdates});
+                if (onRefreshIssue) {
+                    const refreshedIssue = await onRefreshIssue(currentIssue._id);
+                    setCurrentIssue(refreshedIssue);
+                }
             }
         } catch (error) {
             console.error('Failed to update assignees:', error);
@@ -156,13 +173,14 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
             }}
         >
             <IssueDetailHeader
-                issueId={currentIssue._id}
+                issueId={currentIssue?._id || ''}
                 isEditing={isEditing}
                 loading={loading}
                 onStartEdit={handleStartEdit}
                 onSaveEdit={handleSaveEdit}
                 onCancelEdit={handleCancelEdit}
                 onClose={onClose}
+                isCreatingNew={isCreatingNew}
             />
 
             <DialogContent sx={{p: 0, overflow: 'auto'}}>
@@ -176,7 +194,7 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
                         onEditDataChange={handleEditDataChange}
                         onNewCommentChange={setNewComment}
                         onAddComment={handleAddComment}
-                        canAddComment={!!onAddComment}
+                        canAddComment={!!onAddComment && !isCreatingNew}
                     />
 
                     <IssueDetailSidebar

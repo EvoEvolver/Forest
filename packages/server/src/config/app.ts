@@ -20,5 +20,5 @@ export const config = {
         jsonLimit: '50mb',
         urlencodedLimit: '50mb'
     },
-    postgresDbUrl: process.env.POSTGRES_DB_URL,
+    postgresDbUrl: process.env.SUPERBASE_PG_DB_URL,
 }; 

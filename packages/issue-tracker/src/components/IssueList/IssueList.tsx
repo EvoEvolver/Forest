@@ -3,7 +3,6 @@ import {Alert, Box, Button, Snackbar,} from '@mui/material';
 import {Add as AddIcon,} from '@mui/icons-material';
 import type {CreateIssueRequest, Issue, UpdateIssueRequest} from '../../types/Issue';
 import {issueServiceAtom} from '../../services/issueService';
-import CreateIssueDialog from './CreateIssueDialog';
 import IssueDetail from '../IssueDetail/IssueDetail';
 import IssueDataGrid from './IssueDataGrid';
 import {useAtomValue} from "jotai";
@@ -18,10 +17,27 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
     const [issues, setIssues] = useState<Issue[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
-    const [createDialogOpen, setCreateDialogOpen] = useState(false);
+    const [isCreatingNew, setIsCreatingNew] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const issueService = useAtomValue(issueServiceAtom)
+    
+    const createEmptyIssue = (): Issue => ({
+        _id: '',
+        treeId,
+        title: '',
+        description: '',
+        status: 'open',
+        priority: 'medium',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        creator: { userId: 'demo-user', username: 'Demo User' },
+        assignees: [],
+        nodes: nodeId ? [{ nodeId, nodeType: undefined }] : [],
+        tags: [],
+        comments: []
+    });
+    
     // Fetch issues on component mount
     useEffect(() => {
         loadIssues();
@@ -80,6 +96,26 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
         }
     };
 
+    const handleIssueUpdate = async (issueId: string, updates: UpdateIssueRequest) => {
+        if (isCreatingNew) {
+            // When creating new, we need to create the issue first
+            const createData: CreateIssueRequest = {
+                title: updates.title || '',
+                description: updates.description || '',
+                priority: updates.priority || 'medium',
+                dueDate: updates.dueDate,
+                tags: updates.tags || [],
+                assignees: updates.assignees || [],
+                nodes: updates.nodes || (nodeId ? [{ nodeId, nodeType: undefined }] : [])
+            };
+            await handleCreateIssue(createData);
+            setIsCreatingNew(false);
+        } else {
+            // When updating existing issue
+            await handleUpdateIssue(issueId, updates);
+        }
+    };
+
     const handleAddComment = async (issueId: string, comment: { userId: string; content: string }) => {
         try {
             await issueService.addComment(issueId, comment);
@@ -102,7 +138,10 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
                 <Button
                     variant="contained"
                     startIcon={<AddIcon/>}
-                    onClick={() => setCreateDialogOpen(true)}
+                    onClick={() => {
+                        setIsCreatingNew(true);
+                        setSelectedIssue(createEmptyIssue());
+                    }}
                 >
                     Create Issue
                 </Button>
@@ -121,22 +160,17 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
             <IssueDetail
                 issue={selectedIssue}
                 open={!!selectedIssue}
-                onClose={() => setSelectedIssue(null)}
-                onUpdate={handleUpdateIssue}
+                onClose={() => {
+                    setSelectedIssue(null);
+                    setIsCreatingNew(false);
+                }}
+                onUpdate={handleIssueUpdate}
                 onAddComment={handleAddComment}
                 onRefreshIssue={async (issueId: string) => {
                     const issue = await issueService.getIssueById(issueId);
                     return issue;
                 }}
-            />
-
-            {/* Create Issue Dialog */}
-            <CreateIssueDialog
-                open={createDialogOpen}
-                onClose={() => setCreateDialogOpen(false)}
-                onSubmit={handleCreateIssue}
-                treeId={treeId}
-                nodeId={nodeId}
+                isCreatingNew={isCreatingNew}
             />
 
             {/* Success/Error Snackbars */}

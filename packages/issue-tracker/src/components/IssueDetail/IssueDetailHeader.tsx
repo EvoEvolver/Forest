@@ -10,6 +10,7 @@ interface IssueDetailHeaderProps {
     onSaveEdit: () => void;
     onCancelEdit: () => void;
     onClose: () => void;
+    isCreatingNew?: boolean;
 }
 
 const IssueDetailHeader: React.FC<IssueDetailHeaderProps> = ({
@@ -20,6 +21,7 @@ const IssueDetailHeader: React.FC<IssueDetailHeaderProps> = ({
                                                                  onSaveEdit,
                                                                  onCancelEdit,
                                                                  onClose,
+                                                                 isCreatingNew = false,
                                                              }) => {
     return (
         <DialogTitle
@@ -34,17 +36,19 @@ const IssueDetailHeader: React.FC<IssueDetailHeaderProps> = ({
         >
             <Box sx={{display: 'flex', alignItems: 'center', gap: 2}}>
                 <Typography variant="h6" sx={{fontWeight: 600, color: '#24292f'}}>
-                    {isEditing ? 'Edit Issue' : 'Issue Details'}
+                    {isCreatingNew ? 'Create Issue' : (isEditing ? 'Edit Issue' : 'Issue Details')}
                 </Typography>
-                <Chip
-                    label={issueId}
-                    size="small"
-                    sx={{
-                        bgcolor: '#e3f2fd',
-                        color: '#1976d2',
-                        fontFamily: 'monospace',
-                    }}
-                />
+                {!isCreatingNew && (
+                    <Chip
+                        label={issueId}
+                        size="small"
+                        sx={{
+                            bgcolor: '#e3f2fd',
+                            color: '#1976d2',
+                            fontFamily: 'monospace',
+                        }}
+                    />
+                )}
             </Box>
             <Box sx={{display: 'flex', gap: 1}}>
                 {!isEditing ? (

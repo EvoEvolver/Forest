@@ -8,7 +8,6 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:29999';
 
 const apiAtom = atom((get)=>{
     const authToken = get(userAtom)?.token;
-    console.log(authToken)
     return axios.create({
     baseURL: `${API_BASE_URL}/api`,
     headers: {

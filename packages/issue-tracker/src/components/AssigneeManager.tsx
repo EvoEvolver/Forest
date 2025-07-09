@@ -2,6 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {Avatar, Box, Chip, IconButton, Stack, Tooltip, Typography,} from '@mui/material';
 import {Cancel as CancelIcon, Edit as EditIcon, Person as PersonIcon, Save as SaveIcon,} from '@mui/icons-material';
 import UserSelector from './UserSelector';
+import {getUserMetadata, getUsername} from "@forest/user-system/src/userMetadata";
 
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
 export const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort}`
@@ -40,6 +41,7 @@ const AssigneeManager: React.FC<AssigneeManagerProps> = ({
     const [editingAssignees, setEditingAssignees] = useState<User[]>([]);
     const [treeMembers, setTreeMembers] = useState<User[]>([]);
     const [loadingMembers, setLoadingMembers] = useState(false);
+    const [usernames, setUsernames] = useState<{ [userId: string]: string }>({});
 
     // Fetch tree members with permission and enrich with user details
     useEffect(() => {
@@ -61,16 +63,12 @@ const AssigneeManager: React.FC<AssigneeManagerProps> = ({
                 // Fetch user details from our user metadata API
                 const userDetails: User[] = await Promise.all(userIds.map(async (id: string) => {
                     try {
-                        const res = await fetch(`${httpUrl}/api/user/metadata/${id}`);
-                        if (!res.ok) throw new Error('User not found');
-                        const meta = await res.json();
-                        // meta may be a stringified object, parse if needed
-                        const userMeta = typeof meta === 'string' ? JSON.parse(meta) : meta;
+                        const userMeta = await getUserMetadata(id)
                         return {
                             userId: id,
-                            username: userMeta.preferred_username || userMeta.user_name || userMeta.email?.split('@')[0] || id,
-                            email: userMeta.email || undefined,
-                            avatar: userMeta.avatar_url || null,
+                            username:  userMeta.username,
+                            email: userMeta?.email || undefined,
+                            avatar: userMeta.avatar || null,
                         };
                     } catch {
                         return {userId: id, username: id};
@@ -91,6 +89,24 @@ const AssigneeManager: React.FC<AssigneeManagerProps> = ({
         setEditingAssignees(assignees);
     }, [assignees]);
 
+    useEffect(() => {
+        // Fetch usernames for all assignees
+        async function fetchUsernames() {
+            const ids = assignees.map(a => a.userId);
+            const usernameMap: { [userId: string]: string } = {};
+            await Promise.all(ids.map(async (id) => {
+                try {
+                    const username = await getUsername(id);
+                    usernameMap[id] = username;
+                } catch {
+                    usernameMap[id] = id;
+                }
+            }));
+            setUsernames(usernameMap);
+        }
+        fetchUsernames();
+    }, [assignees]);
+
     const handleStartEdit = () => {
         setIsEditing(true);
         setEditingAssignees(assignees);
@@ -109,7 +125,7 @@ const AssigneeManager: React.FC<AssigneeManagerProps> = ({
     };
 
     const getUserDisplayName = (user: User) => {
-        return user.username || user.email || user.userId;
+        return usernames[user.userId] || "loading";
     };
 
     // List variant - compact display for table rows
