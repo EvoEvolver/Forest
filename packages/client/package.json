@@ -30,7 +30,8 @@
     "@forest/node-type-reader": "workspace:*",
     "@forest/schema": "workspace:*",
     "@forest/user-system": "workspace:*",
-    "@forest/user-panel": "workspace:*"
+    "@forest/user-panel": "workspace:*",
+    "@forest/issue-tracker": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.10.4",

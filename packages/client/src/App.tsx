@@ -35,6 +35,20 @@ export default function App() {
         }
     }, []);
 
+    const user = useAtomValue(userAtom)
+    const provider = useAtomValue(YjsProviderAtom)
+
+    useEffect(() => {
+        const awareness = provider?.awareness
+        if (awareness) {
+            const userEmail = user?.email || '';
+            console.log('Setting awareness user state for:', userEmail);
+            const username = userEmail?.split('@')[0] || 'Annonymous ' + getRandomAnimal(awareness.clientID)
+            awareness.setLocalStateField("user", {"name": username, "color": getPastelHexFromUsername(username)});
+        }
+        recordTreeVisit(treeId, supabaseClient);
+    }, [user]);
+
     const appBarHeight = 55;
 
     return (
@@ -59,7 +73,6 @@ export default function App() {
                 </Box>
                 {/* Auth Modal */}
                 {supabaseClient && <AuthModal/>}
-                <SideEffects/>
             </ThemeProvider>
         </>
     );
@@ -93,28 +106,4 @@ const TheSelectedPage = ({currentPage}) => {
         default:
             return <TreeViewPage/>;
     }
-};
-
-
-const SideEffects = () => {
-    const user = useAtomValue(userAtom)
-    const supabaseClient = useAtomValue(supabaseClientAtom)
-    const provider = useAtomValue(YjsProviderAtom)
-
-    useEffect(() => {
-        const awareness = provider?.awareness
-        if (awareness) {
-            const userEmail = user?.email || '';
-            console.log('Setting awareness user state for:', userEmail);
-            const username = userEmail?.split('@')[0] || 'Annonymous ' + getRandomAnimal(awareness.clientID)
-            awareness.setLocalStateField("user", {"name": username, "color": getPastelHexFromUsername(username)});
-        }
-        recordTreeVisit(treeId, supabaseClient);
-    }, [user]);
-
-
-    return (
-        <>
-        </>
-    );
 };

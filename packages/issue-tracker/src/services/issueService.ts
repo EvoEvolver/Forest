@@ -1,8 +1,9 @@
 import axios from 'axios';
 import type {AddCommentRequest, CreateIssueRequest, Issue, UpdateIssueRequest} from '../types/Issue';
+import { User } from '@forest/user-system/src/authStates';
 
 // @ts-ignore
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:29999';
 
 const api = axios.create({
     baseURL: `${API_BASE_URL}/api`,
@@ -29,13 +30,12 @@ export const issueService = {
     },
 
     // Create a new issue
-    async createIssue(treeId: string, issue: CreateIssueRequest): Promise<Issue> {
+    async createIssue(treeId: string, issue: CreateIssueRequest, authUser: User): Promise<Issue> {
         const issueData = {
             ...issue,
             treeId,
             creator: {
-                userId: 'demo-user',
-                username: 'Demo User'
+                userId: authUser.id
             }
         };
         const response = await api.post('/issues', issueData);

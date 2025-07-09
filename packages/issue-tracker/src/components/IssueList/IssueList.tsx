@@ -6,6 +6,8 @@ import issueService from '../../services/issueService';
 import CreateIssueDialog from './CreateIssueDialog';
 import IssueDetail from '../IssueDetail/IssueDetail';
 import IssueDataGrid from './IssueDataGrid';
+import {useAtomValue} from "jotai";
+import {authTokenAtom, userAtom} from '@forest/user-system/src/authStates';
 
 interface IssueListProps {
     treeId: string;
@@ -20,6 +22,7 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
+    const user = useAtomValue(userAtom)
 
     // Fetch issues on component mount
     useEffect(() => {
@@ -57,7 +60,7 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
 
     const handleCreateIssue = async (issueData: CreateIssueRequest) => {
         try {
-            await issueService.createIssue(treeId, issueData);
+            await issueService.createIssue(treeId, issueData, user);
             await loadIssues(); // Refresh the list
             setSuccessMessage('Issue created successfully');
         } catch (error) {

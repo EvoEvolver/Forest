@@ -11,6 +11,8 @@
   "dependencies": {
     "@forest/schema": "workspace:*",
     "@forest/user-system": "workspace:*",
+    "@mui/icons-material": "^6.4.2",
+    "jotai": "^2.10.3",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

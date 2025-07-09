@@ -1,7 +1,8 @@
 {
-  "name": "client",
+  "name": "@forest/issue-tracker",
   "private": true,
   "version": "0.0.0",
+  "main": "src/index.tsx",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -19,8 +20,10 @@
     "@mui/x-date-pickers": "^8.7.0",
     "axios": "^1.10.0",
     "react": "^18.2.0",
+    "jotai": "^2.10.3",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^7.6.3"
+    "react-router-dom": "^7.6.3",
+    "@forest/user-system": "workspace:*"
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",
