@@ -15,9 +15,9 @@ const connectDB = async (): Promise<Connection> => {
   }
 
   try {
-    const mongoUri = process.env.ISSUE_MONGODB_URI || 'mongodb://localhost:27017/issues';
+    const mongoUri = process.env.Y_PERSISTENCE_MONGO_URL+"/issues" || 'mongodb://localhost:27017/issues';
     connection = await mongoose.createConnection(mongoUri);
-    console.log('Connected to MongoDB for issues');
+    console.log('Connected to MongoDB for issues', mongoUri);
     return connection;
   } catch (error) {
     console.error('MongoDB connection error:', error);
