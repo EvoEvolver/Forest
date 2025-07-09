@@ -5,10 +5,10 @@
   "scripts": {
   },
   "dependencies": {
-    "@mui/icons-material": "^6.4.2",
-    "@mui/material": "^6.4.12",
+    "@mui/icons-material": "^7.2.0",
+    "@mui/material": "^7.2.0",
     "jotai": "^2.10.3",
-    "react": "^18.2.0",
+    "react": "^19.1.0",
     "react-code-blocks": "^0.1.6",
     "react-latex-next": "^3.0.0",
     "react-medium-image-zoom": "^5.2.14",

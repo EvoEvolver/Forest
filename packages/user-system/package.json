@@ -1,11 +1,8 @@
 {
   "name": "@forest/user-system",
-  "private": true,
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -13,14 +10,16 @@
     "@supabase/auth-ui-react": "^0.4.7",
     "@supabase/auth-ui-shared": "^0.1.8",
     "@supabase/supabase-js": "^2.50.3",
-    "@mui/icons-material": "^6.4.2",
+    "@mui/material": "^7.2.0",
+    "@mui/icons-material": "^7.2.0",
+    "react": "^19.1.0",
     "jotai": "^2.10.3",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",
-    "@types/react": "^19.1.8",
-    "@types/react-dom": "^18.2.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^4.5.2",
     "eslint": "^9.29.0",
     "eslint-plugin-react-hooks": "^5.2.0",

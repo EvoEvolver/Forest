@@ -171,16 +171,17 @@ const DropDownOperationButton = ({node}: { node: NodeVM }) => {
                     <AddIcon/>
                 </ListItemIcon>
                     <ListItemText>Add Sibling</ListItemText></MenuItem>}
-                {node.nodeType.allowReshape && <><MenuItem onClick={() => {
-                    moveUp();
-                    handleClose();
-                }}>
-                    <ListItemIcon>
-                        <ArrowUpwardIcon/>
-                    </ListItemIcon>
-                    Move Up
-                </MenuItem>
-                    <MenuItem onClick={() => {
+                {node.nodeType.allowReshape && [
+                    <MenuItem key="moveUp" onClick={() => {
+                        moveUp();
+                        handleClose();
+                    }}>
+                        <ListItemIcon>
+                            <ArrowUpwardIcon/>
+                        </ListItemIcon>
+                        Move Up
+                    </MenuItem>,
+                    <MenuItem key="moveDown" onClick={() => {
                         moveDown();
                         handleClose();
                     }}>
@@ -188,7 +189,8 @@ const DropDownOperationButton = ({node}: { node: NodeVM }) => {
                             <ArrowDownwardIcon/>
                         </ListItemIcon>
                         <ListItemText>Move Down</ListItemText>
-                    </MenuItem></>}
+                    </MenuItem>
+                ]}
                 <Divider/>
                 {node.nodeType.allowReshape &&
                     <MenuItem onClick={() => {

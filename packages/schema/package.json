@@ -21,13 +21,13 @@
   "homepage": "https://github.com/doomspec/Forest#readme",
   "dependencies": {
     "jotai": "^2.10.3",
-    "react": "^18.2.0",
+    "react": "^19.1.0",
     "uuid": "^9.0.1",
     "y-websocket": "^3.0.0",
     "yjs": "^13.6.27"
   },
   "devDependencies": {
-    "@types/react": "^18.2.0",
+    "@types/react": "^19.1.0",
     "@types/uuid": "^9.0.0",
     "typescript": "^5.0.0"
   },
