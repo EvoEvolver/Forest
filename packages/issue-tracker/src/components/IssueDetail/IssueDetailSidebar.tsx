@@ -1,11 +1,13 @@
-import React from 'react';
+import React, {useState} from 'react';
 import type {SelectChangeEvent} from '@mui/material';
-import {Avatar, Box, Chip, Divider, FormControl, MenuItem, Select, Stack, TextField, Typography,} from '@mui/material';
+import {Avatar, Box, Chip, Divider, FormControl, MenuItem, Select, Stack, TextField, Typography, IconButton,} from '@mui/material';
 import {
     CalendarToday as CalendarIcon,
     Flag as PriorityIcon,
     Label as LabelIcon,
     Person as PersonIcon,
+    Add as AddIcon,
+    Close as CloseIcon,
 } from '@mui/icons-material';
 import type {Issue, UpdateIssueRequest} from '../../types/Issue';
 import type {User} from '../UserSelector';
@@ -64,6 +66,58 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
 
     const handlePriorityChange = (event: SelectChangeEvent<string>) => {
         onEditDataChange({priority: event.target.value as Issue['priority']});
+    };
+
+    const [newTag, setNewTag] = useState('');
+    const [editingTagIndex, setEditingTagIndex] = useState<number | null>(null);
+    const [editingTagValue, setEditingTagValue] = useState('');
+
+    const handleAddTag = () => {
+        if (newTag.trim() && !editData.tags?.includes(newTag.trim())) {
+            const updatedTags = [...(editData.tags || []), newTag.trim()];
+            onEditDataChange({tags: updatedTags});
+            setNewTag('');
+        }
+    };
+
+    const handleRemoveTag = (index: number) => {
+        const updatedTags = [...(editData.tags || [])];
+        updatedTags.splice(index, 1);
+        onEditDataChange({tags: updatedTags});
+    };
+
+    const handleStartEditTag = (index: number, tag: string) => {
+        setEditingTagIndex(index);
+        setEditingTagValue(tag);
+    };
+
+    const handleSaveEditTag = () => {
+        if (editingTagValue.trim() && editingTagIndex !== null) {
+            const updatedTags = [...(editData.tags || [])];
+            updatedTags[editingTagIndex] = editingTagValue.trim();
+            onEditDataChange({tags: updatedTags});
+            setEditingTagIndex(null);
+            setEditingTagValue('');
+        }
+    };
+
+    const handleCancelEditTag = () => {
+        setEditingTagIndex(null);
+        setEditingTagValue('');
+    };
+
+    const handleKeyPress = (event: React.KeyboardEvent) => {
+        if (event.key === 'Enter') {
+            handleAddTag();
+        }
+    };
+
+    const handleEditTagKeyPress = (event: React.KeyboardEvent) => {
+        if (event.key === 'Enter') {
+            handleSaveEditTag();
+        } else if (event.key === 'Escape') {
+            handleCancelEditTag();
+        }
     };
 
     return (
@@ -170,26 +224,111 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
                     <LabelIcon fontSize="small"/>
                     Tags
                 </Typography>
-                <Stack direction="row" spacing={1} flexWrap="wrap">
-                    {issue.tags && issue.tags.length > 0 ? (
-                        issue.tags.map((tag, index) => (
-                            <Chip
-                                key={index}
-                                label={tag}
+                
+                {isEditing ? (
+                    <>
+                        {/* Add new tag */}
+                        <Box sx={{display: 'flex', gap: 1, mb: 2}}>
+                            <TextField
                                 size="small"
-                                sx={{
-                                    bgcolor: '#e3f2fd',
-                                    color: '#1976d2',
-                                    mb: 0.5,
-                                }}
+                                placeholder="Add tag..."
+                                value={newTag}
+                                onChange={(e) => setNewTag(e.target.value)}
+                                onKeyPress={handleKeyPress}
+                                sx={{flex: 1}}
                             />
-                        ))
-                    ) : (
-                        <Typography variant="body2" color="text.secondary">
-                            No tags
-                        </Typography>
-                    )}
-                </Stack>
+                            <IconButton
+                                size="small"
+                                onClick={handleAddTag}
+                                disabled={!newTag.trim()}
+                                sx={{bgcolor: '#e3f2fd', '&:hover': {bgcolor: '#bbdefb'}}}
+                            >
+                                <AddIcon fontSize="small"/>
+                            </IconButton>
+                        </Box>
+                        
+                        {/* Existing tags */}
+                        <Stack direction="row" spacing={1} flexWrap="wrap">
+                            {(editData.tags || []).map((tag, index) => (
+                                editingTagIndex === index ? (
+                                    <Box key={index} sx={{display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5}}>
+                                        <TextField
+                                            size="small"
+                                            value={editingTagValue}
+                                            onChange={(e) => setEditingTagValue(e.target.value)}
+                                            onKeyPress={handleEditTagKeyPress}
+                                            onBlur={handleSaveEditTag}
+                                            autoFocus
+                                            sx={{
+                                                '& .MuiOutlinedInput-root': {
+                                                    height: 32,
+                                                    fontSize: '0.75rem',
+                                                }
+                                            }}
+                                        />
+                                        <IconButton
+                                            size="small"
+                                            onClick={handleSaveEditTag}
+                                            sx={{p: 0.5}}
+                                        >
+                                            <AddIcon fontSize="small"/>
+                                        </IconButton>
+                                        <IconButton
+                                            size="small"
+                                            onClick={handleCancelEditTag}
+                                            sx={{p: 0.5}}
+                                        >
+                                            <CloseIcon fontSize="small"/>
+                                        </IconButton>
+                                    </Box>
+                                ) : (
+                                    <Chip
+                                        key={index}
+                                        label={tag}
+                                        size="small"
+                                        onDelete={() => handleRemoveTag(index)}
+                                        onClick={() => handleStartEditTag(index, tag)}
+                                        sx={{
+                                            bgcolor: '#e3f2fd',
+                                            color: '#1976d2',
+                                            mb: 0.5,
+                                            cursor: 'pointer',
+                                            '&:hover': {
+                                                bgcolor: '#bbdefb',
+                                            }
+                                        }}
+                                    />
+                                )
+                            ))}
+                            {(editData.tags || []).length === 0 && (
+                                <Typography variant="body2" color="text.secondary">
+                                    No tags
+                                </Typography>
+                            )}
+                        </Stack>
+                    </>
+                ) : (
+                    <Stack direction="row" spacing={1} flexWrap="wrap">
+                        {issue.tags && issue.tags.length > 0 ? (
+                            issue.tags.map((tag, index) => (
+                                <Chip
+                                    key={index}
+                                    label={tag}
+                                    size="small"
+                                    sx={{
+                                        bgcolor: '#e3f2fd',
+                                        color: '#1976d2',
+                                        mb: 0.5,
+                                    }}
+                                />
+                            ))
+                        ) : (
+                            <Typography variant="body2" color="text.secondary">
+                                No tags
+                            </Typography>
+                        )}
+                    </Stack>
+                )}
             </Box>
 
             {/* Assignees */}

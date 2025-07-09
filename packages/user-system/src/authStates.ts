@@ -7,7 +7,7 @@ import {setupSupabaseClient} from "./supabase.ts";
 export interface User {
     id: string
     email: string
-
+    token: string
     [key: string]: any
 }
 
@@ -71,7 +71,8 @@ export const subscriptionAtom: WritableAtom<any, any, any> = atom((get) => {
                 set(userAtom, {
                     id: session.user.id,
                     email: session.user.email || '',
-                    ...session.user.user_metadata
+                    ...session.user.user_metadata,
+                    token: session.access_token
                 })
                 // @ts-ignore
                 set(authTokenAtom, session.access_token)
@@ -86,6 +87,8 @@ export const subscriptionAtom: WritableAtom<any, any, any> = atom((get) => {
         }
     }
 
+    await initializeSession()
+
     // Set up auth state change listener
     const {data: {subscription}} = supabaseClient.auth.onAuthStateChange(async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email)
@@ -95,6 +98,7 @@ export const subscriptionAtom: WritableAtom<any, any, any> = atom((get) => {
             set(userAtom, {
                 id: session.user.id,
                 email: session.user.email || '',
+                token: session.access_token,
                 user_metadata: session.user.user_metadata,
                 ...session.user.user_metadata
             });

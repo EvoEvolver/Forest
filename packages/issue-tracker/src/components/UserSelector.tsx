@@ -2,21 +2,6 @@ import React, {useEffect, useState} from 'react';
 import {Autocomplete, Avatar, Box, Chip, CircularProgress, TextField, Typography,} from '@mui/material';
 import {Person as PersonIcon} from '@mui/icons-material';
 
-// Mock user data - in real app, this would come from an API
-const mockUsers = [
-    {userId: 'user1', username: 'alice', email: 'alice@example.com', avatar: null},
-    {userId: 'user2', username: 'bob', email: 'bob@example.com', avatar: null},
-    {userId: 'user3', username: 'charlie', email: 'charlie@example.com', avatar: null},
-    {userId: 'user4', username: 'diana', email: 'diana@example.com', avatar: null},
-    {userId: 'user5', username: 'eve', email: 'eve@example.com', avatar: null},
-    {userId: 'user6', username: 'frank', email: 'frank@example.com', avatar: null},
-    {userId: 'user7', username: 'grace', email: 'grace@example.com', avatar: null},
-    {userId: 'user8', username: 'henry', email: 'henry@example.com', avatar: null},
-    {userId: 'user9', username: 'ivy', email: 'ivy@example.com', avatar: null},
-    {userId: 'user10', username: 'jack', email: 'jack@example.com', avatar: null},
-    {userId: 'demo-user', username: 'Demo User', email: 'demo@example.com', avatar: null},
-    {userId: 'test-user', username: 'Test User', email: 'test@example.com', avatar: null},
-];
 
 interface User {
     userId: string;

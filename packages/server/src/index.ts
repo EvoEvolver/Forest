@@ -3,31 +3,31 @@ import http from 'http';
 import minimist from 'minimist';
 
 // Import configuration
-import { config } from './config/app';
+import {config} from './config/app';
 
 // Import middleware
-import { setupCORS } from './middleware/cors';
-import { setupBodyParser } from './middleware/bodyParser';
-import { setupStaticFiles } from './middleware/staticFiles';
+import {setupCORS} from './middleware/cors';
+import {setupBodyParser} from './middleware/bodyParser';
+import {setupStaticFiles} from './middleware/staticFiles';
+import cookieParser from 'cookie-parser';
 
 // Import services
-import { TreeService } from './services/treeService';
-import { aiService } from './services/aiService';
+import {TreeService} from './services/treeService';
 
 // Import routers
-import { createTreeRouter } from './routes/treeRoutes';
-import { createAIRouter } from './routes/aiRoutes';
-import { createVisitRouter } from './routes/visitRoutes';
-import { issueRoutes } from '@forest/issue-tracker-server'
+import {createTreeRouter} from './routes/treeRoutes';
+import {createAIRouter} from './routes/aiRoutes';
+import {createVisitRouter} from './routes/visitRoutes';
+import {issueRoutes} from '@forest/issue-tracker-server'
 
 // Import WebSocket handler
-import { WebSocketHandler } from './websocket/websocketHandler';
+import {WebSocketHandler} from './websocket/websocketHandler';
 
 // Import existing modules
-import { setMongoConnection } from './mongoConnection';
-import { setupYjsPersistence } from './y-websocket/utils';
-import { TreeMetadataManager } from './services/treeMetadata';
-import { TreeVisitManager } from './services/treeVisitTracker';
+import {setMongoConnection} from './mongoConnection';
+import {setupYjsPersistence} from './y-websocket/utils';
+import {TreeMetadataManager} from './services/treeMetadata';
+import {TreeVisitManager} from './services/treeVisitTracker';
 
 // Initialize services and connections
 setMongoConnection();
@@ -47,6 +47,7 @@ function main(): void {
     const server = http.createServer(app);
 
     // Setup middleware
+    app.use(cookieParser());
     setupCORS(app);
     setupBodyParser(app);
 

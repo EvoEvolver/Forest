@@ -7,6 +7,9 @@
     "build": "node build.js"
   },
   "dependencies": {
+    "@forest/issue-tracker-server": "workspace:*",
+    "@forest/schema": "workspace:*",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^4.21.1",
@@ -20,9 +23,7 @@
     "ws": "^8.18.0",
     "y-mongodb-provider": "^0.2.1",
     "y-protocols": "^1.0.6",
-    "yjs": "13.6.27",
-    "@forest/issue-tracker-server": "workspace:*",
-    "@forest/schema": "workspace:*"
+    "yjs": "13.6.27"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

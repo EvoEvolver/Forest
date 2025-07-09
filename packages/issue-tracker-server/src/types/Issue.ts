@@ -1,6 +1,5 @@
 export interface Issue {
-  _id?: string;                    // MongoDB auto-generated ID
-  issueId: string;                 // Custom issue ID (format: TREE_001, TREE_002)
+  _id: string;                     // MongoDB auto-generated ID
   treeId: string;                  // Associated tree ID
   title: string;                   // Issue title
   description: string;             // Detailed description

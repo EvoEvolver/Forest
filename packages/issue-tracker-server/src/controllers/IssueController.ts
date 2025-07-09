@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { getIssueModel } from '../models/Issue';
-import { v4 as uuidv4 } from 'uuid';
+import mongoose from 'mongoose';
 
 // Get all issues for a specific tree
 export const getIssuesByTree = async (req: Request, res: Response) => {
@@ -31,7 +31,7 @@ export const getIssueById = async (req: Request, res: Response) => {
   try {
     const Issue = await getIssueModel();
     const { issueId } = req.params;
-    const issue = await Issue.findOne({ issueId });
+    const issue = await Issue.findById(issueId);
     
     if (!issue) {
       res.status(404).json({ error: 'Issue not found' });
@@ -51,12 +51,8 @@ export const createIssue = async (req: Request, res: Response) => {
     
     console.log('Creating issue with data:', { treeId, title, description, priority, dueDate, creator, assignees, nodes, tags });
     
-    // Generate issue ID using UUID
-    // TODO: use the mongodb object id
-    const issueId = uuidv4();
-    
+    // Create new issue
     const newIssue = new Issue({
-      issueId,
       treeId,
       title,
       description,
@@ -85,12 +81,12 @@ export const updateIssue = async (req: Request, res: Response) => {
     const updates = req.body;
     
     // Remove fields that shouldn't be updated directly
-    delete updates.issueId;
+    delete updates._id;
     delete updates.treeId;
     delete updates.createdAt;
     
-    const updatedIssue = await Issue.findOneAndUpdate(
-      { issueId },
+    const updatedIssue = await Issue.findByIdAndUpdate(
+      issueId,
       { ...updates, updatedAt: new Date() },
       { new: true }
     );
@@ -110,7 +106,7 @@ export const deleteIssue = async (req: Request, res: Response) => {
   try {
     const Issue = await getIssueModel();
     const { issueId } = req.params;
-    const deletedIssue = await Issue.findOneAndDelete({ issueId });
+    const deletedIssue = await Issue.findByIdAndDelete(issueId);
     
     if (!deletedIssue) {
       res.status(404).json({ error: 'Issue not found' });
@@ -130,14 +126,14 @@ export const addComment = async (req: Request, res: Response) => {
     const { userId, content } = req.body;
     
     const comment = {
-      commentId: uuidv4(),
+      commentId: new mongoose.Types.ObjectId().toString(),
       userId,
       content,
       createdAt: new Date()
     };
     
-    const updatedIssue = await Issue.findOneAndUpdate(
-      { issueId },
+    const updatedIssue = await Issue.findByIdAndUpdate(
+      issueId,
       { 
         $push: { comments: comment },
         updatedAt: new Date()
@@ -162,8 +158,8 @@ export const resolveIssue = async (req: Request, res: Response) => {
     const { issueId } = req.params;
     const { resolvedBy } = req.body;
     
-    const updatedIssue = await Issue.findOneAndUpdate(
-      { issueId },
+    const updatedIssue = await Issue.findByIdAndUpdate(
+      issueId,
       { 
         status: 'resolved',
         resolvedAt: new Date(),

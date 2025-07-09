@@ -1,13 +1,12 @@
 import React, {useEffect, useState} from 'react';
-import {Alert, Box, Button, Snackbar, Typography,} from '@mui/material';
+import {Alert, Box, Button, Snackbar,} from '@mui/material';
 import {Add as AddIcon,} from '@mui/icons-material';
 import type {CreateIssueRequest, Issue, UpdateIssueRequest} from '../../types/Issue';
-import issueService from '../../services/issueService';
+import {issueServiceAtom} from '../../services/issueService';
 import CreateIssueDialog from './CreateIssueDialog';
 import IssueDetail from '../IssueDetail/IssueDetail';
 import IssueDataGrid from './IssueDataGrid';
 import {useAtomValue} from "jotai";
-import {authTokenAtom, userAtom} from '@forest/user-system/src/authStates';
 
 interface IssueListProps {
     treeId: string;
@@ -22,8 +21,7 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
-    const user = useAtomValue(userAtom)
-
+    const issueService = useAtomValue(issueServiceAtom)
     // Fetch issues on component mount
     useEffect(() => {
         loadIssues();
@@ -60,7 +58,7 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
 
     const handleCreateIssue = async (issueData: CreateIssueRequest) => {
         try {
-            await issueService.createIssue(treeId, issueData, user);
+            await issueService.createIssue(treeId, issueData);
             await loadIssues(); // Refresh the list
             setSuccessMessage('Issue created successfully');
         } catch (error) {
@@ -101,9 +99,6 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
     return (
         <Box sx={{height: 600, width: '100%'}}>
             <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2}}>
-                <Typography variant="h5" component="h2">
-                    Issues for Tree: {treeId}
-                </Typography>
                 <Button
                     variant="contained"
                     startIcon={<AddIcon/>}

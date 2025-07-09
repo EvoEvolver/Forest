@@ -17,7 +17,7 @@ const ActionsCell: React.FC<ActionsCellProps> = ({row, onEdit, onDelete}) => (
             </IconButton>
         </Tooltip>
         <Tooltip title="Delete">
-            <IconButton size="small" onClick={() => onDelete(row.issueId)} sx={{p: 0.5}}>
+            <IconButton size="small" onClick={() => onDelete(row._id)} sx={{p: 0.5}}>
                 <DeleteIcon fontSize="small"/>
             </IconButton>
         </Tooltip>

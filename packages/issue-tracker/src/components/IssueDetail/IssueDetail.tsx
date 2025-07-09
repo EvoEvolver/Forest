@@ -77,10 +77,10 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
     const handleSaveEdit = async () => {
         setLoading(true);
         try {
-            await onUpdate(currentIssue.issueId, editData);
+            await onUpdate(currentIssue._id, editData);
             setIsEditing(false);
             if (onRefreshIssue) {
-                const refreshedIssue = await onRefreshIssue(currentIssue.issueId);
+                const refreshedIssue = await onRefreshIssue(currentIssue._id);
                 setCurrentIssue(refreshedIssue);
             }
         } catch (error) {
@@ -109,9 +109,9 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
         // Directly save assignees changes to backend
         setLoading(true);
         try {
-            await onUpdate(currentIssue.issueId, {assignees: assigneeUpdates});
+            await onUpdate(currentIssue._id, {assignees: assigneeUpdates});
             if (onRefreshIssue) {
-                const refreshedIssue = await onRefreshIssue(currentIssue.issueId);
+                const refreshedIssue = await onRefreshIssue(currentIssue._id);
                 setCurrentIssue(refreshedIssue);
             }
         } catch (error) {
@@ -126,13 +126,13 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
 
         setLoading(true);
         try {
-            await onAddComment(currentIssue.issueId, {
+            await onAddComment(currentIssue._id, {
                 userId: 'demo-user',
                 content: newComment.trim(),
             });
             setNewComment('');
             if (onRefreshIssue) {
-                const refreshedIssue = await onRefreshIssue(currentIssue.issueId);
+                const refreshedIssue = await onRefreshIssue(currentIssue._id);
                 setCurrentIssue(refreshedIssue);
             }
         } catch (error) {
@@ -156,7 +156,7 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
             }}
         >
             <IssueDetailHeader
-                issueId={currentIssue.issueId}
+                issueId={currentIssue._id}
                 isEditing={isEditing}
                 loading={loading}
                 onStartEdit={handleStartEdit}

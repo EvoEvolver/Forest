@@ -1,7 +1,13 @@
 import React, {useEffect, useState} from 'react';
-import {Avatar, Box, Chip, IconButton, Stack, Tooltip, Typography,} from '@mui/material';
-import {Cancel as CancelIcon, Edit as EditIcon, Person as PersonIcon, Save as SaveIcon,} from '@mui/icons-material';
-import UserSelector, {type User} from './UserSelector';
+import {Avatar, Box, Button, Chip, IconButton, Stack, TextField, Tooltip, Typography,} from '@mui/material';
+import {Add as AddIcon, Cancel as CancelIcon, Edit as EditIcon, Person as PersonIcon, Save as SaveIcon,} from '@mui/icons-material';
+
+interface User {
+    userId: string;
+    username: string;
+    email?: string;
+    avatar?: string | null;
+}
 
 interface AssigneeManagerProps {
     assignees: User[];
@@ -25,27 +31,52 @@ const AssigneeManager: React.FC<AssigneeManagerProps> = ({
                                                              disabled = false,
                                                          }) => {
     const [isEditing, setIsEditing] = useState(false);
-    const [editingAssignees, setEditingAssignees] = useState<User[]>([]);
+    const [editingAssignees, setEditingAssignees] = useState<string[]>([]);
+    const [newAssignee, setNewAssignee] = useState('');
 
     useEffect(() => {
-        setEditingAssignees(assignees);
+        setEditingAssignees(assignees.map(a => a.username || a.userId));
     }, [assignees]);
 
     const handleStartEdit = () => {
         setIsEditing(true);
-        setEditingAssignees(assignees);
+        setEditingAssignees(assignees.map(a => a.username || a.userId));
     };
 
     const handleCancelEdit = () => {
         setIsEditing(false);
-        setEditingAssignees(assignees);
+        setEditingAssignees(assignees.map(a => a.username || a.userId));
+        setNewAssignee('');
     };
 
     const handleSaveEdit = () => {
         if (onAssigneesChange) {
-            onAssigneesChange(editingAssignees);
+            const assigneeUsers = editingAssignees.map(username => ({
+                userId: username,
+                username: username
+            }));
+            onAssigneesChange(assigneeUsers);
         }
         setIsEditing(false);
+        setNewAssignee('');
+    };
+
+    const handleAddAssignee = () => {
+        if (newAssignee.trim() && !editingAssignees.includes(newAssignee.trim())) {
+            setEditingAssignees([...editingAssignees, newAssignee.trim()]);
+            setNewAssignee('');
+        }
+    };
+
+    const handleRemoveAssignee = (assigneeToRemove: string) => {
+        setEditingAssignees(editingAssignees.filter(assignee => assignee !== assigneeToRemove));
+    };
+
+    const handleKeyPress = (event: React.KeyboardEvent) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            handleAddAssignee();
+        }
     };
 
     const getUserDisplayName = (user: User) => {
@@ -135,13 +166,49 @@ const AssigneeManager: React.FC<AssigneeManagerProps> = ({
             )}
 
             {isEditing ? (
-                <UserSelector
-                    selectedUsers={editingAssignees}
-                    onUsersChange={setEditingAssignees}
-                    placeholder="Search and assign users..."
-                    maxUsers={10}
-                    disabled={disabled}
-                />
+                <Box>
+                    <Stack direction="row" spacing={1} alignItems="center" sx={{mb: 2}}>
+                        <TextField
+                            size="small"
+                            placeholder="Add assignee"
+                            value={newAssignee}
+                            onChange={(e) => setNewAssignee(e.target.value)}
+                            onKeyPress={handleKeyPress}
+                            sx={{flexGrow: 1}}
+                        />
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={handleAddAssignee}
+                            startIcon={<AddIcon/>}
+                            disabled={!newAssignee.trim()}
+                        >
+                            Add
+                        </Button>
+                    </Stack>
+
+                    {editingAssignees.length > 0 && (
+                        <Box>
+                            <Stack direction="row" spacing={1} flexWrap="wrap">
+                                {editingAssignees.map((assignee, index) => (
+                                    <Chip
+                                        key={index}
+                                        label={assignee}
+                                        onDelete={() => handleRemoveAssignee(assignee)}
+                                        size="small"
+                                        sx={{
+                                            bgcolor: '#e3f2fd',
+                                            color: '#1976d2',
+                                            '& .MuiChip-deleteIcon': {
+                                                color: '#1976d2',
+                                            },
+                                        }}
+                                    />
+                                ))}
+                            </Stack>
+                        </Box>
+                    )}
+                </Box>
             ) : (
                 <Stack spacing={1}>
                     {assignees.length > 0 ? (

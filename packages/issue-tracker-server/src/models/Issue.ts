@@ -27,12 +27,6 @@ const connectDB = async (): Promise<Connection> => {
 
 // Define the schema
 const IssueSchema = new Schema<IssueDocument>({
-  issueId: { 
-    type: String, 
-    required: true, 
-    unique: true,
-    index: true 
-  },
   treeId: { 
     type: String, 
     required: true,
@@ -65,7 +59,7 @@ const IssueSchema = new Schema<IssueDocument>({
     username: { type: String }
   },
   assignees: [{
-    userId: { type: String, required: true },
+    userId: { type: String },
     username: { type: String },
     assignedAt: { type: Date, default: Date.now }
   }],

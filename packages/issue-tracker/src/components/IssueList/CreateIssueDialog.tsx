@@ -11,7 +11,7 @@ import {
   DialogContent,
   DialogTitle,
   FormControl,
-  Grid2 as Grid,
+  Grid,
   IconButton,
   MenuItem,
   Select,
@@ -21,7 +21,6 @@ import {
 } from '@mui/material';
 import {Add as AddIcon, Close as CloseIcon,} from '@mui/icons-material';
 import type {CreateIssueRequest} from '../../types/Issue';
-import UserSelector, {type User} from '../UserSelector';
 
 interface CreateIssueDialogProps {
     open: boolean;
@@ -45,7 +44,8 @@ const CreateIssueDialog: React.FC<CreateIssueDialogProps> = ({
         dueDate: '',
         tags: [] as string[],
         newTag: '',
-        assignees: [] as User[],
+        assignees: [] as string[],
+        newAssignee: '',
     });
 
     const [loading, setLoading] = useState(false);
@@ -76,9 +76,9 @@ const CreateIssueDialog: React.FC<CreateIssueDialogProps> = ({
                 priority: formData.priority,
                 dueDate: formData.dueDate || undefined,
                 tags: formData.tags,
-                assignees: formData.assignees.map(user => ({
-                    userId: user.userId,
-                    username: user.username
+                assignees: formData.assignees.map(assignee => ({
+                    userId: assignee,
+                    username: assignee
                 })),
                 nodes: nodeId ? [{nodeId}] : [],
             };
@@ -101,6 +101,7 @@ const CreateIssueDialog: React.FC<CreateIssueDialogProps> = ({
             tags: [],
             newTag: '',
             assignees: [],
+            newAssignee: '',
         });
         onClose();
     };
@@ -133,16 +134,41 @@ const CreateIssueDialog: React.FC<CreateIssueDialogProps> = ({
         }
     };
 
+    const handleAddAssignee = () => {
+        if (formData.newAssignee.trim() && !formData.assignees.includes(formData.newAssignee.trim())) {
+            setFormData({
+                ...formData,
+                assignees: [...formData.assignees, formData.newAssignee.trim()],
+                newAssignee: '',
+            });
+        }
+    };
+
+    const handleRemoveAssignee = (assigneeToRemove: string) => {
+        setFormData({
+            ...formData,
+            assignees: formData.assignees.filter(assignee => assignee !== assigneeToRemove),
+        });
+    };
+
+    const handleAssigneeKeyPress = (event: React.KeyboardEvent) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            handleAddAssignee();
+        }
+    };
+
     return (
         <Dialog
             open={open}
             onClose={handleClose}
-            maxWidth="auto"
+            maxWidth={false}
             PaperProps={{
                 sx: {
                     borderRadius: 2,
                     boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
                     height: '80vh',
+                    maxWidth: '1200px',
                 }
             }}
         >
@@ -317,42 +343,52 @@ const CreateIssueDialog: React.FC<CreateIssueDialogProps> = ({
                                 </FormControl>
                             </Box>
 
-                            {/* Due Date Section */}
-                            <Box sx={{mb: 4}}>
-                                <Typography variant="body2" sx={{mb: 1, fontWeight: 500, color: '#24292f'}}>
-                                    Due Date & Time
-                                </Typography>
-                                <TextField
-                                    fullWidth
-                                    type="datetime-local"
-                                    value={formData.dueDate}
-                                    onChange={(e) => setFormData({...formData, dueDate: e.target.value})}
-                                    variant="outlined"
-                                    InputLabelProps={{
-                                        shrink: true,
-                                    }}
-                                    sx={{
-                                        '& .MuiOutlinedInput-root': {
-                                            borderRadius: 1,
-                                            '&:hover .MuiOutlinedInput-notchedOutline': {
-                                                borderColor: '#1976d2',
-                                            },
-                                        },
-                                    }}
-                                />
-                            </Box>
-
                             {/* Assignees Section */}
                             <Box sx={{mb: 4}}>
                                 <Typography variant="body2" sx={{mb: 1, fontWeight: 500, color: '#24292f'}}>
                                     Assignees
                                 </Typography>
-                                <UserSelector
-                                    selectedUsers={formData.assignees}
-                                    onUsersChange={(users) => setFormData({...formData, assignees: users})}
-                                    placeholder="Search and assign users to this issue..."
-                                    maxUsers={10}
-                                />
+                                <Stack direction="row" spacing={1} alignItems="center" sx={{mb: 2}}>
+                                    <TextField
+                                        size="small"
+                                        placeholder="Add assignee"
+                                        value={formData.newAssignee}
+                                        onChange={(e) => setFormData({...formData, newAssignee: e.target.value})}
+                                        onKeyPress={handleAssigneeKeyPress}
+                                        sx={{flexGrow: 1}}
+                                    />
+                                    <Button
+                                        variant="outlined"
+                                        size="small"
+                                        onClick={handleAddAssignee}
+                                        startIcon={<AddIcon/>}
+                                        disabled={!formData.newAssignee.trim()}
+                                    >
+                                        Add
+                                    </Button>
+                                </Stack>
+
+                                {formData.assignees.length > 0 && (
+                                    <Box>
+                                        <Stack direction="row" spacing={1} flexWrap="wrap">
+                                            {formData.assignees.map((assignee, index) => (
+                                                <Chip
+                                                    key={index}
+                                                    label={assignee}
+                                                    onDelete={() => handleRemoveAssignee(assignee)}
+                                                    size="small"
+                                                    sx={{
+                                                        bgcolor: '#e3f2fd',
+                                                        color: '#1976d2',
+                                                        '& .MuiChip-deleteIcon': {
+                                                            color: '#1976d2',
+                                                        },
+                                                    }}
+                                                />
+                                            ))}
+                                        </Stack>
+                                    </Box>
+                                )}
                             </Box>
 
                             {/* Tree Info */}

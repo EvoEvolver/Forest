@@ -17,7 +17,6 @@ export interface Comment {
 
 export interface Issue {
     _id: string;
-    issueId: string;
     treeId: string;
     title: string;
     description: string;

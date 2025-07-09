@@ -138,7 +138,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                     paginationModel: {page: 0, pageSize: 10},
                 },
             }}
-            getRowId={(row) => row.issueId}
+            getRowId={(row) => row._id}
             disableRowSelectionOnClick
             sx={{
                 '& .MuiDataGrid-main': {
