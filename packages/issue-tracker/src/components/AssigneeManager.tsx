@@ -23,7 +23,10 @@ interface AssigneeManagerProps {
     showTitle?: boolean;
     title?: string;
     disabled?: boolean;
-    treeId: string; // <-- Add treeId prop
+    treeId: string;
+    isEditing?: boolean; // External editing state
+    editingAssignees?: User[]; // External editing assignees
+    onEditingAssigneesChange?: (assignees: User[]) => void; // Callback for editing changes
 }
 
 const AssigneeManager: React.FC<AssigneeManagerProps> = ({
@@ -36,12 +39,14 @@ const AssigneeManager: React.FC<AssigneeManagerProps> = ({
                                                              title = 'Assignees',
                                                              disabled = false,
                                                              treeId,
+                                                             isEditing,
+                                                             editingAssignees,
+                                                             onEditingAssigneesChange,
                                                          }) => {
-    const [isEditing, setIsEditing] = useState(false);
-    const [editingAssignees, setEditingAssignees] = useState<User[]>([]);
     const [treeMembers, setTreeMembers] = useState<User[]>([]);
     const [loadingMembers, setLoadingMembers] = useState(false);
     const [usernames, setUsernames] = useState<{ [userId: string]: string }>({});
+    const [enrichedAssignees, setEnrichedAssignees] = useState<User[]>(assignees);
 
     // Fetch tree members with permission and enrich with user details
     useEffect(() => {
@@ -60,18 +65,24 @@ const AssigneeManager: React.FC<AssigneeManagerProps> = ({
                     setLoadingMembers(false);
                     return;
                 }
-                // Fetch user details from our user metadata API
+                // Fetch user details from Supabase and our user metadata API
                 const userDetails: User[] = await Promise.all(userIds.map(async (id: string) => {
                     try {
-                        const userMeta = await getUserMetadata(id)
+                        const userMeta = await getUserMetadata(id);
+                        console.log("User metadata for user", id, userMeta);
                         return {
                             userId: id,
-                            username:  userMeta.username,
-                            email: userMeta?.email || undefined,
+                            username: userMeta.username,
+                            email: userMeta.email || undefined,
                             avatar: userMeta.avatar || null,
                         };
-                    } catch {
-                        return {userId: id, username: id};
+                    } catch (error) {
+                        return {
+                            userId: id, 
+                            username: id,
+                            email: undefined,
+                            avatar: null
+                        };
                     }
                 }));
                 setTreeMembers(userDetails);
@@ -86,55 +97,42 @@ const AssigneeManager: React.FC<AssigneeManagerProps> = ({
     }, [treeId, isEditing]);
 
     useEffect(() => {
-        setEditingAssignees(assignees);
-    }, [assignees]);
-
-    useEffect(() => {
-        // Fetch usernames for all assignees
+        // Fetch usernames and avatars for all assignees
         async function fetchUsernames() {
             const ids = assignees.map(a => a.userId);
             const usernameMap: { [userId: string]: string } = {};
-            await Promise.all(ids.map(async (id) => {
+            const enrichedUsers: User[] = await Promise.all(assignees.map(async (assignee) => {
                 try {
-                    const username = await getUsername(id);
-                    usernameMap[id] = username;
+                    const userMeta = await getUserMetadata(assignee.userId);
+                    usernameMap[assignee.userId] = userMeta.username;
+                    return {
+                        userId: assignee.userId,
+                        username: userMeta.username,
+                        email: userMeta.email || assignee.email,
+                        avatar: userMeta.avatar || assignee.avatar,
+                    };
                 } catch {
-                    usernameMap[id] = id;
+                    usernameMap[assignee.userId] = assignee.username || assignee.userId;
+                    return assignee;
                 }
             }));
             setUsernames(usernameMap);
+            setEnrichedAssignees(enrichedUsers);
         }
         fetchUsernames();
     }, [assignees]);
 
-    const handleStartEdit = () => {
-        setIsEditing(true);
-        setEditingAssignees(assignees);
-    };
-
-    const handleCancelEdit = () => {
-        setIsEditing(false);
-        setEditingAssignees(assignees);
-    };
-
-    const handleSaveEdit = () => {
-        if (onAssigneesChange) {
-            onAssigneesChange(editingAssignees);
-        }
-        setIsEditing(false);
-    };
-
     const getUserDisplayName = (user: User) => {
-        return usernames[user.userId] || "loading";
+        return usernames[user.userId] || user.username || "loading";
     };
 
     // List variant - compact display for table rows
     if (variant === 'list') {
         return (
             <>
-                {assignees.length > 0 ? (
+                {enrichedAssignees.length > 0 ? (
                     <>
-                        {assignees.slice(0, maxDisplay).map((assignee, index) => (
+                        {enrichedAssignees.slice(0, maxDisplay).map((assignee, index) => (
                             <Tooltip key={index} title={getUserDisplayName(assignee)}>
                                 <Chip
                                     label={getUserDisplayName(assignee)}
@@ -151,9 +149,9 @@ const AssigneeManager: React.FC<AssigneeManagerProps> = ({
                                 />
                             </Tooltip>
                         ))}
-                        {assignees.length > maxDisplay && (
+                        {enrichedAssignees.length > maxDisplay && (
                             <Chip
-                                label={`+${assignees.length - maxDisplay}`}
+                                label={`+${enrichedAssignees.length - maxDisplay}`}
                                 size="small"
                                 sx={{
                                     bgcolor: '#f5f5f5',
@@ -187,21 +185,6 @@ const AssigneeManager: React.FC<AssigneeManagerProps> = ({
                         <PersonIcon fontSize="small"/>
                         {title}
                     </Typography>
-                    {editable && !disabled && !isEditing && (
-                        <IconButton size="small" onClick={handleStartEdit}>
-                            <EditIcon fontSize="small"/>
-                        </IconButton>
-                    )}
-                    {isEditing && (
-                        <Box sx={{display: 'flex', gap: 0.5}}>
-                            <IconButton size="small" onClick={handleSaveEdit}>
-                                <SaveIcon fontSize="small"/>
-                            </IconButton>
-                            <IconButton size="small" onClick={handleCancelEdit}>
-                                <CancelIcon fontSize="small"/>
-                            </IconButton>
-                        </Box>
-                    )}
                 </Box>
             )}
 
@@ -212,7 +195,7 @@ const AssigneeManager: React.FC<AssigneeManagerProps> = ({
                     ) : (
                         <UserSelector
                             selectedUsers={editingAssignees}
-                            onUsersChange={setEditingAssignees}
+                            onUsersChange={onEditingAssigneesChange}
                             label="Select assignees"
                             placeholder="Search tree members..."
                             disabled={disabled}
@@ -226,15 +209,14 @@ const AssigneeManager: React.FC<AssigneeManagerProps> = ({
                 </Box>
             ) : (
                 <Stack spacing={1}>
-                    {assignees.length > 0 ? (
-                        assignees.map((assignee, index) => (
+                    {enrichedAssignees.length > 0 ? (
+                        enrichedAssignees.map((assignee, index) => (
                             <Box key={index} sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-                                <Avatar sx={{width: 24, height: 24}}>
-                                    {assignee.avatar ? (
-                                        <img src={assignee.avatar} alt={getUserDisplayName(assignee)}/>
-                                    ) : (
-                                        <PersonIcon fontSize="small"/>
-                                    )}
+                                <Avatar 
+                                    sx={{width: 24, height: 24}}
+                                    src={assignee.avatar || undefined}
+                                >
+                                    <PersonIcon fontSize="small"/>
                                 </Avatar>
                                 <Typography variant="body2">
                                     {getUserDisplayName(assignee)}

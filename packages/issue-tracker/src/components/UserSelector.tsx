@@ -174,12 +174,11 @@ const UserSelector: React.FC<UserSelectorProps> = ({
             )}
             renderOption={(props, option) => (
                 <Box component="li" {...props} sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-                    <Avatar sx={{width: 32, height: 32}}>
-                        {option.avatar ? (
-                            <img src={option.avatar} alt={getUserDisplayName(option)}/>
-                        ) : (
-                            <PersonIcon fontSize="small"/>
-                        )}
+                    <Avatar 
+                        sx={{width: 32, height: 32}}
+                        src={option.avatar || undefined}
+                    >
+                        <PersonIcon fontSize="small"/>
                     </Avatar>
                     <Box>
                         <Typography variant="body2" sx={{fontWeight: 500}}>
@@ -199,12 +198,11 @@ const UserSelector: React.FC<UserSelectorProps> = ({
                         {...getTagProps({index})}
                         key={option.userId}
                         avatar={
-                            <Avatar sx={{width: 24, height: 24}}>
-                                {option.avatar ? (
-                                    <img src={option.avatar} alt={getUserDisplayName(option)}/>
-                                ) : (
-                                    <PersonIcon fontSize="small"/>
-                                )}
+                            <Avatar 
+                                sx={{width: 24, height: 24}}
+                                src={option.avatar || undefined}
+                            >
+                                <PersonIcon fontSize="small"/>
                             </Avatar>
                         }
                         label={getUserDisplayName(option)}

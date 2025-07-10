@@ -64,8 +64,10 @@ export async function getUserMetadata(id: string) {
 
         const userData = {
             userId: id,
-            username: userMeta.name || userMeta.user_name || userMeta.email?.split('@')[0] || id,
+            // Priority: display_name > name > user_name > email prefix > fallback to id
+            username: userMeta.display_name || userMeta.name || userMeta.user_name || userMeta.email?.split('@')[0] || id,
             email: userMeta.email || undefined,
+            // Use avatar_url from Supabase user metadata
             avatar: userMeta.avatar_url || null,
         };
 
@@ -73,8 +75,9 @@ export async function getUserMetadata(id: string) {
         userMetadataCache.set(id, userData);
 
         return userData;
-    } catch {
-        const fallbackData = {userId: id, username: id, avatar: null};
+    } catch (error) {
+        console.log('Error fetching user metadata for user', id, error);
+        const fallbackData = {userId: id, username: id, email: undefined, avatar: null};
         userMetadataCache.set(id, fallbackData);
         return fallbackData;
     }

@@ -104,40 +104,6 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
         setEditData({...editData, ...updates});
     };
 
-    const handleAssigneesChange = async (users: User[]) => {
-        console.log('handleAssigneesChange', users);
-        const assigneeUpdates = users.map(u => ({
-            userId: u.userId,
-            username: u.username
-        }));
-
-        setEditData({
-            ...editData,
-            assignees: assigneeUpdates
-        });
-
-        // For new issues, just update the edit data
-        if (isCreatingNew) {
-            return;
-        }
-
-        // Directly save assignees changes to backend for existing issues
-        setLoading(true);
-        try {
-            if (currentIssue) {
-                await onUpdate(currentIssue._id, {assignees: assigneeUpdates});
-                if (onRefreshIssue) {
-                    const refreshedIssue = await onRefreshIssue(currentIssue._id);
-                    setCurrentIssue(refreshedIssue);
-                }
-            }
-        } catch (error) {
-            console.error('Failed to update assignees:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const handleAddComment = async () => {
         if (!newComment.trim() || !onAddComment) return;
 
@@ -203,7 +169,6 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
                         editData={editData}
                         loading={loading}
                         onEditDataChange={handleEditDataChange}
-                        onAssigneesChange={handleAssigneesChange}
                     />
                 </Box>
             </DialogContent>

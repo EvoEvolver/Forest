@@ -29,7 +29,13 @@ function IssuePanel() {
             </Toolbar>
         </AppBar>
         {supabaseClient && <AuthModal/>}
-        <Container maxWidth="xl" sx={{py: 4, paddingTop: 10}}>
+        <Container maxWidth="xl" sx={{
+            pb: 3, 
+            height: '100vh', // Full viewport height
+            display: 'flex',
+            flexDirection: 'column',
+            //paddingTop: '48px' 
+        }}>
             {treeId ? (
                 <IssueList treeId={treeId} simple={false}/>
             ) : (

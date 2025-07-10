@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import type {SelectChangeEvent} from '@mui/material';
 import {Avatar, Box, Chip, Divider, FormControl, MenuItem, Select, Stack, TextField, Typography, IconButton,} from '@mui/material';
 import {
@@ -12,6 +12,7 @@ import {
 import type {Issue, UpdateIssueRequest} from '../../types/Issue';
 import type {User} from '../UserSelector';
 import AssigneeManager from '../AssigneeManager';
+import {getUserMetadata} from "@forest/user-system/src/userMetadata";
 
 interface IssueDetailSidebarProps {
     issue: Issue;
@@ -19,7 +20,6 @@ interface IssueDetailSidebarProps {
     editData: UpdateIssueRequest;
     loading: boolean;
     onEditDataChange: (updates: Partial<UpdateIssueRequest>) => void;
-    onAssigneesChange: (users: User[]) => void;
 }
 
 const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
@@ -28,7 +28,6 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
                                                                    editData,
                                                                    loading,
                                                                    onEditDataChange,
-                                                                   onAssigneesChange,
                                                                }) => {
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -119,6 +118,35 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
             handleCancelEditTag();
         }
     };
+
+    const [creatorInfo, setCreatorInfo] = useState<{username: string, avatar?: string}>({
+        username: issue.creator.username || issue.creator.userId,
+        avatar: undefined
+    });
+
+    // Fetch creator information
+    useEffect(() => {
+        async function fetchCreatorInfo() {
+            try {
+                console.log("Fetching creator info for user", issue.creator.userId);
+                const userMeta = await getUserMetadata(issue.creator.userId);
+                console.log("User metadata for creator", userMeta);
+                setCreatorInfo({
+                    username: userMeta.username,
+                    avatar: userMeta.avatar
+                });
+
+            } catch (error) {
+                console.error('Failed to fetch creator info:', error);
+                setCreatorInfo({
+                    username: issue.creator.username || issue.creator.userId,
+                    avatar: undefined
+                });
+            }
+        }
+        
+        fetchCreatorInfo();
+    }, [issue.creator.userId, issue.creator.username]);
 
     return (
         <Box
@@ -339,12 +367,26 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
                     email: undefined,
                     avatar: null
                 }))}
-                onAssigneesChange={onAssigneesChange}
+                onAssigneesChange={() => {}}
                 editable={true}
                 variant="detail"
                 title="Assignees"
                 disabled={loading}
                 treeId={issue.treeId}
+                isEditing={isEditing}
+                editingAssignees={(editData.assignees || []).map(a => ({
+                    userId: a.userId,
+                    username: a.username || a.userId,
+                    email: undefined,
+                    avatar: null
+                }))}
+                onEditingAssigneesChange={(users) => {
+                    const assigneeUpdates = users.map(u => ({
+                        userId: u.userId,
+                        username: u.username
+                    }));
+                    onEditDataChange({ assignees: assigneeUpdates });
+                }}
             />
 
             <Divider sx={{my: 2}}/>
@@ -357,11 +399,14 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
                     Creator
                 </Typography>
                 <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-                    <Avatar sx={{width: 24, height: 24}}>
+                    <Avatar 
+                        sx={{width: 24, height: 24}}
+                        src={creatorInfo.avatar || undefined}
+                    >
                         <PersonIcon fontSize="small"/>
                     </Avatar>
                     <Typography variant="body2">
-                        {issue.creator.username || issue.creator.userId}
+                        {creatorInfo.username}
                     </Typography>
                 </Box>
             </Box>

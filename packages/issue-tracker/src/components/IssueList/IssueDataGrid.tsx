@@ -1,6 +1,8 @@
 import React from 'react';
 import type {GridColDef, GridRenderCellParams} from '@mui/x-data-grid';
-import {DataGrid} from '@mui/x-data-grid';
+import {DataGrid, GridFooterContainer, GridPagination} from '@mui/x-data-grid';
+import {Box, Button} from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import type {Issue} from '../../types/Issue';
 import TitleCell from './columns/TitleCell';
 import StatusCell from './columns/StatusCell';
@@ -17,6 +19,7 @@ interface IssueDataGridProps {
     onIssueSelect: (issue: Issue) => void;
     onIssueEdit: (issue: Issue) => void;
     onIssueDelete: (issueId: string) => void;
+    onCreateIssue?: () => void;
 }
 
 const IssueDataGrid: React.FC<IssueDataGridProps> = ({
@@ -26,14 +29,33 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
     onIssueSelect,
     onIssueEdit,
     onIssueDelete,
+    onCreateIssue,
 }) => {
+    // Custom footer component with Create Issue button and pagination
+    const CustomFooter = () => (
+        <GridFooterContainer>
+            <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                <Button
+                    variant="contained"
+                    size="small"
+                    startIcon={<AddIcon/>}
+                    onClick={onCreateIssue}
+                    sx={{ marginLeft: 1 }}
+                >
+                    Create Issue
+                </Button>
+                <Box sx={{ flex: 1 }} />
+                <GridPagination />
+            </Box>
+        </GridFooterContainer>
+    );
+
     const columns: GridColDef[] = simple ? [
         {
             field: 'title',
             headerName: 'Issue',
-            width: 200,
-            minWidth: 200,
-            flex: 1,
+            minWidth: 100,
+            flex: 2, 
             renderCell: (params: GridRenderCellParams) => (
                 <TitleCell value={params.value} row={params.row} onSelect={onIssueSelect}/>
             ),
@@ -41,8 +63,8 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
         {
             field: 'assignees',
             headerName: 'Assignees',
-            width: 180,
-            minWidth: 150,
+            minWidth: 100,
+            flex: 1, 
             renderCell: (params: GridRenderCellParams) => (
                 <AssigneesCell value={params.value}/>
             ),
@@ -81,6 +103,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
             headerName: 'Assignees',
             width: 180,
             minWidth: 150,
+            flex: 2,
             renderCell: (params: GridRenderCellParams) => (
                 <AssigneesCell value={params.value}/>
             ),
@@ -121,15 +144,17 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
             rows={issues}
             columns={columns}
             loading={loading}
-            pageSizeOptions={[10]}
+            pageSizeOptions={[5]}
             initialState={{
                 pagination: {
-                    paginationModel: {page: 0, pageSize: 10},
+                    paginationModel: {page: 0, pageSize: 5}, 
                 },
             }}
             getRowId={(row) => row._id}
             disableRowSelectionOnClick
             sx={{
+                width: '100%',
+                height: '100%', // Fill parent container
                 '& .MuiDataGrid-main': {
                     overflow: 'visible'
                 },
@@ -146,13 +171,15 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                     padding: '4px',
                     display: 'flex',
                 },
+                '& .MuiDataGrid-virtualScroller': {
+                    // Ensure consistent height regardless of content
+                    minHeight: '200px',
+                },
             }}
-            autoHeight={false}
             rowHeight={35}
             slots={{
-                footer: issues.length > 10 ? undefined : () => null,
+                footer: CustomFooter,
             }}
-
         />
     );
 };

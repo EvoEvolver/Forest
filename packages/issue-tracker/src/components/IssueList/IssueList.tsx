@@ -133,27 +133,28 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
     };
 
     return (
-        <Box sx={{height: '90%', width: '100%'}}>
-            <IssueDataGrid
-                issues={issues}
-                loading={loading}
-                simple={simple}
-                onIssueSelect={setSelectedIssue}
-                onIssueEdit={handleEditIssue}
-                onIssueDelete={handleDeleteIssue}
-            />
-            <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2}}>
-                <Button
-                    variant="contained"
-                    size="small"
-                    startIcon={<AddIcon/>}
-                    onClick={() => {
+        <Box sx={{
+            height: '100%', 
+            width: '100%', 
+            flexGrow: 1,
+            border: '1px solid black',
+            display: 'flex',
+            flexDirection: 'column'
+        }}>
+            {/* DataGrid with fixed height to prevent size changes */}
+            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <IssueDataGrid
+                    issues={issues}
+                    loading={loading}
+                    simple={simple}
+                    onIssueSelect={setSelectedIssue}
+                    onIssueEdit={handleEditIssue}
+                    onIssueDelete={handleDeleteIssue}
+                    onCreateIssue={() => {
                         setIsCreatingNew(true);
                         setSelectedIssue(createEmptyIssue());
                     }}
-                >
-                    Create Issue
-                </Button>
+                />
             </Box>
             {/* Issue Detail Dialog */}
             <IssueDetail
