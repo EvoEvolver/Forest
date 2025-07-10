@@ -4,6 +4,7 @@ import {useAtom, useAtomValue} from 'jotai';
 import {subscriptionAtom, supabaseClientAtom, userAtom} from '@forest/user-system/src/authStates';
 import {AppBar, Toolbar, Container, Paper, Typography, Button, Alert, Box, CircularProgress} from "@mui/material";
 import AuthButton from "@forest/user-system/src/AuthButton";
+import AuthModal from "@forest/user-system/src/AuthModal";
 
 const TreeInvitePage = () => {
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -70,6 +71,7 @@ const TreeInvitePage = () => {
                     {supabaseClient && <>{<AuthButton/>}</>}
                 </Toolbar>
             </AppBar>
+            {supabaseClient && <AuthModal/>}
             <Container maxWidth="sm" sx={{ pt: 10, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <Paper elevation={3} sx={{ p: 4, mt: 4, width: '100%', maxWidth: 500, textAlign: 'center' }}>
                     <Typography variant="h4" gutterBottom color="primary">

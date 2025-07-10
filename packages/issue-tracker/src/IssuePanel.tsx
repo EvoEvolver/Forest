@@ -4,6 +4,7 @@ import IssueList from './components/IssueList/IssueList';
 import AuthButton from "@forest/user-system/src/AuthButton";
 import {subscriptionAtom, supabaseClientAtom} from "@forest/user-system/src/authStates";
 import {useAtom, useAtomValue} from "jotai";
+import AuthModal from "@forest/user-system/src/AuthModal";
 
 function IssuePanel() {
     const [subscription, setSubscription] = useAtom(subscriptionAtom);
@@ -27,6 +28,7 @@ function IssuePanel() {
                 {supabaseClient && <AuthButton/>}
             </Toolbar>
         </AppBar>
+        {supabaseClient && <AuthModal/>}
         <Container maxWidth="xl" sx={{py: 4, paddingTop: 10}}>
             {treeId ? (
                 <IssueList treeId={treeId} simple={false}/>
