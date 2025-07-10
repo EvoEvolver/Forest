@@ -9,6 +9,8 @@
   "dependencies": {
     "@forest/issue-tracker-server": "workspace:*",
     "@forest/schema": "workspace:*",
+    "@supabase/supabase-js": "^2.50.5",
+    "@types/pg": "^8.15.4",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
@@ -20,11 +22,11 @@
     "minimist": "^1.2.8",
     "mongodb": "^6.16.0",
     "openai": "^4.103.0",
+    "pg": "^8.16.3",
     "ws": "^8.18.0",
     "y-mongodb-provider": "^0.2.1",
     "y-protocols": "^1.0.6",
-    "yjs": "13.6.27",
-    "pg": "^8.16.3"
+    "yjs": "13.6.27"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
