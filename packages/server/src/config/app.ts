@@ -13,7 +13,11 @@ export const config = {
     noFrontend: process.env.NO_FRONTEND === 'true',
     openaiApiKey: process.env.OPENAI_API_KEY,
     cors: {
-        origin: process.env.CORS_ORIGIN || '*',
+        origin: [
+            'http://localhost:39999',
+            'http://localhost:29999',
+            'https://treer.ai'
+        ],
         credentials: true
     },
     express: {
