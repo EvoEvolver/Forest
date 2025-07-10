@@ -121,7 +121,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
             rows={issues}
             columns={columns}
             loading={loading}
-            pageSizeOptions={[5, 10, 25]}
+            pageSizeOptions={[10]}
             initialState={{
                 pagination: {
                     paginationModel: {page: 0, pageSize: 10},
@@ -150,9 +150,9 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
             autoHeight={false}
             rowHeight={35}
             slots={{
-                footer: issues.length > 20 ? undefined : () => null,
+                footer: issues.length > 10 ? undefined : () => null,
             }}
-            showToolbar={!simple}
+
         />
     );
 };

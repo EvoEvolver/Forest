@@ -21,7 +21,7 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
     const [successMessage, setSuccessMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const issueService = useAtomValue(issueServiceAtom)
-    
+
     const createEmptyIssue = (): Issue => ({
         _id: '',
         treeId,
@@ -31,13 +31,13 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
         priority: 'medium',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        creator: { userId: 'demo-user', username: 'Demo User' },
+        creator: {userId: '', username: ''},
         assignees: [],
-        nodes: nodeId ? [{ nodeId, nodeType: undefined }] : [],
+        nodes: nodeId ? [{nodeId, nodeType: undefined}] : [],
         tags: [],
         comments: []
     });
-    
+
     // Fetch issues on component mount
     useEffect(() => {
         loadIssues();
@@ -106,7 +106,7 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
                 dueDate: updates.dueDate,
                 tags: updates.tags || [],
                 assignees: updates.assignees || [],
-                nodes: updates.nodes || (nodeId ? [{ nodeId, nodeType: undefined }] : [])
+                nodes: updates.nodes || (nodeId ? [{nodeId, nodeType: undefined}] : [])
             };
             await handleCreateIssue(createData);
             setIsCreatingNew(false);
@@ -133,9 +133,7 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
     };
 
     return (
-        <Box sx={{height: 300, width: '100%'}}>
-
-
+        <Box sx={{height: '90%', width: '100%'}}>
             <IssueDataGrid
                 issues={issues}
                 loading={loading}
