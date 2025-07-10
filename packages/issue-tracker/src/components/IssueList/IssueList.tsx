@@ -137,12 +137,19 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
             height: '100%', 
             width: '100%', 
             flexGrow: 1,
-            border: '1px solid black',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            overflow: 'hidden',
+            minHeight: 0 // Important for flex containers
         }}>
             {/* DataGrid with fixed height to prevent size changes */}
-            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ 
+                flex: 1, 
+                display: 'flex', 
+                flexDirection: 'column',
+                overflow: 'hidden',
+                minHeight: 0 // Important for nested flex containers
+            }}>
                 <IssueDataGrid
                     issues={issues}
                     loading={loading}
@@ -166,6 +173,11 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
                 }}
                 onUpdate={handleIssueUpdate}
                 onAddComment={handleAddComment}
+                onDelete={async (issueId: string) => {
+                    await issueService.deleteIssue(issueId);
+                    await loadIssues(); // Refresh the list
+                    setSuccessMessage('Issue deleted successfully');
+                }}
                 onRefreshIssue={async (issueId: string) => {
                     const issue = await issueService.getIssueById(issueId);
                     return issue;

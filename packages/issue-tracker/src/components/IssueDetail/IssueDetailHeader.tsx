@@ -1,6 +1,6 @@
-import React from 'react';
-import {Box, Chip, DialogTitle, IconButton, Typography,} from '@mui/material';
-import {Cancel as CancelIcon, Close as CloseIcon, Edit as EditIcon, Save as SaveIcon,} from '@mui/icons-material';
+import React, {useState} from 'react';
+import {Box, Chip, DialogTitle, IconButton, Typography, Dialog, DialogActions, DialogContent, DialogContentText, Button,} from '@mui/material';
+import {Cancel as CancelIcon, Close as CloseIcon, Edit as EditIcon, Save as SaveIcon, Delete as DeleteIcon,} from '@mui/icons-material';
 
 interface IssueDetailHeaderProps {
     issueId: string;
@@ -10,7 +10,9 @@ interface IssueDetailHeaderProps {
     onSaveEdit: () => void;
     onCancelEdit: () => void;
     onClose: () => void;
+    onDelete?: () => void;
     isCreatingNew?: boolean;
+    canDelete?: boolean; // Whether current user can delete this issue
 }
 
 const IssueDetailHeader: React.FC<IssueDetailHeaderProps> = ({
@@ -21,55 +23,117 @@ const IssueDetailHeader: React.FC<IssueDetailHeaderProps> = ({
                                                                  onSaveEdit,
                                                                  onCancelEdit,
                                                                  onClose,
+                                                                 onDelete,
                                                                  isCreatingNew = false,
+                                                                 canDelete = false,
                                                              }) => {
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+
+    const handleDeleteClick = () => {
+        setDeleteConfirmOpen(true);
+    };
+
+    const handleDeleteConfirm = () => {
+        setDeleteConfirmOpen(false);
+        onDelete?.();
+    };
+
+    const handleDeleteCancel = () => {
+        setDeleteConfirmOpen(false);
+    };
+
     return (
-        <DialogTitle
-            sx={{
-                bgcolor: '#f6f8fa',
-                borderBottom: '1px solid #d1d9e0',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                p: 3,
-            }}
-        >
-            <Box sx={{display: 'flex', alignItems: 'center', gap: 2}}>
-                <Typography variant="h6" sx={{fontWeight: 600, color: '#24292f'}}>
-                    {isCreatingNew ? 'Create Issue' : (isEditing ? 'Edit Issue' : 'Issue Details')}
-                </Typography>
-                {!isCreatingNew && (
-                    <Chip
-                        label={issueId}
-                        size="small"
-                        sx={{
-                            bgcolor: '#e3f2fd',
-                            color: '#1976d2',
-                            fontFamily: 'monospace',
-                        }}
-                    />
-                )}
-            </Box>
-            <Box sx={{display: 'flex', gap: 1}}>
-                {!isEditing ? (
-                    <IconButton onClick={onStartEdit} size="small">
-                        <EditIcon/>
+        <>
+            <DialogTitle
+                sx={{
+                    bgcolor: '#f6f8fa',
+                    borderBottom: '1px solid #d1d9e0',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    p: 3,
+                }}
+            >
+                <Box sx={{display: 'flex', alignItems: 'center', gap: 2}}>
+                    <Typography variant="h6" sx={{fontWeight: 600, color: '#24292f'}}>
+                        {isCreatingNew ? 'Create Issue' : (isEditing ? 'Edit Issue' : 'Issue Details')}
+                    </Typography>
+                    {!isCreatingNew && (
+                        <Chip
+                            label={issueId}
+                            size="small"
+                            sx={{
+                                bgcolor: '#e3f2fd',
+                                color: '#1976d2',
+                                fontFamily: 'monospace',
+                            }}
+                        />
+                    )}
+                </Box>
+                <Box sx={{display: 'flex', gap: 1}}>
+                    {!isEditing ? (
+                        <>
+                            <IconButton onClick={onStartEdit} size="small">
+                                <EditIcon/>
+                            </IconButton>
+                            {canDelete && !isCreatingNew && (
+                                <IconButton 
+                                    onClick={handleDeleteClick} 
+                                    size="small"
+                                    sx={{
+                                        color: '#d32f2f',
+                                        '&:hover': {
+                                            bgcolor: '#ffebee',
+                                        }
+                                    }}
+                                >
+                                    <DeleteIcon/>
+                                </IconButton>
+                            )}
+                        </>
+                    ) : (
+                        <>
+                            <IconButton onClick={onSaveEdit} size="small" disabled={loading}>
+                                <SaveIcon/>
+                            </IconButton>
+                            <IconButton onClick={onCancelEdit} size="small">
+                                <CancelIcon/>
+                            </IconButton>
+                        </>
+                    )}
+                    <IconButton onClick={onClose} size="small">
+                        <CloseIcon/>
                     </IconButton>
-                ) : (
-                    <>
-                        <IconButton onClick={onSaveEdit} size="small" disabled={loading}>
-                            <SaveIcon/>
-                        </IconButton>
-                        <IconButton onClick={onCancelEdit} size="small">
-                            <CancelIcon/>
-                        </IconButton>
-                    </>
-                )}
-                <IconButton onClick={onClose} size="small">
-                    <CloseIcon/>
-                </IconButton>
-            </Box>
-        </DialogTitle>
+                </Box>
+            </DialogTitle>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog
+                open={deleteConfirmOpen}
+                onClose={handleDeleteCancel}
+                aria-labelledby="delete-dialog-title"
+                aria-describedby="delete-dialog-description"
+            >
+                <DialogContent>
+                    <DialogContentText id="delete-dialog-description">
+                        Are you sure you want to delete this issue? This action cannot be undone.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleDeleteCancel} color="primary">
+                        Cancel
+                    </Button>
+                    <Button 
+                        onClick={handleDeleteConfirm} 
+                        color="error" 
+                        variant="contained"
+                        autoFocus
+                    >
+                        Delete
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        </>
     );
 };
 

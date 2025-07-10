@@ -152,11 +152,22 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
             }}
             getRowId={(row) => row._id}
             disableRowSelectionOnClick
+            hideFooterSelectedRowCount
             sx={{
                 width: '100%',
-                height: '100%', // Fill parent container
+                height: '100%',
+                border: 'none',
                 '& .MuiDataGrid-main': {
-                    overflow: 'visible'
+                    overflow: 'hidden'
+                },
+                '& .MuiDataGrid-virtualScroller': {
+                    overflow: 'hidden !important'
+                },
+                '& .MuiDataGrid-virtualScrollerContent': {
+                    overflow: 'hidden'
+                },
+                '& .MuiDataGrid-virtualScrollerRenderZone': {
+                    overflow: 'hidden'
                 },
                 '& .MuiDataGrid-columnHeaders': {
                     backgroundColor: '#f5f5f5',
@@ -171,10 +182,15 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                     padding: '4px',
                     display: 'flex',
                 },
-                '& .MuiDataGrid-virtualScroller': {
-                    // Ensure consistent height regardless of content
-                    minHeight: '200px',
+                '& .MuiDataGrid-scrollbar': {
+                    display: 'none'
                 },
+                '& .MuiDataGrid-scrollbar--vertical': {
+                    display: 'none'
+                },
+                '& .MuiDataGrid-scrollbar--horizontal': {
+                    display: 'none'
+                }
             }}
             rowHeight={35}
             slots={{

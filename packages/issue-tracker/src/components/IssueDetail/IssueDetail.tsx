@@ -5,6 +5,9 @@ import type {User} from '../UserSelector';
 import IssueDetailHeader from './IssueDetailHeader';
 import IssueDetailContent from './IssueDetailContent';
 import IssueDetailSidebar from './IssueDetailSidebar';
+import {useAtomValue} from 'jotai';
+import {userAtom} from '@forest/user-system/src/authStates';
+import issueServiceAtom from '../../services/issueService';
 
 interface IssueDetailProps {
     issue: Issue | null;
@@ -13,6 +16,7 @@ interface IssueDetailProps {
     onUpdate: (issueId: string, updates: UpdateIssueRequest) => Promise<void>;
     onAddComment?: (issueId: string, comment: { userId: string; content: string }) => Promise<void>;
     onRefreshIssue?: (issueId: string) => Promise<Issue>;
+    onDelete?: (issueId: string) => Promise<void>; // New delete callback
     isCreatingNew?: boolean;
 }
 
@@ -23,6 +27,7 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
                                                      onUpdate,
                                                      onAddComment,
                                                      onRefreshIssue,
+                                                     onDelete,
                                                      isCreatingNew = false,
                                                  }) => {
     const [isEditing, setIsEditing] = useState(isCreatingNew);
@@ -30,6 +35,9 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
     const [newComment, setNewComment] = useState('');
     const [loading, setLoading] = useState(false);
     const [currentIssue, setCurrentIssue] = useState<Issue | null>(issue);
+    
+    const currentUser = useAtomValue(userAtom);
+    const issueService = useAtomValue(issueServiceAtom);
 
     React.useEffect(() => {
         setCurrentIssue(issue);
@@ -58,6 +66,9 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
     }, [currentIssue]);
 
     if (!currentIssue && !isCreatingNew) return null;
+
+    // Check if current user can delete this issue (only creator can delete)
+    const canDelete = currentIssue && currentUser && currentIssue.creator.userId === currentUser.id;
 
     const handleStartEdit = () => {
         setIsEditing(true);
@@ -95,6 +106,26 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
             }
         } catch (error) {
             console.error('Failed to update issue:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!currentIssue) return;
+        
+        setLoading(true);
+        try {
+            if (onDelete) {
+                // Use the callback provided by parent
+                await onDelete(currentIssue._id);
+            } else {
+                // Use the issue service directly
+                await issueService.deleteIssue(currentIssue._id);
+            }
+            onClose(); // Close the dialog after successful deletion
+        } catch (error) {
+            console.error('Failed to delete issue:', error);
         } finally {
             setLoading(false);
         }
@@ -146,6 +177,8 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
                 onSaveEdit={handleSaveEdit}
                 onCancelEdit={handleCancelEdit}
                 onClose={onClose}
+                onDelete={handleDelete}
+                canDelete={canDelete}
                 isCreatingNew={isCreatingNew}
             />
 

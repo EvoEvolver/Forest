@@ -28,9 +28,9 @@ const IssueDetailContent: React.FC<IssueDetailContentProps> = ({
                                                                    canAddComment = false,
                                                                }) => {
     return (
-        <Box sx={{p: 3, overflow: 'auto', flex: 1}}>
+        <Box sx={{p: 0, overflow: 'auto', flex: 1}}>
             {/* Title */}
-            <Box sx={{mb: 3}}>
+            <Box sx={{mb: 3, px: 3, pt: 3}}>
                 {isEditing ? (
                     <TextField
                         fullWidth
@@ -47,7 +47,7 @@ const IssueDetailContent: React.FC<IssueDetailContentProps> = ({
             </Box>
 
             {/* Description */}
-            <Box sx={{mb: 3}}>
+            <Box sx={{mb: 3, px: 3}}>
                 <Typography variant="h6" sx={{mb: 2, display: 'flex', alignItems: 'center', gap: 1}}>
                     <CommentIcon fontSize="small"/>
                     Description
@@ -79,14 +79,16 @@ const IssueDetailContent: React.FC<IssueDetailContentProps> = ({
             </Box>
 
             {/* Comments Section */}
-            <CommentSection
-                issue={issue}
-                newComment={newComment}
-                loading={loading}
-                onNewCommentChange={onNewCommentChange}
-                onAddComment={onAddComment}
-                canAddComment={canAddComment}
-            />
+            <Box sx={{px: 3, pb: 3}}>
+                <CommentSection
+                    issue={issue}
+                    newComment={newComment}
+                    loading={loading}
+                    onNewCommentChange={onNewCommentChange}
+                    onAddComment={onAddComment}
+                    canAddComment={canAddComment}
+                />
+            </Box>
         </Box>
     );
 };
