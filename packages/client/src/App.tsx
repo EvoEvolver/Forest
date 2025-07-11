@@ -1,12 +1,10 @@
 import React, {lazy, Suspense, useEffect, useState} from 'react';
 import {Box, CssBaseline} from "@mui/material";
-import {ThemeProvider} from '@mui/material/styles';
 import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import TreeView from "./TreeView/TreeView";
 import {setupYDocAtom, YjsProviderAtom} from "./TreeState/YjsConnection";
 import LinearView from "./LinearView";
 import AuthModal from '../../user-system/src/AuthModal';
-import {themeOptions} from "./theme";
 import {subscriptionAtom, supabaseClientAtom, userAtom} from "../../user-system/src/authStates";
 import {MyAppBar} from "./AppBar";
 import {treeId} from "./appState";
@@ -54,25 +52,25 @@ export default function App() {
     return (
         <>
 
-                <Box sx={{display: 'flex', flexDirection: 'column', height: '100dvh'}}>
-                    <CssBaseline/>
-                    <Box sx={{width: '100%'}}>
-                        <MyAppBar setCurrentPage={setCurrentPage} currentPage={currentPage}/>
-                    </Box>
-                    <Box
-                        flexGrow={1}
-                        overflow="auto"
-                        p={2}
-                        pt={`${appBarHeight}px`}
-                        bgcolor="background.default"
-                        sx={{overflowX: 'hidden'}}
-                    >
-
-                        <TheSelectedPage currentPage={currentPage}/>
-                    </Box>
+            <Box sx={{display: 'flex', flexDirection: 'column', height: '100dvh'}}>
+                <CssBaseline/>
+                <Box sx={{width: '100%'}}>
+                    <MyAppBar setCurrentPage={setCurrentPage} currentPage={currentPage}/>
                 </Box>
-                {/* Auth Modal */}
-                {supabaseClient && <AuthModal/>}
+                <Box
+                    flexGrow={1}
+                    overflow="auto"
+                    p={2}
+                    pt={`${appBarHeight}px`}
+                    bgcolor="background.default"
+                    sx={{overflowX: 'hidden'}}
+                >
+
+                    <TheSelectedPage currentPage={currentPage}/>
+                </Box>
+            </Box>
+            {/* Auth Modal */}
+            {supabaseClient && <AuthModal/>}
         </>
     );
 }
