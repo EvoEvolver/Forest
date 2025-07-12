@@ -29,6 +29,7 @@ export const setupYDocAtom = atom(null, async (get, set) => {
         if (isSynced) {
             const treeMetadata = ydoc.getMap("metadata").toJSON()
             console.log('Yjs sync completed', treeMetadata)
+            get(treeAtom).syncMetadata(set)
             // Set up the metadata map
             set(YjsConnectionStatusAtom, "connected");
             set(updateChildrenCountAtom, {});
@@ -85,6 +86,7 @@ export const initSelectedNodeAtom = atom(null, (get, set) => {
     console.log("Init selected node", nodeId)
     set(selectedNodeAtom, nodeId);
     setTimeout(() => {
+        set(selectedNodeAtom, nodeId);
         set(scrollToNodeAtom, nodeId)
     }, 500);
 

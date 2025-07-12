@@ -6,6 +6,7 @@ import {updateChildrenCountAtom} from "./childrenCount";
 import {treeId} from "../appState";
 import {NodeJson, NodeM, TreeM, TreeVM} from "@forest/schema"
 import {supportedNodeTypes} from "../TreeView/NodeTypes";
+import { atomEffect } from 'jotai-effect'
 
 const treeValueAtom: PrimitiveAtom<TreeVM> = atom()
 
@@ -19,6 +20,7 @@ export const treeAtom = atom(
         set(treeValueAtom, treeVM)
     }
 )
+
 
 export const deleteNodeAtom = atom(null, (get, set, props: { nodeId: string }) => {
     const currTree = get(treeAtom)
@@ -60,6 +62,7 @@ export const deleteNodeAtom = atom(null, (get, set, props: { nodeId: string }) =
 
     set(updateChildrenCountAtom, {});
 })
+
 
 /*
 * This atom is used to set the position of a node in the tree.
@@ -182,22 +185,18 @@ export const selectedNodeAtom = atom(
     (get) => {
         const currTree = get(treeAtom)
         const selectedNodeId = get(selectedNodeIdAtom)
+
         // Add dependency on reRenderFlag to ensure updates when tree structure changes
         if (currTree) {
-            get(currTree.reRenderFlag)
+            get(currTree.viewCommitNumberAtom)
+        }
+
+        if (!selectedNodeId) {
+            return null
         }
 
         if (!currTree || Object.keys(currTree.nodeDict).length === 0)
             return null
-
-        if (!selectedNodeId) {
-            const metadata = get(currTree.metadata)
-            const rootNodeAtom = currTree.nodeDict[metadata.rootId]
-            if (!rootNodeAtom) {
-                return null
-            }
-            return get(rootNodeAtom)
-        }
 
         const currSelectedNodeAtom = currTree.nodeDict[selectedNodeId]
         if (currSelectedNodeAtom) {
@@ -234,14 +233,14 @@ export const listOfNodesForViewAtom = atom(
         if (!tree) {
             return []
         }
-
-        get(tree.reRenderFlag)
+        get(tree.viewCommitNumberAtom)
         if (Object.keys(tree.nodeDict).length === 0) {
             return []; // If there are no nodes, return an empty array
         }
         const parentNodeId = get(currNodeParentIdAtom)
         if (!parentNodeId) {
-            const rootNodeAtom = tree.nodeDict[get(tree.metadata).rootId]
+            const rootNodeAtom =
+                tree.nodeDict[get(tree.metadata).rootId]
             if (!rootNodeAtom) {
                 return []; // If there's no root node, return an empty array
             }

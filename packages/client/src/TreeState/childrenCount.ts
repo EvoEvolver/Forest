@@ -24,7 +24,11 @@ export const updateChildrenCountAtom = atom(null, (get, set, props) => {
             if(nodeChildren.length > 0){
                 let count = 0
                 for (let childId of nodeChildren){
-                    let childrenCount = get(nodeDict[childId]).data["children_count"]
+                    const childrenAtom = nodeDict[childId]
+                    let childrenCount = 0
+                    if (childrenAtom){
+                        childrenCount = get(childrenAtom).data["children_count"]
+                    }
                     if(childrenCount !== null && childrenCount !== undefined){
                         count += 1 + childrenCount
                     }

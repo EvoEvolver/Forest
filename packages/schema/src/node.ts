@@ -25,8 +25,8 @@ export function getYjsBindedAtom(yjsMapNode: YMap<any>, key: string): PrimitiveA
     return yjsAtom
 }
 
-export function nodeMToNodeVMAtom(nodeM: NodeM, supportedNodesTypes: SupportedNodeTypesMap): PrimitiveAtom<NodeVM> {
-    const node: NodeVM = new NodeVM(nodeM, supportedNodesTypes)
+export async function nodeMToNodeVMAtom(nodeM: NodeM, supportedNodesTypes: SupportedNodeTypesMap): Promise<PrimitiveAtom<NodeVM>> {
+    const node: NodeVM = await NodeVM.create(nodeM, supportedNodesTypes)
     const nodeAtom: PrimitiveAtom<NodeVM> = atom(node)
 
     nodeAtom.onMount = (set) => {
@@ -38,12 +38,14 @@ export function nodeMToNodeVMAtom(nodeM: NodeM, supportedNodesTypes: SupportedNo
                     }
                 })
             }
-            const newNode: NodeVM = new NodeVM(nodeM, supportedNodesTypes)
-            set(newNode)
+            NodeVM.create(nodeM, supportedNodesTypes).then(newNode=>{
+              set(newNode)
+            })
         }
         nodeM.ymap.observe(observeFunc)
-        const newNode: NodeVM = new NodeVM(nodeM, supportedNodesTypes)
-        set(newNode)
+        NodeVM.create(nodeM, supportedNodesTypes).then(newNode=>{
+            set(newNode)
+        })
         return () => {
             nodeM.ymap.unobserve(observeFunc)
         }

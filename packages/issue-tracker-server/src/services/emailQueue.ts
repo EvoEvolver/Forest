@@ -106,6 +106,7 @@ export class EmailQueue {
         this.queue.on('stalled', (job) => {
             console.warn(`Email job ${job.id} stalled`);
         });
+        console.log(`Email queue initialized and ready`);
     }
 
     // Add assignment notification to queue

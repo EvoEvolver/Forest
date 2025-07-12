@@ -70,7 +70,6 @@ function main(): void {
     // Start server
     server.listen(config.port, config.host, async () => {
         console.log(`Server running at http://${config.host}:${config.port}/`);
-        console.log(`Email queue initialized and ready`);
         
         // Start daily reminders cron job
         reminderService.startDailyReminders();

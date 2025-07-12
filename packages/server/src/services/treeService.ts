@@ -66,7 +66,7 @@ function createNewTree(treeJson: TreeJson): TreeM {
     const treeId = crypto.randomUUID();
     const doc = getYDoc(treeId)
     // @ts-ignore
-    const tree = new TreeM(doc, treeId)
-    tree.patchFromTreeJson(treeJson)
+    const tree = new TreeM(doc)
+    tree.patchFromTreeJson(treeJson, treeId)
     return tree
 }

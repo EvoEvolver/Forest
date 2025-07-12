@@ -36,16 +36,15 @@ export class TreeM {
     nodeDict: YMap<YMap<any>>
     metadata: YMap<any>
 
-    constructor(ydoc: YDoc, treeId: string) {
+    constructor(ydoc: YDoc) {
         this.ydoc = ydoc
         this.metadata = this.ydoc.getMap("metadata")
         this.nodeDict = this.ydoc.getMap("nodeDict")
-        this.metadata.set("treeId", treeId)
     }
 
     static treeFromWs(wsUrl: string, treeId: string): [TreeM, WebsocketProvider] {
         const ydoc = new Y.Doc()
-        const treeM = new TreeM(ydoc, treeId)
+        const treeM = new TreeM(ydoc)
         let wsProvider = new WebsocketProvider(wsUrl, treeId, ydoc)
         return [treeM, wsProvider]
     }
@@ -53,7 +52,7 @@ export class TreeM {
     static treeFromWsWait(wsUrl: string, treeId: string): Promise<TreeM> {
         return new Promise((resolve) => {
             const ydoc = new Y.Doc()
-            const treeM = new TreeM(ydoc, treeId)
+            const treeM = new TreeM(ydoc)
             const wsProvider = new WebsocketProvider(wsUrl, treeId, ydoc)
             wsProvider.on('sync', (isSynced: boolean) => {
                 if (isSynced) {
@@ -63,13 +62,17 @@ export class TreeM {
         })
     }
 
-    patchFromTreeJson(treeJson: TreeJson) {
+    patchFromTreeJson(treeJson: TreeJson, treeId: string) {
         this.ydoc.transact(() => {
             // Update metadata
             const metadata = treeJson.metadata;
+            console.log(metadata)
             Object.entries(metadata).forEach(([key, value]) => {
                 this.metadata.set(key, value);
             });
+            if (treeId) {
+                this.metadata.set("treeId", treeId);
+            }
 
             // Update nodeDict
             const nodeDictJson = treeJson.nodeDict;
@@ -148,9 +151,8 @@ export class TreeVM {
     treeM: TreeM
     get: any
     set: any
-    reRenderFlag = atom(false)
-
-    didSelectedNodeInit = false
+    viewCommitNumberAtom = atom(0)
+    viewCommitNumber: number = 0
 
     /*
     The constructor links the TreeVM to the TreeM
@@ -162,19 +164,25 @@ export class TreeVM {
         this.nodeDict = {}
         let nodeDictyMap: YMap<YMap<any>> = treeM.nodeDict
         nodeDictyMap.observe((ymapEvent) => {
+            let promises: Promise<void>[] = [];
             ymapEvent.changes.keys.forEach((change, key) => {
                 if (change.action === 'add') {
-                    let newNode = new NodeM(nodeDictyMap.get(key), key)
-                    this.addNode(newNode)
+                    let newNode = new NodeM(nodeDictyMap.get(key), key);
+                    promises.push(this.addNode(newNode));
                 } else if (change.action === 'update') {
-                    let newNode = new NodeM(nodeDictyMap.get(key), key)
-                    this.deleteNode(key)
-                    this.addNode(newNode)
+                    let newNode = new NodeM(nodeDictyMap.get(key), key);
+                    this.deleteNode(key);
+                    promises.push(this.addNode(newNode));
                 } else if (change.action === 'delete') {
-                    this.deleteNode(key)
+                    this.deleteNode(key);
                 }
-            })
-        })
+            });
+            // Wait for all promises to complete before triggering re-render
+            Promise.all(promises).then(() => {
+                this.commitViewToRender()
+                promises = []; // Reset the promises array
+            });
+        });
         let metadataMap: YMap<any> = treeM.metadata;
         // Initialize atom with current metadata
         this.metadata = atom({
@@ -182,35 +190,43 @@ export class TreeVM {
             treeId: metadataMap.get("treeId"),
         });
         this.metadata.onMount = (set) => {
-            const observer = (event) => {
-                const newMetadata = {
-                    rootId: metadataMap.get("rootId") || "",
-                    treeId: metadataMap.get("treeId"),
-                }
-                console.log(newMetadata)
-                set(newMetadata);
+            const observer = () => {
+                this.syncMetadata(set)
             }
             metadataMap.observeDeep(observer);
             return () => {
-                metadataMap.unobserve(observer);
+                metadataMap.unobserveDeep(observer);
             }
         }
     }
 
-    addNode(newNode: NodeM) {
-        this.nodeDict[newNode.id] = nodeMToNodeVMAtom(newNode, this.supportedNodesTypes)
-        this.set(this.reRenderFlag, !this.get(this.reRenderFlag))
+    syncMetadata(set) {
+        const newMetadata = {
+            rootId: this.treeM.metadata.get("rootId") || "",
+            treeId: this.treeM.metadata.get("treeId"),
+        }
+        console.log(newMetadata)
+        set(this.metadata, newMetadata);
+        this.commitViewToRender()
+    }
+
+    async addNode(newNode: NodeM) {
+        this.nodeDict[newNode.id] = await nodeMToNodeVMAtom(newNode, this.supportedNodesTypes)
     }
 
     deleteNode(nodeId: string) {
         delete this.nodeDict[nodeId];
-        this.set(this.reRenderFlag, !this.get(this.reRenderFlag))
     }
 
     initSelectedNode() {
 
     }
 
+    commitViewToRender(){
+        this.viewCommitNumber = this.viewCommitNumber + 1
+        console.log("commit number: ", this.viewCommitNumber)
+        this.set(this.viewCommitNumberAtom, this.viewCommitNumber)
+    }
 }
 
 
@@ -293,32 +309,36 @@ export class NodeVM {
     tabs: any
     tools: any
 
-    constructor(nodeM: NodeM, supportedNodesTypes: SupportedNodeTypesMap) {
+    static async create(nodeM, supportedNodesTypes: SupportedNodeTypesMap) {
+        const nodeVM = new NodeVM()
         const yjsMapNode = nodeM.ymap;
         const childrenAtom = getYjsBindedAtom(yjsMapNode, "children");
         const titleAtom = atom(nodeM.title());
-        this.id = nodeM.id
-        this.title = titleAtom;
-        this.parent = nodeM.parent()
-        this.children = childrenAtom;
-        this.data = nodeM.data()
-        this.ydata = nodeM.ydata()
-        this.vdata = {}
+        nodeVM.id = nodeM.id
+        nodeVM.title = titleAtom;
+        nodeVM.parent = nodeM.parent()
+        nodeVM.children = childrenAtom;
+        nodeVM.data = nodeM.data()
+        nodeVM.ydata = nodeM.ydata()
+        nodeVM.vdata = {}
 
-        this.nodeTypeName = nodeM.nodeTypeName()
-        this.nodeType = null; // TODO: init the nodeType
-        this.nodeM = nodeM
+        nodeVM.nodeTypeName = nodeM.nodeTypeName()
+        nodeVM.nodeType = null; // TODO: init the nodeType
+        nodeVM.nodeM = nodeM
 
         if (yjsMapNode.has("tabs"))
-            this.tabs = yjsMapNode.get("tabs")
+            nodeVM.tabs = yjsMapNode.get("tabs")
         if (yjsMapNode.has("tools"))
-            this.tools = yjsMapNode.get("tools")
+            nodeVM.tools = yjsMapNode.get("tools")
 
-        this.assignNodeType(supportedNodesTypes)
-
+        await nodeVM.assignNodeType(supportedNodesTypes)
+        return nodeVM
     }
 
-    assignNodeType(supportedNodesTypes: SupportedNodeTypesMap) {
+    constructor() {
+    }
+
+    async assignNodeType(supportedNodesTypes: SupportedNodeTypesMap) {
         if (!this.nodeTypeName) {
             if (this.tabs["content"] === `<PaperEditorMain/>`) {
                 this.nodeTypeName = "EditorNodeType"
@@ -326,23 +346,16 @@ export class NodeVM {
                 this.nodeTypeName = "CustomNodeType"
             }
         }
-        this.nodeType = getNodeType(this.nodeTypeName, supportedNodesTypes)
+        this.nodeType = await getNodeType(this.nodeTypeName, supportedNodesTypes)
     }
 
 }
 
-export function getNodeType(nodeTypeName: string, supportedNodesTypes: SupportedNodeTypesMap): NodeType {
-    const nodeType = supportedNodesTypes[nodeTypeName]
-    if (!nodeType) {
-        console.warn("unsupported node type", this.nodeTypeName)
-        return
-    }
-    return nodeType
+export async function getNodeType(nodeTypeName: string, supportedNodesTypes: SupportedNodeTypesMap): Promise<NodeType> {
+    return await supportedNodesTypes(nodeTypeName)
 }
 
-export interface SupportedNodeTypesMap {
-    [key: string]: NodeType
-}
+export type SupportedNodeTypesMap = (typeName: string)=>Promise<NodeType>
 
 export abstract class NodeType {
     name: string
