@@ -96,7 +96,7 @@ export class TreeM {
         return childrenNodes
     }
 
-    getNode(nodeId: string):NodeM | undefined {
+    getNode(nodeId: string): NodeM | undefined {
         const nodeYMap = this.nodeDict.get(nodeId)
         if (!nodeYMap) return undefined
         return new NodeM(nodeYMap, nodeId)
@@ -151,6 +151,7 @@ export class TreeVM {
     treeM: TreeM
     get: any
     set: any
+    nodeMapObserver: any
     viewCommitNumberAtom = atom(0)
     viewCommitNumber: number = 0
 
@@ -163,7 +164,7 @@ export class TreeVM {
         this.treeM = treeM
         this.nodeDict = {}
         let nodeDictyMap: YMap<YMap<any>> = treeM.nodeDict
-        nodeDictyMap.observe((ymapEvent) => {
+        this.nodeMapObserver = (ymapEvent) => {
             let promises: Promise<void>[] = [];
             ymapEvent.changes.keys.forEach((change, key) => {
                 if (change.action === 'add') {
@@ -182,7 +183,8 @@ export class TreeVM {
                 this.commitViewToRender()
                 promises = []; // Reset the promises array
             });
-        });
+        }
+        nodeDictyMap.observe(this.nodeMapObserver);
         let metadataMap: YMap<any> = treeM.metadata;
         // Initialize atom with current metadata
         this.metadata = atom({
@@ -198,6 +200,13 @@ export class TreeVM {
                 metadataMap.unobserveDeep(observer);
             }
         }
+    }
+
+    deconstruct() {
+        this.treeM.nodeDict.unobserve(this.nodeMapObserver);
+
+        // Reset instance variables
+        this.nodeDict = {};
     }
 
     syncMetadata(set) {
@@ -222,7 +231,7 @@ export class TreeVM {
 
     }
 
-    commitViewToRender(){
+    commitViewToRender() {
         this.viewCommitNumber = this.viewCommitNumber + 1
         console.log("commit number: ", this.viewCommitNumber)
         this.set(this.viewCommitNumberAtom, this.viewCommitNumber)
@@ -355,7 +364,7 @@ export async function getNodeType(nodeTypeName: string, supportedNodesTypes: Sup
     return await supportedNodesTypes(nodeTypeName)
 }
 
-export type SupportedNodeTypesMap = (typeName: string)=>Promise<NodeType>
+export type SupportedNodeTypesMap = (typeName: string) => Promise<NodeType>
 
 export abstract class NodeType {
     name: string
@@ -374,5 +383,6 @@ export abstract class NodeType {
 
     abstract renderPrompt(node: NodeM): string
 
-    ydataInitialize(node: NodeVM): void{}
+    ydataInitialize(node: NodeVM): void {
+    }
 }

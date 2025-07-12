@@ -6,7 +6,6 @@ import {updateChildrenCountAtom} from "./childrenCount";
 import {treeId} from "../appState";
 import {NodeJson, NodeM, TreeM, TreeVM} from "@forest/schema"
 import {supportedNodeTypes} from "../TreeView/NodeTypes";
-import { atomEffect } from 'jotai-effect'
 
 const treeValueAtom: PrimitiveAtom<TreeVM> = atom()
 
@@ -15,6 +14,10 @@ export const treeAtom = atom(
         return get(treeValueAtom)
     },
     (get, set, treeM: TreeM) => {
+        const currentTree = get(treeValueAtom)
+        if (currentTree) {
+            currentTree.deconstruct()
+        }
         const treeVM = new TreeVM(treeM, get, set)
         treeVM.supportedNodesTypes = supportedNodeTypes
         set(treeValueAtom, treeVM)
@@ -248,7 +251,10 @@ export const listOfNodesForViewAtom = atom(
         }
         const parentNodeAtom = tree.nodeDict[parentNodeId]
         const parentNode = get(parentNodeAtom)
-        return get(parentNode.children).map((id) => get(tree.nodeDict[id]));
+        return get(parentNode.children)
+            .map((id) => tree.nodeDict[id])
+            .filter((nodeAtom) => nodeAtom !== undefined)
+            .map((nodeAtom) => get(nodeAtom))
     }
 )
 
