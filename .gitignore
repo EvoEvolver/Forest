@@ -31,3 +31,11 @@ node_modules
 test*.sh
 *.lock
 *.egg-info
+
+# TypeScript compiled files
+# Ignore JS files in TypeScript source directories
+packages/*/src/**/*.js
+packages/*/src/**/*.js.map
+# But keep JS config files
+!packages/*/src/**/*.config.js
+!packages/*/src/**/*.setup.js

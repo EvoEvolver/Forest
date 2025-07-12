@@ -83,6 +83,27 @@ IssueSchema.index({ treeId: 1, status: 1 });
 IssueSchema.index({ treeId: 1, 'nodes.nodeId': 1 });
 IssueSchema.index({ createdAt: -1 });
 
+// NEW: Indexes for email reminder system
+IssueSchema.index({ 
+  dueDate: 1, 
+  status: 1 
+}); // For deadline reminder queries
+
+IssueSchema.index({ 
+  'assignees.userId': 1 
+}); // For finding issues by assignee
+
+IssueSchema.index({ 
+  dueDate: 1, 
+  status: 1, 
+  'assignees.userId': 1 
+}); // Compound index for deadline + assignee queries
+
+IssueSchema.index({ 
+  status: 1, 
+  dueDate: 1 
+}); // For status + deadline filtering
+
 // Export the model factory function - creates singleton model instance
 export const getIssueModel = async (): Promise<Model<IssueDocument>> => {
   if (IssueModel) {

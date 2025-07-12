@@ -20,6 +20,7 @@ interface IssueDetailSidebarProps {
     editData: UpdateIssueRequest;
     loading: boolean;
     onEditDataChange: (updates: Partial<UpdateIssueRequest>) => void;
+    isCreatingNew?: boolean; // Add this prop to know if we're creating a new issue
 }
 
 const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
@@ -28,6 +29,7 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
                                                                    editData,
                                                                    loading,
                                                                    onEditDataChange,
+                                                                   isCreatingNew = false,
                                                                }) => {
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -391,47 +393,52 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
 
             <Divider sx={{my: 2}}/>
 
-            {/* Creator */}
-            <Box sx={{mb: 2}}>
-                <Typography variant="subtitle2"
-                            sx={{mb: 1, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1}}>
-                    <PersonIcon fontSize="small"/>
-                    Creator
-                </Typography>
-                <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-                    <Avatar 
-                        sx={{width: 24, height: 24}}
-                        src={creatorInfo.avatar || undefined}
-                    >
-                        <PersonIcon fontSize="small"/>
-                    </Avatar>
-                    <Typography variant="body2">
-                        {creatorInfo.username}
-                    </Typography>
-                </Box>
-            </Box>
+            {/* Only show Creator, Created, Last Updated sections when not creating new issue */}
+            {!isCreatingNew && (
+                <>
+                    {/* Creator */}
+                    <Box sx={{mb: 2}}>
+                        <Typography variant="subtitle2"
+                                    sx={{mb: 1, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1}}>
+                            <PersonIcon fontSize="small"/>
+                            Creator
+                        </Typography>
+                        <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+                            <Avatar 
+                                sx={{width: 24, height: 24}}
+                                src={creatorInfo.avatar || undefined}
+                            >
+                                <PersonIcon fontSize="small"/>
+                            </Avatar>
+                            <Typography variant="body2">
+                                {creatorInfo.username}
+                            </Typography>
+                        </Box>
+                    </Box>
 
-            {/* Created Date */}
-            <Box sx={{mb: 2}}>
-                <Typography variant="subtitle2"
-                            sx={{mb: 1, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1}}>
-                    <CalendarIcon fontSize="small"/>
-                    Created
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                    {new Date(issue.createdAt).toLocaleString()}
-                </Typography>
-            </Box>
+                    {/* Created Date */}
+                    <Box sx={{mb: 2}}>
+                        <Typography variant="subtitle2"
+                                    sx={{mb: 1, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1}}>
+                            <CalendarIcon fontSize="small"/>
+                            Created
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            {new Date(issue.createdAt).toLocaleString()}
+                        </Typography>
+                    </Box>
 
-            {/* Updated Date */}
-            <Box sx={{mb: 2}}>
-                <Typography variant="subtitle2" sx={{mb: 1, fontWeight: 600}}>
-                    Last Updated
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                    {new Date(issue.updatedAt).toLocaleString()}
-                </Typography>
-            </Box>
+                    {/* Updated Date */}
+                    <Box sx={{mb: 2}}>
+                        <Typography variant="subtitle2" sx={{mb: 1, fontWeight: 600}}>
+                            Last Updated
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            {new Date(issue.updatedAt).toLocaleString()}
+                        </Typography>
+                    </Box>
+                </>
+            )}
 
             {/* Tree and Node Info */}
             <Box sx={{mb: 2}}>

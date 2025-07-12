@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {Box, Chip, DialogTitle, IconButton, Typography, Dialog, DialogActions, DialogContent, DialogContentText, Button,} from '@mui/material';
-import {Cancel as CancelIcon, Close as CloseIcon, Edit as EditIcon, Save as SaveIcon, Delete as DeleteIcon,} from '@mui/icons-material';
+import {Cancel as CancelIcon, Close as CloseIcon, Edit as EditIcon, Save as SaveIcon, Delete as DeleteIcon, Check as CheckIcon,} from '@mui/icons-material';
 
 interface IssueDetailHeaderProps {
     issueId: string;
@@ -71,12 +71,23 @@ const IssueDetailHeader: React.FC<IssueDetailHeaderProps> = ({
                     )}
                 </Box>
                 <Box sx={{display: 'flex', gap: 1}}>
-                    {!isEditing ? (
+                    {isCreatingNew ? (
+                        // Create Issue mode: only show create and close buttons
+                        <>
+                            <IconButton onClick={onSaveEdit} size="small" disabled={loading}>
+                                <CheckIcon/>
+                            </IconButton>
+                            <IconButton onClick={onClose} size="small">
+                                <CloseIcon/>
+                            </IconButton>
+                        </>
+                    ) : !isEditing ? (
+                        // View mode: show edit, delete, and close buttons
                         <>
                             <IconButton onClick={onStartEdit} size="small">
                                 <EditIcon/>
                             </IconButton>
-                            {canDelete && !isCreatingNew && (
+                            {canDelete && (
                                 <IconButton 
                                     onClick={handleDeleteClick} 
                                     size="small"
@@ -90,8 +101,12 @@ const IssueDetailHeader: React.FC<IssueDetailHeaderProps> = ({
                                     <DeleteIcon/>
                                 </IconButton>
                             )}
+                            <IconButton onClick={onClose} size="small">
+                                <CloseIcon/>
+                            </IconButton>
                         </>
                     ) : (
+                        // Edit mode: show save, cancel, and close buttons
                         <>
                             <IconButton onClick={onSaveEdit} size="small" disabled={loading}>
                                 <SaveIcon/>
@@ -99,11 +114,11 @@ const IssueDetailHeader: React.FC<IssueDetailHeaderProps> = ({
                             <IconButton onClick={onCancelEdit} size="small">
                                 <CancelIcon/>
                             </IconButton>
+                            <IconButton onClick={onClose} size="small">
+                                <CloseIcon/>
+                            </IconButton>
                         </>
                     )}
-                    <IconButton onClick={onClose} size="small">
-                        <CloseIcon/>
-                    </IconButton>
                 </Box>
             </DialogTitle>
 

@@ -1,6 +1,52 @@
 import { Request, Response } from 'express';
 import { getIssueModel } from '../models/Issue';
 import mongoose from 'mongoose';
+import { emailQueue } from '../services/emailQueue';
+
+// Email queue is initialized as singleton in emailQueue.ts
+
+// Helper function to get user email
+async function getUserEmail(userId: string): Promise<{ email: string | null, username: string }> {
+  try {
+    const response = await fetch(`${process.env.USER_SERVICE_URL || 'http://localhost:29999'}/api/user/metadata/${userId}`);
+    
+    if (response.ok) {
+      const userData = await response.json();
+      return {
+        email: userData.email || null,
+        username: userData.username || userData.display_name || userData.name || userData.user_name || userId
+      };
+    }
+    
+    return { email: null, username: userId };
+  } catch (error) {
+    console.error(`Failed to fetch user data for ${userId}:`, error);
+    return { email: null, username: userId };
+  }
+}
+
+// Helper function to queue assignment notifications to assignees
+async function queueAssignmentNotifications(assigneeIds: string[], issue: any, context: 'create' | 'update' = 'create') {
+  if (!assigneeIds || assigneeIds.length === 0) {
+    return;
+  }
+
+  console.log(`Queueing ${context} assignment notifications for ${assigneeIds.length} assignees for issue: ${issue.title}`);
+  
+  for (const userId of assigneeIds) {
+    try {
+      const { email, username } = await getUserEmail(userId);
+      if (email) {
+        await emailQueue.queueAssignmentNotification(email, username, issue, context);
+        console.log(`Queued ${context} assignment notification for ${email} for issue: ${issue.title}`);
+      } else {
+        console.warn(`No email found for assigned user ${userId}`);
+      }
+    } catch (error) {
+      console.error(`Failed to queue ${context} assignment email for user ${userId}:`, error);
+    }
+  }
+}
 
 // Get all issues for a specific tree
 export const getIssuesByTree = async (req: Request, res: Response) => {
@@ -66,6 +112,13 @@ export const createIssue = async (req: Request, res: Response) => {
     });
     
     const savedIssue = await newIssue.save();
+    
+    // Queue assignment notifications for all assignees (since this is a new issue)
+    if (assignees && assignees.length > 0) {
+      const assigneeIds = assignees.map((a: any) => a.userId);
+      await queueAssignmentNotifications(assigneeIds, savedIssue.toObject(), 'create');
+    }
+    
     res.status(201).json(savedIssue);
   } catch (error: any) {
     console.error('Error creating issue:', error);
@@ -80,6 +133,13 @@ export const updateIssue = async (req: Request, res: Response) => {
     const { issueId } = req.params;
     const updates = req.body;
     
+    // Get the original issue to compare assignees
+    const originalIssue = await Issue.findById(issueId);
+    if (!originalIssue) {
+      res.status(404).json({ error: 'Issue not found' });
+      return;
+    }
+    
     // Remove fields that shouldn't be updated directly
     delete updates._id;
     delete updates.treeId;
@@ -93,10 +153,24 @@ export const updateIssue = async (req: Request, res: Response) => {
     
     if (!updatedIssue) {
       res.status(404).json({ error: 'Issue not found' });
-    } else {
-      res.json(updatedIssue);
+      return;
     }
+    console.log('updates.assignees', updates.assignees);
+    // Check for new assignees and send notification emails
+    if (updates.assignees) {
+      console.log('try to send assignment notifications');
+      const originalAssigneeIds = originalIssue.assignees.map(a => a.userId);
+      const newAssigneeIds = updates.assignees
+        .map((a: any) => a.userId)
+        .filter((id: string) => !originalAssigneeIds.includes(id));
+      
+      // Queue emails to new assignees only
+      await queueAssignmentNotifications(newAssigneeIds, updatedIssue.toObject(), 'update');
+    }
+    
+    res.json(updatedIssue);
   } catch (error) {
+    console.error('Error updating issue:', error);
     res.status(500).json({ error: 'Failed to update issue' });
   }
 };

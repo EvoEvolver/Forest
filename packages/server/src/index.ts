@@ -18,7 +18,7 @@ import {TreeService} from './services/treeService';
 import {createTreeRouter} from './routes/treeRoutes';
 import {createAIRouter} from './routes/aiRoutes';
 import {createVisitRouter} from './routes/visitRoutes';
-import {issueRoutes} from '@forest/issue-tracker-server'
+import {issueRoutes, ReminderService, emailQueue} from '@forest/issue-tracker-server'
 import { createUserRouter } from './routes/userRoutes';
 
 // Import WebSocket handler
@@ -44,6 +44,9 @@ const treeService = new TreeService(treeMetadataManager);
 // Initialize WebSocket handler
 const websocketHandler = new WebSocketHandler(treeMetadataManager);
 
+// Initialize email reminder service
+const reminderService = new ReminderService();
+
 function main(): void {
     const app = express();
     const server = http.createServer(app);
@@ -65,13 +68,45 @@ function main(): void {
     app.use('/api/user', createUserRouter());
 
     // Start server
-    server.listen(config.port, config.host, () => {
+    server.listen(config.port, config.host, async () => {
         console.log(`Server running at http://${config.host}:${config.port}/`);
+        console.log(`Email queue initialized and ready`);
+        
+        // Start daily reminders cron job
+        reminderService.startDailyReminders();
+        
+        // Trigger initial reminder check on startup
+        console.log('Triggering initial reminder check...');
+        try {
+            await reminderService.triggerRemindersNow();
+            console.log('Initial reminder check completed successfully');
+        } catch (error) {
+            console.error('Initial reminder check failed:', error);
+        }
     });
 
     // Setup WebSocket upgrade handling
     server.on('upgrade', (request, socket, head) => {
         websocketHandler.handleUpgrade(request, socket, head);
+    });
+    
+    // Graceful shutdown for email queue
+    process.on('SIGTERM', async () => {
+        console.log('SIGTERM received, shutting down gracefully');
+        await emailQueue.close();
+        server.close(() => {
+            console.log('Process terminated');
+            process.exit(0);
+        });
+    });
+
+    process.on('SIGINT', async () => {
+        console.log('SIGINT received, shutting down gracefully');
+        await emailQueue.close();
+        server.close(() => {
+            console.log('Process terminated');
+            process.exit(0);
+        });
     });
 }
 

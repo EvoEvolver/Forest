@@ -14,6 +14,7 @@ interface IssueDetailContentProps {
     onNewCommentChange: (comment: string) => void;
     onAddComment: () => void;
     canAddComment?: boolean;
+    isCreatingNew?: boolean; // Add this prop to know if we're creating a new issue
 }
 
 const IssueDetailContent: React.FC<IssueDetailContentProps> = ({
@@ -26,6 +27,7 @@ const IssueDetailContent: React.FC<IssueDetailContentProps> = ({
                                                                    onNewCommentChange,
                                                                    onAddComment,
                                                                    canAddComment = false,
+                                                                   isCreatingNew = false,
                                                                }) => {
     return (
         <Box sx={{p: 0, overflow: 'auto', flex: 1}}>
@@ -79,16 +81,18 @@ const IssueDetailContent: React.FC<IssueDetailContentProps> = ({
             </Box>
 
             {/* Comments Section */}
-            <Box sx={{px: 3, pb: 3}}>
-                <CommentSection
-                    issue={issue}
-                    newComment={newComment}
-                    loading={loading}
-                    onNewCommentChange={onNewCommentChange}
-                    onAddComment={onAddComment}
-                    canAddComment={canAddComment}
-                />
-            </Box>
+            {!isCreatingNew && (
+                <Box sx={{px: 3, pb: 3}}>
+                    <CommentSection
+                        issue={issue}
+                        newComment={newComment}
+                        loading={loading}
+                        onNewCommentChange={onNewCommentChange}
+                        onAddComment={onAddComment}
+                        canAddComment={canAddComment}
+                    />
+                </Box>
+            )}
         </Box>
     );
 };

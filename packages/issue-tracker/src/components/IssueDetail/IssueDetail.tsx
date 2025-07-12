@@ -194,6 +194,7 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
                         onNewCommentChange={setNewComment}
                         onAddComment={handleAddComment}
                         canAddComment={!!onAddComment && !isCreatingNew}
+                        isCreatingNew={isCreatingNew}
                     />
 
                     <IssueDetailSidebar
@@ -202,6 +203,7 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
                         editData={editData}
                         loading={loading}
                         onEditDataChange={handleEditDataChange}
+                        isCreatingNew={isCreatingNew}
                     />
                 </Box>
             </DialogContent>

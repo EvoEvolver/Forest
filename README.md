@@ -51,3 +51,10 @@ Then, you can start the dev server with:
 ```
 
 Then, you can run the tests in the `test` folder
+
+
+to run mongodb (path depends on yourself)
+```bash
+mongod --dbpath /usr/local/var/mongodb
+
+```
