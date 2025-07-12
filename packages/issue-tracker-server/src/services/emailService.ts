@@ -1,68 +1,68 @@
 import axios from 'axios';
-import { Issue } from '../types/Issue';
+import {Issue} from '../types/Issue';
 
 export class EmailService {
-  private smtp2goApiKey = process.env.SMTP2GO_API_KEY;
-  private fromEmail = process.env.FROM_EMAIL || 'noreply@yourdomain.com';
-  
-  constructor() {
-    if (!this.smtp2goApiKey) {
-      console.warn('SMTP2GO_API_KEY not configured - email notifications disabled');
-    }
-  }
+    private smtp2goApiKey = process.env.SMTP2GO_API_KEY;
+    private fromEmail = process.env.FROM_EMAIL || 'noreply@yourdomain.com';
 
-  async sendEmail(to: string, subject: string, htmlContent: string, textContent?: string) {
-    if (!this.smtp2goApiKey) {
-      console.log('Email service not configured, skipping email to:', to);
-      return;
+    constructor() {
+        if (!this.smtp2goApiKey) {
+            console.warn('SMTP2GO_API_KEY not configured - email notifications disabled');
+        }
     }
 
-    try {
-      const response = await axios.post('https://api.smtp2go.com/v3/email/send', {
-        api_key: this.smtp2goApiKey,
-        to: [to],
-        sender: this.fromEmail,
-        subject: subject,
-        html_body: htmlContent,
-        text_body: textContent || this.stripHtml(htmlContent)
-      });
-      
-      console.log(`Email sent successfully to ${to}:`, response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Failed to send email to', to, ':', error);
-      throw error;
+    async sendEmail(to: string, subject: string, htmlContent: string, textContent?: string) {
+        if (!this.smtp2goApiKey) {
+            console.log('Email service not configured, skipping email to:', to);
+            return;
+        }
+
+        try {
+            const response = await axios.post('https://api.smtp2go.com/v3/email/send', {
+                api_key: this.smtp2goApiKey,
+                to: [to],
+                sender: this.fromEmail,
+                subject: subject,
+                html_body: htmlContent,
+                text_body: textContent || this.stripHtml(htmlContent)
+            });
+
+            console.log(`Email sent successfully to ${to}:`, response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Failed to send email to', to, ':', error);
+            throw error;
+        }
     }
-  }
 
-  async sendAssignmentNotification(assigneeEmail: string, assigneeName: string, issue: Issue) {
-    const subject = `🎯 You've been assigned to: ${issue.title}`;
-    const htmlContent = this.generateAssignmentEmailTemplate(assigneeName, issue);
-    
-    return this.sendEmail(assigneeEmail, subject, htmlContent);
-  }
+    async sendAssignmentNotification(assigneeEmail: string, assigneeName: string, issue: Issue) {
+        const subject = `🎯 You've been assigned to: ${issue.title}`;
+        const htmlContent = this.generateAssignmentEmailTemplate(assigneeName, issue);
 
-  async sendDeadlineReminder(assigneeEmail: string, assigneeName: string, issue: Issue) {
-    const dueDate = new Date(issue.dueDate!);
-    const isToday = dueDate.toDateString() === new Date().toDateString();
-    const isTomorrow = dueDate.toDateString() === new Date(Date.now() + 24 * 60 * 60 * 1000).toDateString();
-    
-    const urgencyText = isToday ? 'due TODAY' : isTomorrow ? 'due TOMORROW' : 'due soon';
-    const subject = `⏰ Reminder: "${issue.title}" is ${urgencyText}`;
-    const htmlContent = this.generateDeadlineReminderTemplate(assigneeName, issue, urgencyText);
-    
-    return this.sendEmail(assigneeEmail, subject, htmlContent);
-  }
+        return this.sendEmail(assigneeEmail, subject, htmlContent);
+    }
 
-  private generateAssignmentEmailTemplate(assigneeName: string, issue: Issue): string {
-    const priorityEmoji = {
-      low: '🟢',
-      medium: '🟡', 
-      high: '🟠',
-      urgent: '🔴'
-    };
+    async sendDeadlineReminder(assigneeEmail: string, assigneeName: string, issue: Issue) {
+        const dueDate = new Date(issue.dueDate!);
+        const isToday = dueDate.toDateString() === new Date().toDateString();
+        const isTomorrow = dueDate.toDateString() === new Date(Date.now() + 24 * 60 * 60 * 1000).toDateString();
 
-    return `
+        const urgencyText = isToday ? 'due TODAY' : isTomorrow ? 'due TOMORROW' : 'due soon';
+        const subject = `⏰ Reminder: "${issue.title}" is ${urgencyText}`;
+        const htmlContent = this.generateDeadlineReminderTemplate(assigneeName, issue, urgencyText);
+
+        return this.sendEmail(assigneeEmail, subject, htmlContent);
+    }
+
+    private generateAssignmentEmailTemplate(assigneeName: string, issue: Issue): string {
+        const priorityEmoji = {
+            low: '🟢',
+            medium: '🟡',
+            high: '🟠',
+            urgent: '🔴'
+        };
+
+        return `
       <!DOCTYPE html>
       <html>
       <head>
@@ -115,10 +115,10 @@ export class EmailService {
       </body>
       </html>
     `;
-  }
+    }
 
-  private generateDeadlineReminderTemplate(assigneeName: string, issue: Issue, urgencyText: string): string {
-    return `
+    private generateDeadlineReminderTemplate(assigneeName: string, issue: Issue, urgencyText: string): string {
+        return `
       <!DOCTYPE html>
       <html>
       <head>
@@ -171,19 +171,24 @@ export class EmailService {
       </body>
       </html>
     `;
-  }
-
-  private getPriorityColor(priority: string): string {
-    switch (priority) {
-      case 'low': return '#2e7d32';
-      case 'medium': return '#ed6c02';
-      case 'high': return '#d32f2f';
-      case 'urgent': return '#d32f2f';
-      default: return '#ed6c02';
     }
-  }
 
-  private stripHtml(html: string): string {
-    return html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
-  }
+    private getPriorityColor(priority: string): string {
+        switch (priority) {
+            case 'low':
+                return '#2e7d32';
+            case 'medium':
+                return '#ed6c02';
+            case 'high':
+                return '#d32f2f';
+            case 'urgent':
+                return '#d32f2f';
+            default:
+                return '#ed6c02';
+        }
+    }
+
+    private stripHtml(html: string): string {
+        return html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+    }
 } 
