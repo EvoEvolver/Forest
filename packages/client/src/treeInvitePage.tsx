@@ -3,6 +3,7 @@ import {httpUrl} from './appState';
 import {useAtom, useAtomValue} from 'jotai';
 import {subscriptionAtom, supabaseClientAtom, userAtom} from '@forest/user-system/src/authStates';
 import {AppBar, Toolbar, Container, Paper, Typography, Button, Alert, Box, CircularProgress} from "@mui/material";
+import {ArrowBack as ArrowBackIcon} from '@mui/icons-material';
 import AuthButton from "@forest/user-system/src/AuthButton";
 import AuthModal from "@forest/user-system/src/AuthModal";
 
@@ -63,10 +64,35 @@ const TreeInvitePage = () => {
     const params = new URLSearchParams(window.location.search);
     const treeId = params.get('treeId');
 
+    // Function to navigate back to tree
+    const handleBackToTree = () => {
+        // Get current base URL
+        const getBaseUrl = () => {
+            return `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
+        };
+        
+        const baseUrl = getBaseUrl();
+        const treeUrl = `${baseUrl}/?id=${treeId}`;
+        
+        // Navigate to the tree URL
+        window.location.href = treeUrl;
+    };
+
     return (
         <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
             <AppBar position="fixed">
                 <Toolbar variant="dense">
+                    {/* Back to Tree button */}
+                    {treeId && (
+                        <Button
+                            color="inherit"
+                            startIcon={<ArrowBackIcon />}
+                            onClick={handleBackToTree}
+                            sx={{ mr: 2 }}
+                        >
+                            Back to Tree
+                        </Button>
+                    )}
                     {/* Fix linter error by wrapping AuthButton in a fragment */}
                     {supabaseClient && <>{<AuthButton/>}</>}
                 </Toolbar>
@@ -105,7 +131,21 @@ const TreeInvitePage = () => {
                         </Button>
                     )}
                     {status === 'loading' && <Box sx={{ mt: 2, mb: 1 }}><CircularProgress size={28} /><Typography variant="body2" sx={{ mt: 1 }}>Granting permission...</Typography></Box>}
-                    {status === 'success' && <Alert severity="success" sx={{ mt: 2 }}>{message}</Alert>}
+                    {status === 'success' && (
+                        <>
+                            <Alert severity="success" sx={{ mt: 2, mb: 2 }}>{message}</Alert>
+                            <Button
+                                onClick={handleBackToTree}
+                                variant="contained"
+                                color="primary"
+                                size="large"
+                                startIcon={<ArrowBackIcon />}
+                                sx={{ mt: 1 }}
+                            >
+                                Go to Tree
+                            </Button>
+                        </>
+                    )}
                     {status === 'error' && <Alert severity="error" sx={{ mt: 2 }}>{message}</Alert>}
                     <Box sx={{ mt: 3 }}>
                         <Typography variant="caption" color="text.secondary">
