@@ -54,6 +54,19 @@ export class EmailService {
         return this.sendEmail(assigneeEmail, subject, htmlContent);
     }
 
+    async sendCommentNotification(
+        recipientEmail: string, 
+        recipientName: string, 
+        issue: Issue, 
+        comment: { commentId: string; userId: string; content: string; createdAt: Date }, 
+        commenterName: string
+    ) {
+        const subject = `💬 New comment on: ${issue.title}`;
+        const htmlContent = this.generateCommentNotificationTemplate(recipientName, issue, comment, commenterName);
+
+        return this.sendEmail(recipientEmail, subject, htmlContent);
+    }
+
     private generateAssignmentEmailTemplate(assigneeName: string, issue: Issue): string {
         const priorityEmoji = {
             low: '🟢',
@@ -166,6 +179,73 @@ export class EmailService {
         
         <div class="footer">
           <p>This is an automated deadline reminder from Issue Tracker.</p>
+          <p>Tree ID: ${issue.treeId}</p>
+        </div>
+      </body>
+      </html>
+    `;
+    }
+
+    private generateCommentNotificationTemplate(
+        recipientName: string, 
+        issue: Issue, 
+        comment: { commentId: string; userId: string; content: string; createdAt: Date }, 
+        commenterName: string
+    ): string {
+        return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #e3f2fd; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; border: 1px solid #bbdefb; }
+          .comment-box { background: #f5f5f5; padding: 15px; border-radius: 4px; margin: 15px 0; border-left: 4px solid #1976d2; }
+          .comment-meta { color: #666; font-size: 14px; margin-bottom: 10px; }
+          .button { 
+            background: #1976d2 !important; 
+            color: white !important; 
+            padding: 12px 24px; 
+            text-decoration: none; 
+            border-radius: 4px; 
+            display: inline-block; 
+            margin: 20px 0;
+            border: none;
+          }
+          .button:hover { background: #1565c0 !important; }
+          .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; }
+          .issue-details { background: #f8f9fa; padding: 15px; border-radius: 4px; margin: 15px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h2>💬 New Comment</h2>
+          <p>Hi ${recipientName}, there's a new comment on an issue you're involved with!</p>
+        </div>
+        
+        <p><strong>Issue:</strong> ${issue.title}</p>
+        <p><strong>Status:</strong> ${issue.status.replace('_', ' ').toUpperCase()}</p>
+        <p><strong>Priority:</strong> ${(issue.priority || 'medium').toUpperCase()}</p>
+        
+        <div class="comment-box">
+          <div class="comment-meta">
+            <strong>${commenterName}</strong> commented on ${new Date(comment.createdAt).toLocaleString()}
+          </div>
+          <div style="white-space: pre-wrap;">${comment.content}</div>
+        </div>
+        
+        <p><strong>Issue Description:</strong></p>
+        <div class="issue-details">
+          ${issue.description || 'No description provided.'}
+        </div>
+        
+        <div style="text-align: center;">
+          <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/issues?treeId=${issue.treeId}" class="button" style="background: #1976d2 !important; color: white !important;">
+            View Issue & Reply
+          </a>
+        </div>
+        
+        <div class="footer">
+          <p>This is an automated notification from Issue Tracker.</p>
           <p>Tree ID: ${issue.treeId}</p>
         </div>
       </body>

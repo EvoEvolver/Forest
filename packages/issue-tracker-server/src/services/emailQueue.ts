@@ -18,7 +18,21 @@ interface DeadlineReminderJob {
     issue: Issue;
 }
 
-type EmailJob = AssignmentEmailJob | DeadlineReminderJob;
+interface CommentNotificationJob {
+    type: 'comment';
+    recipientEmail: string;
+    recipientName: string;
+    issue: Issue;
+    comment: {
+        commentId: string;
+        userId: string;
+        content: string;
+        createdAt: Date;
+    };
+    commenterName: string;
+}
+
+type EmailJob = AssignmentEmailJob | DeadlineReminderJob | CommentNotificationJob;
 
 export class EmailQueue {
     private queue: Queue.Queue<EmailJob>;
@@ -63,9 +77,19 @@ export class EmailQueue {
                         data.issue
                     );
                     console.log(`Deadline reminder sent to ${data.assigneeEmail} for issue: ${data.issue.title}`);
+                } else if (data.type === 'comment') {
+                    await this.emailService.sendCommentNotification(
+                        data.recipientEmail,
+                        data.recipientName,
+                        data.issue,
+                        data.comment,
+                        data.commenterName
+                    );
+                    console.log(`Comment notification sent to ${data.recipientEmail} for issue: ${data.issue.title}`);
                 }
             } catch (error) {
-                console.error(`Failed to send ${data.type} email to ${data.assigneeEmail}:`, error);
+                const emailAddress = data.type === 'comment' ? data.recipientEmail : data.assigneeEmail;
+                console.error(`Failed to send ${data.type} email to ${emailAddress}:`, error);
                 throw error; // Re-throw to trigger retry
             }
         });
@@ -125,6 +149,36 @@ export class EmailQueue {
         });
 
         console.log(`Queued deadline reminder for ${assigneeEmail}`);
+    }
+
+    // Add comment notification to queue
+    async queueCommentNotification(
+        recipientEmail: string,
+        recipientName: string,
+        issue: Issue,
+        comment: {
+            commentId: string;
+            userId: string;
+            content: string;
+            createdAt: Date;
+        },
+        commenterName: string
+    ) {
+        const jobData: CommentNotificationJob = {
+            type: 'comment',
+            recipientEmail,
+            recipientName,
+            issue,
+            comment,
+            commenterName,
+        };
+
+        await this.queue.add(jobData, {
+            priority: 1, // Medium priority for comment notifications
+            delay: 2000, // Small delay to batch similar operations
+        });
+
+        console.log(`Queued comment notification for ${recipientEmail}`);
     }
 
     // Get queue statistics

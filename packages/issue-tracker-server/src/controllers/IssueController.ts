@@ -12,9 +12,13 @@ async function getUserEmail(userId: string): Promise<{ email: string | null, use
     
     if (response.ok) {
       const userData = await response.json();
+      
+      // Match frontend priority order: display_name > name > user_name > email prefix > fallback to id
+      const username = userData.display_name || userData.name || userData.user_name || userData.email?.split('@')[0] || userId;
+      
       return {
         email: userData.email || null,
-        username: userData.username || userData.display_name || userData.name || userData.user_name || userId
+        username: username
       };
     }
     
@@ -44,6 +48,48 @@ async function queueAssignmentNotifications(assigneeIds: string[], issue: any, c
       }
     } catch (error) {
       console.error(`Failed to queue ${context} assignment email for user ${userId}:`, error);
+    }
+  }
+}
+
+// Helper function to queue comment notifications to assignees and creator (excluding commenter)
+async function queueCommentNotifications(issue: any, comment: any, commenterUserId: string) {
+  console.log(`Queueing comment notifications for issue: ${issue.title}`);
+  
+  // Get commenter info for the email
+  const { username: commenterName } = await getUserEmail(commenterUserId);
+  
+  // Collect all unique user IDs that should receive notifications
+  const recipientUserIds = new Set<string>();
+  
+  // Add creator (if not the commenter)
+  if (issue.creator && issue.creator.userId && issue.creator.userId !== commenterUserId) {
+    recipientUserIds.add(issue.creator.userId);
+  }
+  
+  // Add all assignees (if not the commenter)
+  if (issue.assignees && issue.assignees.length > 0) {
+    issue.assignees.forEach((assignee: any) => {
+      if (assignee.userId && assignee.userId !== commenterUserId) {
+        recipientUserIds.add(assignee.userId);
+      }
+    });
+  }
+  
+  console.log(`Sending comment notifications to ${recipientUserIds.size} users for issue: ${issue.title}`);
+  
+  // Send notifications to all recipients
+  for (const userId of recipientUserIds) {
+    try {
+      const { email, username } = await getUserEmail(userId);
+      if (email) {
+        await emailQueue.queueCommentNotification(email, username, issue, comment, commenterName);
+        console.log(`Queued comment notification for ${email} for issue: ${issue.title}`);
+      } else {
+        console.warn(`No email found for user ${userId}`);
+      }
+    } catch (error) {
+      console.error(`Failed to queue comment notification for user ${userId}:`, error);
     }
   }
 }
@@ -217,10 +263,15 @@ export const addComment = async (req: Request, res: Response) => {
     
     if (!updatedIssue) {
       res.status(404).json({ error: 'Issue not found' });
-    } else {
-      res.json(updatedIssue);
+      return;
     }
+
+    // Send comment notifications to all relevant users (excluding the commenter)
+    await queueCommentNotifications(updatedIssue.toObject(), comment, userId);
+    
+    res.json(updatedIssue);
   } catch (error) {
+    console.error('Error adding comment:', error);
     res.status(500).json({ error: 'Failed to add comment' });
   }
 };

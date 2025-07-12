@@ -47,8 +47,7 @@ export class ReminderService {
                 for (const assignee of issue.assignees) {
                     try {
                         // Obtain user email information
-                        const userEmail = await this.getUserEmail(assignee.userId);
-                        const userName = assignee.username || assignee.userId;
+                        const { email: userEmail, username: userName } = await this.getUserEmail(assignee.userId);
 
                         if (userEmail) {
                             // Convert lean document to Issue type for email service
@@ -75,20 +74,26 @@ export class ReminderService {
         }
     }
 
-    private async getUserEmail(userId: string): Promise<string | null> {
+    private async getUserEmail(userId: string): Promise<{ email: string | null, username: string }> {
         try {
             // Call user service to get email
             const response = await fetch(`${process.env.USER_SERVICE_URL || 'http://localhost:29999'}/api/user/metadata/${userId}`);
 
             if (response.ok) {
                 const userData = await response.json();
-                return userData.email || null;
+                // Match frontend priority order: display_name > name > user_name > email prefix > fallback to id
+                const username = userData.display_name || userData.name || userData.user_name || userData.email?.split('@')[0] || userId;
+                
+                return {
+                    email: userData.email || null,
+                    username: username
+                };
             }
 
-            return null;
+            return { email: null, username: userId };
         } catch (error) {
             console.error(`Failed to fetch email for user ${userId}:`, error);
-            return null;
+            return { email: null, username: userId };
         }
     }
 
