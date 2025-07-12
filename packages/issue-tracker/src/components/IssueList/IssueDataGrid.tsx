@@ -1,8 +1,12 @@
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import type {GridColDef, GridRenderCellParams} from '@mui/x-data-grid';
 import {DataGrid, GridFooterContainer, GridPagination} from '@mui/x-data-grid';
-import {Box, Button} from '@mui/material';
+import {Box, Button, FormControl, InputLabel, Select, MenuItem, Chip, Stack, Typography, IconButton} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import {FilterList as FilterIcon, Sort as SortIcon, SwapVert as SwapVertIcon} from '@mui/icons-material';
+import {getUserMetadata} from "@forest/user-system/src/userMetadata";
+import {useAtomValue} from "jotai";
+import {userAtom} from '@forest/user-system/src/authStates';
 import type {Issue} from '../../types/Issue';
 import TitleCell from './columns/TitleCell';
 import StatusCell from './columns/StatusCell';
@@ -20,6 +24,16 @@ interface IssueDataGridProps {
     onIssueEdit: (issue: Issue) => void;
     onIssueDelete: (issueId: string) => void;
     onCreateIssue?: () => void;
+    // Filter and sort props for large version
+    assigneeFilter?: string;
+    onAssigneeFilterChange?: (filter: string) => void;
+    creatorFilter?: string;
+    onCreatorFilterChange?: (filter: string) => void;
+    sortBy?: string;
+    onSortByChange?: (sortBy: string) => void;
+    sortOrder?: 'asc' | 'desc';
+    onSortOrderChange?: (order: 'asc' | 'desc') => void;
+    treeId?: string;
 }
 
 const IssueDataGrid: React.FC<IssueDataGridProps> = ({
@@ -30,7 +44,161 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
     onIssueEdit,
     onIssueDelete,
     onCreateIssue,
+    // Filter and sort props
+    assigneeFilter = 'all',
+    onAssigneeFilterChange,
+    creatorFilter = 'all',
+    onCreatorFilterChange,
+    sortBy = 'smart',
+    onSortByChange,
+    sortOrder = 'asc',
+    onSortOrderChange,
+    treeId,
 }) => {
+    const currentUser = useAtomValue(userAtom);
+    const [treeMembers, setTreeMembers] = useState<Array<{userId: string, username: string}>>([]);
+    
+    // Fetch tree members for filter options
+    useEffect(() => {
+        const fetchTreeMembers = async () => {
+            if (!treeId || simple) return;
+            
+            try {
+                const response = await fetch(`${process.env.NODE_ENV === 'development' ? 'http://localhost:29999' : `${window.location.protocol}//${window.location.hostname}:${window.location.port}`}/api/tree-permission/tree/${treeId}`, {
+                    credentials: 'include',
+                    headers: {'Content-Type': 'application/json'},
+                });
+                const data = await response.json();
+                const permissions = data.permissions || [];
+                const userIds = permissions.map((p: any) => p.userId);
+                
+                // Fetch user details
+                const userDetails = await Promise.all(userIds.map(async (id: string) => {
+                    try {
+                        const userMeta = await getUserMetadata(id);
+                        return {
+                            userId: id,
+                            username: userMeta.username,
+                        };
+                    } catch (error) {
+                        return {
+                            userId: id,
+                            username: id,
+                        };
+                    }
+                }));
+                
+                setTreeMembers(userDetails);
+            } catch (error) {
+                console.error('Failed to fetch tree members:', error);
+            }
+        };
+        
+        fetchTreeMembers();
+    }, [treeId, simple]);
+    
+    // Filter and Sort Controls Component
+    const FilterSortControls = () => {
+        if (simple) return null;
+        
+        return (
+            <Box sx={{ p: 2, bgcolor: '#f8f9fa', borderBottom: '1px solid #e1e4e8' }}>
+                <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+                    <Typography variant="subtitle2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <FilterIcon fontSize="small" />
+                        Filters & Sort
+                    </Typography>
+                    
+                    {/* Assignee Filter */}
+                    <FormControl size="small" sx={{ minWidth: 150 }}>
+                        <InputLabel>Assignee</InputLabel>
+                        <Select
+                            value={assigneeFilter}
+                            onChange={(e) => onAssigneeFilterChange?.(e.target.value)}
+                            label="Assignee"
+                        >
+                            <MenuItem value="all">All Assignees</MenuItem>
+                            <MenuItem value="me">Assigned to Me</MenuItem>
+                            {treeMembers.map((member) => (
+                                <MenuItem key={member.userId} value={member.userId}>
+                                    {member.username}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                    
+                    {/* Creator Filter */}
+                    <FormControl size="small" sx={{ minWidth: 150 }}>
+                        <InputLabel>Creator</InputLabel>
+                        <Select
+                            value={creatorFilter}
+                            onChange={(e) => onCreatorFilterChange?.(e.target.value)}
+                            label="Creator"
+                        >
+                            <MenuItem value="all">All Creators</MenuItem>
+                            <MenuItem value="me">Created by Me</MenuItem>
+                            {treeMembers.map((member) => (
+                                <MenuItem key={member.userId} value={member.userId}>
+                                    {member.username}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                    
+                    {/* Sort By */}
+                    <FormControl size="small" sx={{ minWidth: 150 }}>
+                        <InputLabel>Sort By</InputLabel>
+                        <Select
+                            value={sortBy}
+                            onChange={(e) => onSortByChange?.(e.target.value)}
+                            label="Sort By"
+                        >
+                            <MenuItem value="smart">Smart (My Issues First)</MenuItem>
+                            <MenuItem value="deadline">Deadline</MenuItem>
+                            <MenuItem value="created">Created Date</MenuItem>
+                            <MenuItem value="updated">Last Updated</MenuItem>
+                        </Select>
+                    </FormControl>
+                    
+                    {/* Sort Order */}
+                    <IconButton
+                        onClick={() => onSortOrderChange?.(sortOrder === 'asc' ? 'desc' : 'asc')}
+                        size="small"
+                        sx={{ 
+                            bgcolor: sortOrder === 'desc' ? '#e3f2fd' : 'transparent',
+                            '&:hover': { bgcolor: '#e3f2fd' }
+                        }}
+                    >
+                        <SwapVertIcon fontSize="small" />
+                    </IconButton>
+                    
+                    {/* Active Filters Display */}
+                    {(assigneeFilter !== 'all' || creatorFilter !== 'all') && (
+                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                            <Typography variant="caption" color="text.secondary">Active:</Typography>
+                            {assigneeFilter !== 'all' && (
+                                <Chip
+                                    label={`Assignee: ${assigneeFilter === 'me' ? 'Me' : treeMembers.find(m => m.userId === assigneeFilter)?.username || assigneeFilter}`}
+                                    size="small"
+                                    onDelete={() => onAssigneeFilterChange?.('all')}
+                                    sx={{ bgcolor: '#e3f2fd', color: '#1976d2' }}
+                                />
+                            )}
+                            {creatorFilter !== 'all' && (
+                                <Chip
+                                    label={`Creator: ${creatorFilter === 'me' ? 'Me' : treeMembers.find(m => m.userId === creatorFilter)?.username || creatorFilter}`}
+                                    size="small"
+                                    onDelete={() => onCreatorFilterChange?.('all')}
+                                    sx={{ bgcolor: '#e3f2fd', color: '#1976d2' }}
+                                />
+                            )}
+                        </Box>
+                    )}
+                </Stack>
+            </Box>
+        );
+    };
+
     // Custom footer component with Create Issue button and pagination
     const CustomFooter = () => (
         <GridFooterContainer>
@@ -66,7 +234,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
             minWidth: 100,
             flex: 1, 
             renderCell: (params: GridRenderCellParams) => (
-                <AssigneesCell value={params.value}/>
+                <AssigneesCell value={params.value} treeId={treeId}/>
             ),
         }
     ] : [
@@ -105,7 +273,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
             minWidth: 150,
             flex: 2,
             renderCell: (params: GridRenderCellParams) => (
-                <AssigneesCell value={params.value}/>
+                <AssigneesCell value={params.value} treeId={treeId}/>
             ),
         },
         {
@@ -140,63 +308,66 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
     ];
 
     return (
-        <DataGrid
-            rows={issues}
-            columns={columns}
-            loading={loading}
-            pageSizeOptions={[5]}
-            initialState={{
-                pagination: {
-                    paginationModel: {page: 0, pageSize: 5}, 
-                },
-            }}
-            getRowId={(row) => row._id}
-            disableRowSelectionOnClick
-            hideFooterSelectedRowCount
-            sx={{
-                width: '100%',
-                height: '100%',
-                border: 'none',
-                '& .MuiDataGrid-main': {
-                    overflow: 'hidden'
-                },
-                '& .MuiDataGrid-virtualScroller': {
-                    overflow: 'hidden !important'
-                },
-                '& .MuiDataGrid-virtualScrollerContent': {
-                    overflow: 'hidden'
-                },
-                '& .MuiDataGrid-virtualScrollerRenderZone': {
-                    overflow: 'hidden'
-                },
-                '& .MuiDataGrid-columnHeaders': {
-                    backgroundColor: '#f5f5f5',
-                    minHeight: '35px !important',
-                    maxHeight: '35px !important',
-                },
-                '& .MuiDataGrid-columnHeader': {
-                    minHeight: '35px !important',
-                    maxHeight: '35px !important',
-                },
-                '& .MuiDataGrid-cell': {
-                    padding: '4px',
-                    display: 'flex',
-                },
-                '& .MuiDataGrid-scrollbar': {
-                    display: 'none'
-                },
-                '& .MuiDataGrid-scrollbar--vertical': {
-                    display: 'none'
-                },
-                '& .MuiDataGrid-scrollbar--horizontal': {
-                    display: 'none'
-                }
-            }}
-            rowHeight={35}
-            slots={{
-                footer: CustomFooter,
-            }}
-        />
+        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <FilterSortControls />
+            <DataGrid
+                rows={issues}
+                columns={columns}
+                loading={loading}
+                pageSizeOptions={[5]}
+                initialState={{
+                    pagination: {
+                        paginationModel: {page: 0, pageSize: 5}, 
+                    },
+                }}
+                getRowId={(row) => row._id}
+                disableRowSelectionOnClick
+                hideFooterSelectedRowCount
+                sx={{
+                    width: '100%',
+                    flex: 1,
+                    border: 'none',
+                    '& .MuiDataGrid-main': {
+                        overflow: 'hidden'
+                    },
+                    '& .MuiDataGrid-virtualScroller': {
+                        overflow: 'hidden !important'
+                    },
+                    '& .MuiDataGrid-virtualScrollerContent': {
+                        overflow: 'hidden'
+                    },
+                    '& .MuiDataGrid-virtualScrollerRenderZone': {
+                        overflow: 'hidden'
+                    },
+                    '& .MuiDataGrid-columnHeaders': {
+                        backgroundColor: '#f5f5f5',
+                        minHeight: '35px !important',
+                        maxHeight: '35px !important',
+                    },
+                    '& .MuiDataGrid-columnHeader': {
+                        minHeight: '35px !important',
+                        maxHeight: '35px !important',
+                    },
+                    '& .MuiDataGrid-cell': {
+                        padding: '4px',
+                        display: 'flex',
+                    },
+                    '& .MuiDataGrid-scrollbar': {
+                        display: 'none'
+                    },
+                    '& .MuiDataGrid-scrollbar--vertical': {
+                        display: 'none'
+                    },
+                    '& .MuiDataGrid-scrollbar--horizontal': {
+                        display: 'none'
+                    }
+                }}
+                rowHeight={35}
+                slots={{
+                    footer: CustomFooter,
+                }}
+            />
+        </Box>
     );
 };
 

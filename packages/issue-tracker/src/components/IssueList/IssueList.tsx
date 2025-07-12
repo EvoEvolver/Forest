@@ -6,6 +6,7 @@ import {issueServiceAtom} from '../../services/issueService';
 import IssueDetail from '../IssueDetail/IssueDetail';
 import IssueDataGrid from './IssueDataGrid';
 import {useAtomValue} from "jotai";
+import {userAtom} from '@forest/user-system/src/authStates';
 
 interface IssueListProps {
     treeId: string;
@@ -20,7 +21,16 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
     const [isCreatingNew, setIsCreatingNew] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
-    const issueService = useAtomValue(issueServiceAtom)
+    const [filteredIssues, setFilteredIssues] = useState<Issue[]>([]);
+    
+    // Filter and sort states for large version
+    const [assigneeFilter, setAssigneeFilter] = useState<string>('all'); // 'all', 'me', 'specific-user-id'
+    const [creatorFilter, setCreatorFilter] = useState<string>('all'); // 'all', 'me', 'specific-user-id'
+    const [sortBy, setSortBy] = useState<string>('smart'); // 'smart', 'deadline', 'created', 'updated'
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+    
+    const issueService = useAtomValue(issueServiceAtom);
+    const currentUser = useAtomValue(userAtom);
 
     const createEmptyIssue = (): Issue => ({
         _id: '',
@@ -37,6 +47,103 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
         tags: [],
         comments: []
     });
+
+    // Smart sorting function - prioritizes current user's assigned issues by deadline
+    const smartSort = (issues: Issue[]): Issue[] => {
+        if (!currentUser) return issues;
+        
+        const currentUserId = currentUser.id;
+        
+        return [...issues].sort((a, b) => {
+            // Check if issues are assigned to current user
+            const aAssignedToMe = a.assignees?.some(assignee => assignee.userId === currentUserId) || false;
+            const bAssignedToMe = b.assignees?.some(assignee => assignee.userId === currentUserId) || false;
+            
+            // If one is assigned to me and the other isn't, prioritize the assigned one
+            if (aAssignedToMe && !bAssignedToMe) return -1;
+            if (!aAssignedToMe && bAssignedToMe) return 1;
+            
+            // If both are assigned to me or both are not, sort by deadline
+            const aDeadline = a.dueDate ? new Date(a.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
+            const bDeadline = b.dueDate ? new Date(b.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
+            
+            return aDeadline - bDeadline;
+        });
+    };
+    
+    // Generic sorting function
+    const sortIssues = (issues: Issue[], sortBy: string, sortOrder: 'asc' | 'desc'): Issue[] => {
+        const sorted = [...issues].sort((a, b) => {
+            let aValue: any, bValue: any;
+            
+            switch (sortBy) {
+                case 'smart':
+                    return 0; // Will be handled by smartSort
+                case 'deadline':
+                    aValue = a.dueDate ? new Date(a.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
+                    bValue = b.dueDate ? new Date(b.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
+                    break;
+                case 'created':
+                    aValue = new Date(a.createdAt).getTime();
+                    bValue = new Date(b.createdAt).getTime();
+                    break;
+                case 'updated':
+                    aValue = new Date(a.updatedAt).getTime();
+                    bValue = new Date(b.updatedAt).getTime();
+                    break;
+                default:
+                    return 0;
+            }
+            
+            if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+            if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+            return 0;
+        });
+        
+        return sortBy === 'smart' ? smartSort(sorted) : sorted;
+    };
+    
+    // Filter issues based on assignee and creator filters
+    const filterIssues = (issues: Issue[]): Issue[] => {
+        if (!currentUser) return issues;
+        
+        let filtered = issues;
+        
+        // Filter by assignee
+        if (assigneeFilter === 'me') {
+            filtered = filtered.filter(issue => 
+                issue.assignees?.some(assignee => assignee.userId === currentUser.id)
+            );
+        } else if (assigneeFilter !== 'all') {
+            filtered = filtered.filter(issue => 
+                issue.assignees?.some(assignee => assignee.userId === assigneeFilter)
+            );
+        }
+        
+        // Filter by creator
+        if (creatorFilter === 'me') {
+            filtered = filtered.filter(issue => issue.creator.userId === currentUser.id);
+        } else if (creatorFilter !== 'all') {
+            filtered = filtered.filter(issue => issue.creator.userId === creatorFilter);
+        }
+        
+        return filtered;
+    };
+    
+    // Apply filters and sorting whenever issues or filter/sort options change
+    useEffect(() => {
+        let processed = issues;
+        
+        if (!simple) {
+            // Apply filters for large version
+            processed = filterIssues(processed);
+        }
+        
+        // Apply sorting
+        processed = sortIssues(processed, sortBy, sortOrder);
+        
+        setFilteredIssues(processed);
+    }, [issues, assigneeFilter, creatorFilter, sortBy, sortOrder, currentUser, simple]);
 
     // Fetch issues on component mount
     useEffect(() => {
@@ -154,7 +261,7 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
                 minHeight: 0 // Important for nested flex containers
             }}>
                 <IssueDataGrid
-                    issues={issues}
+                    issues={filteredIssues}
                     loading={loading}
                     simple={simple}
                     onIssueSelect={setSelectedIssue}
@@ -164,6 +271,16 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
                         setIsCreatingNew(true);
                         setSelectedIssue(createEmptyIssue());
                     }}
+                    // Filter and sort props for large version
+                    assigneeFilter={assigneeFilter}
+                    onAssigneeFilterChange={setAssigneeFilter}
+                    creatorFilter={creatorFilter}
+                    onCreatorFilterChange={setCreatorFilter}
+                    sortBy={sortBy}
+                    onSortByChange={setSortBy}
+                    sortOrder={sortOrder}
+                    onSortOrderChange={setSortOrder}
+                    treeId={treeId}
                 />
             </Box>
             {/* Issue Detail Dialog */}
