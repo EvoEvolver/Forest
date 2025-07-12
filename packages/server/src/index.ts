@@ -74,14 +74,14 @@ function main(): void {
         // Start daily reminders cron job
         reminderService.startDailyReminders();
         
-        // Trigger initial reminder check on startup
-        console.log('Triggering initial reminder check...');
-        try {
-            await reminderService.triggerRemindersNow();
-            console.log('Initial reminder check completed successfully');
-        } catch (error) {
-            console.error('Initial reminder check failed:', error);
-        }
+        // // Trigger initial reminder check on startup
+        // console.log('Triggering initial reminder check...');
+        // try {
+        //     await reminderService.triggerRemindersNow();
+        //     console.log('Initial reminder check completed successfully');
+        // } catch (error) {
+        //     console.error('Initial reminder check failed:', error);
+        // }
     });
 
     // Setup WebSocket upgrade handling

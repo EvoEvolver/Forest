@@ -1,6 +1,6 @@
 import React, {useState, useEffect} from 'react';
 import type {SelectChangeEvent} from '@mui/material';
-import {Avatar, Box, Chip, Divider, FormControl, MenuItem, Select, Stack, TextField, Typography, IconButton,} from '@mui/material';
+import {Avatar, Box, Chip, Divider, FormControl, MenuItem, Select, Stack, TextField, Typography, IconButton, Button} from '@mui/material';
 import {
     CalendarToday as CalendarIcon,
     Flag as PriorityIcon,
@@ -8,6 +8,8 @@ import {
     Person as PersonIcon,
     Add as AddIcon,
     Close as CloseIcon,
+    Launch as LaunchIcon,
+    AccountTree as TreeIcon,
 } from '@mui/icons-material';
 import type {Issue, UpdateIssueRequest} from '../../types/Issue';
 import type {User} from '../UserSelector';
@@ -150,6 +152,20 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
         fetchCreatorInfo();
     }, [issue.creator.userId, issue.creator.username]);
 
+    // Function to navigate to a specific node
+    const handleGoToNode = (nodeId: string) => {
+        // Get current base URL
+        const getBaseUrl = () => {
+            return `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
+        };
+        
+        const baseUrl = getBaseUrl();
+        const nodeUrl = `${baseUrl}/?id=${issue.treeId}&n=${nodeId}`;
+        
+        // Navigate to the node URL
+        window.location.href = nodeUrl;
+    };
+
     return (
         <Box
             sx={{
@@ -173,7 +189,7 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
                             onChange={handleStatusChange}
                         >
                             <MenuItem value="open">🔵 Open</MenuItem>
-                            <MenuItem value="in_progress">🟡 In Progress</MenuItem>
+                            <MenuItem value="in_progress">🟠 In Progress</MenuItem>
                             <MenuItem value="resolved">🟢 Resolved</MenuItem>
                             <MenuItem value="closed">⚫ Closed</MenuItem>
                         </Select>
@@ -392,6 +408,43 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
             />
 
             <Divider sx={{my: 2}}/>
+
+            {/* Go to Node Section */}
+            {!isCreatingNew && issue.nodes && issue.nodes.length > 0 && (
+                <>
+                    <Box sx={{mb: 3}}>
+                        <Typography variant="subtitle2"
+                                    sx={{mb: 1, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1}}>
+                            <TreeIcon fontSize="small"/>
+                            Related Nodes
+                        </Typography>
+                        <Stack spacing={1}>
+                            {issue.nodes.map((node, index) => (
+                                <Button
+                                    key={index}
+                                    variant="outlined"
+                                    size="small"
+                                    startIcon={<LaunchIcon fontSize="small"/>}
+                                    onClick={() => handleGoToNode(node.nodeId)}
+                                    sx={{
+                                        justifyContent: 'flex-start',
+                                        textTransform: 'none',
+                                        color: '#1976d2',
+                                        borderColor: '#1976d2',
+                                        '&:hover': {
+                                            bgcolor: '#e3f2fd',
+                                            borderColor: '#1976d2',
+                                        }
+                                    }}
+                                >
+                                    Go to Node {node.nodeId.substring(0, 8)}...
+                                </Button>
+                            ))}
+                        </Stack>
+                    </Box>
+                    <Divider sx={{my: 2}}/>
+                </>
+            )}
 
             {/* Only show Creator, Created, Last Updated sections when not creating new issue */}
             {!isCreatingNew && (

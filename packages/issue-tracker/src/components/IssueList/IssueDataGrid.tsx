@@ -3,7 +3,7 @@ import type {GridColDef, GridRenderCellParams} from '@mui/x-data-grid';
 import {DataGrid, GridFooterContainer, GridPagination} from '@mui/x-data-grid';
 import {Box, Button, FormControl, InputLabel, Select, MenuItem, Chip, Stack, Typography, IconButton, Avatar} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import {FilterList as FilterIcon, Sort as SortIcon, SwapVert as SwapVertIcon, Person as PersonIcon} from '@mui/icons-material';
+import {FilterList as FilterIcon, Sort as SortIcon, SwapVert as SwapVertIcon, Person as PersonIcon, ArrowBack as ArrowBackIcon} from '@mui/icons-material';
 import {getUserMetadata} from "@forest/user-system/src/userMetadata";
 import {useAtomValue} from "jotai";
 import {userAtom} from '@forest/user-system/src/authStates';
@@ -58,6 +58,19 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
     const currentUser = useAtomValue(userAtom);
     const [treeMembers, setTreeMembers] = useState<Array<{userId: string, username: string, avatar?: string | null}>>([]);
     
+    // Get current base URL
+    const getBaseUrl = () => {
+        return `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
+    };
+    
+    // Handle back to tree navigation
+    const handleBackToTree = () => {
+        if (treeId) {
+            const baseUrl = getBaseUrl();
+            window.location.href = `${baseUrl}/?id=${treeId}`;
+        }
+    };
+    
     // Fetch tree members for filter options
     useEffect(() => {
         const fetchTreeMembers = async () => {
@@ -106,10 +119,21 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
         return (
             <Box sx={{ p: 2, bgcolor: '#f8f9fa', borderBottom: '1px solid #e1e4e8' }}>
                 <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
-                    <Typography variant="subtitle2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <FilterIcon fontSize="small" />
-                        Filters & Sort
-                    </Typography>
+                    {/* Back to Tree Button */}
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<ArrowBackIcon />}
+                        onClick={handleBackToTree}
+                        sx={{ 
+                            minWidth: 'auto',
+                            '&:hover': {
+                                bgcolor: '#e3f2fd'
+                            }
+                        }}
+                    >
+                        Back to Tree
+                    </Button>
                     
                     {/* Assignee Filter */}
                     <FormControl size="small" sx={{ minWidth: 150 }}>
