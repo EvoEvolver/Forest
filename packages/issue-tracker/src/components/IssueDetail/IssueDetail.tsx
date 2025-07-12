@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {Box, Dialog, DialogContent,} from '@mui/material';
+import {Box, Dialog, DialogContent, Alert, Snackbar} from '@mui/material';
 import type {Issue, UpdateIssueRequest} from '../../types/Issue';
 import type {User} from '../UserSelector';
 import IssueDetailHeader from './IssueDetailHeader';
@@ -35,6 +35,7 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
     const [newComment, setNewComment] = useState('');
     const [loading, setLoading] = useState(false);
     const [currentIssue, setCurrentIssue] = useState<Issue | null>(issue);
+    const [loginError, setLoginError] = useState('');
     
     const currentUser = useAtomValue(userAtom);
     const issueService = useAtomValue(issueServiceAtom);
@@ -92,10 +93,18 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
     };
 
     const handleSaveEdit = async () => {
+        // Check if user is logged in
+        if (!currentUser || !currentUser.id) {
+            setLoginError('You must login to create/modify issues');
+            return;
+        }
+
         setLoading(true);
         try {
             if (isCreatingNew) {
                 await onUpdate('', editData);
+                // Close the dialog after successful creation
+                onClose();
             } else if (currentIssue) {
                 await onUpdate(currentIssue._id, editData);
                 setIsEditing(false);
@@ -138,10 +147,16 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
     const handleAddComment = async () => {
         if (!newComment.trim() || !onAddComment) return;
 
+        // Check if user is logged in
+        if (!currentUser || !currentUser.id) {
+            setLoginError('You must login to add comments');
+            return;
+        }
+
         setLoading(true);
         try {
             await onAddComment(currentIssue._id, {
-                userId: 'demo-user',
+                userId: currentUser.id,
                 content: newComment.trim(),
             });
             setNewComment('');
@@ -157,57 +172,71 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
     };
 
     return (
-        <Dialog
-            open={open}
-            onClose={onClose}
-            maxWidth={false}
-            PaperProps={{
-                sx: {
-                    borderRadius: 2,
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-                    height: '90vh',
-                }
-            }}
-        >
-            <IssueDetailHeader
-                issueId={currentIssue?._id || ''}
-                isEditing={isEditing}
-                loading={loading}
-                onStartEdit={handleStartEdit}
-                onSaveEdit={handleSaveEdit}
-                onCancelEdit={handleCancelEdit}
+        <>
+            <Dialog
+                open={open}
                 onClose={onClose}
-                onDelete={handleDelete}
-                canDelete={canDelete}
-                isCreatingNew={isCreatingNew}
-            />
+                maxWidth={false}
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                        height: '90vh',
+                    }
+                }}
+            >
+                <IssueDetailHeader
+                    issueId={currentIssue?._id || ''}
+                    isEditing={isEditing}
+                    loading={loading}
+                    onStartEdit={handleStartEdit}
+                    onSaveEdit={handleSaveEdit}
+                    onCancelEdit={handleCancelEdit}
+                    onClose={onClose}
+                    onDelete={handleDelete}
+                    canDelete={canDelete}
+                    isCreatingNew={isCreatingNew}
+                />
 
-            <DialogContent sx={{p: 0, overflow: 'auto'}}>
-                <Box sx={{display: 'flex', height: '100%'}}>
-                    <IssueDetailContent
-                        issue={currentIssue}
-                        isEditing={isEditing}
-                        editData={editData}
-                        newComment={newComment}
-                        loading={loading}
-                        onEditDataChange={handleEditDataChange}
-                        onNewCommentChange={setNewComment}
-                        onAddComment={handleAddComment}
-                        canAddComment={!!onAddComment && !isCreatingNew}
-                        isCreatingNew={isCreatingNew}
-                    />
+                <DialogContent sx={{p: 0, overflow: 'auto'}}>
+                    <Box sx={{display: 'flex', height: '100%'}}>
+                        <IssueDetailContent
+                            issue={currentIssue}
+                            isEditing={isEditing}
+                            editData={editData}
+                            newComment={newComment}
+                            loading={loading}
+                            onEditDataChange={handleEditDataChange}
+                            onNewCommentChange={setNewComment}
+                            onAddComment={handleAddComment}
+                            canAddComment={!!onAddComment && !isCreatingNew}
+                            isCreatingNew={isCreatingNew}
+                        />
 
-                    <IssueDetailSidebar
-                        issue={currentIssue}
-                        isEditing={isEditing}
-                        editData={editData}
-                        loading={loading}
-                        onEditDataChange={handleEditDataChange}
-                        isCreatingNew={isCreatingNew}
-                    />
-                </Box>
-            </DialogContent>
-        </Dialog>
+                        <IssueDetailSidebar
+                            issue={currentIssue}
+                            isEditing={isEditing}
+                            editData={editData}
+                            loading={loading}
+                            onEditDataChange={handleEditDataChange}
+                            isCreatingNew={isCreatingNew}
+                        />
+                    </Box>
+                </DialogContent>
+            </Dialog>
+
+            {/* Login Error Snackbar */}
+            <Snackbar
+                open={!!loginError}
+                autoHideDuration={6000}
+                onClose={() => setLoginError('')}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+                <Alert onClose={() => setLoginError('')} severity="warning" sx={{ width: '100%' }}>
+                    {loginError}
+                </Alert>
+            </Snackbar>
+        </>
     );
 };
 

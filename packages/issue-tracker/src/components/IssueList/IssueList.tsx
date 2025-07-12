@@ -79,7 +79,8 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
             setSuccessMessage('Issue created successfully');
         } catch (error) {
             console.error('Failed to create issue:', error);
-            setErrorMessage('Failed to create issue');
+            const errorMessage = error instanceof Error ? error.message : 'Failed to create issue';
+            setErrorMessage(errorMessage);
             throw error; // Re-throw to let the dialog handle it
         }
     };
@@ -91,7 +92,8 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
             setSuccessMessage('Issue updated successfully');
         } catch (error) {
             console.error('Failed to update issue:', error);
-            setErrorMessage('Failed to update issue');
+            const errorMessage = error instanceof Error ? error.message : 'Failed to update issue';
+            setErrorMessage(errorMessage);
             throw error;
         }
     };
@@ -123,7 +125,8 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
             setSuccessMessage('Comment added successfully');
         } catch (error) {
             console.error('Failed to add comment:', error);
-            setErrorMessage('Failed to add comment');
+            const errorMessage = error instanceof Error ? error.message : 'Failed to add comment';
+            setErrorMessage(errorMessage);
             throw error;
         }
     };

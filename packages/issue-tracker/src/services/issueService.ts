@@ -39,11 +39,16 @@ export const issueServiceAtom = atom((get) => {
 
         // Create a new issue
         async createIssue(treeId: string, issue: CreateIssueRequest): Promise<Issue> {
+            const currentUser = get(userAtom);
+            if (!currentUser || !currentUser.id) {
+                throw new Error('You must login to create issues');
+            }
+            
             const issueData = {
                 ...issue,
                 treeId,
                 creator: {
-                    userId: get(userAtom).id
+                    userId: currentUser.id
                 }
             };
             const response = await api.post('/issues', issueData);
@@ -52,6 +57,11 @@ export const issueServiceAtom = atom((get) => {
 
         // Update an existing issue
         async updateIssue(issueId: string, updates: UpdateIssueRequest): Promise<Issue> {
+            const currentUser = get(userAtom);
+            if (!currentUser || !currentUser.id) {
+                throw new Error('You must login to modify issues');
+            }
+            
             const response = await api.put(`/issues/${issueId}`, updates);
             return response.data;
         },
@@ -63,6 +73,11 @@ export const issueServiceAtom = atom((get) => {
 
         // Add comment to an issue
         async addComment(issueId: string, comment: AddCommentRequest): Promise<Issue> {
+            const currentUser = get(userAtom);
+            if (!currentUser || !currentUser.id) {
+                throw new Error('You must login to add comments');
+            }
+            
             const response = await api.post(`/issues/${issueId}/comments`, comment);
             return response.data;
         },
