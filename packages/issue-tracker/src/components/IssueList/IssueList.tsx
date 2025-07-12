@@ -48,14 +48,18 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
         comments: []
     });
 
-    // Smart sorting function - prioritizes current user's assigned issues by deadline
+    // Smart sorting function - prioritizes current user's assigned issues by deadline, closed issues last
     const smartSort = (issues: Issue[]): Issue[] => {
         if (!currentUser) return issues;
         
         const currentUserId = currentUser.id;
         
         return [...issues].sort((a, b) => {
-            // Check if issues are assigned to current user
+            // First, sort by status - closed issues go to the end
+            if (a.status === 'closed' && b.status !== 'closed') return 1;
+            if (a.status !== 'closed' && b.status === 'closed') return -1;
+            
+            // For non-closed issues, check if they are assigned to current user
             const aAssignedToMe = a.assignees?.some(assignee => assignee.userId === currentUserId) || false;
             const bAssignedToMe = b.assignees?.some(assignee => assignee.userId === currentUserId) || false;
             
@@ -74,6 +78,10 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
     // Generic sorting function
     const sortIssues = (issues: Issue[], sortBy: string, sortOrder: 'asc' | 'desc'): Issue[] => {
         const sorted = [...issues].sort((a, b) => {
+            // Always put closed issues at the end regardless of sort type
+            if (a.status === 'closed' && b.status !== 'closed') return 1;
+            if (a.status !== 'closed' && b.status === 'closed') return -1;
+            
             let aValue: any, bValue: any;
             
             switch (sortBy) {
@@ -167,15 +175,13 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
     };
 
     const handleDeleteIssue = async (issueId: string) => {
-        if (window.confirm('Are you sure you want to delete this issue?')) {
-            try {
-                await issueService.deleteIssue(issueId);
-                await loadIssues();
-                setSuccessMessage('Issue deleted successfully');
-            } catch (error) {
-                console.error('Failed to delete issue:', error);
-                setErrorMessage('Failed to delete issue');
-            }
+        try {
+            await issueService.deleteIssue(issueId);
+            await loadIssues();
+            setSuccessMessage('Issue deleted successfully');
+        } catch (error) {
+            console.error('Failed to delete issue:', error);
+            setErrorMessage('Failed to delete issue');
         }
     };
 

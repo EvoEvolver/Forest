@@ -1,9 +1,9 @@
 import React, {useState, useEffect} from 'react';
 import type {GridColDef, GridRenderCellParams} from '@mui/x-data-grid';
 import {DataGrid, GridFooterContainer, GridPagination} from '@mui/x-data-grid';
-import {Box, Button, FormControl, InputLabel, Select, MenuItem, Chip, Stack, Typography, IconButton} from '@mui/material';
+import {Box, Button, FormControl, InputLabel, Select, MenuItem, Chip, Stack, Typography, IconButton, Avatar} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import {FilterList as FilterIcon, Sort as SortIcon, SwapVert as SwapVertIcon} from '@mui/icons-material';
+import {FilterList as FilterIcon, Sort as SortIcon, SwapVert as SwapVertIcon, Person as PersonIcon} from '@mui/icons-material';
 import {getUserMetadata} from "@forest/user-system/src/userMetadata";
 import {useAtomValue} from "jotai";
 import {userAtom} from '@forest/user-system/src/authStates';
@@ -56,7 +56,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
     treeId,
 }) => {
     const currentUser = useAtomValue(userAtom);
-    const [treeMembers, setTreeMembers] = useState<Array<{userId: string, username: string}>>([]);
+    const [treeMembers, setTreeMembers] = useState<Array<{userId: string, username: string, avatar?: string | null}>>([]);
     
     // Fetch tree members for filter options
     useEffect(() => {
@@ -72,18 +72,20 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                 const permissions = data.permissions || [];
                 const userIds = permissions.map((p: any) => p.userId);
                 
-                // Fetch user details
+                // Fetch user details including avatars
                 const userDetails = await Promise.all(userIds.map(async (id: string) => {
                     try {
                         const userMeta = await getUserMetadata(id);
                         return {
                             userId: id,
                             username: userMeta.username,
+                            avatar: userMeta.avatar || null,
                         };
                     } catch (error) {
                         return {
                             userId: id,
                             username: id,
+                            avatar: null,
                         };
                     }
                 }));
@@ -121,7 +123,15 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                             <MenuItem value="me">Assigned to Me</MenuItem>
                             {treeMembers.map((member) => (
                                 <MenuItem key={member.userId} value={member.userId}>
-                                    {member.username}
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Avatar 
+                                            sx={{ width: 20, height: 20 }}
+                                            src={member.avatar || undefined}
+                                        >
+                                            <PersonIcon fontSize="small" />
+                                        </Avatar>
+                                        {member.username}
+                                    </Box>
                                 </MenuItem>
                             ))}
                         </Select>
@@ -139,7 +149,15 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                             <MenuItem value="me">Created by Me</MenuItem>
                             {treeMembers.map((member) => (
                                 <MenuItem key={member.userId} value={member.userId}>
-                                    {member.username}
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Avatar 
+                                            sx={{ width: 20, height: 20 }}
+                                            src={member.avatar || undefined}
+                                        >
+                                            <PersonIcon fontSize="small" />
+                                        </Avatar>
+                                        {member.username}
+                                    </Box>
                                 </MenuItem>
                             ))}
                         </Select>
