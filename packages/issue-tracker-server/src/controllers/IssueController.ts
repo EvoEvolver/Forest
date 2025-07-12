@@ -31,7 +31,7 @@ async function getUserEmail(userId: string): Promise<{ email: string | null, use
 }
 
 // Helper function to send assignment notifications to assignees
-async function sendAssignmentNotifications(assigneeIds: string[], issue: any, context: 'create' | 'update' = 'create') {
+async function sendAssignmentNotifications(assigneeIds: string[], issue: any, context: 'create' | 'update' = 'create', excludeUserId?: string) {
   if (!assigneeIds || assigneeIds.length === 0) {
     return;
   }
@@ -61,9 +61,9 @@ async function sendAssignmentNotifications(assigneeIds: string[], issue: any, co
   }
 }
 
-// Helper function to queue comment notifications to assignees and creator (excluding commenter)
-async function queueCommentNotifications(issue: any, comment: any, commenterUserId: string) {
-  console.log(`Queueing comment notifications for issue: ${issue.title}`);
+// Helper function to send comment notifications to assignees and creator (excluding commenter)
+async function sendCommentNotifications(issue: any, comment: any, commenterUserId: string) {
+  console.log(`Sending comment notifications for issue: ${issue.title}`);
 
   // Get commenter info for the email
   const { username: commenterName } = await getUserEmail(commenterUserId);
@@ -92,13 +92,13 @@ async function queueCommentNotifications(issue: any, comment: any, commenterUser
     try {
       const { email, username } = await getUserEmail(userId);
       if (email) {
-        await emailQueue.queueCommentNotification(email, username, issue, comment, commenterName);
-        console.log(`Queued comment notification for ${email} for issue: ${issue.title}`);
+        await emailService.sendCommentNotification(email, username, issue, comment, commenterName);
+        console.log(`Sent comment notification to ${email} for issue: ${issue.title}`);
       } else {
         console.warn(`No email found for user ${userId}`);
       }
     } catch (error) {
-      console.error(`Failed to queue comment notification for user ${userId}:`, error);
+      console.error(`Failed to send comment notification for user ${userId}:`, error);
     }
   }
 }
@@ -168,11 +168,11 @@ export const createIssue = async (req: Request, res: Response) => {
     
     const savedIssue = await newIssue.save();
     
-    // Send assignment notifications for all assignees (since this is a new issue)
+    // Send assignment notifications for all assignees (excluding creator to avoid self-notification)
     if (assignees && assignees.length > 0) {
       const assigneeIds = assignees.map((a: any) => a.userId);
       // Use setImmediate to avoid blocking the response
-      setImmediate(() => sendAssignmentNotifications(assigneeIds, savedIssue.toObject(), 'create'));
+      setImmediate(() => sendAssignmentNotifications(assigneeIds, savedIssue.toObject(), 'create', creator.userId));
     }
     
     res.status(201).json(savedIssue);
@@ -220,10 +220,10 @@ export const updateIssue = async (req: Request, res: Response) => {
         .map((a: any) => a.userId)
         .filter((id: string) => !originalAssigneeIds.includes(id));
 
-      // Send emails to new assignees only
+      // Send emails to new assignees only (excluding the user who made the update)
       if (newAssigneeIds.length > 0) {
         // Use setImmediate to avoid blocking the response
-        setImmediate(() => sendAssignmentNotifications(newAssigneeIds, updatedIssue.toObject(), 'update'));
+        setImmediate(() => sendAssignmentNotifications(newAssigneeIds, updatedIssue.toObject(), 'update', updates.updatedBy));
       }
     }
     
@@ -280,7 +280,7 @@ export const addComment = async (req: Request, res: Response) => {
     }
 
     // Send comment notifications to all relevant users (excluding the commenter)
-    await queueCommentNotifications(updatedIssue.toObject(), comment, userId);
+    setImmediate(() => sendCommentNotifications(updatedIssue.toObject(), comment, userId));
 
     res.json(updatedIssue);
   } catch (error) {
