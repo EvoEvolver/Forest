@@ -40,8 +40,7 @@ export class EmailQueue {
 
     constructor() {
         // Create Bull queue with Redis connection
-        this.queue = new Queue('email notifications', {
-            redis: process.env.REDIS_URL,
+        this.queue = new Queue('email notifications', process.env.REDIS_URL, {
             defaultJobOptions: {
                 attempts: 3,
                 backoff: {
