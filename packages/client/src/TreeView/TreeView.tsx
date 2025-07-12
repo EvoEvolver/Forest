@@ -1,7 +1,7 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {Card, Grid} from '@mui/material';
-import {useAtomValue, useSetAtom} from "jotai";
-import {listOfNodesForViewAtom, selectedNodeAtom} from "../TreeState/TreeState";
+import {useAtom, useAtomValue, useSetAtom} from "jotai";
+import {listOfNodesForViewAtom, selectedNodeAtom, treeAtom} from "../TreeState/TreeState";
 import CardContent from "@mui/material/CardContent";
 import {NodeButtons} from "./NodeButtons";
 import {isMobileModeAtom} from "../appState";
@@ -10,14 +10,20 @@ import {ColumnRight} from "./ColumnRight";
 import {NodeVM} from "@forest/schema"
 import {NodeTitle} from "./NodeTitle";
 import { thisNodeContext } from './NodeContext';
+import {updateChildrenCountAtom} from "../TreeState/childrenCount";
+import {observe} from "jotai-effect";
 
 const TreeView = () => {
     const leaves = useAtomValue(listOfNodesForViewAtom)
     const mobileMode = useAtomValue(isMobileModeAtom)
-
-    if (leaves.length === 0) {
-        return <></>
-    }
+    const tree = useAtomValue(treeAtom)
+    const commitNumber = useAtomValue(tree.viewCommitNumberAtom)
+    const countChildren = useSetAtom(updateChildrenCountAtom)
+    useEffect(() => {
+        countChildren({})
+    }, [commitNumber]);
+    if (leaves.length === 0)
+        return null
     return (
         <Grid style={{height: "100%", width: "100%"}} container spacing={1}>
             {!mobileMode && <Grid size={3.5} style={{height: "100%"}}>

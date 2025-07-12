@@ -16,6 +16,7 @@ import { NodeVM } from '@forest/schema';
 
 export const NavigatorItemsAtom = atom((get) => {
         const tree = get(treeAtom)
+        const commitNumber = get(tree.viewCommitNumberAtom)
         let root: NodeVM
         if (get(tree.metadata).rootId) {
             // if rootId is set, use it to find the root node
@@ -36,7 +37,15 @@ export const NavigatorItemsAtom = atom((get) => {
         const addChildren = (item) => {
             const node = get(tree.nodeDict[item.id])
             const children_ids = get(node.children)
-            const children = children_ids.map((childId) => get(tree.nodeDict[childId]))
+            const children = children_ids.map((childId) => {
+                const childrenNodeAtom = tree.nodeDict[childId]
+                if(!childrenNodeAtom){
+                    return null
+                }
+                return get(childrenNodeAtom)
+            }).filter((child) => {
+                return child != null
+            })
 
             item.children = children.map((child) => {
                 return {

@@ -10,6 +10,7 @@ import {MyAppBar} from "./AppBar";
 import {treeId} from "./appState";
 import {getPastelHexFromUsername, getRandomAnimal} from "@forest/user-system/src/helper";
 import {recordTreeVisit} from "./TreeState/treeVisitService";
+import {treeAtom} from "./TreeState/TreeState";
 
 // @ts-ignore
 const FlowVisualizer = lazy(() => import('./FlowView'));
@@ -76,11 +77,15 @@ export default function App() {
 }
 
 
-const TreeViewPage = () => (
-    <Box style={{width: "100vw", height: "100%", flexGrow: 1, boxSizing: "border-box"}}>
+const TreeViewPage = () => {
+    const tree = useAtomValue(treeAtom);
+    if(!tree)
+        return null;
+    return <Box style={{width: "100vw", height: "100%", flexGrow: 1, boxSizing: "border-box"}}>
         <TreeView/>
     </Box>
-);
+}
+
 
 const LinearViewPage = () => (
     <Box style={{width: "100vw", height: "100%", flexGrow: 1, boxSizing: "border-box"}}>

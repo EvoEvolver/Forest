@@ -25,8 +25,6 @@ export const issueServiceAtom = atom((get) => {
             priority?: string;
             nodeId?: string;
         }): Promise<Issue[]> {
-
-            console.log(params)
             const response = await api.get(`/issues/tree/${treeId}`, {params});
             return response.data;
         },

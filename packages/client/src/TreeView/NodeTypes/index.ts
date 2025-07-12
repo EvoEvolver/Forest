@@ -1,10 +1,37 @@
 import {SupportedNodeTypesMap} from "@forest/schema"
-import {CustomNodeType} from "./CustomNodeType";
-import {EditorNodeType} from "@forest/node-type-editor";
-import {ReaderNodeType} from "@forest/node-type-reader";
+import {EditorNodeType} from "@forest/node-type-editor"
+import {ReaderNodeType} from "@forest/node-type-reader"
+// @ts-ignore
+const typeModules = {
+    "CustomNodeType": () => import("./CustomNodeType").then(m => new m.CustomNodeType()),
+    "EditorNodeType": async () => new EditorNodeType(),
+    "ReaderNodeType": async () => new ReaderNodeType()
+};
 
-export const supportedNodeTypes: SupportedNodeTypesMap = {
-    "CustomNodeType": new CustomNodeType(),
-    "EditorNodeType": new EditorNodeType(),
-    "ReaderNodeType": new ReaderNodeType()
+// Cache for loaded types AND loading promises
+const loadedTypes: Record<string, Promise<any>> = {};
+
+export const supportedNodeTypes: SupportedNodeTypesMap = async (typeName: string) => {
+    // Return from cache if already loading or loaded
+    if (loadedTypes[typeName]) {
+        return loadedTypes[typeName];
+    }
+
+    // Load the type dynamically
+    if (typeName in typeModules) {
+        try {
+            // Store the promise in cache before awaiting
+            loadedTypes[typeName] = typeModules[typeName]().then(nodeType => {
+                console.log(`Loaded node type: ${typeName}`);
+                return nodeType;
+            });
+            return await loadedTypes[typeName];
+        } catch (error) {
+            console.error(`Failed to load node type: ${typeName}`, error);
+            delete loadedTypes[typeName]; // Remove failed promise from cache
+            return null;
+        }
+    }
+
+    return null;
 }
