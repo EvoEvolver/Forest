@@ -21,7 +21,7 @@
     "@mui/material": "^7.2.0",
     "@mui/system": "^5.15.20",
     "@mui/x-tree-view": "^7.26.0",
-    "@supabase/supabase-js": "^2.49.10",
+    "@supabase/supabase-js": "^2.50.5",
     "d3-hierarchy": "^3.1.2",
     "jotai": "^2.10.3",
     "jotai-effect": "^2.0.4",
