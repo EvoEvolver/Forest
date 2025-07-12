@@ -1,8 +1,13 @@
 import cron from 'node-cron';
 import {getIssueModel} from '../models/Issue';
-import {emailQueue} from './emailQueue';
+import {EmailService} from './emailService';
 
 export class ReminderService {
+    private emailService: EmailService;
+
+    constructor() {
+        this.emailService = new EmailService();
+    }
 
     startDailyReminders() {
         // 9 AM every day
@@ -56,9 +61,9 @@ export class ReminderService {
                                 ...issue,
                                 _id: issue._id.toString()
                             } as any;
-                            await emailQueue.queueDeadlineReminder(userEmail, userName, issueForEmail);
+                            await this.emailService.sendDeadlineReminder(userEmail, userName, issueForEmail);
                             emailsSent++;
-                            console.log(`Queued deadline reminder for ${userEmail} for issue: ${issue.title}`);
+                            console.log(`Sent deadline reminder to ${userEmail} for issue: ${issue.title}`);
                         } else {
                             console.warn(`No email found for user ${assignee.userId}`);
                         }

@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 import { getIssueModel } from '../models/Issue';
 import mongoose from 'mongoose';
-import { emailQueue } from '../services/emailQueue';
+import { EmailService } from '../services/emailService';
 
-// Email queue is initialized as singleton in emailQueue.ts
+// Email service instance
+const emailService = new EmailService();
 
 // Helper function to get user email
 async function getUserEmail(userId: string): Promise<{ email: string | null, username: string }> {
@@ -25,25 +26,25 @@ async function getUserEmail(userId: string): Promise<{ email: string | null, use
   }
 }
 
-// Helper function to queue assignment notifications to assignees
-async function queueAssignmentNotifications(assigneeIds: string[], issue: any, context: 'create' | 'update' = 'create') {
+// Helper function to send assignment notifications to assignees
+async function sendAssignmentNotifications(assigneeIds: string[], issue: any, context: 'create' | 'update' = 'create') {
   if (!assigneeIds || assigneeIds.length === 0) {
     return;
   }
 
-  console.log(`Queueing ${context} assignment notifications for ${assigneeIds.length} assignees for issue: ${issue.title}`);
+  console.log(`Sending ${context} assignment notifications for ${assigneeIds.length} assignees for issue: ${issue.title}`);
   
   for (const userId of assigneeIds) {
     try {
       const { email, username } = await getUserEmail(userId);
       if (email) {
-        await emailQueue.queueAssignmentNotification(email, username, issue, context);
-        console.log(`Queued ${context} assignment notification for ${email} for issue: ${issue.title}`);
+        await emailService.sendAssignmentNotification(email, username, issue);
+        console.log(`Sent ${context} assignment notification to ${email} for issue: ${issue.title}`);
       } else {
         console.warn(`No email found for assigned user ${userId}`);
       }
     } catch (error) {
-      console.error(`Failed to queue ${context} assignment email for user ${userId}:`, error);
+      console.error(`Failed to send ${context} assignment email to user ${userId}:`, error);
     }
   }
 }
@@ -113,10 +114,11 @@ export const createIssue = async (req: Request, res: Response) => {
     
     const savedIssue = await newIssue.save();
     
-    // Queue assignment notifications for all assignees (since this is a new issue)
+    // Send assignment notifications for all assignees (since this is a new issue)
     if (assignees && assignees.length > 0) {
       const assigneeIds = assignees.map((a: any) => a.userId);
-      await queueAssignmentNotifications(assigneeIds, savedIssue.toObject(), 'create');
+      // Use setImmediate to avoid blocking the response
+      setImmediate(() => sendAssignmentNotifications(assigneeIds, savedIssue.toObject(), 'create'));
     }
     
     res.status(201).json(savedIssue);
@@ -164,8 +166,11 @@ export const updateIssue = async (req: Request, res: Response) => {
         .map((a: any) => a.userId)
         .filter((id: string) => !originalAssigneeIds.includes(id));
       
-      // Queue emails to new assignees only
-      await queueAssignmentNotifications(newAssigneeIds, updatedIssue.toObject(), 'update');
+      // Send emails to new assignees only
+      if (newAssigneeIds.length > 0) {
+        // Use setImmediate to avoid blocking the response
+        setImmediate(() => sendAssignmentNotifications(newAssigneeIds, updatedIssue.toObject(), 'update'));
+      }
     }
     
     res.json(updatedIssue);
