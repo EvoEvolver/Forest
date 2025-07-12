@@ -7,13 +7,10 @@
   "scripts": {
     "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
-    "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "@types/bull": "^4.10.4",
     "axios": "^1.10.0",
-    "bull": "^4.16.5",
     "cors": "^2.8.5",
     "dotenv": "^17.0.1",
     "express": "^4.21.1",
@@ -21,7 +18,6 @@
     "mongoose": "^8.16.1",
     "morgan": "^1.10.0",
     "node-cron": "^4.2.1",
-    "redis": "^5.6.0",
     "uuid": "^11.1.0"
   },
   "devDependencies": {

@@ -18,7 +18,7 @@ import {TreeService} from './services/treeService';
 import {createTreeRouter} from './routes/treeRoutes';
 import {createAIRouter} from './routes/aiRoutes';
 import {createVisitRouter} from './routes/visitRoutes';
-import {issueRoutes, ReminderService, emailQueue} from '@forest/issue-tracker-server'
+import {issueRoutes, ReminderService} from '@forest/issue-tracker-server'
 import { createUserRouter } from './routes/userRoutes';
 
 // Import WebSocket handler
@@ -89,10 +89,9 @@ function main(): void {
         websocketHandler.handleUpgrade(request, socket, head);
     });
     
-    // Graceful shutdown for email queue
+    // Graceful shutdown
     process.on('SIGTERM', async () => {
         console.log('SIGTERM received, shutting down gracefully');
-        await emailQueue.close();
         server.close(() => {
             console.log('Process terminated');
             process.exit(0);
@@ -101,7 +100,6 @@ function main(): void {
 
     process.on('SIGINT', async () => {
         console.log('SIGINT received, shutting down gracefully');
-        await emailQueue.close();
         server.close(() => {
             console.log('Process terminated');
             process.exit(0);
