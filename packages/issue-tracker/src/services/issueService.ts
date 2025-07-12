@@ -60,7 +60,13 @@ export const issueServiceAtom = atom((get) => {
                 throw new Error('You must login to modify issues');
             }
             
-            const response = await api.put(`/issues/${issueId}`, updates);
+            // Add updatedBy field to prevent self-notification
+            const updateData = {
+                ...updates,
+                updatedBy: currentUser.id
+            };
+            
+            const response = await api.put(`/issues/${issueId}`, updateData);
             return response.data;
         },
 

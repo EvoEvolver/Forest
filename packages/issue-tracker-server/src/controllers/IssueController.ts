@@ -30,14 +30,22 @@ async function getUserEmail(userId: string): Promise<{ email: string | null, use
 }
 
 // Helper function to queue assignment notifications to assignees
-async function queueAssignmentNotifications(assigneeIds: string[], issue: any, context: 'create' | 'update' = 'create') {
+async function queueAssignmentNotifications(assigneeIds: string[], issue: any, context: 'create' | 'update' = 'create', excludeUserId?: string) {
   if (!assigneeIds || assigneeIds.length === 0) {
     return;
   }
 
-  console.log(`Queueing ${context} assignment notifications for ${assigneeIds.length} assignees for issue: ${issue.title}`);
+  // Filter out the user who created/updated the issue to avoid self-notification
+  const filteredAssigneeIds = excludeUserId ? assigneeIds.filter(id => id !== excludeUserId) : assigneeIds;
   
-  for (const userId of assigneeIds) {
+  if (filteredAssigneeIds.length === 0) {
+    console.log(`No assignment notifications to send for issue: ${issue.title} (all assignees excluded)`);
+    return;
+  }
+
+  console.log(`Queueing ${context} assignment notifications for ${filteredAssigneeIds.length} assignees for issue: ${issue.title}`);
+  
+  for (const userId of filteredAssigneeIds) {
     try {
       const { email, username } = await getUserEmail(userId);
       if (email) {
@@ -162,7 +170,7 @@ export const createIssue = async (req: Request, res: Response) => {
     // Queue assignment notifications for all assignees (since this is a new issue)
     if (assignees && assignees.length > 0) {
       const assigneeIds = assignees.map((a: any) => a.userId);
-      await queueAssignmentNotifications(assigneeIds, savedIssue.toObject(), 'create');
+      await queueAssignmentNotifications(assigneeIds, savedIssue.toObject(), 'create', creator.userId);
     }
     
     res.status(201).json(savedIssue);
@@ -210,8 +218,8 @@ export const updateIssue = async (req: Request, res: Response) => {
         .map((a: any) => a.userId)
         .filter((id: string) => !originalAssigneeIds.includes(id));
       
-      // Queue emails to new assignees only
-      await queueAssignmentNotifications(newAssigneeIds, updatedIssue.toObject(), 'update');
+      // Queue emails to new assignees only (exclude the user who made the update)
+      await queueAssignmentNotifications(newAssigneeIds, updatedIssue.toObject(), 'update', updates.updatedBy);
     }
     
     res.json(updatedIssue);
