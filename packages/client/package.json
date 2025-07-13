@@ -13,6 +13,7 @@
     "@forest/node-components": "workspace:*",
     "@forest/node-type-editor": "workspace:*",
     "@forest/node-type-reader": "workspace:*",
+    "@forest/node-type-agents": "workspace:*",
     "@forest/schema": "workspace:*",
     "@forest/user-panel": "workspace:*",
     "@forest/user-system": "workspace:*",

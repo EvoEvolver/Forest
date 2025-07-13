@@ -340,14 +340,16 @@ export class NodeVM {
         if (yjsMapNode.has("tools"))
             nodeVM.tools = yjsMapNode.get("tools")
 
-        await nodeVM.assignNodeType(supportedNodesTypes)
+        nodeVM.nodeType = await nodeVM.getNodeType(supportedNodesTypes)
+        nodeVM.nodeType.ydataInitialize(nodeVM)
+
         return nodeVM
     }
 
     constructor() {
     }
 
-    async assignNodeType(supportedNodesTypes: SupportedNodeTypesMap) {
+    async getNodeType(supportedNodesTypes: SupportedNodeTypesMap): Promise<NodeType> {
         if (!this.nodeTypeName) {
             if (this.tabs["content"] === `<PaperEditorMain/>`) {
                 this.nodeTypeName = "EditorNodeType"
@@ -355,7 +357,7 @@ export class NodeVM {
                 this.nodeTypeName = "CustomNodeType"
             }
         }
-        this.nodeType = await getNodeType(this.nodeTypeName, supportedNodesTypes)
+        return await getNodeType(this.nodeTypeName, supportedNodesTypes)
     }
 
 }
