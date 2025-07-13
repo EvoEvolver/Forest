@@ -51,7 +51,7 @@ export async function pushTreeData(
 }
 
 
-export async function createNewTree(host: string = 'http://0.0.0.0:29999',
+export async function createNewTree(rootNodeTypeName: string, host: string = 'http://0.0.0.0:29999',
                                     token?: string) {
     const nodeId = uuidv4()
     const newRootJson: NodeJson = {
@@ -60,7 +60,7 @@ export async function createNewTree(host: string = 'http://0.0.0.0:29999',
         id: nodeId,
         parent: null,
         data: {},
-        nodeTypeName: "EditorNodeType"
+        nodeTypeName: rootNodeTypeName
     }
     const newTreeMetadata: TreeMetadata = {
         rootId: newRootJson.id

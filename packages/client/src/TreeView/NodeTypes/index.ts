@@ -4,6 +4,8 @@ import {ReaderNodeType} from "@forest/node-type-reader"
 // @ts-ignore
 const typeModules = {
     "CustomNodeType": () => import("./CustomNodeType").then(m => new m.CustomNodeType()),
+    "AgentNodeType": () => import("@forest/node-type-agents").then(m => new m.AgentNodeType()),
+    "AgentToolNodeType": () => import("@forest/node-type-agents").then(m => new m.AgentToolNodeType()),
     "EditorNodeType": async () => new EditorNodeType(),
     "ReaderNodeType": async () => new ReaderNodeType()
 };

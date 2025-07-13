@@ -55,7 +55,7 @@ function TabPanel({node}:{node: NodeVM}) {
             </Box>
             <Box sx={{ p: 2 }}>
                 {value === 0 && <IssueList simple={true} treeId={treeId} nodeId={node.id}/>}
-                {value === 1 && <TodoApp />}
+                {value === 1 && <TodoApp node={node}/>}
             </Box>
         </Box>
     );

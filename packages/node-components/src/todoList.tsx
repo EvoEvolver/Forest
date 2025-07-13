@@ -2,7 +2,7 @@ import React from 'react';
 import { TextField, Button, List, ListItem, ListItemText, Checkbox } from '@mui/material';
 import { Array as YArray } from 'yjs';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { thisNodeContext } from "@forest/client";
+import { NodeVM } from '@forest/schema';
 
 
 interface Todo {
@@ -11,8 +11,7 @@ interface Todo {
     done: boolean;
 }
 
-export function TodoApp() {
-    const node = React.useContext(thisNodeContext);
+export function TodoApp({node}: {node: NodeVM}) {
     let yList = node.ydata.get("todolist");
     if (!yList) {
         yList = new YArray();

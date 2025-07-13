@@ -13,9 +13,12 @@
     "@langchain/openai": "^0.0.14",
     "axios": "^1.6.0",
     "dotenv": "^16.6.1",
+    "js-yaml": "^4.1.0",
     "langchain": "0.2.19",
     "uuid": "^9.0.1",
-    "yjs": "^13.6.27"
+    "yjs": "^13.6.27",
+    "react": "^19.1.0",
+    "@mui/icons-material": "^7.2.0"
   },
   "devDependencies": {
     "@forest/schema": "workspace:*",
