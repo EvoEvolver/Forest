@@ -1,12 +1,12 @@
 import express from 'express';
 import {
-  getIssuesByTree,
-  getIssueById,
-  createIssue,
-  updateIssue,
-  deleteIssue,
   addComment,
-  resolveIssue
+  createIssue,
+  deleteIssue,
+  getIssueById,
+  getIssuesByTree,
+  resolveIssue,
+  updateIssue
 } from '../controllers/IssueController';
 
 const router = express.Router();

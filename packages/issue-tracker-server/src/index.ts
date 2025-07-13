@@ -1,4 +1,4 @@
 import issueRoutes from './routes/issues';
-import { ReminderService } from './services/reminderService';
+import {ReminderService} from './services/reminderService';
 
-export { issueRoutes, ReminderService };
+export {issueRoutes, ReminderService};

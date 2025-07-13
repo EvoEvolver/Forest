@@ -1,18 +1,30 @@
-import React, {useState, useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import type {SelectChangeEvent} from '@mui/material';
-import {Avatar, Box, Chip, Divider, FormControl, MenuItem, Select, Stack, TextField, Typography, IconButton, Button} from '@mui/material';
 import {
+    Avatar,
+    Box,
+    Button,
+    Chip,
+    Divider,
+    FormControl,
+    IconButton,
+    MenuItem,
+    Select,
+    Stack,
+    TextField,
+    Typography
+} from '@mui/material';
+import {
+    AccountTree as TreeIcon,
+    Add as AddIcon,
     CalendarToday as CalendarIcon,
+    Close as CloseIcon,
     Flag as PriorityIcon,
     Label as LabelIcon,
-    Person as PersonIcon,
-    Add as AddIcon,
-    Close as CloseIcon,
     Launch as LaunchIcon,
-    AccountTree as TreeIcon,
+    Person as PersonIcon,
 } from '@mui/icons-material';
 import type {Issue, UpdateIssueRequest} from '../../types/Issue';
-import type {User} from '../UserSelector';
 import AssigneeManager from '../AssigneeManager';
 import {getUserMetadata} from "@forest/user-system/src/userMetadata";
 
@@ -123,7 +135,7 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
         }
     };
 
-    const [creatorInfo, setCreatorInfo] = useState<{username: string, avatar?: string}>({
+    const [creatorInfo, setCreatorInfo] = useState<{ username: string, avatar?: string }>({
         username: issue.creator.username || issue.creator.userId,
         avatar: undefined
     });
@@ -148,7 +160,7 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
                 });
             }
         }
-        
+
         fetchCreatorInfo();
     }, [issue.creator.userId, issue.creator.username]);
 
@@ -158,10 +170,10 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
         const getBaseUrl = () => {
             return `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
         };
-        
+
         const baseUrl = getBaseUrl();
         const nodeUrl = `${baseUrl}/?id=${issue.treeId}&n=${nodeId}`;
-        
+
         // Navigate to the node URL
         window.location.href = nodeUrl;
     };
@@ -270,7 +282,7 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
                     <LabelIcon fontSize="small"/>
                     Tags
                 </Typography>
-                
+
                 {isEditing ? (
                     <>
                         {/* Add new tag */}
@@ -292,7 +304,7 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
                                 <AddIcon fontSize="small"/>
                             </IconButton>
                         </Box>
-                        
+
                         {/* Existing tags */}
                         <Stack direction="row" spacing={1} flexWrap="wrap">
                             {(editData.tags || []).map((tag, index) => (
@@ -385,7 +397,8 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
                     email: undefined,
                     avatar: null
                 }))}
-                onAssigneesChange={() => {}}
+                onAssigneesChange={() => {
+                }}
                 editable={true}
                 variant="detail"
                 title="Assignees"
@@ -403,7 +416,7 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
                         userId: u.userId,
                         username: u.username
                     }));
-                    onEditDataChange({ assignees: assigneeUpdates });
+                    onEditDataChange({assignees: assigneeUpdates});
                 }}
             />
 
@@ -457,7 +470,7 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
                             Creator
                         </Typography>
                         <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-                            <Avatar 
+                            <Avatar
                                 sx={{width: 24, height: 24}}
                                 src={creatorInfo.avatar || undefined}
                             >

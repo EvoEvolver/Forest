@@ -5,16 +5,17 @@ import {userAtom} from "@forest/user-system/src/authStates";
 import {httpUrl} from "../components/AssigneeManager";
 
 
-const apiAtom = atom((get)=>{
+const apiAtom = atom((get) => {
     const authToken = get(userAtom)?.token;
     return axios.create({
-    baseURL: `${httpUrl}/api`,
-    headers: {
-        'Content-Type': 'application/json',
-        "Authorization": authToken ? `Bearer ${authToken}` : ""
-    },
-    withCredentials: true
-});})
+        baseURL: `${httpUrl}/api`,
+        headers: {
+            'Content-Type': 'application/json',
+            "Authorization": authToken ? `Bearer ${authToken}` : ""
+        },
+        withCredentials: true
+    });
+})
 
 export const issueServiceAtom = atom((get) => {
     const api = get(apiAtom)
@@ -41,7 +42,7 @@ export const issueServiceAtom = atom((get) => {
             if (!currentUser || !currentUser.id) {
                 throw new Error('You must login to create issues');
             }
-            
+
             const issueData = {
                 ...issue,
                 treeId,
@@ -59,13 +60,13 @@ export const issueServiceAtom = atom((get) => {
             if (!currentUser || !currentUser.id) {
                 throw new Error('You must login to modify issues');
             }
-            
+
             // Add updatedBy field to prevent self-notification
             const updateData = {
                 ...updates,
                 updatedBy: currentUser.id
             };
-            
+
             const response = await api.put(`/issues/${issueId}`, updateData);
             return response.data;
         },
@@ -81,7 +82,7 @@ export const issueServiceAtom = atom((get) => {
             if (!currentUser || !currentUser.id) {
                 throw new Error('You must login to add comments');
             }
-            
+
             const response = await api.post(`/issues/${issueId}/comments`, comment);
             return response.data;
         },

@@ -55,10 +55,10 @@ export class EmailService {
     }
 
     async sendCommentNotification(
-        recipientEmail: string, 
-        recipientName: string, 
-        issue: Issue, 
-        comment: { commentId: string; userId: string; content: string; createdAt: Date }, 
+        recipientEmail: string,
+        recipientName: string,
+        issue: Issue,
+        comment: { commentId: string; userId: string; content: string; createdAt: Date },
         commenterName: string
     ) {
         const subject = `💬 New comment on: ${issue.title}`;
@@ -187,9 +187,9 @@ export class EmailService {
     }
 
     private generateCommentNotificationTemplate(
-        recipientName: string, 
-        issue: Issue, 
-        comment: { commentId: string; userId: string; content: string; createdAt: Date }, 
+        recipientName: string,
+        issue: Issue,
+        comment: { commentId: string; userId: string; content: string; createdAt: Date },
         commenterName: string
     ): string {
         return `

@@ -1,6 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {Alert, Box, Button, Snackbar,} from '@mui/material';
-import {Add as AddIcon,} from '@mui/icons-material';
+import {Alert, Box, Snackbar,} from '@mui/material';
 import type {CreateIssueRequest, Issue, UpdateIssueRequest} from '../../types/Issue';
 import {issueServiceAtom} from '../../services/issueService';
 import IssueDetail from '../IssueDetail/IssueDetail';
@@ -22,13 +21,13 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
     const [successMessage, setSuccessMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [filteredIssues, setFilteredIssues] = useState<Issue[]>([]);
-    
+
     // Filter and sort states for large version
     const [assigneeFilter, setAssigneeFilter] = useState<string>('all'); // 'all', 'me', 'specific-user-id'
     const [creatorFilter, setCreatorFilter] = useState<string>('all'); // 'all', 'me', 'specific-user-id'
     const [sortBy, setSortBy] = useState<string>('smart'); // 'smart', 'deadline', 'created', 'updated'
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-    
+
     const issueService = useAtomValue(issueServiceAtom);
     const currentUser = useAtomValue(userAtom);
 
@@ -51,39 +50,39 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
     // Smart sorting function - prioritizes current user's assigned issues by deadline, closed issues last
     const smartSort = (issues: Issue[]): Issue[] => {
         if (!currentUser) return issues;
-        
+
         const currentUserId = currentUser.id;
-        
+
         return [...issues].sort((a, b) => {
             // First, sort by status - closed issues go to the end
             if (a.status === 'closed' && b.status !== 'closed') return 1;
             if (a.status !== 'closed' && b.status === 'closed') return -1;
-            
+
             // For non-closed issues, check if they are assigned to current user
             const aAssignedToMe = a.assignees?.some(assignee => assignee.userId === currentUserId) || false;
             const bAssignedToMe = b.assignees?.some(assignee => assignee.userId === currentUserId) || false;
-            
+
             // If one is assigned to me and the other isn't, prioritize the assigned one
             if (aAssignedToMe && !bAssignedToMe) return -1;
             if (!aAssignedToMe && bAssignedToMe) return 1;
-            
+
             // If both are assigned to me or both are not, sort by deadline
             const aDeadline = a.dueDate ? new Date(a.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
             const bDeadline = b.dueDate ? new Date(b.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
-            
+
             return aDeadline - bDeadline;
         });
     };
-    
+
     // Generic sorting function
     const sortIssues = (issues: Issue[], sortBy: string, sortOrder: 'asc' | 'desc'): Issue[] => {
         const sorted = [...issues].sort((a, b) => {
             // Always put closed issues at the end regardless of sort type
             if (a.status === 'closed' && b.status !== 'closed') return 1;
             if (a.status !== 'closed' && b.status === 'closed') return -1;
-            
+
             let aValue: any, bValue: any;
-            
+
             switch (sortBy) {
                 case 'smart':
                     return 0; // Will be handled by smartSort
@@ -102,54 +101,54 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
                 default:
                     return 0;
             }
-            
+
             if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
             if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
             return 0;
         });
-        
+
         return sortBy === 'smart' ? smartSort(sorted) : sorted;
     };
-    
+
     // Filter issues based on assignee and creator filters
     const filterIssues = (issues: Issue[]): Issue[] => {
         if (!currentUser) return issues;
-        
+
         let filtered = issues;
-        
+
         // Filter by assignee
         if (assigneeFilter === 'me') {
-            filtered = filtered.filter(issue => 
+            filtered = filtered.filter(issue =>
                 issue.assignees?.some(assignee => assignee.userId === currentUser.id)
             );
         } else if (assigneeFilter !== 'all') {
-            filtered = filtered.filter(issue => 
+            filtered = filtered.filter(issue =>
                 issue.assignees?.some(assignee => assignee.userId === assigneeFilter)
             );
         }
-        
+
         // Filter by creator
         if (creatorFilter === 'me') {
             filtered = filtered.filter(issue => issue.creator.userId === currentUser.id);
         } else if (creatorFilter !== 'all') {
             filtered = filtered.filter(issue => issue.creator.userId === creatorFilter);
         }
-        
+
         return filtered;
     };
-    
+
     // Apply filters and sorting whenever issues or filter/sort options change
     useEffect(() => {
         let processed = issues;
-        
+
         if (!simple) {
             // Apply filters for large version
             processed = filterIssues(processed);
         }
-        
+
         // Apply sorting
         processed = sortIssues(processed, sortBy, sortOrder);
-        
+
         setFilteredIssues(processed);
     }, [issues, assigneeFilter, creatorFilter, sortBy, sortOrder, currentUser, simple]);
 
@@ -250,8 +249,8 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
 
     return (
         <Box sx={{
-            height: '100%', 
-            width: '100%', 
+            height: '100%',
+            width: '100%',
             flexGrow: 1,
             display: 'flex',
             flexDirection: 'column',
@@ -259,9 +258,9 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
             minHeight: 0 // Important for flex containers
         }}>
             {/* DataGrid with fixed height to prevent size changes */}
-            <Box sx={{ 
-                flex: 1, 
-                display: 'flex', 
+            <Box sx={{
+                flex: 1,
+                display: 'flex',
                 flexDirection: 'column',
                 overflow: 'hidden',
                 minHeight: 0 // Important for nested flex containers

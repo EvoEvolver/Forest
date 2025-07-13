@@ -52,7 +52,7 @@ export class ReminderService {
                 for (const assignee of issue.assignees) {
                     try {
                         // Obtain user email information
-                        const { email: userEmail, username: userName } = await this.getUserEmail(assignee.userId);
+                        const {email: userEmail, username: userName} = await this.getUserEmail(assignee.userId);
 
                         if (userEmail) {
                             // Convert lean document to Issue type for email service
@@ -88,17 +88,17 @@ export class ReminderService {
                 const userData = await response.json();
                 // Match frontend priority order: display_name > name > user_name > email prefix > fallback to id
                 const username = userData.display_name || userData.name || userData.user_name || userData.email?.split('@')[0] || userId;
-                
+
                 return {
                     email: userData.email || null,
                     username: username
                 };
             }
 
-            return { email: null, username: userId };
+            return {email: null, username: userId};
         } catch (error) {
             console.error(`Failed to fetch email for user ${userId}:`, error);
-            return { email: null, username: userId };
+            return {email: null, username: userId};
         }
     }
 
