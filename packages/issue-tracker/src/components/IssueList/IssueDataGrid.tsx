@@ -365,6 +365,57 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
         },
     ];
 
+    // Calculate optimal page size based on available space
+    const [pageSize, setPageSize] = React.useState(() => simple ? 5 : 25);
+    const [paginationModel, setPaginationModel] = React.useState({
+        page: 0,
+        pageSize: simple ? 5 : 25,
+    });
+
+    React.useEffect(() => {
+        if (simple) {
+            const newPageSize = 5;
+            setPageSize(newPageSize);
+            setPaginationModel(prev => ({ ...prev, pageSize: newPageSize }));
+            return;
+        }
+
+        // For large mode, calculate based on viewport height
+        const calculateOptimalPageSize = () => {
+            const viewportHeight = window.innerHeight;
+            const headerHeight = 64; // AppBar height
+            const filterControlsHeight = 80; // Filter controls height
+            const footerHeight = 52; // DataGrid footer height
+            const rowHeight = 35; // Row height from sx prop
+            const headerRowHeight = 35; // Header row height
+            const padding = 40; // Some padding for safety
+
+            const availableHeight = viewportHeight - headerHeight - filterControlsHeight - footerHeight - headerRowHeight - padding;
+            const maxRows = Math.floor(availableHeight / rowHeight);
+            
+            // Ensure we have at least 10 rows and at most 100 rows
+            return Math.min(Math.max(maxRows, 10), 100);
+        };
+
+        const handleResize = () => {
+            const newPageSize = calculateOptimalPageSize();
+            setPageSize(newPageSize);
+            setPaginationModel(prev => ({ ...prev, pageSize: newPageSize }));
+        };
+
+        // Set initial page size
+        const newPageSize = calculateOptimalPageSize();
+        setPageSize(newPageSize);
+        setPaginationModel(prev => ({ ...prev, pageSize: newPageSize }));
+
+        // Add resize listener
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [simple]);
+
+    // Dynamic pagination settings based on simple mode
+    const pageSizeOptions = simple ? [5] : [pageSize];
+
     return (
         <Box sx={{height: '100%', display: 'flex', flexDirection: 'column'}}>
             <FilterSortControls/>
@@ -372,12 +423,9 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                 rows={issues}
                 columns={columns}
                 loading={loading}
-                pageSizeOptions={[5]}
-                initialState={{
-                    pagination: {
-                        paginationModel: {page: 0, pageSize: 5},
-                    },
-                }}
+                pageSizeOptions={pageSizeOptions}
+                paginationModel={paginationModel}
+                onPaginationModelChange={setPaginationModel}
                 getRowId={(row) => row._id}
                 disableRowSelectionOnClick
                 hideFooterSelectedRowCount
