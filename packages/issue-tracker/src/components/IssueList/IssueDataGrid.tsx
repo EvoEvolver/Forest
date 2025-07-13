@@ -1,9 +1,21 @@
-import React, {useState, useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import type {GridColDef, GridRenderCellParams} from '@mui/x-data-grid';
 import {DataGrid, GridFooterContainer, GridPagination} from '@mui/x-data-grid';
-import {Box, Button, FormControl, InputLabel, Select, MenuItem, Chip, Stack, Typography, IconButton, Avatar} from '@mui/material';
+import {
+    Avatar,
+    Box,
+    Button,
+    Chip,
+    FormControl,
+    IconButton,
+    InputLabel,
+    MenuItem,
+    Select,
+    Stack,
+    Typography
+} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import {FilterList as FilterIcon, Sort as SortIcon, SwapVert as SwapVertIcon, Person as PersonIcon, ArrowBack as ArrowBackIcon} from '@mui/icons-material';
+import {ArrowBack as ArrowBackIcon, Person as PersonIcon, SwapVert as SwapVertIcon} from '@mui/icons-material';
 import {getUserMetadata} from "@forest/user-system/src/userMetadata";
 import {useAtomValue} from "jotai";
 import {userAtom} from '@forest/user-system/src/authStates';
@@ -37,32 +49,36 @@ interface IssueDataGridProps {
 }
 
 const IssueDataGrid: React.FC<IssueDataGridProps> = ({
-    issues,
-    loading,
-    simple = true,
-    onIssueSelect,
-    onIssueEdit,
-    onIssueDelete,
-    onCreateIssue,
-    // Filter and sort props
-    assigneeFilter = 'all',
-    onAssigneeFilterChange,
-    creatorFilter = 'all',
-    onCreatorFilterChange,
-    sortBy = 'smart',
-    onSortByChange,
-    sortOrder = 'asc',
-    onSortOrderChange,
-    treeId,
-}) => {
+                                                         issues,
+                                                         loading,
+                                                         simple = true,
+                                                         onIssueSelect,
+                                                         onIssueEdit,
+                                                         onIssueDelete,
+                                                         onCreateIssue,
+                                                         // Filter and sort props
+                                                         assigneeFilter = 'all',
+                                                         onAssigneeFilterChange,
+                                                         creatorFilter = 'all',
+                                                         onCreatorFilterChange,
+                                                         sortBy = 'smart',
+                                                         onSortByChange,
+                                                         sortOrder = 'asc',
+                                                         onSortOrderChange,
+                                                         treeId,
+                                                     }) => {
     const currentUser = useAtomValue(userAtom);
-    const [treeMembers, setTreeMembers] = useState<Array<{userId: string, username: string, avatar?: string | null}>>([]);
-    
+    const [treeMembers, setTreeMembers] = useState<Array<{
+        userId: string,
+        username: string,
+        avatar?: string | null
+    }>>([]);
+
     // Get current base URL
     const getBaseUrl = () => {
         return `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
     };
-    
+
     // Handle back to tree navigation
     const handleBackToTree = () => {
         if (treeId) {
@@ -70,12 +86,12 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
             window.location.href = `${baseUrl}/?id=${treeId}`;
         }
     };
-    
+
     // Fetch tree members for filter options
     useEffect(() => {
         const fetchTreeMembers = async () => {
             if (!treeId || simple) return;
-            
+
             try {
                 const response = await fetch(`${process.env.NODE_ENV === 'development' ? 'http://localhost:29999' : `${window.location.protocol}//${window.location.hostname}:${window.location.port}`}/api/tree-permission/tree/${treeId}`, {
                     credentials: 'include',
@@ -84,7 +100,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                 const data = await response.json();
                 const permissions = data.permissions || [];
                 const userIds = permissions.map((p: any) => p.userId);
-                
+
                 // Fetch user details including avatars
                 const userDetails = await Promise.all(userIds.map(async (id: string) => {
                     try {
@@ -102,30 +118,30 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                         };
                     }
                 }));
-                
+
                 setTreeMembers(userDetails);
             } catch (error) {
                 console.error('Failed to fetch tree members:', error);
             }
         };
-        
+
         fetchTreeMembers();
     }, [treeId, simple]);
-    
+
     // Filter and Sort Controls Component
     const FilterSortControls = () => {
         if (simple) return null;
-        
+
         return (
-            <Box sx={{ p: 2, bgcolor: '#f8f9fa', borderBottom: '1px solid #e1e4e8' }}>
+            <Box sx={{p: 2, bgcolor: '#f8f9fa', borderBottom: '1px solid #e1e4e8'}}>
                 <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
                     {/* Back to Tree Button */}
                     <Button
                         variant="outlined"
                         size="small"
-                        startIcon={<ArrowBackIcon />}
+                        startIcon={<ArrowBackIcon/>}
                         onClick={handleBackToTree}
-                        sx={{ 
+                        sx={{
                             minWidth: 'auto',
                             '&:hover': {
                                 bgcolor: '#e3f2fd'
@@ -134,9 +150,9 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                     >
                         Back to Tree
                     </Button>
-                    
+
                     {/* Assignee Filter */}
-                    <FormControl size="small" sx={{ minWidth: 150 }}>
+                    <FormControl size="small" sx={{minWidth: 150}}>
                         <InputLabel>Assignee</InputLabel>
                         <Select
                             value={assigneeFilter}
@@ -147,12 +163,12 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                             <MenuItem value="me">Assigned to Me</MenuItem>
                             {treeMembers.map((member) => (
                                 <MenuItem key={member.userId} value={member.userId}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Avatar 
-                                            sx={{ width: 20, height: 20 }}
+                                    <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+                                        <Avatar
+                                            sx={{width: 20, height: 20}}
                                             src={member.avatar || undefined}
                                         >
-                                            <PersonIcon fontSize="small" />
+                                            <PersonIcon fontSize="small"/>
                                         </Avatar>
                                         {member.username}
                                     </Box>
@@ -160,9 +176,9 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                             ))}
                         </Select>
                     </FormControl>
-                    
+
                     {/* Creator Filter */}
-                    <FormControl size="small" sx={{ minWidth: 150 }}>
+                    <FormControl size="small" sx={{minWidth: 150}}>
                         <InputLabel>Creator</InputLabel>
                         <Select
                             value={creatorFilter}
@@ -173,12 +189,12 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                             <MenuItem value="me">Created by Me</MenuItem>
                             {treeMembers.map((member) => (
                                 <MenuItem key={member.userId} value={member.userId}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Avatar 
-                                            sx={{ width: 20, height: 20 }}
+                                    <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+                                        <Avatar
+                                            sx={{width: 20, height: 20}}
                                             src={member.avatar || undefined}
                                         >
-                                            <PersonIcon fontSize="small" />
+                                            <PersonIcon fontSize="small"/>
                                         </Avatar>
                                         {member.username}
                                     </Box>
@@ -186,9 +202,9 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                             ))}
                         </Select>
                     </FormControl>
-                    
+
                     {/* Sort By */}
-                    <FormControl size="small" sx={{ minWidth: 150 }}>
+                    <FormControl size="small" sx={{minWidth: 150}}>
                         <InputLabel>Sort By</InputLabel>
                         <Select
                             value={sortBy}
@@ -201,29 +217,29 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                             <MenuItem value="updated">Last Updated</MenuItem>
                         </Select>
                     </FormControl>
-                    
+
                     {/* Sort Order */}
                     <IconButton
                         onClick={() => onSortOrderChange?.(sortOrder === 'asc' ? 'desc' : 'asc')}
                         size="small"
-                        sx={{ 
+                        sx={{
                             bgcolor: sortOrder === 'desc' ? '#e3f2fd' : 'transparent',
-                            '&:hover': { bgcolor: '#e3f2fd' }
+                            '&:hover': {bgcolor: '#e3f2fd'}
                         }}
                     >
-                        <SwapVertIcon fontSize="small" />
+                        <SwapVertIcon fontSize="small"/>
                     </IconButton>
-                    
+
                     {/* Active Filters Display */}
                     {(assigneeFilter !== 'all' || creatorFilter !== 'all') && (
-                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                        <Box sx={{display: 'flex', gap: 1, alignItems: 'center'}}>
                             <Typography variant="caption" color="text.secondary">Active:</Typography>
                             {assigneeFilter !== 'all' && (
                                 <Chip
                                     label={`Assignee: ${assigneeFilter === 'me' ? 'Me' : treeMembers.find(m => m.userId === assigneeFilter)?.username || assigneeFilter}`}
                                     size="small"
                                     onDelete={() => onAssigneeFilterChange?.('all')}
-                                    sx={{ bgcolor: '#e3f2fd', color: '#1976d2' }}
+                                    sx={{bgcolor: '#e3f2fd', color: '#1976d2'}}
                                 />
                             )}
                             {creatorFilter !== 'all' && (
@@ -231,7 +247,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                                     label={`Creator: ${creatorFilter === 'me' ? 'Me' : treeMembers.find(m => m.userId === creatorFilter)?.username || creatorFilter}`}
                                     size="small"
                                     onDelete={() => onCreatorFilterChange?.('all')}
-                                    sx={{ bgcolor: '#e3f2fd', color: '#1976d2' }}
+                                    sx={{bgcolor: '#e3f2fd', color: '#1976d2'}}
                                 />
                             )}
                         </Box>
@@ -244,18 +260,18 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
     // Custom footer component with Create Issue button and pagination
     const CustomFooter = () => (
         <GridFooterContainer>
-            <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+            <Box sx={{display: 'flex', alignItems: 'center', flex: 1}}>
                 <Button
                     variant="contained"
                     size="small"
                     startIcon={<AddIcon/>}
                     onClick={onCreateIssue}
-                    sx={{ marginLeft: 1 }}
+                    sx={{marginLeft: 1}}
                 >
                     Create Issue
                 </Button>
-                <Box sx={{ flex: 1 }} />
-                <GridPagination />
+                <Box sx={{flex: 1}}/>
+                <GridPagination/>
             </Box>
         </GridFooterContainer>
     );
@@ -265,7 +281,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
             field: 'title',
             headerName: 'Issue',
             minWidth: 100,
-            flex: 2, 
+            flex: 2,
             renderCell: (params: GridRenderCellParams) => (
                 <TitleCell value={params.value} row={params.row} onSelect={onIssueSelect}/>
             ),
@@ -274,7 +290,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
             field: 'assignees',
             headerName: 'Assignees',
             minWidth: 100,
-            flex: 1, 
+            flex: 1,
             renderCell: (params: GridRenderCellParams) => (
                 <AssigneesCell value={params.value} treeId={treeId}/>
             ),
@@ -350,8 +366,8 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
     ];
 
     return (
-        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <FilterSortControls />
+        <Box sx={{height: '100%', display: 'flex', flexDirection: 'column'}}>
+            <FilterSortControls/>
             <DataGrid
                 rows={issues}
                 columns={columns}
@@ -359,7 +375,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                 pageSizeOptions={[5]}
                 initialState={{
                     pagination: {
-                        paginationModel: {page: 0, pageSize: 5}, 
+                        paginationModel: {page: 0, pageSize: 5},
                     },
                 }}
                 getRowId={(row) => row._id}

@@ -96,7 +96,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                             sx={{p: 2}}
                         >
                             <Box sx={{display: 'flex', alignItems: 'center', gap: 1, mb: 1}}>
-                                <Avatar 
+                                <Avatar
                                     src={comment.avatar || undefined}
                                     sx={{width: 24, height: 24}}
                                 >

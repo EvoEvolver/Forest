@@ -1,6 +1,24 @@
 import React, {useState} from 'react';
-import {Box, Chip, DialogTitle, IconButton, Typography, Dialog, DialogActions, DialogContent, DialogContentText, Button,} from '@mui/material';
-import {Cancel as CancelIcon, Close as CloseIcon, Edit as EditIcon, Save as SaveIcon, Delete as DeleteIcon, Check as CheckIcon,} from '@mui/icons-material';
+import {
+    Box,
+    Button,
+    Chip,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    IconButton,
+    Typography,
+} from '@mui/material';
+import {
+    Cancel as CancelIcon,
+    Check as CheckIcon,
+    Close as CloseIcon,
+    Delete as DeleteIcon,
+    Edit as EditIcon,
+    Save as SaveIcon,
+} from '@mui/icons-material';
 
 interface IssueDetailHeaderProps {
     issueId: string;
@@ -88,8 +106,8 @@ const IssueDetailHeader: React.FC<IssueDetailHeaderProps> = ({
                                 <EditIcon/>
                             </IconButton>
                             {canDelete && (
-                                <IconButton 
-                                    onClick={handleDeleteClick} 
+                                <IconButton
+                                    onClick={handleDeleteClick}
                                     size="small"
                                     sx={{
                                         color: '#d32f2f',
@@ -138,9 +156,9 @@ const IssueDetailHeader: React.FC<IssueDetailHeaderProps> = ({
                     <Button onClick={handleDeleteCancel} color="primary">
                         Cancel
                     </Button>
-                    <Button 
-                        onClick={handleDeleteConfirm} 
-                        color="error" 
+                    <Button
+                        onClick={handleDeleteConfirm}
+                        color="error"
                         variant="contained"
                         autoFocus
                     >

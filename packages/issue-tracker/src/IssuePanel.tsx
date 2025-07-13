@@ -30,7 +30,7 @@ function IssuePanel() {
         </AppBar>
         {supabaseClient && <AuthModal/>}
         <Container maxWidth="xl" sx={{
-            pb: 3, 
+            pb: 3,
             pt: '56px', // Add padding for the fixed AppBar (dense toolbar height + some margin)
             px: 0, // Remove default horizontal padding from Container
             height: '100vh',

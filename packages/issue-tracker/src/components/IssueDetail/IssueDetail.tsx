@@ -1,7 +1,6 @@
 import React, {useState} from 'react';
-import {Box, Dialog, DialogContent, Alert, Snackbar} from '@mui/material';
+import {Alert, Box, Dialog, DialogContent, Snackbar} from '@mui/material';
 import type {Issue, UpdateIssueRequest} from '../../types/Issue';
-import type {User} from '../UserSelector';
 import IssueDetailHeader from './IssueDetailHeader';
 import IssueDetailContent from './IssueDetailContent';
 import IssueDetailSidebar from './IssueDetailSidebar';
@@ -36,7 +35,7 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
     const [loading, setLoading] = useState(false);
     const [currentIssue, setCurrentIssue] = useState<Issue | null>(issue);
     const [loginError, setLoginError] = useState('');
-    
+
     const currentUser = useAtomValue(userAtom);
     const issueService = useAtomValue(issueServiceAtom);
 
@@ -122,7 +121,7 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
 
     const handleDelete = async () => {
         if (!currentIssue) return;
-        
+
         setLoading(true);
         try {
             if (onDelete) {
@@ -230,9 +229,9 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
                 open={!!loginError}
                 autoHideDuration={6000}
                 onClose={() => setLoginError('')}
-                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+                anchorOrigin={{vertical: 'top', horizontal: 'center'}}
             >
-                <Alert onClose={() => setLoginError('')} severity="warning" sx={{ width: '100%' }}>
+                <Alert onClose={() => setLoginError('')} severity="warning" sx={{width: '100%'}}>
                     {loginError}
                 </Alert>
             </Snackbar>

@@ -21,14 +21,14 @@ interface UserSelectorProps {
 }
 
 const UserSelector: React.FC<UserSelectorProps> = ({
-    selectedUsers,
-    onUsersChange,
-    label = "Assignees",
-    placeholder = "Search and select users...",
-    disabled = false,
-    maxUsers,
-    options: externalOptions,
-}) => {
+                                                       selectedUsers,
+                                                       onUsersChange,
+                                                       label = "Assignees",
+                                                       placeholder = "Search and select users...",
+                                                       disabled = false,
+                                                       maxUsers,
+                                                       options: externalOptions,
+                                                   }) => {
     const [open, setOpen] = useState(false);
     const [inputValue, setInputValue] = useState('');
     const [loading, setLoading] = useState(false);
@@ -174,7 +174,7 @@ const UserSelector: React.FC<UserSelectorProps> = ({
             )}
             renderOption={(props, option) => (
                 <Box component="li" {...props} sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-                    <Avatar 
+                    <Avatar
                         sx={{width: 32, height: 32}}
                         src={option.avatar || undefined}
                     >
@@ -198,7 +198,7 @@ const UserSelector: React.FC<UserSelectorProps> = ({
                         {...getTagProps({index})}
                         key={option.userId}
                         avatar={
-                            <Avatar 
+                            <Avatar
                                 sx={{width: 24, height: 24}}
                                 src={option.avatar || undefined}
                             >

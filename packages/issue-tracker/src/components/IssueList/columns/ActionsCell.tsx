@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {IconButton, Tooltip, Dialog, DialogContent, DialogContentText, DialogActions, Button} from '@mui/material';
+import {Button, Dialog, DialogActions, DialogContent, DialogContentText, IconButton, Tooltip} from '@mui/material';
 import {Delete as DeleteIcon, Edit as EditIcon} from '@mui/icons-material';
 import {useAtomValue} from 'jotai';
 import {userAtom} from '@forest/user-system/src/authStates';
@@ -40,9 +40,9 @@ const ActionsCell: React.FC<ActionsCellProps> = ({row, onEdit, onDelete}) => {
             </Tooltip>
             {canDelete && (
                 <Tooltip title="Delete">
-                    <IconButton 
-                        size="small" 
-                        onClick={handleDeleteClick} 
+                    <IconButton
+                        size="small"
+                        onClick={handleDeleteClick}
                         sx={{
                             p: 0.5,
                             color: '#d32f2f',
@@ -55,7 +55,7 @@ const ActionsCell: React.FC<ActionsCellProps> = ({row, onEdit, onDelete}) => {
                     </IconButton>
                 </Tooltip>
             )}
-            
+
             {/* Delete Confirmation Dialog */}
             <Dialog
                 open={deleteConfirmOpen}
@@ -72,9 +72,9 @@ const ActionsCell: React.FC<ActionsCellProps> = ({row, onEdit, onDelete}) => {
                     <Button onClick={handleDeleteCancel} color="primary">
                         Cancel
                     </Button>
-                    <Button 
-                        onClick={handleDeleteConfirm} 
-                        color="error" 
+                    <Button
+                        onClick={handleDeleteConfirm}
+                        color="error"
                         variant="contained"
                         autoFocus
                     >

@@ -1,8 +1,8 @@
 import React, {useEffect, useState} from 'react';
-import {Avatar, Box, Chip, IconButton, Stack, Tooltip, Typography,} from '@mui/material';
-import {Cancel as CancelIcon, Edit as EditIcon, Person as PersonIcon, Save as SaveIcon,} from '@mui/icons-material';
+import {Avatar, Box, Chip, Stack, Tooltip, Typography,} from '@mui/material';
+import {Person as PersonIcon,} from '@mui/icons-material';
 import UserSelector from './UserSelector';
-import {getUserMetadata, getUsername} from "@forest/user-system/src/userMetadata";
+import {getUserMetadata} from "@forest/user-system/src/userMetadata";
 
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
 export const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort}`
@@ -78,7 +78,7 @@ const AssigneeManager: React.FC<AssigneeManagerProps> = ({
                         };
                     } catch (error) {
                         return {
-                            userId: id, 
+                            userId: id,
                             username: id,
                             email: undefined,
                             avatar: null
@@ -119,6 +119,7 @@ const AssigneeManager: React.FC<AssigneeManagerProps> = ({
             setUsernames(usernameMap);
             setEnrichedAssignees(enrichedUsers);
         }
+
         fetchUsernames();
     }, [assignees]);
 
@@ -212,7 +213,7 @@ const AssigneeManager: React.FC<AssigneeManagerProps> = ({
                     {enrichedAssignees.length > 0 ? (
                         enrichedAssignees.map((assignee, index) => (
                             <Box key={index} sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-                                <Avatar 
+                                <Avatar
                                     sx={{width: 24, height: 24}}
                                     src={assignee.avatar || undefined}
                                 >
