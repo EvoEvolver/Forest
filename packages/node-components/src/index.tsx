@@ -1,6 +1,5 @@
 import {Box} from "@mui/material";
 import Tooltip from "@mui/material/Tooltip";
-import ChatView from "./chat";
 import {Code, Expandable, FigureBox, HTMLContent, NodeNavigator, TeX, TextSpan} from "./inline";
 
 export const componentsForCustomNode = {
@@ -12,6 +11,5 @@ export const componentsForCustomNode = {
     TextSpan,
     Tooltip,
     Box,
-    ChatView,
     HTMLContent
 }

@@ -1,61 +1,18 @@
-import React, {useContext, useEffect, useRef, useState} from 'react'
-import {Array as YArray} from 'yjs'
+import React, {useEffect, useRef, useState} from 'react'
 import {Box, Button, Card, CardContent, Paper, Stack, TextField, Typography,} from "@mui/material";
 import SendIcon from '@mui/icons-material/Send';
-import {useAtom} from "jotai";
-import {atomWithStorage} from 'jotai/utils'
-import { thisNodeContext } from "@forest/client";
 
-interface ChatViewProps {
-    label?: string; // The ? makes it optional
-}
-
-export default function ChatView({label}: ChatViewProps) {
-    const node = useContext(thisNodeContext);
-
-    let chatLabel = label || "";
-
-    let yMessages = node.ydata.get("yMessages" + chatLabel);
-    if (!yMessages) {
-        yMessages = new YArray();
-        node.ydata.set("yMessages", yMessages);
-    }
-    const [messages, setMessages] = useState(yMessages.toArray())
-
-
-    useEffect(() => {
-        const updateMessages = () => setMessages(yMessages.toArray())
-        yMessages.observe(updateMessages)
-        return () => yMessages.unobserve(updateMessages)
-    }, [])
-
-    const sendMessage = ({content, author, time}) => {
-        yMessages.push([{content: content, author: author, time: time}])
-    }
-
-    return <>
-        <ChatViewImpl sendMessage={sendMessage} messages={messages} messageDisabled={false}/>
-    </>
-}
-
-
-export const usernameAtom = atomWithStorage('chat-username', '');
 
 export function ChatViewImpl({sendMessage, messages, messageDisabled}) {
     const [message, setMessage] = useState("");
     const endRef = useRef(null);
-    const [username, setUsername] = useAtom(usernameAtom);
+    const [username,] = useState("user")
 
     useEffect(() => {
         endRef.current?.scrollIntoView({behavior: "smooth"});
     }, [messages]);
 
-
     useEffect(() => {
-        if (username === "") {
-            let defaultUsername = `User${Math.floor(Math.random() * 1000)}`;
-            setUsername(defaultUsername); // Default username
-        }
         return () => {
             endRef.current = null
         }

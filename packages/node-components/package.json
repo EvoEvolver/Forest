@@ -14,7 +14,6 @@
     "react-medium-image-zoom": "^5.2.14",
     "yjs": "^13.6.27",
     "react-syntax-highlighter": "^15.6.1",
-    "@forest/client": "workspace:*",
     "@forest/schema": "workspace:*",
     "@forest/user-system": "workspace:*"
   }

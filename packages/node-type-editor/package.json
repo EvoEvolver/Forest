@@ -27,7 +27,6 @@
     "@forest/node-components": "workspace:*",
     "@forest/issue-tracker": "workspace:*",
     "react": "^19.1.0",
-    "@forest/client": "workspace:*",
     "react-popper": "^2.3.0"
   }
 }

@@ -1,9 +1,8 @@
-import React, {useContext, useEffect, useState} from 'react'
+import React, {useEffect, useState} from 'react'
 import './style.css';
 import {useAtomValue} from "jotai";
 import {YjsProviderAtom} from "@forest/client/src/TreeState/YjsConnection";
 import {XmlFragment} from 'yjs';
-import {thisNodeContext} from "@forest/client";
 import Collaboration from '@tiptap/extension-collaboration'
 import {CollaborationCursor} from './Extensions/collaboration-cursor'
 import {BubbleMenu, EditorContent, useEditor} from '@tiptap/react'
@@ -20,13 +19,15 @@ import Bold from '@tiptap/extension-bold'
 import {Button} from "@mui/material";
 import {usePopper} from "react-popper";
 import {LinkExtension, makeOnLinkActivated} from "./Extensions/link";
+import {NodeVM} from "@forest/schema";
 
 interface TiptapEditorProps {
+    node: NodeVM,
     label?: string
 }
 
 const TiptapEditor = (props: TiptapEditorProps) => {
-    const node = useContext(thisNodeContext)
+    const node = props.node
     const provider = useAtomValue(YjsProviderAtom)
     const ydataLabel = props.label || "";
     // This cannot be edited because it will break the existing docs
@@ -37,7 +38,7 @@ const TiptapEditor = (props: TiptapEditorProps) => {
         node.ydata.set(ydataKey, yXML);
     }
     return <>
-        <EditorImpl yXML={yXML} provider={provider} dataLabel={ydataLabel}/>
+        <EditorImpl yXML={yXML} provider={provider} dataLabel={ydataLabel} node={node}/>
     </>
 
 };
@@ -45,8 +46,7 @@ const TiptapEditor = (props: TiptapEditorProps) => {
 
 export default TiptapEditor;
 
-const EditorImpl = ({yXML, provider, dataLabel}) => {
-    const node = useContext(thisNodeContext)
+const EditorImpl = ({yXML, provider, dataLabel, node}) => {
     const [hoverElements, setHoverElements] = useState([]);
 
 
