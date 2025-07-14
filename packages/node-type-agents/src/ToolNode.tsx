@@ -7,8 +7,9 @@ import { yaml } from '@codemirror/lang-yaml';
 
 const AgentToolOpenApiSpecText = "AgentToolOpenApiSpecText"
 export class AgentToolNodeType extends NodeType {
+    displayName = "Tool"
     allowReshape = true
-    allowAddingChildren = true
+    allowAddingChildren = false
     allowEditTitle = true
 
     render(node: NodeVM): React.ReactNode {

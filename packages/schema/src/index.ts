@@ -220,7 +220,7 @@ export class TreeVM {
     }
 
     async addNode(newNode: NodeM) {
-        this.nodeDict[newNode.id] = await nodeMToNodeVMAtom(newNode, this.supportedNodesTypes)
+        this.nodeDict[newNode.id] = await nodeMToNodeVMAtom(newNode, this)
     }
 
     deleteNode(nodeId: string) {
@@ -313,13 +313,14 @@ export class NodeVM {
     nodeTypeName: string
     nodeType: NodeType
     nodeM: NodeM
+    treeVM: TreeVM
 
     // legacy properties
     tabs: any
     tools: any
 
-    static async create(nodeM, supportedNodesTypes: SupportedNodeTypesMap) {
-        const nodeVM = new NodeVM()
+    static async create(nodeM, treeVM: TreeVM) {
+        const nodeVM = new NodeVM(treeVM)
         const yjsMapNode = nodeM.ymap;
         const childrenAtom = getYjsBindedAtom(yjsMapNode, "children");
         const titleAtom = atom(nodeM.title());
@@ -340,13 +341,14 @@ export class NodeVM {
         if (yjsMapNode.has("tools"))
             nodeVM.tools = yjsMapNode.get("tools")
 
-        nodeVM.nodeType = await nodeVM.getNodeType(supportedNodesTypes)
+        nodeVM.nodeType = await nodeVM.getNodeType(treeVM.supportedNodesTypes)
         nodeVM.nodeType.ydataInitialize(nodeVM)
 
         return nodeVM
     }
 
-    constructor() {
+    constructor(treeVM: TreeVM) {
+        this.treeVM = treeVM
     }
 
     async getNodeType(supportedNodesTypes: SupportedNodeTypesMap): Promise<NodeType> {
@@ -369,13 +371,15 @@ export async function getNodeType(nodeTypeName: string, supportedNodesTypes: Sup
 export type SupportedNodeTypesMap = (typeName: string) => Promise<NodeType>
 
 export abstract class NodeType {
-    name: string
+    displayName: string
 
     allowAddingChildren: boolean = false
 
     allowReshape: boolean = false
 
     allowEditTitle: boolean = false
+
+    allowedChildrenTypes: string[] = []
 
     abstract render(node: NodeVM): React.ReactNode
 
@@ -386,5 +390,8 @@ export abstract class NodeType {
     abstract renderPrompt(node: NodeM): string
 
     ydataInitialize(node: NodeVM): void {
+    }
+
+    vdataInitialize(node: NodeVM): void {
     }
 }
