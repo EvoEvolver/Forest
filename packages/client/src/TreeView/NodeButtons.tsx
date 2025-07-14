@@ -89,29 +89,33 @@ interface childTypesForDisplay {
     "displayName": string,
 }
 
-const AddChildrenMenuItem = ({node, onClose}: { node: NodeVM, onClose: () => void }) => {
+interface AddNodeMenuItemProps {
+    node: NodeVM;
+    onClose: () => void;
+    mode: 'child' | 'sibling';
+}
+
+const AddNodeMenuItem = ({node, onClose, mode}: AddNodeMenuItemProps) => {
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const addNewNode = useSetAtom(addNewNodeAtom);
-    const [availableChildTypesForDisplay, setAvailableChildTypesForDisplay] = React.useState<childTypesForDisplay[]>([]);
+    const [availableTypesForDisplay, setAvailableTypesForDisplay] = React.useState<childTypesForDisplay[]>([]);
 
-    const availableChildrenTypeNames = node.nodeType.allowedChildrenTypes;
+    const availableTypeNames = node.nodeType.allowedChildrenTypes
 
     useEffect(() => {
-        const fetchChildTypes = async () => {
-            const promises = availableChildrenTypeNames.map(async (typeName) => {
+        const fetchTypes = async () => {
+            const promises = availableTypeNames.map(async (typeName) => {
                 const nodeType = await node.treeVM.supportedNodesTypes(typeName);
-                console.log(typeName)
                 return {
                     name: typeName,
                     displayName: nodeType.displayName
                 };
             });
-            const availableChildTypes = await Promise.all(promises);
-            setAvailableChildTypesForDisplay(availableChildTypes);
+            const availableTypes = await Promise.all(promises);
+            setAvailableTypesForDisplay(availableTypes);
         };
-
-        fetchChildTypes();
-    }, [availableChildrenTypeNames, node.treeVM]);
+        fetchTypes();
+    }, [availableTypeNames, node.treeVM]);
 
     const handleClick = (event: React.MouseEvent<HTMLLIElement>) => {
         setAnchorEl(event.currentTarget);
@@ -121,12 +125,14 @@ const AddChildrenMenuItem = ({node, onClose}: { node: NodeVM, onClose: () => voi
         setAnchorEl(null);
     };
 
-    const handleAddChild = (nodeTypeName: string) => {
+    const handleAdd = (nodeTypeName: string) => {
+
         addNewNode({
             parentId: node.id,
             positionId: null,
-            nodeTypeName: nodeTypeName
+            nodeTypeName
         });
+
         handleClose();
         onClose();
     };
@@ -137,25 +143,19 @@ const AddChildrenMenuItem = ({node, onClose}: { node: NodeVM, onClose: () => voi
                 <ListItemIcon>
                     <AddIcon/>
                 </ListItemIcon>
-                <ListItemText>Add Children</ListItemText>
+                <ListItemText>{mode === 'child' ? 'Add Children' : 'Add Sibling'}</ListItemText>
             </MenuItem>
             <Menu
                 anchorEl={anchorEl}
                 open={Boolean(anchorEl)}
                 onClose={handleClose}
-                anchorOrigin={{
-                    vertical: 'top',
-                    horizontal: 'right',
-                }}
-                transformOrigin={{
-                    vertical: 'top',
-                    horizontal: 'left',
-                }}
+                anchorOrigin={{vertical: 'top', horizontal: 'right'}}
+                transformOrigin={{vertical: 'top', horizontal: 'left'}}
             >
-                {availableChildTypesForDisplay.map((type) => (
+                {availableTypesForDisplay.map((type) => (
                     <MenuItem
                         key={type.name}
-                        onClick={() => handleAddChild(type.name)}
+                        onClick={() => handleAdd(type.name)}
                     >
                         <ListItemText>{type.displayName}</ListItemText>
                     </MenuItem>
@@ -171,7 +171,6 @@ const DropDownOperationButton = ({node}: { node: NodeVM }) => {
     const theme = useTheme();
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
-    const addNewNode = useSetAtom(addNewNodeAtom)
     const deleteNode = useSetAtom(deleteNodeAtom)
     const setNodePosition = useSetAtom(setNodePositionAtom);
 
@@ -204,6 +203,10 @@ const DropDownOperationButton = ({node}: { node: NodeVM }) => {
     const tree = useAtomValue(treeAtom)
     const treeMetadata = useAtomValue(tree.metadata)
     const parentId = node.parent;
+    let parentNode
+    if (parentId) {
+        parentNode = useAtomValue(tree.nodeDict[parentId])
+    }
     let currentUrl = window.location.href;
     // remove all the query parameters
     currentUrl = currentUrl.split('?')[0];
@@ -231,19 +234,11 @@ const DropDownOperationButton = ({node}: { node: NodeVM }) => {
                 onClose={handleClose}
             >
                 {node.nodeType.allowAddingChildren &&
-                    <AddChildrenMenuItem node={node} onClose={handleClose}/>
+                    <AddNodeMenuItem node={node} onClose={handleClose} mode={"child"}/>
                 }
-                {node.nodeType.allowAddingChildren && <MenuItem onClick={() => {
-                    addNewNode({
-                        parentId: parentId,
-                        positionId: nodeId,
-                        nodeTypeName: node.nodeTypeName
-                    })
-                    handleClose();
-                }}><ListItemIcon>
-                    <AddIcon/>
-                </ListItemIcon>
-                    <ListItemText>Add Sibling</ListItemText></MenuItem>}
+                {parentId && parentNode.nodeType.allowAddingChildren &&
+                    <AddNodeMenuItem node={parentNode} onClose={handleClose} mode={"sibling"}/>
+                }
                 {node.nodeType.allowReshape && [
                     <MenuItem key="moveUp" onClick={() => {
                         moveUp();
