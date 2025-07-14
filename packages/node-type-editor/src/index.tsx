@@ -17,7 +17,7 @@ export class EditorNodeType extends NodeType {
 
     render(node: NodeVM): React.ReactNode {
         return <>
-            <TiptapEditor label="paperEditor"/>
+            <TiptapEditor label="paperEditor" node={node}/>
         </>
     }
 
@@ -27,7 +27,7 @@ export class EditorNodeType extends NodeType {
 
     renderTool2(node: NodeVM): React.ReactNode {
         return <>
-            <AiChat/>
+            <AiChat node={node}/>
         </>
     }
 

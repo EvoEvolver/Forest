@@ -1,13 +1,13 @@
-import React, {useContext, useState} from "react";
+import React, {useState} from "react";
 import {ChatViewImpl} from "./index";
 import {XmlElement, XmlText} from "yjs";
 import {useAtomValue, useSetAtom} from "jotai";
 
 import {authModalOpenAtom, authTokenAtom, isAuthenticatedAtom} from "@forest/user-system/src/authStates";
+import {Button} from "@mui/material";
+
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
 const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort}`
-import {Button} from "@mui/material";
-import { thisNodeContext } from "@forest/client";
 
 // @ts-ignore
 const devMode = import.meta.env.MODE === 'development'; // Check if in development mode
@@ -107,8 +107,7 @@ async function fetchChatResponse(messages: Message[], authToken: string | null) 
     }
 }
 
-export const AiChat: React.FC = (props) => {
-    const node = useContext(thisNodeContext);
+export const AiChat: React.FC = ({node}) => {
     const [messages, setMessages] = useState<Message[]>([]);
 
     // Authentication state
