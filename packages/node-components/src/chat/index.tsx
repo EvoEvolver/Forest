@@ -2,8 +2,24 @@ import React, {useEffect, useRef, useState} from 'react'
 import {Box, Button, Card, CardContent, Paper, Stack, TextField, Typography,} from "@mui/material";
 import SendIcon from '@mui/icons-material/Send';
 
+// Types for Messages
+export interface Message {
+    content: string;
+    htmlContent?: string;
+    role: "assistant" | "user";
+    author: string;
+    time: string;
+}
 
-export function ChatViewImpl({sendMessage, messages, messageDisabled}) {
+// Props for ChatViewImpl component
+interface ChatViewImplProps {
+    sendMessage: (message: Message) => Promise<void>;
+    messages: Message[];
+    messageDisabled: boolean;
+}
+
+
+export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewImplProps) {
     const [message, setMessage] = useState("");
     const endRef = useRef(null);
     const [username,] = useState("user")
@@ -23,7 +39,8 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled}) {
             sendMessage({
                 content: message,
                 author: username,
-                time: Date.now()
+                role: "user",
+                time: Date.now().toString()
             });
             setMessage("");
         }
@@ -38,7 +55,8 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled}) {
                 padding: 2,
                 display: "flex",
                 flexDirection: "column",
-                height: "100%",
+                height: "95%",
+                maxHeight: "500px",
                 position: "relative", // Enable absolute positioning for child elements
             }}
         >

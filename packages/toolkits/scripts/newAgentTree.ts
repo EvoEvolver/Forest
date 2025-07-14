@@ -1,4 +1,7 @@
 import {createNewTree} from "../treeOps";
 
 
-createNewTree("AgentToolNodeType")
+createNewTree("AgentNodeType")
+
+
+//createNewTree("AgentToolNodeType")

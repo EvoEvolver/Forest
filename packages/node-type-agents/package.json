@@ -8,6 +8,8 @@
     "@codemirror/lang-yaml": "^6.1.2",
     "@codemirror/state": "^6.5.2",
     "@forest/node-type-editor": "workspace:*",
+    "@forest/node-components": "workspace:*",
+    "@forest/user-system": "workspace:*",
     "@forest/schema": "workspace:*",
     "@mui/icons-material": "^7.2.0",
     "axios": "^1.10.0",
@@ -17,5 +19,8 @@
     "y-codemirror": "^3.0.1",
     "y-codemirror.next": "^0.3.5",
     "yjs": "^13.6.27"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.13"
   }
 }

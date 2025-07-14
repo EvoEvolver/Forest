@@ -1,5 +1,5 @@
 import React, {useState} from "react";
-import {ChatViewImpl} from "./index";
+import {ChatViewImpl, Message} from "./index";
 import {XmlElement, XmlText} from "yjs";
 import {useAtomValue, useSetAtom} from "jotai";
 
@@ -11,12 +11,6 @@ const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort
 
 // @ts-ignore
 const devMode = import.meta.env.MODE === 'development'; // Check if in development mode
-
-interface Message {
-    content: string;
-    author: string;
-    time: string;
-}
 
 
 // Recursively convert DOM nodes to Y.XmlElements
@@ -50,15 +44,8 @@ function domToYXmlElement(parentXML, domNode) {
 
 
 async function fetchChatResponse(messages: Message[], authToken: string | null) {
-    // if last message is 123, return "123"
     if (messages.length === 0) {
         return "No messages to process.";
-    }
-    if (messages[messages.length - 1].content === "123") {
-        return `<editor_content><p>Haha I'm here for test</p></editor_content>`
-    }
-    if (messages[messages.length - 1].content === "1") {
-        return messages[0].content
     }
 
     // Check authentication before making API call
@@ -146,9 +133,10 @@ The user has provided the following content in the editor:
             // Use the updated messages array from the callback to ensure we have the latest state
             const response = await fetchChatResponse(messagesToSend, authToken);
 
-            const assistantMessage = {
+            const assistantMessage: Message = {
                 content: response,
-                author: "assistant",
+                author: "Chatbot",
+                role: "assistant",
                 time: new Date().toISOString()
             };
 
