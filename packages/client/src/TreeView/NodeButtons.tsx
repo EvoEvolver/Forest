@@ -13,7 +13,7 @@ import {Button, Divider, ListItemIcon, ListItemText, Menu, MenuItem} from "@mui/
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import BlurOnIcon from "@mui/icons-material/BlurOn";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import React from "react";
+import React, {useEffect} from "react";
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import InsertLinkIcon from '@mui/icons-material/InsertLink';
@@ -84,6 +84,87 @@ export const NodeButtons = (props: { node: NodeVM }) => {
     </div>
 }
 
+interface childTypesForDisplay {
+    "name": string,
+    "displayName": string,
+}
+
+const AddChildrenMenuItem = ({node, onClose}: { node: NodeVM, onClose: () => void }) => {
+    const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+    const addNewNode = useSetAtom(addNewNodeAtom);
+    const [availableChildTypesForDisplay, setAvailableChildTypesForDisplay] = React.useState<childTypesForDisplay[]>([]);
+
+    const availableChildrenTypeNames = node.nodeType.allowedChildrenTypes;
+
+    useEffect(() => {
+        const fetchChildTypes = async () => {
+            const promises = availableChildrenTypeNames.map(async (typeName) => {
+                const nodeType = await node.treeVM.supportedNodesTypes(typeName);
+                console.log(typeName)
+                return {
+                    name: typeName,
+                    displayName: nodeType.displayName
+                };
+            });
+            const availableChildTypes = await Promise.all(promises);
+            setAvailableChildTypesForDisplay(availableChildTypes);
+        };
+
+        fetchChildTypes();
+    }, [availableChildrenTypeNames, node.treeVM]);
+
+    const handleClick = (event: React.MouseEvent<HTMLLIElement>) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleClose = () => {
+        setAnchorEl(null);
+    };
+
+    const handleAddChild = (nodeTypeName: string) => {
+        addNewNode({
+            parentId: node.id,
+            positionId: null,
+            nodeTypeName: nodeTypeName
+        });
+        handleClose();
+        onClose();
+    };
+
+    return (
+        <>
+            <MenuItem onClick={handleClick}>
+                <ListItemIcon>
+                    <AddIcon/>
+                </ListItemIcon>
+                <ListItemText>Add Children</ListItemText>
+            </MenuItem>
+            <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleClose}
+                anchorOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                }}
+                transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'left',
+                }}
+            >
+                {availableChildTypesForDisplay.map((type) => (
+                    <MenuItem
+                        key={type.name}
+                        onClick={() => handleAddChild(type.name)}
+                    >
+                        <ListItemText>{type.displayName}</ListItemText>
+                    </MenuItem>
+                ))}
+            </Menu>
+        </>
+    );
+};
+
 
 const DropDownOperationButton = ({node}: { node: NodeVM }) => {
 
@@ -149,17 +230,9 @@ const DropDownOperationButton = ({node}: { node: NodeVM }) => {
                 open={open}
                 onClose={handleClose}
             >
-                {node.nodeType.allowAddingChildren && <MenuItem onClick={() => {
-                    addNewNode({
-                        parentId: nodeId,
-                        positionId: null,
-                        nodeTypeName: node.nodeTypeName
-                    })
-                    handleClose();
-                }}><ListItemIcon>
-                    <AddIcon/>
-                </ListItemIcon>
-                    <ListItemText>Add Children</ListItemText></MenuItem>}
+                {node.nodeType.allowAddingChildren &&
+                    <AddChildrenMenuItem node={node} onClose={handleClose}/>
+                }
                 {node.nodeType.allowAddingChildren && <MenuItem onClick={() => {
                     addNewNode({
                         parentId: parentId,
@@ -222,3 +295,4 @@ const DropDownOperationButton = ({node}: { node: NodeVM }) => {
         </>
     );
 };
+

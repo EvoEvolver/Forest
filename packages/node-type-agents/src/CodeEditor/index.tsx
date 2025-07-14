@@ -52,7 +52,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ yText, langEx
     }, [yText]);
 
     return (
-        <div className="collaborative-editor">
+        <div className="collaborative-editor" style={{ height: '100%' }}>
             <div ref={editorRef} style={{ height: '100%' }} />
         </div>
     );

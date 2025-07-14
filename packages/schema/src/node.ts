@@ -1,6 +1,6 @@
 import {Map as YMap} from "yjs";
 import {atom, PrimitiveAtom} from "jotai/index";
-import {NodeM, NodeVM, SupportedNodeTypesMap} from "./index";
+import {NodeM, NodeVM, SupportedNodeTypesMap, TreeVM} from "./index";
 
 
 export function getYjsBindedAtom(yjsMapNode: YMap<any>, key: string): PrimitiveAtom<any> {
@@ -25,8 +25,8 @@ export function getYjsBindedAtom(yjsMapNode: YMap<any>, key: string): PrimitiveA
     return yjsAtom
 }
 
-export async function nodeMToNodeVMAtom(nodeM: NodeM, supportedNodesTypes: SupportedNodeTypesMap): Promise<PrimitiveAtom<NodeVM>> {
-    const node: NodeVM = await NodeVM.create(nodeM, supportedNodesTypes)
+export async function nodeMToNodeVMAtom(nodeM: NodeM, treeVM: TreeVM): Promise<PrimitiveAtom<NodeVM>> {
+    const node: NodeVM = await NodeVM.create(nodeM, treeVM)
     const nodeAtom: PrimitiveAtom<NodeVM> = atom(node)
 
     nodeAtom.onMount = (set) => {
@@ -38,12 +38,12 @@ export async function nodeMToNodeVMAtom(nodeM: NodeM, supportedNodesTypes: Suppo
                     }
                 })
             }
-            NodeVM.create(nodeM, supportedNodesTypes).then(newNode=>{
+            NodeVM.create(nodeM, treeVM).then(newNode=>{
               set(newNode)
             })
         }
         nodeM.ymap.observe(observeFunc)
-        NodeVM.create(nodeM, supportedNodesTypes).then(newNode=>{
+        NodeVM.create(nodeM, treeVM).then(newNode=>{
             set(newNode)
         })
         return () => {

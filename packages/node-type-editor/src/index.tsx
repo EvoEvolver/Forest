@@ -11,9 +11,11 @@ interface EditorNodeData {
 }
 
 export class EditorNodeType extends NodeType {
+    displayName = "Editor"
     allowReshape = true
     allowAddingChildren = true
     allowEditTitle = true
+    allowedChildrenTypes = ["EditorNodeType"]
 
     render(node: NodeVM): React.ReactNode {
         return <>

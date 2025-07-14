@@ -4,13 +4,16 @@ import CollaborativeEditor from "./CodeEditor";
 import {markdown} from "@codemirror/lang-markdown";
 import * as Y from "yjs";
 import {ChatComponent} from "./ChatComponent";
+import {Box} from "@mui/material";
 
 const AgentPromptText = "AgentPromptText"
 
 export class AgentNodeType extends NodeType {
+    displayName = "Agent"
     allowReshape = true
     allowAddingChildren = true
     allowEditTitle = true
+    allowedChildrenTypes = ["AgentNodeType", "AgentToolNodeType"]
 
     render(node: NodeVM): React.ReactNode {
         return <>
@@ -19,10 +22,10 @@ export class AgentNodeType extends NodeType {
     }
 
     renderTool1(node: NodeVM): React.ReactNode {
-        return <>
+        return <Box sx={{width: "100%", height: "100%"}}>
             <h1>Agent context</h1>
             <CollaborativeEditor yText={node.ydata.get(AgentPromptText)} langExtension={markdown}/>
-        </>
+        </Box>
     }
 
     renderTool2(node: NodeVM): React.ReactNode {
@@ -40,6 +43,9 @@ export class AgentNodeType extends NodeType {
             // @ts-ignore
             ydata.set(AgentPromptText, new Y.Text())
         }
+    }
+
+    vdataInitialize(node: NodeVM) {
     }
 
     agentPromptYText(node: NodeVM): Y.Text {
