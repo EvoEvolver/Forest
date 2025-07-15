@@ -62,14 +62,6 @@ const CardViewer: React.FC<CardViewerProps> = ({json}) => {
 
         return Object.entries(groupedEndpoints).map(([tag, endpoints]) => (
             <Box key={tag} sx={{mb: 4}}>
-                <Typography variant="h5" sx={{mb: 2, display: 'flex', alignItems: 'center'}}>
-                    {tag}
-                    <Chip
-                        label={`${endpoints.length} endpoint${endpoints.length > 1 ? 's' : ''}`}
-                        size="small"
-                        sx={{ml: 2}}
-                    />
-                </Typography>
                 {endpoints.map(endpoint => (
                     <EndpointCard
                         key={endpoint.id}
@@ -94,8 +86,6 @@ const CardViewer: React.FC<CardViewerProps> = ({json}) => {
 
     return (
         <Box>
-
-
             {/* Loading State */}
             {loading && (
                 <Box sx={{display: 'flex', justifyContent: 'center', my: 4}}>
@@ -124,12 +114,6 @@ const CardViewer: React.FC<CardViewerProps> = ({json}) => {
             {apiSpec && (
                 <Card sx={{mb: 3}}>
                     <CardContent>
-                        {apiSpec.info.title && <Typography variant="h5" component="h3" gutterBottom>
-                            {apiSpec.info.title}
-                        </Typography>}
-                        {apiSpec.info.version && <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-                            Version: {apiSpec.info.version}
-                        </Typography>}
                         {apiSpec.info.description && (
                             <Typography variant="body1" sx={{mb: 2}}>
                                 {apiSpec.info.description}
