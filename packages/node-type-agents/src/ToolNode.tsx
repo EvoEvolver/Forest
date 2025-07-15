@@ -3,7 +3,7 @@ import React, {useEffect, useState} from "react";
 import * as Y from "yjs";
 import CollaborativeEditor from "./CodeEditor";
 import CardViewer from "./openapi/CardViewer";
-import { yaml } from '@codemirror/lang-yaml';
+import { json as jsonLang } from '@codemirror/lang-json';
 
 const AgentToolOpenApiSpecText = "AgentToolOpenApiSpecText"
 export class AgentToolNodeType extends NodeType {
@@ -15,10 +15,10 @@ export class AgentToolNodeType extends NodeType {
     render(node: NodeVM): React.ReactNode {
         //@ts-ignore
         const yText: Y.Text = node.ydata.get(AgentToolOpenApiSpecText) as Y.Text
-        const [yamlData, setYamlData] = useState(yText.toString())
+        const [jsonData, setJsonData] = useState(yText.toString())
         useEffect(() => {
             const observer = ()=>{
-                setYamlData(yText.toString())
+                setJsonData(yText.toString())
             }
             yText.observe(observer)
             return () => {
@@ -26,7 +26,7 @@ export class AgentToolNodeType extends NodeType {
             }
         }, []);
         return <div>
-            <CardViewer yaml={yamlData}/>
+            <CardViewer json={jsonData}/>
         </div>
     }
 
@@ -34,7 +34,7 @@ export class AgentToolNodeType extends NodeType {
     renderTool1(node: NodeVM): React.ReactNode {
         return <>
             <h1>OpenAPI spec</h1>
-            <CollaborativeEditor yText={node.ydata.get(AgentToolOpenApiSpecText)} langExtension={yaml}/>
+            <CollaborativeEditor yText={node.ydata.get(AgentToolOpenApiSpecText)} langExtension={jsonLang}/>
         </>
     }
 

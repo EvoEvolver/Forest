@@ -4,21 +4,21 @@ import {ApiEndpoint, ApiSpec, parseApiSpec} from './apiParser';
 import EndpointCard from './EndpointCard';
 
 interface CardViewerProps {
-    yaml?: string;
+    json?: string;
     title?: string;
 }
 
-const CardViewer: React.FC<CardViewerProps> = ({yaml}) => {
+const CardViewer: React.FC<CardViewerProps> = ({json}) => {
     const [apiSpec, setApiSpec] = useState<ApiSpec | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const loadApiSpec = async (yamlContent: string) => {
+    const loadApiSpec = async (jsonContent: string) => {
         setLoading(true);
         setError(null);
 
         try {
-            const spec = await parseApiSpec(yamlContent);
+            const spec = await parseApiSpec(jsonContent);
             setApiSpec(spec);
         } catch (err: any) {
             setError(`Failed to parse API specification: ${err.message}`);
@@ -29,13 +29,13 @@ const CardViewer: React.FC<CardViewerProps> = ({yaml}) => {
     };
 
     useEffect(() => {
-        if (yaml) {
-            loadApiSpec(yaml);
+        if (json) {
+            loadApiSpec(json);
         } else {
             setApiSpec(null);
             setError(null);
         }
-    }, [yaml]);
+    }, [json]);
 
     const baseUrl = apiSpec?.servers?.[0]?.url || '';
 
@@ -81,8 +81,8 @@ const CardViewer: React.FC<CardViewerProps> = ({yaml}) => {
         ));
     };
 
-    // Show empty state when no YAML is provided
-    if (!yaml) {
+    // Show empty state when no json is provided
+    if (!json) {
         return (
             <Box>
                 <Alert severity="info">
