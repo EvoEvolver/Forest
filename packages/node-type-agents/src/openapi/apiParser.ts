@@ -1,4 +1,3 @@
-import yaml from 'js-yaml';
 
 export interface ApiEndpoint {
     id: string;
@@ -31,20 +30,20 @@ export interface ApiSpecWithRaw {
     raw: any;
 }
 
-export async function parseApiSpec(apiUrlOrYaml: string): Promise<ApiSpec> {
+export async function parseApiSpec(apiUrlOrJson: string): Promise<ApiSpec> {
     try {
-        let yamlText: string;
+        let jsonText: string;
         
         // Check if the input is a URL (starts with http://, https://, or /)
-        if (apiUrlOrYaml.startsWith('http://') || apiUrlOrYaml.startsWith('https://') || apiUrlOrYaml.startsWith('/')) {
-            const response = await fetch(apiUrlOrYaml);
-            yamlText = await response.text();
+        if (apiUrlOrJson.startsWith('http://') || apiUrlOrJson.startsWith('https://') || apiUrlOrJson.startsWith('/')) {
+            const response = await fetch(apiUrlOrJson);
+            jsonText = await response.text();
         } else {
             // Treat as YAML string
-            yamlText = apiUrlOrYaml;
+            jsonText = apiUrlOrJson;
         }
 
-        const spec = yaml.load(yamlText) as any;
+        const spec = JSON.parse(jsonText) as any;
 
         const endpoints: ApiEndpoint[] = [];
 
@@ -88,20 +87,20 @@ export async function parseApiSpec(apiUrlOrYaml: string): Promise<ApiSpec> {
     }
 }
 
-export async function parseApiSpecWithRaw(apiUrlOrYaml: string): Promise<ApiSpecWithRaw> {
+export async function parseApiSpecWithRaw(apiUrlOrJson: string): Promise<ApiSpecWithRaw> {
     try {
-        let yamlText: string;
+        let jsonText: string;
         
         // Check if the input is a URL (starts with http://, https://, or /)
-        if (apiUrlOrYaml.startsWith('http://') || apiUrlOrYaml.startsWith('https://') || apiUrlOrYaml.startsWith('/')) {
-            const response = await fetch(apiUrlOrYaml);
-            yamlText = await response.text();
+        if (apiUrlOrJson.startsWith('http://') || apiUrlOrJson.startsWith('https://') || apiUrlOrJson.startsWith('/')) {
+            const response = await fetch(apiUrlOrJson);
+            jsonText = await response.text();
         } else {
             // Treat as YAML string
-            yamlText = apiUrlOrYaml;
+            jsonText = apiUrlOrJson;
         }
 
-        const spec = yaml.load(yamlText) as any;
+        const spec = JSON.parse(jsonText) as any;
 
         const endpoints: ApiEndpoint[] = [];
 
