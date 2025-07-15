@@ -37,8 +37,8 @@ const getMethodColor = (method: string) => {
 };
 
 const EndpointCard: React.FC<EndpointCardProps> = ({ endpoint, baseUrl = '' }) => {
-    const [expanded, setExpanded] = useState(false);
-    const [tryItMode, setTryItMode] = useState(false);
+    const [expanded, setExpanded] = useState(true);
+    const [tryItMode, setTryItMode] = useState(true);
     const [parameters, setParameters] = useState<Record<string, any>>({});
     const [requestBody, setRequestBody] = useState('');
     const [loading, setLoading] = useState(false);
@@ -200,33 +200,16 @@ const EndpointCard: React.FC<EndpointCardProps> = ({ endpoint, baseUrl = '' }) =
                             </Box>
                         )}
 
-                        <Box sx={{ mb: 2 }}>
-                            <Button
-                                variant={tryItMode ? "outlined" : "contained"}
-                                onClick={handleTryIt}
-                                sx={{ mr: 2 }}
-                            >
-                                {tryItMode ? 'Cancel' : 'Try it out'}
-                            </Button>
-                        </Box>
-
-                        {tryItMode && (
+                        {(
                             <Box sx={{ mb: 2 }}>
-                                <Typography variant="h6" sx={{ mb: 2 }}>Parameters</Typography>
+                                {endpoint.parameters &&<Typography variant="h6" sx={{ mb: 2 }}>Parameters</Typography>}
 
-                                {endpoint.parameters && endpoint.parameters.length > 0 ? (
+                                {endpoint.parameters && endpoint.parameters.length > 0 && (
                                     endpoint.parameters.map(renderParameterInput)
-                                ) : (
-                                    <Typography variant="body2" color="text.secondary">
-                                        No parameters required
-                                    </Typography>
                                 )}
 
                                 {['POST', 'PUT', 'PATCH'].includes(endpoint.method) && endpoint.requestBody && (
                                     <Box sx={{ mt: 2 }}>
-                                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                                            Request Body
-                                        </Typography>
                                         <TextField
                                             fullWidth
                                             multiline
