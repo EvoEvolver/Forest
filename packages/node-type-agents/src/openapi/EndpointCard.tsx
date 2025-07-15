@@ -280,13 +280,18 @@ const EndpointCard: React.FC<EndpointCardProps> = ({ endpoint, baseUrl = '' }) =
 
                         <Box sx={{ mt: 2 }}>
                             <Typography variant="h6" sx={{ mb: 1 }}>Responses</Typography>
-                            {Object.entries(endpoint.responses).map(([status, response]: [string, any]) => (
+                            {endpoint.responses && Object.entries(endpoint.responses).map(([status, response]: [string, any]) => (
                                 <Box key={status} sx={{ mb: 1 }}>
                                     <Typography variant="subtitle2">
-                                        {status}: {response.description}
+                                        {status}: {response?.description ?? 'No description available'}
                                     </Typography>
                                 </Box>
                             ))}
+                            {!endpoint.responses && (
+                                <Typography variant="body2" color="text.secondary">
+                                    No response information available
+                                </Typography>
+                            )}
                         </Box>
                     </Box>
                 </AccordionDetails>
