@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {Alert, Box, Card, CardContent, Chip, CircularProgress, Typography} from '@mui/material';
+import {Alert, Box, Card, CardContent, CircularProgress, Typography} from '@mui/material';
 import {ApiEndpoint, ApiSpec, parseApiSpec} from './apiParser';
 import EndpointCard from './EndpointCard';
 
@@ -111,26 +111,13 @@ const CardViewer: React.FC<CardViewerProps> = ({json}) => {
             )}
 
             {/* API Overview */}
-            {apiSpec && (
-                <Card sx={{mb: 3}}>
-                    <CardContent>
-                        {apiSpec.info.description && (
-                            <Typography variant="body1" sx={{mb: 2}}>
-                                {apiSpec.info.description}
+            {false && apiSpec && (<Box>
+                        {apiSpec.servers && apiSpec.servers.length > 0 && (
+                            <Typography variant="body2" sx={{fontFamily: 'monospace'}}>
+                                {apiSpec.servers[0].url}
                             </Typography>
                         )}
-                        {apiSpec.servers && apiSpec.servers.length > 0 && (
-                            <Box>
-                                <Typography variant="subtitle2" gutterBottom>
-                                    Base URL:
-                                </Typography>
-                                <Typography variant="body2" sx={{fontFamily: 'monospace'}}>
-                                    {apiSpec.servers[0].url}
-                                </Typography>
-                            </Box>
-                        )}
-                    </CardContent>
-                </Card>
+                </Box>
             )}
 
             {/* Empty State */}
@@ -139,8 +126,7 @@ const CardViewer: React.FC<CardViewerProps> = ({json}) => {
                     No endpoints found in this API specification.
                 </Alert>
             )}
-        </Box>
-    );
+        </Box>)
 };
 
 export default CardViewer;
