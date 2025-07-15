@@ -25,6 +25,7 @@
     "yjs": "^13.6.27",
     "@forest/schema": "workspace:*",
     "@forest/node-components": "workspace:*",
+    "@forest/client": "workspace:*",
     "@forest/issue-tracker": "workspace:*",
     "react": "^19.1.0",
     "react-popper": "^2.3.0"
