@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {Box, Card, Grid, Typography} from '@mui/material';
 import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import {listOfNodesForViewAtom, selectedNodeAtom, treeAtom} from "../TreeState/TreeState";
-import {NodeButtons} from "./NodeButtons";
+import {NodeButtons} from "./HoverSidePanel";
 import {isMobileModeAtom} from "../appState";
 import {ColumnLeft} from "./ColumnLeft";
 import {ColumnRight} from "./ColumnRight";
@@ -63,6 +63,7 @@ const TreeView = () => {
 
 export const MiddleContents = ({node}: { node: NodeVM }) => {
     let setSelectedNode = useSetAtom(selectedNodeAtom)
+    const [isHovered, setIsHovered] = useState(false);
 
     const handleClick = () => {
         //console.log(event.target)
@@ -71,11 +72,19 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
 
     return <div
         style={{
-            padding: "2px",
-            paddingLeft: '10px',
-            paddingRight: '10px',
+            padding: '24px',
+            marginBottom: '24px',
+            borderRadius: '24px',
+            display: 'flex',
+            flexDirection: 'column',
             position: "relative",
+            color: 'black',
+            backgroundColor: 'white',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            border: '1px solid #c6c6c6',
         }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
     >
         <NodeBorder node={node}/>
         <div
@@ -89,7 +98,7 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
             {node.nodeType.render(node)}
             </thisNodeContext.Provider>
         </div>
-        <NodeButtons node={node}/>
+        <NodeButtons node={node} isVisible={isHovered}/>
     </div>
 }
 
