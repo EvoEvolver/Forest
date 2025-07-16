@@ -1,0 +1,12 @@
+{
+  "name": "@forest/node-types",
+  "version": "0.1.0",
+  "main": "src/index.ts",
+  "dependencies": {
+    "@forest/node-type-agents": "workspace:*",
+    "@forest/node-type-editor": "workspace:*",
+    "@forest/node-type-reader": "workspace:*",
+    "@forest/schema": "workspace:*",
+    "@forest/node-components": "workspace:*"
+  }
+}

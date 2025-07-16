@@ -16,6 +16,8 @@
     "react-syntax-highlighter": "^15.6.1",
     "@forest/schema": "workspace:*",
     "@forest/user-system": "workspace:*",
-    "@forest/client": "workspace:*"
+    "@forest/client": "workspace:*",
+    "react-jsx-parser": "^1.29.0",
+    "@mui/lab": "7.0.0-beta.14"
   }
 }

@@ -6,7 +6,7 @@ import {Box} from "@mui/material";
 import TabList from "@mui/lab/TabList";
 import Tab from "@mui/material/Tab";
 import TabPanel from "@mui/lab/TabPanel";
-import { componentsForCustomNode } from "@forest/node-components";
+import { componentsForCustomNode } from "./index";
 
 
 const renderTabs = (tabs, node: NodeVM) => {
