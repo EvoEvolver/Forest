@@ -13,6 +13,28 @@ import { thisNodeContext } from './NodeContext';
 import {updateChildrenCountAtom} from "../TreeState/childrenCount";
 import {observe} from "jotai-effect";
 
+export const NodeContentFrame = ({children}) => {
+    const sxDefault = {
+        width: "100%",
+        height: "100%",
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        wordBreak: "break-word",
+        backgroundColor: '#fbfbfb',
+        border: "1px solid",
+        borderColor: '#c6c6c6',
+        boxShadow: "0px 0px 20px rgba(0,0,0,0.1)",
+        borderRadius: "10px",
+    }
+    return (
+        <Card sx={sxDefault}>
+            <CardContent>
+                {children}
+            </CardContent>
+        </Card>
+    )
+}
+
 const TreeView = () => {
     const leaves = useAtomValue(listOfNodesForViewAtom)
     const mobileMode = useAtomValue(isMobileModeAtom)
@@ -34,34 +56,19 @@ const TreeView = () => {
                     <div>
                         {leaves.map((n, _) => <MiddleContents node={n} key={n.id}/>)}
                     </div>
-                    {!mobileMode && (
-                        <div style={{backgroundColor: '#fafafa', height: '100%'}}>
-                            <LeftColumn/>
-                        </div>
-                    )}
-                </Allotment>
+                </NodeContentFrame>
             </Grid>
-<<<<<<< HEAD:packages/client/src/TreeView/TreeView.tsx
             {!mobileMode && <Grid style={{height: "100%"}} size={3.5} className={"hide-mobile"}>
                 <ColumnRight/>
             </Grid>}
         </Grid>
-=======
-        </Box>
-
->>>>>>> 2a7af02 (dev: beautify interface):forest_client/src/TreeView/TreeView.tsx
     );
 };
 
 export const MiddleContents = ({node}: { node: NodeVM }) => {
     let setSelectedNode = useSetAtom(selectedNodeAtom)
 
-<<<<<<< HEAD:packages/client/src/TreeView/TreeView.tsx
-    const handleClick = () => {
-        //console.log(event.target)
-=======
     const handleClick = (event) => {
->>>>>>> 2a7af02 (dev: beautify interface):forest_client/src/TreeView/TreeView.tsx
         setSelectedNode(node.id)
     }
 
@@ -76,18 +83,14 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
         <NodeBorder node={node}/>
         <div
             onClick={handleClick}
-            // id={`node-${node.id}`}
+            id={`node-${node.id}`}
         >
             <thisNodeContext.Provider value={node}>
             <NodeTitle
                 node={node}
             />
-<<<<<<< HEAD:packages/client/src/TreeView/TreeView.tsx
             {node.nodeType.render(node)}
             </thisNodeContext.Provider>
-=======
-            <NodeButtons node={node}/>
->>>>>>> 2a7af02 (dev: beautify interface):forest_client/src/TreeView/TreeView.tsx
         </div>
     </div>
 }
@@ -115,8 +118,5 @@ const NodeBorder = ({node}) => {
             <div style={{...lineStyle, top: '100%'}}></div>
         </>
 }
-
-
-
 
 export default TreeView;

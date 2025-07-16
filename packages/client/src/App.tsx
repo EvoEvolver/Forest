@@ -4,6 +4,7 @@ import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import TreeView from "./TreeView/TreeView";
 import {setupYDocAtom, YjsProviderAtom} from "./TreeState/YjsConnection";
 import LinearView from "./LinearView";
+import LatexView from "./LatexView";
 import AuthModal from '../../user-system/src/AuthModal';
 import {subscriptionAtom, supabaseClientAtom, userAtom} from "../../user-system/src/authStates";
 import {MyAppBar} from "./AppBar";
@@ -93,6 +94,12 @@ const LinearViewPage = () => (
     </Box>
 );
 
+const LatexViewPage = () => (
+    <Box style={{width: "100vw", height: "100%", flexGrow: 1, boxSizing: "border-box"}}>
+        <LatexView/>
+    </Box>
+);
+
 const TheSelectedPage = ({currentPage}) => {
     switch (currentPage) {
         case 'tree':
@@ -100,6 +107,10 @@ const TheSelectedPage = ({currentPage}) => {
         case 'linear':
             return <Suspense fallback={<div>Loading...</div>}>
                 <LinearViewPage/>
+            </Suspense>
+        case 'latex':
+            return <Suspense fallback={<div>Loading...</div>}>
+                <LatexViewPage/>
             </Suspense>
         case 'flow':
             return <Suspense fallback={<div>Loading...</div>}>
