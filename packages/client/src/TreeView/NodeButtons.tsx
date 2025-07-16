@@ -53,8 +53,6 @@ export const NodeButtons = (props: { node: NodeVM }) => {
             height: '2rem',
             paddingLeft: '10px',
             paddingRight: '10px',
-            paddingBottom: '5px',
-            marginBottom: '10px',
             position: 'relative'
         }}
     >
