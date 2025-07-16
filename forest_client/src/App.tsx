@@ -5,6 +5,7 @@ import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import TreeView from "./TreeView/TreeView";
 import {setupYDocAtom} from "./TreeState/YjsConnection";
 import LinearView from "./LinearView";
+import LatexView from "./LatexView";
 import AuthModal from './UserSystem/AuthModal';
 import {themeOptions} from "./theme";
 import {subscriptionAtom, supabaseClientAtom} from "./UserSystem/authStates";
@@ -76,12 +77,20 @@ const LinearViewPage = () => (
     </Box>
 );
 
+const LatexViewPage = () => (
+    <Box style={{width: "100vw", height: "100%", flexGrow: 1, boxSizing: "border-box"}}>
+        <LatexView/>
+    </Box>
+);
+
 const TheSelectedPage = ({currentPage}) => {
     switch (currentPage) {
         case 'tree':
             return <TreeViewPage/>;
         case 'linear':
             return <LinearViewPage/>;
+        case 'latex':
+            return <LatexViewPage/>;
         default:
             return <TreeViewPage/>;
     }

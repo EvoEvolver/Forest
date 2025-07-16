@@ -1,6 +1,7 @@
 import {AppBar, Avatar, Button, Stack, Toolbar} from "@mui/material";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import ArticleIcon from "@mui/icons-material/Article";
+import FunctionsIcon from "@mui/icons-material/Functions";
 import AuthButton from "./UserSystem/AuthButton";
 import React, {useState} from "react";
 import {useAtomValue, useSetAtom} from "jotai";
@@ -36,6 +37,12 @@ export const AppBarLeft = ({setCurrentPage, currentPage}) => {
                 variant={currentPage === 'linear' ? 'outlined' : 'text'}
             >
                 <ArticleIcon/>
+            </Button>
+            <Button
+                onClick={() => setCurrentPage('latex')}
+                variant={currentPage === 'latex' ? 'outlined' : 'text'}
+            >
+                <FunctionsIcon/>
             </Button>
         </Stack>
     );
