@@ -13,10 +13,13 @@ export function RightColumn() {
         <Box
             sx={{
                 position: "relative",
-                height: "100%",
+                height: "calc(100% - 96px)",
                 width: collapsed ? collapsedWidth : expandedWidth,
                 transition: "width 0.3s ease",
-                overflow: "visible",    // let the button bleed out
+                overflow: "visible",
+                marginTop: "48px",
+                marginLeft: "24px",
+                flexShrink: 0,
             }}
         >
             <Collapse
@@ -53,8 +56,8 @@ export function RightColumn() {
                 sx={{
                     position: "absolute",
                     top: "50%",
-                    left: collapsed ? collapsedWidth - 1 : expandedWidth - 1,
-                    transform: "translate(-50%, -50%)",
+                    right: collapsed ? 0 : -20,
+                    transform: "translateY(-50%)",
                     backgroundColor: "#fff",
                     border: "1px solid #ccc",
                     borderRadius: "4px",
