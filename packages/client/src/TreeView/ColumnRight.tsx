@@ -1,8 +1,8 @@
 import React from "react";
 import {useAtomValue} from "jotai";
 import {selectedNodeAtom} from "../TreeState/TreeState";
-import {NodeContentFrame} from "./TreeView";
 import {thisNodeContext} from "./NodeContext";
+import {NodeContentFrame} from "./ColumnLeft";
 
 export function ColumnRight() {
     const node = useAtomValue(selectedNodeAtom)
