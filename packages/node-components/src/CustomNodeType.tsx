@@ -21,7 +21,7 @@ const renderTabs = (tabs, node: NodeVM) => {
             <div>{content}</div>
         </>)
         return <>
-            {/* @ts-expect-error */}
+            {/* @ts-ignore */}
             <JsxParser
                 components={envComponent}
                 jsx={content}

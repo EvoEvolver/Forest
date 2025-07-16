@@ -1,6 +1,7 @@
 import {Map as YMap} from "yjs";
 import {atom, PrimitiveAtom} from "jotai/index";
-import {NodeM, NodeVM, SupportedNodeTypesMap, TreeVM} from "./index";
+import {NodeVM, TreeVM} from "./viewModel";
+import {NodeM} from "./model";
 
 
 export function getYjsBindedAtom(yjsMapNode: YMap<any>, key: string): PrimitiveAtom<any> {
@@ -38,12 +39,12 @@ export async function nodeMToNodeVMAtom(nodeM: NodeM, treeVM: TreeVM): Promise<P
                     }
                 })
             }
-            NodeVM.create(nodeM, treeVM).then(newNode=>{
-              set(newNode)
+            NodeVM.create(nodeM, treeVM).then(newNode => {
+                set(newNode)
             })
         }
         nodeM.ymap.observe(observeFunc)
-        NodeVM.create(nodeM, treeVM).then(newNode=>{
+        NodeVM.create(nodeM, treeVM).then(newNode => {
             set(newNode)
         })
         return () => {

@@ -16,7 +16,7 @@ import { NodeVM } from '@forest/schema';
 
 export const NavigatorItemsAtom = atom((get) => {
         const tree = get(treeAtom)
-        const commitNumber = get(tree.viewCommitNumberAtom)
+        get(tree.viewCommitNumberAtom)
         let root: NodeVM
         if (get(tree.metadata).rootId) {
             // if rootId is set, use it to find the root node
