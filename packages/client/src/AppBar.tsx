@@ -196,3 +196,27 @@ const AwarenessStatus = () => {
         </Stack>
     );
 };
+
+// Main AppBar component that combines left and right sides
+export const MyAppBar = ({setCurrentPage, currentPage}) => {
+    const [settingsOpen, setSettingsOpen] = useState(false);
+
+    return (
+        <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1, bgcolor: 'background.paper' }}>
+            <Toolbar sx={{ justifyContent: 'space-between', minHeight: '64px !important' }}>
+                <AppBarLeft setCurrentPage={setCurrentPage} currentPage={currentPage} />
+                <Stack direction="row" spacing={2} alignItems="center">
+                    <AppBarRight />
+                    <IconButton
+                        color="inherit"
+                        onClick={() => setSettingsOpen(true)}
+                        sx={{ color: 'text.primary' }}
+                    >
+                        <SettingsIcon />
+                    </IconButton>
+                </Stack>
+            </Toolbar>
+            <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+        </AppBar>
+    );
+};
