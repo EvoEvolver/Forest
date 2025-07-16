@@ -104,7 +104,7 @@ export const AiChat: React.FC = ({node}) => {
 
 
     const dataKey = "tiptap_editor_" + "paperEditor"
-    const editor = node.data[dataKey];
+    const editor = node.vdata[dataKey];
 
     const sendMessage = async ({content, author, time}: Message) => {
         const messageInList = {content, author, time};

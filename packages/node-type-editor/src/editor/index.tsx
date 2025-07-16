@@ -103,7 +103,7 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
     // Destroy the editor when the component unmounts
     useEffect(() => {
         const editorFieldName = "tiptap_editor_" + dataLabel;
-        node.data[editorFieldName] = editor
+        node.vdata[editorFieldName] = editor
         return () => {
             editor.destroy();
         }

@@ -25,6 +25,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import {NodeVM, NodeM} from "@forest/schema";
 import {userAtom} from "@forest/user-system/src/authStates";
 import {httpUrl, treeId} from "../appState";
+import {StageVersionDialog} from "./StageVersionDialog";
 
 export const NodeButtons = (props: { node: NodeVM }) => {
 
@@ -179,6 +180,9 @@ const DropDownOperationButton = ({node}: { node: NodeVM }) => {
     const deleteNode = useSetAtom(deleteNodeAtom)
     const setNodePosition = useSetAtom(setNodePositionAtom);
     const user = useAtomValue(userAtom)
+    
+    // Stage version dialog state
+    const [stageDialogOpen, setStageDialogOpen] = React.useState(false);
 
     const moveUp = () => {
         setNodePosition({
@@ -205,33 +209,8 @@ const DropDownOperationButton = ({node}: { node: NodeVM }) => {
         node.commitDataChange()
     }
 
-    const stageVersion = async () => {
-        const snapshotData = node.nodeM.getSnapshot();
-        try {
-            const response = await fetch(httpUrl+'/api/nodeSnapshot', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    treeId: treeId, // Fix: use node.treeVM to get treeId
-                    nodeId: node.id,
-                    authorId: user?.id || "",
-                    tag: "snapshot", // Fix: use a more meaningful tag
-                    data: snapshotData
-                })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to save snapshot');
-            }
-
-            console.log('Snapshot saved successfully');
-        } catch (error) {
-            console.error('Failed to save snapshot:', error);
-            // You might want to show an error notification to the user here
-        }
+    const handleStageVersion = () => {
+        setStageDialogOpen(true);
     };
 
     const treeAgent = () => {
@@ -308,7 +287,7 @@ const DropDownOperationButton = ({node}: { node: NodeVM }) => {
                     </MenuItem>,
 
                     <MenuItem key="stageVersion" onClick={() => {
-                        stageVersion()
+                        handleStageVersion();
                         handleClose();
                     }}>
                         <ListItemIcon>
@@ -377,6 +356,13 @@ const DropDownOperationButton = ({node}: { node: NodeVM }) => {
                     <ListItemText>Copy Node Link</ListItemText>
                 </MenuItem>
             </Menu>
+            
+            {/* Stage Version Dialog */}
+            <StageVersionDialog 
+                open={stageDialogOpen}
+                onClose={() => setStageDialogOpen(false)}
+                node={node}
+            />
         </>
     );
 };

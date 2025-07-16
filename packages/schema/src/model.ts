@@ -2,6 +2,7 @@ import * as Y from 'yjs'
 import {Doc as YDoc, Map as YMap} from 'yjs'
 import {WebsocketProvider} from "y-websocket";
 import { Buffer } from 'buffer';
+import {v4} from "uuid";
 
 export interface NodeJson {
     id: string,
@@ -199,8 +200,15 @@ export class NodeM {
 
     getSnapshot(): string {
         const snapdoc = new YDoc()
-        const clonedYmap = this.ymap.clone()
-        snapdoc.getMap("snapshot").set("node", clonedYmap)
+        const newNodeYmap = snapdoc.getMap("node")
+        snapdoc.transact(()=>{
+            newNodeYmap.set("title", this.title())
+            newNodeYmap.set("data", this.data())
+            newNodeYmap.set("nodeTypeName", this.nodeTypeName())
+            newNodeYmap.set("ydata", this.ydata().clone())
+            newNodeYmap.set("children", new Y.Array<string>())
+            newNodeYmap.set("parent","")
+        })
         const stateVector = Y.encodeStateAsUpdate(snapdoc)
         // Convert Uint8Array to base64 string
         return btoa(String.fromCharCode(...stateVector))
@@ -215,8 +223,9 @@ export class NodeM {
             stateVectorArray[i] = binaryString.charCodeAt(i)
         }
         Y.applyUpdate(snapdoc, stateVectorArray)
-        const clonedYmap = snapdoc.getMap("snapshot").get("node") as Y.Map<any>
-        const nodeM = new NodeM(clonedYmap, clonedYmap.get("id"))
-        return nodeM
+        const nodeYmap = snapdoc.getMap("node")
+        const tempId = v4()
+        nodeYmap.set("id", tempId)
+        return new NodeM(nodeYmap, tempId)
     }
 }
