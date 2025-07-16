@@ -54,6 +54,7 @@
     "html-react-parser": "^5.0.11",
     "jotai": "^2.10.3",
     "jotai-scope": "^0.7.3",
+    "katex": "^0.16.22",
     "react": "^18.2.0",
     "react-code-blocks": "^0.1.6",
     "react-d3-tree": "^3.6.2",
