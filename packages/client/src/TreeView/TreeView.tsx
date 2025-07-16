@@ -103,29 +103,7 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
 }
 
 const NodeBorder = ({node}) => {
-    let selectedNode = useAtomValue(selectedNodeAtom)
-    if (!selectedNode)
-        return null
-    const isSelected = selectedNode.id === node.id;
-    const lineWidth = "3px"
-    const lineStyle = {
-        position: 'absolute' as const,
-        left: '0',
-        top: '0',
-        width: '100%',
-        height: lineWidth,
-        backgroundColor: '#dadada'
-    };
-
-    if (!isSelected)
-        return <></>
-    else
-        return <>
-            <div style={{...lineStyle, top: '0'}}></div>
-            <div style={{...lineStyle, width: lineWidth, height: '100%'}}></div>
-            <div style={{...lineStyle, width: lineWidth, height: '100%', left: `calc(100% - ${lineWidth})`}}></div>
-            <div style={{...lineStyle, top: '100%'}}></div>
-        </>
+    return null
 }
 
 
