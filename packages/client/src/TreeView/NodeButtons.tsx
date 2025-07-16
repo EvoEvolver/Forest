@@ -16,10 +16,15 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import React, {useEffect} from "react";
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import ArchiveIcon from '@mui/icons-material/Archive';
+import PsychologyIcon from '@mui/icons-material/Psychology';
+import TagIcon from '@mui/icons-material/Tag';
 import InsertLinkIcon from '@mui/icons-material/InsertLink';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import {NodeVM} from "@forest/schema";
+import {NodeVM, NodeM} from "@forest/schema";
+import {userAtom} from "@forest/user-system/src/authStates";
+import {httpUrl, treeId} from "../appState";
 
 export const NodeButtons = (props: { node: NodeVM }) => {
 
@@ -173,6 +178,7 @@ const DropDownOperationButton = ({node}: { node: NodeVM }) => {
     const open = Boolean(anchorEl);
     const deleteNode = useSetAtom(deleteNodeAtom)
     const setNodePosition = useSetAtom(setNodePositionAtom);
+    const user = useAtomValue(userAtom)
 
     const moveUp = () => {
         setNodePosition({
@@ -189,6 +195,48 @@ const DropDownOperationButton = ({node}: { node: NodeVM }) => {
             shift: 1 // Move down by 1 position
         });
     };
+
+    const archiveNode = () => {
+        node.data['archived'] = true;
+        node.commitDataChange()
+    }
+    const unarchiveNode = () => {
+        node.data['archived'] = false;
+        node.commitDataChange()
+    }
+
+    const stageVersion = async () => {
+        const snapshotData = node.nodeM.getSnapshot();
+        try {
+            const response = await fetch(httpUrl+'/api/nodeSnapshot', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    treeId: treeId, // Fix: use node.treeVM to get treeId
+                    nodeId: node.id,
+                    authorId: user?.id || "",
+                    tag: "snapshot", // Fix: use a more meaningful tag
+                    data: snapshotData
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to save snapshot');
+            }
+
+            console.log('Snapshot saved successfully');
+        } catch (error) {
+            console.error('Failed to save snapshot:', error);
+            // You might want to show an error notification to the user here
+        }
+    };
+
+    const treeAgent = () => {
+
+    }
 
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         setAnchorEl(event.currentTarget);
@@ -257,9 +305,51 @@ const DropDownOperationButton = ({node}: { node: NodeVM }) => {
                             <ArrowDownwardIcon/>
                         </ListItemIcon>
                         <ListItemText>Move Down</ListItemText>
+                    </MenuItem>,
+
+                    <MenuItem key="stageVersion" onClick={() => {
+                        stageVersion()
+                        handleClose();
+                    }}>
+                        <ListItemIcon>
+                            <TagIcon/>
+                        </ListItemIcon>
+                        <ListItemText>Stage version</ListItemText>
+                    </MenuItem>,
+                    <MenuItem key="agent" onClick={() => {
+                        treeAgent()
+                        handleClose();
+                    }}>
+                        <ListItemIcon>
+                            <PsychologyIcon/>
+                        </ListItemIcon>
+                        <ListItemText>Tree agent</ListItemText>
                     </MenuItem>
                 ]}
                 <Divider/>
+                {
+                    node.data['archived'] === true ? (
+                        <MenuItem key="unarchive" onClick={() => {
+                            unarchiveNode();
+                            handleClose();
+                        }}>
+                            <ListItemIcon>
+                                <ArchiveIcon/>
+                            </ListItemIcon>
+                            <ListItemText>Unarchive</ListItemText>
+                        </MenuItem>
+                    ) : (
+                        <MenuItem key="archive" onClick={() => {
+                            archiveNode();
+                            handleClose();
+                        }}>
+                            <ListItemIcon>
+                                <ArchiveIcon/>
+                            </ListItemIcon>
+                            <ListItemText>Archive</ListItemText>
+                        </MenuItem>
+                    )
+                }
                 {node.nodeType.allowReshape &&
                     <MenuItem onClick={() => {
                         deleteNode({nodeId: nodeId});

@@ -1,6 +1,7 @@
 import * as Y from 'yjs'
 import {Doc as YDoc, Map as YMap} from 'yjs'
 import {WebsocketProvider} from "y-websocket";
+import { Buffer } from 'buffer';
 
 export interface NodeJson {
     id: string,
@@ -194,5 +195,28 @@ export class NodeM {
 
     nodeTypeName(): string {
         return this.ymap.get("nodeTypeName");
+    }
+
+    getSnapshot(): string {
+        const snapdoc = new YDoc()
+        const clonedYmap = this.ymap.clone()
+        snapdoc.getMap("snapshot").set("node", clonedYmap)
+        const stateVector = Y.encodeStateAsUpdate(snapdoc)
+        // Convert Uint8Array to base64 string
+        return btoa(String.fromCharCode(...stateVector))
+    }
+
+    static fromSnapshot(stateVector: string): NodeM {
+        const snapdoc = new YDoc()
+        // Convert base64 string back to Uint8Array
+        const binaryString = atob(stateVector)
+        const stateVectorArray = new Uint8Array(binaryString.length)
+        for (let i = 0; i < binaryString.length; i++) {
+            stateVectorArray[i] = binaryString.charCodeAt(i)
+        }
+        Y.applyUpdate(snapdoc, stateVectorArray)
+        const clonedYmap = snapdoc.getMap("snapshot").get("node") as Y.Map<any>
+        const nodeM = new NodeM(clonedYmap, clonedYmap.get("id"))
+        return nodeM
     }
 }

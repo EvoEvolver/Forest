@@ -27,6 +27,7 @@
     "yjs": "^13.6.27"
   },
   "devDependencies": {
+    "@types/node": "^24.0.14",
     "@types/react": "^19.1.0",
     "@types/uuid": "^9.0.0",
     "typescript": "^5.0.0"

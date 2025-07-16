@@ -1,5 +1,5 @@
-import React, {useEffect} from 'react';
-import {Card, Grid} from '@mui/material';
+import React, {useEffect, useState} from 'react';
+import {Box, Card, Grid, Typography} from '@mui/material';
 import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import {listOfNodesForViewAtom, selectedNodeAtom, treeAtom} from "../TreeState/TreeState";
 import CardContent from "@mui/material/CardContent";
@@ -11,7 +11,6 @@ import {NodeVM} from "@forest/schema"
 import {NodeTitle} from "./NodeTitle";
 import { thisNodeContext } from './NodeContext';
 import {updateChildrenCountAtom} from "../TreeState/childrenCount";
-import {observe} from "jotai-effect";
 
 const TreeView = () => {
     const leaves = useAtomValue(listOfNodesForViewAtom)
@@ -19,6 +18,7 @@ const TreeView = () => {
     const tree = useAtomValue(treeAtom)
     const commitNumber = useAtomValue(tree.viewCommitNumberAtom)
     const countChildren = useSetAtom(updateChildrenCountAtom)
+    const [showArchived, setShowArchived] = useState(false);
     useEffect(() => {
         countChildren({})
     }, [commitNumber]);
@@ -32,8 +32,26 @@ const TreeView = () => {
             <Grid size={mobileMode ? 12 : 5} style={{height: "100%"}}>
                 <NodeContentFrame>
                     <div>
-                        {leaves.map((n, _) => <MiddleContents node={n} key={n.id}/>)}
+                        {leaves.filter((n) => n.data["archived"]!==true).map((n)=><MiddleContents node={n} key={n.id}/>)}
                     </div>
+                    {/* Archive section only if there are archived nodes */}
+                    {leaves.some(n => n.data["archived"] === true) && (
+                        <>
+                        <div style={{marginTop: 16, marginBottom: 8, display: 'flex', alignItems: 'center'}}>
+                            <Typography
+                                sx={{color: '#afafaf'}}
+                                onClick={() => setShowArchived(v => !v)}
+                            >
+                                Archived ({leaves.filter(n => n.data["archived"]===true).length}) ({showArchived ? 'hide' : 'show'})
+                            </Typography>
+                        </div>
+                        {showArchived && (
+                            <Box style={{border: '1px dashed #555', borderRadius: 6, padding: 8, marginBottom: 8}}>
+                                {leaves.filter((n) => n.data["archived"]===true).map((n)=><MiddleContents node={n} key={n.id}/>)}
+                            </Box>
+                        )}
+                        </>
+                    )}
                 </NodeContentFrame>
             </Grid>
             {!mobileMode && <Grid style={{height: "100%"}} size={3.5} className={"hide-mobile"}>

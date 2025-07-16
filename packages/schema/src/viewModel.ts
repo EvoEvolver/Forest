@@ -114,8 +114,11 @@ export class NodeVM {
     title: PrimitiveAtom<string>
     parent: string
     children: PrimitiveAtom<string[]>
+    // normal data that does not require collaboration
     data: any
+    // yjs data. The most collaborative one
     ydata?: Y.Map<string>
+    // data for UI. Will not be synced and saved
     vdata: any
     nodeTypeName: string
     nodeType: NodeType
@@ -126,7 +129,7 @@ export class NodeVM {
     tabs: any
     tools: any
 
-    static async create(nodeM, treeVM: TreeVM) {
+    static async create(nodeM: NodeM, treeVM: TreeVM) {
         const nodeVM = new NodeVM(treeVM)
         const yjsMapNode = nodeM.ymap;
         const childrenAtom = getYjsBindedAtom(yjsMapNode, "children");
@@ -167,6 +170,10 @@ export class NodeVM {
             }
         }
         return await getNodeType(this.nodeTypeName, supportedNodesTypes)
+    }
+
+    commitDataChange(){
+        this.nodeM.ymap.set("data", this.data)
     }
 
 }
