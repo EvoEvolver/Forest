@@ -2,15 +2,15 @@ import React, {useEffect, useState} from 'react';
 import {Box, Card, Grid, Typography} from '@mui/material';
 import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import {listOfNodesForViewAtom, selectedNodeAtom, treeAtom} from "../TreeState/TreeState";
-import CardContent from "@mui/material/CardContent";
 import {NodeButtons} from "./NodeButtons";
 import {isMobileModeAtom} from "../appState";
-import {ColumnLeft, NodeContentFrame} from "./ColumnLeft";
+import {ColumnLeft} from "./ColumnLeft";
 import {ColumnRight} from "./ColumnRight";
 import {NodeVM} from "@forest/schema"
 import {NodeTitle} from "./NodeTitle";
 import { thisNodeContext } from './NodeContext';
 import {updateChildrenCountAtom} from "../TreeState/childrenCount";
+import { NodeContentFrame } from './NodeContentFrame';
 
 const TreeView = () => {
     const leaves = useAtomValue(listOfNodesForViewAtom)
