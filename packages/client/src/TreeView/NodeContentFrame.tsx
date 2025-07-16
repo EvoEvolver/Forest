@@ -1,6 +1,5 @@
 import {Card} from "@mui/material";
 import CardContent from "@mui/material/CardContent";
-import Typography from "@mui/material/Typography";
 import React from "react";
 
 export const NodeContentFrame = ({children}) => {
@@ -14,19 +13,7 @@ export const NodeContentFrame = ({children}) => {
     }
     return <>
         <Card sx={sxDefault}>
-            <CardContent sx={{
-                backgroundColor: '#fafafa',
-                borderBottom: "1px solid #c6c6c6",
-                padding: '0 0 0 1rem',
-                display: 'flex',
-                alignItems: 'center',
-                height: '3rem',
-            }}>
-                <Typography sx={{ margin: 0 }}>
-                    Header
-                </Typography>
-            </CardContent>
-            <CardContent sx={{paddingTop: '0'}}>
+            <CardContent sx={{padding: '1rem'}}>
                 {children}
             </CardContent>
         </Card>
