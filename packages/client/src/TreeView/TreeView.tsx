@@ -5,7 +5,7 @@ import {listOfNodesForViewAtom, selectedNodeAtom, treeAtom} from "../TreeState/T
 import CardContent from "@mui/material/CardContent";
 import {NodeButtons} from "./NodeButtons";
 import {isMobileModeAtom} from "../appState";
-import {ColumnLeft} from "./ColumnLeft";
+import {ColumnLeft, NodeContentFrame} from "./ColumnLeft";
 import {ColumnRight} from "./ColumnRight";
 import {NodeVM} from "@forest/schema"
 import {NodeTitle} from "./NodeTitle";
@@ -117,24 +117,6 @@ const NodeBorder = ({node}) => {
             <div style={{...lineStyle, width: lineWidth, height: '100%', left: `calc(100% - ${lineWidth})`}}></div>
             <div style={{...lineStyle, top: '100%'}}></div>
         </>
-}
-
-export const NodeContentFrame = ({children}) => {
-    const sxDefault = {
-        width: "100%",
-        height: "100%",
-        overflowY: 'auto',
-        overflowX: 'hidden',
-        wordBreak: "break-word",
-        backgroundColor: '#f4f4f4'
-    }
-    return <>
-        <Card sx={sxDefault}>
-            <CardContent>
-                {children}
-            </CardContent>
-        </Card>
-    </>
 }
 
 

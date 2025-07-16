@@ -23,7 +23,6 @@ export default function App() {
     const setupYDoc = useSetAtom(setupYDocAtom);
 
     useEffect(() => {
-        document.body.style.overflow = 'hidden';
         if (treeId) {
             setupYDoc()
         }
@@ -81,7 +80,7 @@ const TreeViewPage = () => {
     const tree = useAtomValue(treeAtom);
     if(!tree)
         return null;
-    return <Box style={{width: "100vw", height: "100%", flexGrow: 1, boxSizing: "border-box"}}>
+    return <Box style={{width: "100vw", height: "100%", flexGrow: 1, overflow: 'auto', boxSizing: "border-box"}}>
         <TreeView/>
     </Box>
 }
