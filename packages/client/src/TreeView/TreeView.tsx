@@ -29,34 +29,34 @@ const TreeView = () => {
             {!mobileMode && <Grid size={3.5} style={{height: "100%"}}>
                 <ColumnLeft/>
             </Grid>}
-            <Grid size={mobileMode ? 12 : 5} style={{height: "100%"}}>
-                <NodeContentFrame>
-                    <div>
-                        {leaves.filter((n) => n.data["archived"]!==true).map((n)=><MiddleContents node={n} key={n.id}/>)}
-                    </div>
-                    {/* Archive section only if there are archived nodes */}
-                    {leaves.some(n => n.data["archived"] === true) && (
-                        <>
-                        <div style={{marginTop: 16, marginBottom: 8, display: 'flex', alignItems: 'center'}}>
-                            <Typography
-                                sx={{color: '#afafaf'}}
-                                onClick={() => setShowArchived(v => !v)}
-                            >
-                                Archived ({leaves.filter(n => n.data["archived"]===true).length}) ({showArchived ? 'hide' : 'show'})
-                            </Typography>
-                        </div>
-                        {showArchived && (
-                            <Box style={{border: '1px dashed #555', borderRadius: 6, padding: 8, marginBottom: 8}}>
-                                {leaves.filter((n) => n.data["archived"]===true).map((n)=><MiddleContents node={n} key={n.id}/>)}
-                            </Box>
-                        )}
-                        </>
-                    )}
-                </NodeContentFrame>
+            <Grid size={mobileMode ? 12 : 5} style={{height: "100%", overflow: "visible", zIndex: "1000"}}>
+               <div>
+                   <div>
+                       {leaves.filter((n) => n.data["archived"]!==true).map((n)=><MiddleContents node={n} key={n.id}/>)}
+                   </div>
+                   {/* Archive section only if there are archived nodes */}
+                   {leaves.some(n => n.data["archived"] === true) && (
+                       <>
+                           <div style={{marginTop: 16, marginBottom: 8, display: 'flex', alignItems: 'center'}}>
+                               <Typography
+                                   sx={{color: '#afafaf'}}
+                                   onClick={() => setShowArchived(v => !v)}
+                               >
+                                   Archived ({leaves.filter(n => n.data["archived"]===true).length}) ({showArchived ? 'hide' : 'show'})
+                               </Typography>
+                           </div>
+                           {showArchived && (
+                               <Box style={{border: '1px dashed #555', borderRadius: 6, padding: 8, marginBottom: 8}}>
+                                   {leaves.filter((n) => n.data["archived"]===true).map((n)=><MiddleContents node={n} key={n.id}/>)}
+                               </Box>
+                           )}
+                       </>
+                   )}
+               </div>
             </Grid>
-            {!mobileMode && <Grid style={{height: "100%"}} size={3.5} className={"hide-mobile"}>
-                <ColumnRight/>
-            </Grid>}
+            {/*{!mobileMode && <Grid style={{height: "100%"}} size={3.5} className={"hide-mobile"}>*/}
+            {/*    <ColumnRight/>*/}
+            {/*</Grid>}*/}
         </Grid>
     );
 };

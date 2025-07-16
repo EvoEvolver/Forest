@@ -8,7 +8,7 @@ export function ColumnRight() {
     const node = useAtomValue(selectedNodeAtom)
     if (!node)
         return null
-    return <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
+    return <div style={{display: 'flex', flexDirection: 'column', height: '100%', zIndex: 1}}>
         <thisNodeContext.Provider value={node}>
             <div style={{flex: 0.9, height: '50%', marginBottom: '2%'}}>
                 <NodeContentFrame>
