@@ -9,7 +9,7 @@ import {
     treeAtom
 } from "../TreeState/TreeState";
 import {useTheme} from "@mui/system";
-import {Button, Divider, ListItemIcon, ListItemText, Menu, MenuItem} from "@mui/material";
+import {Button, Divider, ListItemIcon, ListItemText, Menu, MenuItem, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle} from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import BlurOnIcon from "@mui/icons-material/BlurOn";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
@@ -183,6 +183,9 @@ const DropDownOperationButton = ({node}: { node: NodeVM }) => {
     
     // Stage version dialog state
     const [stageDialogOpen, setStageDialogOpen] = React.useState(false);
+    // Confirmation dialog state for delete
+    const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+    const [pendingDeleteNodeId, setPendingDeleteNodeId] = React.useState<string | null>(null);
 
     const moveUp = () => {
         setNodePosition({
@@ -331,7 +334,8 @@ const DropDownOperationButton = ({node}: { node: NodeVM }) => {
                 }
                 {node.nodeType.allowReshape &&
                     <MenuItem onClick={() => {
-                        deleteNode({nodeId: nodeId});
+                        setPendingDeleteNodeId(nodeId);
+                        setDeleteDialogOpen(true);
                         handleClose();
                     }}
                               disabled={nodeChildren.length > 0 || node.parent === null}
@@ -356,7 +360,38 @@ const DropDownOperationButton = ({node}: { node: NodeVM }) => {
                     <ListItemText>Copy Node Link</ListItemText>
                 </MenuItem>
             </Menu>
-            
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog
+                open={deleteDialogOpen}
+                onClose={() => setDeleteDialogOpen(false)}
+            >
+                <DialogTitle>Confirm Delete</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Are you sure you want to delete this node? This action cannot be undone.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDeleteDialogOpen(false)} color="primary">
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={() => {
+                            if (pendingDeleteNodeId) {
+                                deleteNode({ nodeId: pendingDeleteNodeId });
+                            }
+                            setDeleteDialogOpen(false);
+                            setPendingDeleteNodeId(null);
+                        }}
+                        color="error"
+                        variant="contained"
+                    >
+                        Delete
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
             {/* Stage Version Dialog */}
             <StageVersionDialog 
                 open={stageDialogOpen}
