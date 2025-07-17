@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react'
+import React, {useContext, useEffect, useState} from 'react'
 import './style.css';
 import {useAtomValue} from "jotai";
 import {YjsProviderAtom} from "@forest/client/src/TreeState/YjsConnection";
@@ -20,6 +20,7 @@ import {Button} from "@mui/material";
 import {usePopper} from "react-popper";
 import {LinkExtension, makeOnLinkActivated} from "./Extensions/link";
 import {NodeVM} from "@forest/schema";
+import {contentEditableContext} from "@forest/schema/src/viewContext";
 
 interface TiptapEditorProps {
     node: NodeVM,
@@ -48,7 +49,7 @@ export default TiptapEditor;
 
 const EditorImpl = ({yXML, provider, dataLabel, node}) => {
     const [hoverElements, setHoverElements] = useState([]);
-
+    const contentEditable = useContext(contentEditableContext)
 
     const extensions = [
         Document,
@@ -98,6 +99,7 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
             disableCollaboration()
         },
         extensions: extensions,
+        editable: contentEditable!==false
     })
 
     // Destroy the editor when the component unmounts

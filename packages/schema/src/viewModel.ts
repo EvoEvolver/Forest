@@ -163,10 +163,12 @@ export class NodeVM {
 
     async getNodeType(supportedNodesTypes: SupportedNodeTypesMap): Promise<NodeType> {
         if (!this.nodeTypeName) {
-            if (this.tabs["content"] === `<PaperEditorMain/>`) {
+            if (this?.tabs["content"] === `<PaperEditorMain/>`) {
                 this.nodeTypeName = "EditorNodeType"
+                this.nodeM.ymap.set("nodeTypeName", this.nodeTypeName)
             } else {
                 this.nodeTypeName = "CustomNodeType"
+                this.nodeM.ymap.set("nodeTypeName", this.nodeTypeName)
             }
         }
         return await getNodeType(this.nodeTypeName, supportedNodesTypes)

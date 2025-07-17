@@ -9,19 +9,21 @@
   "dependencies": {
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
+    "@forest/client": "workspace:*",
     "@forest/issue-tracker": "workspace:*",
     "@forest/node-components": "workspace:*",
+    "@forest/node-type-agents": "workspace:*",
     "@forest/node-type-editor": "workspace:*",
     "@forest/node-type-reader": "workspace:*",
-    "@forest/node-type-agents": "workspace:*",
+    "@forest/node-types": "workspace:*",
     "@forest/schema": "workspace:*",
     "@forest/user-panel": "workspace:*",
     "@forest/user-system": "workspace:*",
-    "@forest/client": "workspace:*",
     "@mui/icons-material": "^7.2.0",
     "@mui/lab": "7.0.0-beta.14",
     "@mui/material": "^7.2.0",
     "@mui/system": "^5.15.20",
+    "@mui/x-data-grid": "^7.29.8",
     "@mui/x-tree-view": "^7.26.0",
     "@supabase/supabase-js": "^2.50.5",
     "d3-hierarchy": "^3.1.2",
@@ -34,8 +36,7 @@
     "reactflow": "^11.11.4",
     "uuid": "^9.0.1",
     "y-websocket": "^2.0.4",
-    "yjs": "^13.6.27",
-    "@forest/node-types": "workspace:*"
+    "yjs": "^13.6.27"
   },
   "devDependencies": {
     "@types/node": "^20.10.4",

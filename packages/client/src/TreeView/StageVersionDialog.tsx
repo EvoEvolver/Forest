@@ -10,12 +10,14 @@ import {
     Chip,
     Box
 } from '@mui/material';
+import { DataGrid, GridColDef, GridRenderCellParams, GridValueGetter } from '@mui/x-data-grid';
 import { NodeVM, NodeM } from '@forest/schema';
 import { httpUrl, treeId } from '../appState';
 import { userAtom } from '@forest/user-system/src/authStates';
 import { useAtomValue } from 'jotai';
 import { treeAtom } from '../TreeState/TreeState';
 import { MiddleContents } from './TreeView';
+import {contentEditableContext} from "@forest/schema/src/viewContext";
 
 interface StageVersionDialogProps {
     open: boolean;
@@ -27,7 +29,7 @@ interface Snapshot {
     treeId: string;
     nodeId: string;
     authorId: string;
-    tag: string;
+    tag: string | null;
     data: any;
     date: string;
 }
@@ -38,6 +40,7 @@ export const StageVersionDialog = ({ open, onClose, node }: StageVersionDialogPr
     const [loading, setLoading] = React.useState(false);
     const [previewNodeVM, setPreviewNodeVM] = React.useState<NodeVM | null>(null);
     const [previewLoading, setPreviewLoading] = React.useState(false);
+    const [snapshots, setSnapshots] = React.useState<Snapshot[]>([]);
     const user = useAtomValue(userAtom);
     const tree = useAtomValue(treeAtom);
 
@@ -58,34 +61,20 @@ export const StageVersionDialog = ({ open, onClose, node }: StageVersionDialogPr
             }
             
             const data = await response.json();
-            const tags = data.snapshots?.map((snapshot: Snapshot) => snapshot.tag) || [];
-            setExistingTags(tags);
+            setSnapshots(data.snapshots || []);
         } catch (error) {
             console.error('Failed to fetch existing snapshots:', error);
-            setExistingTags([]);
+            setSnapshots([]);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleChipClick = async (tag: string) => {
+    const handlePreview = async (snapshot: Snapshot) => {
         try {
             setPreviewLoading(true);
             setPreviewNodeVM(null);
             
-            // Find the snapshot with this tag
-            const response = await fetch(`${httpUrl}/api/nodeSnapshot?treeId=${treeId}&nodeId=${node.id}`);
-            if (!response.ok) {
-                throw new Error('Failed to fetch snapshots');
-            }
-            
-            const data = await response.json();
-            const snapshot = data.snapshots?.find((s: Snapshot) => s.tag === tag);
-            
-            if (!snapshot) {
-                throw new Error('Snapshot not found');
-            }
-
             // Create NodeM from snapshot data (now it's a plain object)
             const nodeM = NodeM.fromSnapshot(snapshot.data);
             
@@ -102,23 +91,8 @@ export const StageVersionDialog = ({ open, onClose, node }: StageVersionDialogPr
 
     const stageThisVersion = async (tag: string) => {
         try {
-            // Helper function to safely serialize data, handling circular references
-            const safeStringify = (obj: any): any => {
-                const seen = new WeakSet();
-                return JSON.parse(JSON.stringify(obj, (key, value) => {
-                    if (typeof value === 'object' && value !== null) {
-                        if (seen.has(value)) {
-                            return '[Circular Reference]';
-                        }
-                        seen.add(value);
-                    }
-                    return value;
-                }));
-            };
-
             // Create a simple serializable object from the node data
             const nodeData = node.nodeM.getSnapshot()
-            
             const requestBody = {
                 treeId: treeId,
                 nodeId: node.id,
@@ -126,7 +100,6 @@ export const StageVersionDialog = ({ open, onClose, node }: StageVersionDialogPr
                 tag: tag,
                 data: nodeData
             };
-            
             console.log('Saving snapshot for node:', node.id, 'with tag:', tag);
             const response = await fetch(httpUrl + '/api/nodeSnapshot', {
                 method: 'POST',
@@ -144,7 +117,6 @@ export const StageVersionDialog = ({ open, onClose, node }: StageVersionDialogPr
             console.log('Snapshot saved successfully');
             // Refresh the existing tags after saving
             await fetchExistingSnapshots();
-            handleClose();
         } catch (error) {
             console.error('Failed to save snapshot:', error);
             // You might want to show an error notification to the user here
@@ -152,9 +124,7 @@ export const StageVersionDialog = ({ open, onClose, node }: StageVersionDialogPr
     };
 
     const handleSubmit = () => {
-        if (tagName.trim()) {
-            stageThisVersion(tagName.trim());
-        }
+        stageThisVersion(tagName.trim());
     };
 
     const handleClose = () => {
@@ -170,38 +140,61 @@ export const StageVersionDialog = ({ open, onClose, node }: StageVersionDialogPr
                 <TextField
                     autoFocus
                     margin="dense"
-                    label="Tag Name"
+                    label="Description"
                     type="text"
                     fullWidth
                     variant="outlined"
                     value={tagName}
                     onChange={(e) => setTagName(e.target.value)}
-                    placeholder="Enter a tag name for this version"
-                    onKeyPress={(e) => {
+                    placeholder="A description of this version"
+                    onKeyUp={(e) => {
                         if (e.key === 'Enter') {
                             handleSubmit();
                         }
                     }}
                 />
                 
-                {existingTags.length > 0 && (
+                {snapshots.length > 0 && (
                     <Box mt={2}>
                         <Typography variant="body2" color="textSecondary" gutterBottom>
-                            Existing versions (click to preview):
+                            Existing versions:
                         </Typography>
-                        <Box display="flex" flexWrap="wrap" gap={1}>
-                            {existingTags.map((tag, index) => (
-                                <Chip
-                                    key={index}
-                                    label={tag}
-                                    size="small"
-                                    variant="outlined"
-                                    color="primary"
-                                    onClick={() => handleChipClick(tag)}
-                                    clickable
-                                />
-                            ))}
-                        </Box>
+                        <div style={{ height: 300, width: '100%' }}>
+                            <DataGrid
+                                rows={snapshots.map((s, i) => ({ ...s, id: i })) as Snapshot[]}
+                                columns={[
+                                    {
+                                        field: 'tag',
+                                        headerName: 'Description',
+                                        flex: 1,
+                                        valueGetter: (params: GridRenderCellParams<Snapshot>) => params || 'No description',
+                                    },
+                                    {
+                                        field: 'date',
+                                        headerName: 'Date',
+                                        flex: 1,
+                                        valueGetter: (params: GridRenderCellParams<Snapshot>) => new Date(params).toLocaleString(),
+                                    },
+                                    {
+                                        field: 'preview',
+                                        headerName: 'Preview',
+                                        sortable: false,
+                                        filterable: false,
+                                        renderCell: (params: GridRenderCellParams<Snapshot>) => (
+                                            <Button size="small" onClick={() => handlePreview(params.row)}>
+                                                Preview
+                                            </Button>
+                                        ),
+                                        width: 120
+                                    }
+                                ] as GridColDef<Snapshot>[]}
+                                initialState={{
+                                    pagination: { paginationModel: { pageSize: 5, page: 0 } }
+                                }}
+                                pageSizeOptions={[5]}
+                                disableRowSelectionOnClick
+                            />
+                        </div>
                     </Box>
                 )}
                 
@@ -223,10 +216,9 @@ export const StageVersionDialog = ({ open, onClose, node }: StageVersionDialogPr
 
                 {previewNodeVM && (
                     <Box mt={2} sx={{ border: '1px solid #ddd', borderRadius: 1, p: 2 }}>
-                        <Typography variant="h6" gutterBottom>
-                            Preview:
-                        </Typography>
-                        {previewNodeVM.nodeType.render(previewNodeVM)}
+                        <contentEditableContext.Provider value={false}>
+                            {previewNodeVM.nodeType.render(previewNodeVM)}
+                        </contentEditableContext.Provider>
                     </Box>
                 )}
             </DialogContent>
@@ -238,7 +230,6 @@ export const StageVersionDialog = ({ open, onClose, node }: StageVersionDialogPr
                     onClick={handleSubmit} 
                     color="primary" 
                     variant="contained"
-                    disabled={!tagName.trim()}
                 >
                     Stage Version
                 </Button>
