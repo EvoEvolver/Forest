@@ -48,9 +48,9 @@ export class AgentNodeType extends NodeType {
     vdataInitialize(node: NodeVM) {
     }
 
-    agentPromptYText(node: NodeVM): Y.Text {
+    agentPromptYText(node: NodeM): Y.Text {
         // @ts-ignore
-        return node.ydata.get(AgentPromptText) as Y.Text
+        return node.ydata().get(AgentPromptText) as Y.Text
     }
 }
 

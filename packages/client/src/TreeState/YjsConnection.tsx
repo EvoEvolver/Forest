@@ -5,12 +5,14 @@ import {treeId, wsUrl} from "../appState";
 import {scrollToNodeAtom, selectedNodeAtom, treeAtom} from "./TreeState";
 import {updateChildrenCountAtom} from "./childrenCount";
 import {TreeM, TreeVM} from "@forest/schema";
+import {supportedNodeTypes} from "@forest/node-types"
 
 export const YjsProviderAtom: PrimitiveAtom<WebsocketProvider> = atom();
 export const YjsConnectionStatusAtom = atom("connecting");
 
 export const setupYDocAtom = atom(null, async (get, set) => {
     const [treeM, wsProvider] = await TreeM.treeFromWs(wsUrl, treeId)
+    treeM.supportedNodesTypes = supportedNodeTypes
     set(treeAtom, treeM)
     const currTree = get(treeAtom)
     set(YjsProviderAtom, wsProvider)

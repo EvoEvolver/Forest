@@ -1,8 +1,9 @@
 import * as Y from 'yjs'
 import {Doc as YDoc, Map as YMap} from 'yjs'
 import {WebsocketProvider} from "y-websocket";
-import { Buffer } from 'buffer';
 import {v4} from "uuid";
+import {NodeType} from "./nodeType.ts";
+import {TreeVM} from "./viewModel.ts";
 
 export interface NodeJson {
     id: string,
@@ -25,6 +26,8 @@ export interface TreeMetadata {
     treeId?: string,
 }
 
+export type SupportedNodeTypesMap = (typeName: string) => Promise<NodeType>
+
 /*
 The data type shared between backend and frontend
  */
@@ -32,6 +35,7 @@ export class TreeM {
     ydoc: YDoc
     nodeDict: YMap<YMap<any>>
     metadata: YMap<any>
+    supportedNodesTypes: SupportedNodeTypesMap
 
     constructor(ydoc: YDoc) {
         this.ydoc = ydoc
@@ -74,7 +78,7 @@ export class TreeM {
             // Update nodeDict
             const nodeDictJson = treeJson.nodeDict;
             Object.entries(nodeDictJson).forEach(([key, nodeJson]) => {
-                const nodeM = NodeM.fromNodeJson(nodeJson);
+                const nodeM = NodeM.fromNodeJson(nodeJson, this);
                 this.addNode(nodeM)
             });
         })
@@ -96,7 +100,8 @@ export class TreeM {
     getNode(nodeId: string): NodeM | undefined {
         const nodeYMap = this.nodeDict.get(nodeId)
         if (!nodeYMap) return undefined
-        return new NodeM(nodeYMap, nodeId)
+        const nodeM =  new NodeM(nodeYMap, nodeId, this)
+        return nodeM
     }
 
     getRoot(): NodeM | undefined {
@@ -145,8 +150,9 @@ The data type shared between backend and frontend
 export class NodeM {
     ymap: YMap<any>;
     id: string
+    treeM: TreeM
 
-    static fromNodeJson(nodeJson: NodeJson): NodeM {
+    static fromNodeJson(nodeJson: NodeJson, treeM: TreeM): NodeM {
         const ymap = new YMap<any>();
         ymap.set("id", nodeJson.id);
         ymap.set("title", nodeJson.title);
@@ -166,12 +172,13 @@ export class NodeM {
         ymap.set("tabs", nodeJson.tabs)
         ymap.set("tools", nodeJson.tools)
 
-        return new NodeM(ymap, nodeJson.id)
+        return new NodeM(ymap, nodeJson.id, treeM)
     }
 
-    constructor(ymap: YMap<any>, nodeId: string) {
+    constructor(ymap: YMap<any>, nodeId: string, treeM: TreeM) {
         this.id = nodeId
         this.ymap = ymap
+        this.treeM = treeM
     }
 
     title(): string {
@@ -201,13 +208,13 @@ export class NodeM {
     getSnapshot(): string {
         const snapdoc = new YDoc()
         const newNodeYmap = snapdoc.getMap("node")
-        snapdoc.transact(()=>{
+        snapdoc.transact(() => {
             newNodeYmap.set("title", this.title())
             newNodeYmap.set("data", this.data())
             newNodeYmap.set("nodeTypeName", this.nodeTypeName())
             newNodeYmap.set("ydata", this.ydata().clone())
             newNodeYmap.set("children", new Y.Array<string>())
-            newNodeYmap.set("parent","")
+            newNodeYmap.set("parent", "")
         })
         const stateVector = Y.encodeStateAsUpdate(snapdoc)
         // Convert Uint8Array to base64 string
@@ -226,6 +233,6 @@ export class NodeM {
         const nodeYmap = snapdoc.getMap("node")
         const tempId = v4()
         nodeYmap.set("id", tempId)
-        return new NodeM(nodeYmap, tempId)
+        return new NodeM(nodeYmap, tempId, null)
     }
 }

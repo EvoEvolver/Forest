@@ -5,7 +5,6 @@ import {v4 as uuidv4} from 'uuid';
 import {updateChildrenCountAtom} from "./childrenCount";
 import {treeId} from "../appState";
 import {NodeJson, NodeM, TreeM, TreeVM} from "@forest/schema"
-import {supportedNodeTypes} from "@forest/node-types";
 
 const treeValueAtom: PrimitiveAtom<TreeVM> = atom()
 
@@ -19,7 +18,6 @@ export const treeAtom = atom(
             currentTree.deconstruct()
         }
         const treeVM = new TreeVM(treeM, get, set)
-        treeVM.supportedNodesTypes = supportedNodeTypes
         set(treeValueAtom, treeVM)
     }
 )
@@ -137,7 +135,7 @@ export const addNewNodeAtom = atom(null, (get, set, props: {
         data: {},
         nodeTypeName: props.nodeTypeName
     }
-    const newNodeM = NodeM.fromNodeJson(newNodeJson)
+    const newNodeM = NodeM.fromNodeJson(newNodeJson, treeM)
     treeM.insertNode(newNodeM, props.parentId, props.positionId)
 
     set(updateChildrenCountAtom, {});

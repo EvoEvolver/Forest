@@ -3,10 +3,8 @@ import {Map as YMap} from 'yjs'
 import {PrimitiveAtom} from "jotai";
 import {atom} from "jotai/index";
 import {getYjsBindedAtom, nodeMToNodeVMAtom} from "./node";
-import {NodeM, TreeM, TreeMetadata} from "./model";
+import {NodeM, SupportedNodeTypesMap, TreeM, TreeMetadata} from "./model";
 import {NodeType} from "./nodeType";
-
-export type SupportedNodeTypesMap = (typeName: string) => Promise<NodeType>
 
 /*
 The data type hold only by the frontend as ViewModel (VM) for components to consume
@@ -14,7 +12,6 @@ The data type hold only by the frontend as ViewModel (VM) for components to cons
 export class TreeVM {
     metadata: PrimitiveAtom<TreeMetadata>
     nodeDict: Record<string, PrimitiveAtom<NodeVM>>
-    supportedNodesTypes: SupportedNodeTypesMap
     treeM: TreeM
     get: any
     set: any
@@ -35,10 +32,10 @@ export class TreeVM {
             let promises: Promise<void>[] = [];
             ymapEvent.changes.keys.forEach((change, key) => {
                 if (change.action === 'add') {
-                    let newNode = new NodeM(nodeDictyMap.get(key), key);
+                    let newNode = new NodeM(nodeDictyMap.get(key), key, treeM);
                     promises.push(this.addNode(newNode));
                 } else if (change.action === 'update') {
-                    let newNode = new NodeM(nodeDictyMap.get(key), key);
+                    let newNode = new NodeM(nodeDictyMap.get(key), key, treeM);
                     this.deleteNode(key);
                     promises.push(this.addNode(newNode));
                 } else if (change.action === 'delete') {
@@ -151,7 +148,7 @@ export class NodeVM {
         if (yjsMapNode.has("tools"))
             nodeVM.tools = yjsMapNode.get("tools")
 
-        nodeVM.nodeType = await nodeVM.getNodeType(treeVM.supportedNodesTypes)
+        nodeVM.nodeType = await nodeVM.getNodeType(treeVM.treeM.supportedNodesTypes)
         nodeVM.nodeType.ydataInitialize(nodeVM)
 
         return nodeVM
