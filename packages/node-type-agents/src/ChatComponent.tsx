@@ -3,48 +3,30 @@ import React, {useState} from "react";
 import {useAtomValue} from "jotai/index";
 import {authTokenAtom} from "@forest/user-system/src/authStates";
 import {fetchChatResponse} from "./llm";
-import {BaseMessage, ChatViewImpl, NormalMessage} from "@forest/node-components/src/chat";
+import {BaseMessage, ChatViewImpl, NormalMessage, SystemMessage} from "@forest/node-components/src/chat";
 import {Box} from "@mui/material";
 import {AgentNodeType} from "./AgentNode";
 import {AgentCallingMessage, AgentResponseMessage} from "./Message";
 
-export function ChatComponent({node}: { node: NodeVM }) {
-    const [messages, setMessages] = useState<BaseMessage[]>([])
-    const [messageDisabled, setMessageDisabled] = useState(false)
-    const authToken = useAtomValue(authTokenAtom);
-    // Recursively send messages, handling agent calling
-    const sendMessagesRecursive = async (
-        message: { content: string; author: string; role: string; },
-        currentNode: NodeM,
-        parentMessages?: BaseMessage[]
-    ): Promise<string | null> => {
+async function getInitialMessages(nodeM: NodeM, userInput: string) {
+    const treeM = nodeM.treeM;
+    const agentChildren = treeM.getChildren(nodeM).filter((n) => n.nodeTypeName() === "AgentNodeType");
+    const nodeTypeName = nodeM.nodeTypeName()
+    const nodeType = await nodeM.treeM.supportedNodesTypes(nodeTypeName) as AgentNodeType;
+    const title = nodeM.title();
 
-        const treeM = currentNode.treeM;
-        const nodeM = currentNode;
-        const nodeTypeName = nodeM.nodeTypeName()
-        const nodeType = await nodeM.treeM.supportedNodesTypes(nodeTypeName) as AgentNodeType;
-        const agentChildren = treeM.getChildren(nodeM).filter((n) => n.nodeTypeName() === "AgentNodeType");
-        const title = nodeM.title();
-
-        // Use parentMessages for recursion, otherwise use state
-        const baseMessages = parentMessages || messages;
-        const userMsg = new NormalMessage({
-            content: message.content,
-            author: message.author,
-            role: message.role as any,
-            time: new Date().toISOString(),
-        });
-        const messagesAfterInput = [...baseMessages, userMsg];
-        if (!parentMessages) {
-            setMessages(messagesAfterInput);
-        }
-        const systemMessage = new NormalMessage({
-            content: `
+    const userMsg = new NormalMessage({
+        content: userInput,
+        author: "user",
+        role: "user",
+        time: new Date().toISOString(),
+    });
+    const systemMessage = new SystemMessage(`
 You are required to act as a smart AI agent.
 Your title as an agent is: ${title}
 Your context is the following:
 <context>
-${nodeType.agentPromptYText(currentNode).toString()}
+${nodeType.agentPromptYText(nodeM).toString()}
 </context>
 You can get help from the following agents:
 <agents>
@@ -67,71 +49,74 @@ You must only output JSON
  "wait_user": true or false, if true, you stop and wait user for further instruction
 }
 </user_response>
-`,
-            author: "",
-            role: "system",
-            time: new Date().toISOString(),
-        });
+`);
+    return [systemMessage, userMsg];
+}
 
-        const messagesToSubmit = [systemMessage, ...messagesAfterInput].map(m => m.toJson());
-        let response = await fetchChatResponse(messagesToSubmit as any, authToken);
 
-        // take the string between first { and last }
-        try {
-            response = response.substring(response.indexOf('{'), response.lastIndexOf('}') + 1);
-        } catch (e) {
-            // ignore if no json
+async function getNextStep(nodeM: NodeM, messages: BaseMessage[], authToken, setMessages): Promise<string | undefined> {
+    const treeM = nodeM.treeM;
+    const agentChildren = treeM.getChildren(nodeM).filter((n) => n.nodeTypeName() === "AgentNodeType");
+    const messagesToSubmit = messages.map(m => m.toJson());
+    let response = await fetchChatResponse(messagesToSubmit as any, authToken);
+    try {
+        response = response.substring(response.indexOf('{'), response.lastIndexOf('}') + 1);
+    } catch (e) {
+        // ignore if no json
+    }
+
+    // Try to parse the response as JSON
+    let parsedResponse: any;
+    try {
+        parsedResponse = JSON.parse(response);
+    } catch {
+        parsedResponse = {type: "user_response", message: response, wait_user: true};
+    }
+
+    if (parsedResponse.type === "agent_calling") {
+        const agentName = parsedResponse.agent_name;
+        const agentMessage = parsedResponse.message;
+        // Find the child agent node by title
+        const targetAgentNodeM = agentChildren.find(child => child.title() === agentName);
+        if (targetAgentNodeM) {
+            const agentCallingMessage = new AgentCallingMessage({
+                author: "Chatbot",
+                agentName: agentName,
+                message: agentMessage,
+            });
+            messages.push(agentCallingMessage);
+            setMessages([...messages])
+            const agentReply = await getAgentResponse(targetAgentNodeM, agentMessage, authToken, ()=>{});
+            
+            const agentResponseMessage = new AgentResponseMessage({
+                author: "Chatbot",
+                agentName: agentName,
+                result: agentReply,
+            });
+            messages.push(agentResponseMessage);
+            setMessages([...messages])
+
+        } else {
+            throw Error(`Agent ${agentName} not found`);
+        }
+    } else if (parsedResponse.type === "user_response") {
+        const messageContent = parsedResponse.message;
+        const waitUser = parsedResponse.wait_user ?? true;
+
+        if (messageContent) {
+            const responseMessage = new NormalMessage({
+                content: messageContent,
+                author: "Chatbot",
+                role: "assistant",
+                time: new Date().toISOString(),
+            });
+            messages.push(responseMessage);
+            setMessages([...messages])
         }
 
-        // Try to parse the response as JSON
-        let parsedResponse: any;
-        try {
-            parsedResponse = JSON.parse(response);
-        } catch {
-            parsedResponse = {type: "user_response", message: response, wait_user: true};
-        }
-
-        if (parsedResponse.type === "agent_calling") {
-            const agentName = parsedResponse.agent_name;
-            const agentMessage = parsedResponse.message;
-            // Find the child agent node by title
-            const targetAgentNodeM = agentChildren.find(child => child.title() === agentName);
-            if (targetAgentNodeM) {
-                // Convert NodeM to NodeVM for recursion
-                const agentCallingMessage = new AgentCallingMessage({
-                    author: "Chatbot",
-                    agentName: agentName,
-                    message: agentMessage,
-                });
-                setMessages(prev => [...prev, agentCallingMessage]);
-
-                const agentReply = await sendMessagesRecursive({
-                    content: agentMessage,
-                    author: "Agent",
-                    role: "user"
-                }, targetAgentNodeM, messagesAfterInput);
-
-                if (agentReply) {
-                    const agentResponseMessage = new AgentResponseMessage({
-                        author: "Chatbot",
-                        agentName: agentName,
-                        result: agentReply,
-                    });
-                    setMessages(prev => [...prev, agentResponseMessage]);
-                }
-
-                if (!parentMessages) {
-                    return null;
-                }
-                return agentReply;
-            } else {
-                const notFoundMsg = `Agent \"${parsedResponse.agent_name}\" not found.`;
-                return notFoundMsg;
-            }
-        } else if (parsedResponse.type === "user_response") {
-            const messageContent = parsedResponse.message;
-            const waitUser = parsedResponse.wait_user ?? true;
-
+        if (waitUser) {
+            return messageContent; // Recursive call, return result
+        } else {
             if (messageContent) {
                 const responseMessage = new NormalMessage({
                     content: messageContent,
@@ -139,64 +124,36 @@ You must only output JSON
                     role: "assistant",
                     time: new Date().toISOString(),
                 });
-                setMessages(prev => [...prev, responseMessage]);
+                messages.push(responseMessage);
+                setMessages([...messages])
             }
+        }
+    } else {
+        throw Error(`Unknown response type: ${parsedResponse.type}`);
+    }
+}
 
-            if (waitUser) {
-                if (!parentMessages) { // Top-level call
-                    return null;
-                }
-                return messageContent; // Recursive call, return result
-            } else {
-                // Continue execution
-                const continueMessage = {
-                    content: "Continue, what is the next step?",
-                    author: "system",
-                    role: "user"
-                };
-
-                const newHistory = [...messagesAfterInput];
-                if (messageContent) {
-                    const responseMessage = new NormalMessage({
-                        content: messageContent,
-                        author: "Chatbot",
-                        role: "assistant",
-                        time: new Date().toISOString(),
-                    });
-                    newHistory.push(responseMessage);
-                }
-                
-                const result = await sendMessagesRecursive(
-                    continueMessage,
-                    currentNode,
-                    newHistory
-                );
-
-                if (!parentMessages) { // Top-level call
-                    return null;
-                }
-                return result;
-            }
-        } else {
-            // fallback: treat as plain string
-            return response;
+async function getAgentResponse(nodeM: NodeM, userInput, authToken, setMessages) {
+    const messages = await getInitialMessages(nodeM, userInput);
+    setMessages([...messages]);
+    while (true) {
+        const messageContent = await getNextStep(nodeM, messages, authToken, setMessages);
+        if (messageContent) {
+            return messageContent;
         }
     }
+}
+
+export function ChatComponent({node}: { node: NodeVM }) {
+    const [messages, setMessages] = useState<BaseMessage[]>([])
+    const [messageDisabled, setMessageDisabled] = useState(false)
+    const authToken = useAtomValue(authTokenAtom);
+
 
     // Wrapper for ChatViewImpl: (message: Message) => Promise<void>
     const sendMessages = async (message: { content: string; author: string; role: string; }) => {
         setMessageDisabled(true);
-        const reply = await sendMessagesRecursive(message, node.nodeM);
-        if (reply) {
-            setMessages(prev => {
-                return [...prev, new NormalMessage({
-                    content: reply,
-                    author: "Chatbot",
-                    role: "assistant",
-                    time: new Date().toISOString(),
-                })];
-            });
-        }
+        await getAgentResponse(node.nodeM, message.content, authToken, setMessages)
         setMessageDisabled(false);
     }
 

@@ -53,6 +53,15 @@ export class NormalMessage extends BaseMessage {
     }
 }
 
+export class SystemMessage extends BaseMessage {
+    constructor(content: string) {
+        super({content, author: "", role: "system", time: new Date().toISOString()});
+    }
+    render(): React.ReactNode {
+        return undefined;
+    }
+}
+
 // Types for Messages
 export interface Message {
     content: string;
