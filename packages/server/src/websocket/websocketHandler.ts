@@ -26,12 +26,7 @@ export class WebSocketHandler {
             const garbageCollect = true;
             const doc = getYDoc(treeId, garbageCollect);
 
-            // Calculate node count from the document
-            const nodeDict = doc.getMap("nodeDict");
-            const nodeCount = nodeDict.size;
 
-            // Update last accessed time and node count; do nothing if it fails
-            this.treeMetadataManager.updateLastAccessedAndNodeCount(treeId, nodeCount).catch(() => {});
 
             setupWSConnection(conn, req, {
                 doc: doc,
@@ -39,7 +34,9 @@ export class WebSocketHandler {
             });
             
             // Check if upgrade needed
-            this.checkAndUpgrade(doc, treeId);
+            setTimeout(() => {
+                this.checkAndUpgrade(doc, treeId);
+            }, 3000);
         });
     }
 
@@ -58,6 +55,7 @@ export class WebSocketHandler {
             if (rootNode) {
                 const title = rootNode.get("title");
                 const nodeCount = nodeDict.size;
+                this.treeMetadataManager.updateLastAccessed(treeId).catch(() => {});
                 this.treeMetadataManager.updateTreeTitle(treeId, title);
                 this.treeMetadataManager.updateNodeCount(treeId, nodeCount).catch(() => {});
             }
