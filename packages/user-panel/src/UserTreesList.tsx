@@ -266,6 +266,11 @@ export const UserTreesList = ({}) => {
                                 <TableRow>
                                     <TableCell sx={{py: 1}}>
                                         <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
+                                            Id
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell sx={{py: 1}}>
+                                        <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
                                             Details
                                         </Typography>
                                     </TableCell>
@@ -290,6 +295,24 @@ export const UserTreesList = ({}) => {
                                 {trees.map((tree) => (
                                     <TableRow key={tree.treeId} sx={{'&:hover': {backgroundColor: 'action.hover'}}}>
                                         <TableCell sx={{py: 0.5}}>
+                                            <Typography
+                                                variant="subtitle2"
+                                                fontWeight={600}
+                                                fontSize="0.8rem"
+                                                sx={{
+                                                    cursor: 'pointer',
+                                                    color: 'primary.main',
+                                                    '&:hover': {
+                                                        textDecoration: 'underline'
+                                                    }
+                                                }}
+                                                onClick={() => handleOpenTree(tree.treeId)}
+                                            >
+                                                {tree.treeId.slice(0, 8) + '...'}
+                                            </Typography>
+
+                                        </TableCell>
+                                        <TableCell sx={{py: 0.5}}>
                                             <Box>
                                                 <Typography
                                                     variant="subtitle2"
@@ -304,7 +327,7 @@ export const UserTreesList = ({}) => {
                                                     }}
                                                     onClick={() => handleOpenTree(tree.treeId)}
                                                 >
-                                                    {tree.title}
+                                                    {(tree.title?.trim() ? tree.title : 'Untitled')}
                                                 </Typography>
                                                 <Typography
                                                     color="textSecondary"

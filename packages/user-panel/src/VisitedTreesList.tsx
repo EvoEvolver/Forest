@@ -195,6 +195,11 @@ export const VisitedTreesList = () => {
                         >
                             <TableHead>
                                 <TableRow>
+                                    <TableCell sx={{py: 1}}>
+                                        <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
+                                            Id
+                                        </Typography>
+                                    </TableCell>
                                     <TableCell sx={{ py: 1 }}>
                                         <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
                                             Details
@@ -220,6 +225,24 @@ export const VisitedTreesList = () => {
                             <TableBody>
                                 {trees.map((tree) => (
                                     <TableRow key={tree.treeId} sx={{ '&:hover': { backgroundColor: 'action.hover' } }}>
+                                        <TableCell sx={{py: 0.5}}>
+                                            <Typography
+                                                variant="subtitle2"
+                                                fontWeight={600}
+                                                fontSize="0.8rem"
+                                                sx={{
+                                                    cursor: 'pointer',
+                                                    color: 'primary.main',
+                                                    '&:hover': {
+                                                        textDecoration: 'underline'
+                                                    }
+                                                }}
+                                                onClick={() => handleOpenTree(tree.treeId)}
+                                            >
+                                                {tree.treeId.slice(0, 8) + '...'}
+                                            </Typography>
+
+                                        </TableCell>
                                         <TableCell sx={{ py: 0.5 }}>
                                             <Box>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -236,7 +259,7 @@ export const VisitedTreesList = () => {
                                                         }}
                                                         onClick={() => handleOpenTree(tree.treeId)}
                                                     >
-                                                        {tree.title}
+                                                        {(tree.title?.trim() ? tree.title : 'Untitled')}
                                                     </Typography>
                                                     <Chip
                                                         sx={{
