@@ -50,6 +50,7 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
     React.useEffect(() => {
         if (currentIssue) {
             const assigneeUsers = currentIssue.assignees || [];
+            const reviewerUsers = currentIssue.reviewers || [];
             setEditData({
                 title: currentIssue.title,
                 description: currentIssue.description,
@@ -60,6 +61,10 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
                 assignees: assigneeUsers.map(a => ({
                     userId: a.userId,
                     username: a.username
+                })),
+                reviewers: reviewerUsers.map(r => ({
+                    userId: r.userId,
+                    username: r.username
                 })),
             });
         }
@@ -77,6 +82,7 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
     const handleCancelEdit = () => {
         setIsEditing(false);
         const assigneeUsers = currentIssue.assignees || [];
+        const reviewerUsers = currentIssue.reviewers || [];
         setEditData({
             title: currentIssue.title,
             description: currentIssue.description,
@@ -87,6 +93,10 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
             assignees: assigneeUsers.map(a => ({
                 userId: a.userId,
                 username: a.username
+            })),
+            reviewers: reviewerUsers.map(r => ({
+                userId: r.userId,
+                username: r.username
             })),
         });
     };

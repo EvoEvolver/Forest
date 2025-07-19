@@ -39,7 +39,7 @@ export class ReminderService {
                     $gte: today,
                     $lt: dayAfterTomorrow
                 },
-                status: {$in: ['open', 'in_progress']},
+                status: {$in: ['open', 'in_progress', 'in_review']},
                 'assignees.0': {$exists: true}
             }).lean();
 

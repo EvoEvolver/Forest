@@ -42,6 +42,13 @@ export class EmailService {
         return this.sendEmail(assigneeEmail, subject, htmlContent);
     }
 
+    async sendReviewerNotification(reviewerEmail: string, reviewerName: string, issue: Issue) {
+        const subject = `👀 You've been requested to review: ${issue.title}`;
+        const htmlContent = this.generateReviewerEmailTemplate(reviewerName, issue);
+
+        return this.sendEmail(reviewerEmail, subject, htmlContent);
+    }
+
     async sendDeadlineReminder(assigneeEmail: string, assigneeName: string, issue: Issue) {
         const dueDate = new Date(issue.dueDate!);
         const isToday = dueDate.toDateString() === new Date().toDateString();
@@ -102,6 +109,69 @@ export class EmailService {
         <div class="header">
           <h2>🎯 New Issue Assignment</h2>
           <p>Hi ${assigneeName}, you've been assigned to a new issue!</p>
+        </div>
+        
+        <p><strong>Title:</strong> ${issue.title}</p>
+        
+        <p><strong>Priority:</strong> ${priorityEmoji[issue.priority || 'medium']} <span class="priority-${issue.priority}">${(issue.priority || 'medium').toUpperCase()}</span></p>
+        
+        ${issue.dueDate ? `<p><strong>Due Date:</strong> ${new Date(issue.dueDate).toLocaleDateString()}</p>` : ''}
+        
+        <p><strong>Description:</strong></p>
+        <div class="issue-details">
+          ${issue.description || 'No description provided.'}
+        </div>
+        
+        <div style="text-align: center;">
+          <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/issues?treeId=${issue.treeId}" class="button" style="background: #1976d2 !important; color: white !important;">
+            View Issue
+          </a>
+        </div>
+        
+        <div class="footer">
+          <p>This is an automated notification from Issue Tracker.</p>
+          <p>Tree ID: ${issue.treeId}</p>
+        </div>
+      </body>
+      </html>
+    `;
+    }
+
+    private generateReviewerEmailTemplate(reviewerName: string, issue: Issue): string {
+        const priorityEmoji = {
+            low: '🟢',
+            medium: '🟡',
+            high: '🟠',
+            urgent: '🔴'
+        };
+
+        return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+          .priority-${issue.priority} { color: ${this.getPriorityColor(issue.priority)}; font-weight: bold; }
+          .button { 
+            background: #1976d2 !important; 
+            color: white !important; 
+            padding: 12px 24px; 
+            text-decoration: none; 
+            border-radius: 4px; 
+            display: inline-block; 
+            margin: 20px 0;
+            border: none;
+          }
+          .button:hover { background: #1565c0 !important; }
+          .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; }
+          .issue-details { background: #f8f9fa; padding: 15px; border-radius: 4px; margin: 15px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h2>👀 Review Request</h2>
+          <p>Hi ${reviewerName}, you've been requested to review an issue!</p>
         </div>
         
         <p><strong>Title:</strong> ${issue.title}</p>

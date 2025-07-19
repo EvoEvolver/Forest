@@ -42,7 +42,7 @@ const IssueSchema = new Schema<IssueDocument>({
     },
     status: {
         type: String,
-        enum: ['open', 'in_progress', 'resolved', 'closed'],
+        enum: ['open', 'in_progress', 'in_review', 'resolved', 'closed'],
         default: 'open',
         index: true
     },
@@ -59,6 +59,11 @@ const IssueSchema = new Schema<IssueDocument>({
         username: {type: String}
     },
     assignees: [{
+        userId: {type: String},
+        username: {type: String},
+        assignedAt: {type: Date, default: Date.now}
+    }],
+    reviewers: [{
         userId: {type: String},
         username: {type: String},
         assignedAt: {type: Date, default: Date.now}

@@ -3,7 +3,7 @@ export interface Issue {
     treeId: string;                  // Associated tree ID
     title: string;                   // Issue title
     description: string;             // Detailed description
-    status: 'open' | 'in_progress' | 'resolved' | 'closed';
+    status: 'open' | 'in_progress' | 'in_review' | 'resolved' | 'closed';
     priority?: 'low' | 'medium' | 'high' | 'urgent';  // Priority level
     dueDate?: Date;                  // Due date for the issue
     createdAt: Date;                 // Creation timestamp
@@ -13,6 +13,11 @@ export interface Issue {
         username?: string;             // Optional: cached username
     };
     assignees: Array<{
+        userId: string;
+        username?: string;             // Optional: cached username
+        assignedAt: Date;              // Assignment timestamp
+    }>;
+    reviewers?: Array<{
         userId: string;
         username?: string;             // Optional: cached username
         assignedAt: Date;              // Assignment timestamp

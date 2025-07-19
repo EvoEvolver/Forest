@@ -42,6 +42,7 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
         updatedAt: new Date().toISOString(),
         creator: {userId: '', username: ''},
         assignees: [],
+        reviewers: [],
         nodes: nodeId ? [{nodeId, nodeType: undefined}] : [],
         tags: [],
         comments: []
@@ -220,6 +221,7 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
                 dueDate: updates.dueDate,
                 tags: updates.tags || [],
                 assignees: updates.assignees || [],
+                reviewers: updates.reviewers || [],
                 nodes: updates.nodes || (nodeId ? [{nodeId, nodeType: undefined}] : [])
             };
             await handleCreateIssue(createData);

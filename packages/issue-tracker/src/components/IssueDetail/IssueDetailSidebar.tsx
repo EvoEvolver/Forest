@@ -51,6 +51,8 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
                 return '#1976d2';
             case 'in_progress':
                 return '#ed6c02';
+            case 'in_review':
+                return '#673ab7';
             case 'resolved':
                 return '#2e7d32';
             case 'closed':
@@ -202,6 +204,7 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
                         >
                             <MenuItem value="open">🔵 Open</MenuItem>
                             <MenuItem value="in_progress">🟠 In Progress</MenuItem>
+                            <MenuItem value="in_review">🟣 In Review</MenuItem>
                             <MenuItem value="resolved">🟢 Resolved</MenuItem>
                             <MenuItem value="closed">⚫ Closed</MenuItem>
                         </Select>
@@ -417,6 +420,37 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
                         username: u.username
                     }));
                     onEditDataChange({assignees: assigneeUpdates});
+                }}
+            />
+
+            {/* Reviewers */}
+            <AssigneeManager
+                assignees={(issue.reviewers || []).map(a => ({
+                    userId: a.userId,
+                    username: a.username || a.userId,
+                    email: undefined,
+                    avatar: null
+                }))}
+                onAssigneesChange={() => {
+                }}
+                editable={true}
+                variant="detail"
+                title="Reviewers"
+                disabled={loading}
+                treeId={issue.treeId}
+                isEditing={isEditing}
+                editingAssignees={(editData.reviewers || []).map(a => ({
+                    userId: a.userId,
+                    username: a.username || a.userId,
+                    email: undefined,
+                    avatar: null
+                }))}
+                onEditingAssigneesChange={(users) => {
+                    const reviewerUpdates = users.map(u => ({
+                        userId: u.userId,
+                        username: u.username
+                    }));
+                    onEditDataChange({reviewers: reviewerUpdates});
                 }}
             />
 

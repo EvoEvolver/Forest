@@ -11,6 +11,8 @@ const getStatusColor = (status: string): "default" | "primary" | "secondary" | "
             return 'info';
         case 'in_progress':
             return 'warning';
+        case 'in_review':
+            return 'secondary';
         case 'resolved':
             return 'success';
         case 'closed':

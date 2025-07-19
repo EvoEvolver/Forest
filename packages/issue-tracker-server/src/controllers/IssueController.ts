@@ -30,7 +30,7 @@ async function getUserEmail(userId: string): Promise<{ email: string | null, use
     }
 }
 
-// Helper function to send assignment notifications to assignees
+
 async function sendAssignmentNotifications(assigneeIds: string[], issue: any, context: 'create' | 'update' = 'create', excludeUserId?: string) {
     if (!assigneeIds || assigneeIds.length === 0) {
         return;
@@ -52,6 +52,37 @@ async function sendAssignmentNotifications(assigneeIds: string[], issue: any, co
             if (email) {
                 await emailService.sendAssignmentNotification(email, username, issue);
                 console.log(`Sent ${context} assignment notification to ${email} for issue: ${issue.title}`);
+            } else {
+                console.warn(`No email found for assigned user ${userId}`);
+            }
+        } catch (error) {
+            console.error(`Failed to send ${context} assignment email to user ${userId}:`, error);
+        }
+    }
+}
+
+// Helper function to send assignment notifications to reviewers
+async function sendReviewerNotifications(reviewerIds: string[], issue: any, context: 'create' | 'update' = 'create', excludeUserId?: string) {
+    if (!reviewerIds || reviewerIds.length === 0) {
+        return;
+    }
+
+    // Filter out the user who created/updated the issue to avoid self-notification
+    const filteredReviewerIds = excludeUserId ? reviewerIds.filter(id => id !== excludeUserId) : reviewerIds;
+
+    if (filteredReviewerIds.length === 0) {
+        console.log(`No reviewer notifications to send for issue: ${issue.title} (all reviewers excluded)`);
+        return;
+    }
+
+    console.log(`Sending ${context} reviewer notifications for ${filteredReviewerIds.length} reviewers for issue: ${issue.title}`);
+
+    for (const userId of filteredReviewerIds) {
+        try {
+            const {email, username} = await getUserEmail(userId);
+            if (email) {
+                await emailService.sendReviewerNotification(email, username, issue);
+                console.log(`Sent ${context} reviewer notification to ${email} for issue: ${issue.title}`);
             } else {
                 console.warn(`No email found for assigned user ${userId}`);
             }
@@ -85,6 +116,15 @@ async function sendCommentNotifications(issue: any, comment: any, commenterUserI
         });
     }
 
+    // Add all reviewers (if not the commenter)
+    if (issue.reviewers && issue.reviewers.length > 0) {
+        issue.reviewers.forEach((reviewer: any) => {
+            if (reviewer.userId && reviewer.userId !== commenterUserId) {
+                recipientUserIds.add(reviewer.userId);
+            }
+        });
+    }
+
     console.log(`Sending comment notifications to ${recipientUserIds.size} users for issue: ${issue.title}`);
 
     // Send notifications to all recipients
@@ -102,6 +142,7 @@ async function sendCommentNotifications(issue: any, comment: any, commenterUserI
         }
     }
 }
+
 
 // Get all issues for a specific tree
 export const getIssuesByTree = async (req: Request, res: Response) => {
@@ -148,7 +189,7 @@ export const getIssueById = async (req: Request, res: Response) => {
 export const createIssue = async (req: Request, res: Response) => {
     try {
         const Issue = await getIssueModel();
-        const {treeId, title, description, priority, dueDate, creator, assignees, nodes, tags} = req.body;
+        const {treeId, title, description, priority, dueDate, creator, assignees, reviewers, nodes, tags} = req.body;
 
         console.log('Creating issue with data:', {
             treeId,
@@ -158,6 +199,7 @@ export const createIssue = async (req: Request, res: Response) => {
             dueDate,
             creator,
             assignees,
+            reviewers,
             nodes,
             tags
         });
@@ -171,6 +213,7 @@ export const createIssue = async (req: Request, res: Response) => {
             dueDate: dueDate || undefined,
             creator,
             assignees: assignees || [],
+            reviewers: reviewers || [],
             nodes: nodes || [],
             tags: tags || [],
             comments: []
@@ -183,6 +226,12 @@ export const createIssue = async (req: Request, res: Response) => {
             const assigneeIds = assignees.map((a: any) => a.userId);
             // Use setImmediate to avoid blocking the response
             setImmediate(() => sendAssignmentNotifications(assigneeIds, savedIssue.toObject(), 'create', creator.userId));
+        }
+
+        // Send notifications to reviewers if the issue is in review
+        if (savedIssue.status === 'in_review' && reviewers && reviewers.length > 0) {
+            const reviewerIds = reviewers.map((r: any) => r.userId);
+            setImmediate(() => sendReviewerNotifications(reviewerIds, savedIssue.toObject(), 'create', creator.userId));
         }
 
         res.status(201).json(savedIssue);
@@ -234,6 +283,29 @@ export const updateIssue = async (req: Request, res: Response) => {
             if (newAssigneeIds.length > 0) {
                 // Use setImmediate to avoid blocking the response
                 setImmediate(() => sendAssignmentNotifications(newAssigneeIds, updatedIssue.toObject(), 'update', updates.updatedBy));
+            }
+        }
+
+        // Check for new reviewers and send notification emails
+        if (updates.reviewers) {
+            console.log('try to send reviewer notifications');
+            const originalReviewerIds = originalIssue.reviewers.map(r => r.userId);
+            const newReviewerIds = updates.reviewers
+                .map((r: any) => r.userId)
+                .filter((id: string) => !originalReviewerIds.includes(id));
+
+            // Send emails to new reviewers only if the issue is in review
+            if (newReviewerIds.length > 0 && updatedIssue.status === 'in_review') {
+                // Use setImmediate to avoid blocking the response
+                setImmediate(() => sendReviewerNotifications(newReviewerIds, updatedIssue.toObject(), 'update', updates.updatedBy));
+            }
+        }
+
+        // If status changed to 'in_review', send notifications to all reviewers
+        if (updates.status === 'in_review' && originalIssue.status !== 'in_review') {
+            const reviewerIds = updatedIssue.reviewers.map((r: any) => r.userId);
+            if (reviewerIds.length > 0) {
+                setImmediate(() => sendReviewerNotifications(reviewerIds, updatedIssue.toObject(), 'update', updates.updatedBy));
             }
         }
 

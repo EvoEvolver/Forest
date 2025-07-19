@@ -20,13 +20,14 @@ export interface Issue {
     treeId: string;
     title: string;
     description: string;
-    status: 'open' | 'in_progress' | 'resolved' | 'closed';
+    status: 'open' | 'in_progress' | 'in_review' | 'resolved' | 'closed';
     priority: 'low' | 'medium' | 'high' | 'urgent';
     dueDate?: string;
     createdAt: string;
     updatedAt: string;
     creator: User;
     assignees?: User[];
+    reviewers?: User[];
     nodes?: Node[];
     tags?: string[];
     comments?: Comment[];
@@ -46,17 +47,19 @@ export interface CreateIssueRequest {
     dueDate?: string;
     tags?: string[];
     assignees?: AssigneeRequest[];
+    reviewers?: AssigneeRequest[];
     nodes?: { nodeId: string; nodeType?: string }[];
 }
 
 export interface UpdateIssueRequest {
     title?: string;
     description?: string;
-    status?: 'open' | 'in_progress' | 'resolved' | 'closed';
+    status?: 'open' | 'in_progress' | 'in_review' | 'resolved' | 'closed';
     priority?: 'low' | 'medium' | 'high' | 'urgent';
     dueDate?: string;
     tags?: string[];
     assignees?: AssigneeRequest[];
+    reviewers?: AssigneeRequest[];
     nodes?: { nodeId: string; nodeType?: string }[];
 }
 
