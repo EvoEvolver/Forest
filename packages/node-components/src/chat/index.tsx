@@ -66,12 +66,11 @@ export interface Message {
     content: string;
     role: "assistant" | "user";
     author: string;
-    time: string;
 }
 
 // Props for ChatViewImpl component
 interface ChatViewImplProps {
-    sendMessage: (message: { content: string; author: string; role: string; time: string; }) => Promise<void>;
+    sendMessage: (message: { content: string; author: string; role: string; }) => Promise<void>;
     messages: BaseMessage[];
     messageDisabled: boolean;
 }
@@ -97,8 +96,7 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewI
             sendMessage({
                 content: message,
                 author: username,
-                role: "user",
-                time: Date.now().toString()
+                role: "user"
             });
             setMessage("");
         }
@@ -114,7 +112,6 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewI
                 display: "flex",
                 flexDirection: "column",
                 height: "95%",
-                maxHeight: "500px",
                 position: "relative", // Enable absolute positioning for child elements
             }}
         >

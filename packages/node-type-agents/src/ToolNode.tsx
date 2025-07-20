@@ -21,8 +21,13 @@ export class AgentToolNodeType extends NodeType {
         if (!yText) {
             return null;
         }
-        const apiSpec = jsonToSpec(yText.toString());
-        return apiSpec;
+        try {
+            const apiSpec = jsonToSpec(yText.toString());
+            return apiSpec;
+        }
+        catch (e) {
+            return null
+        }
     }
 
     render(node: NodeVM): React.ReactNode {
@@ -64,6 +69,9 @@ export class AgentToolNodeType extends NodeType {
 
     renderPrompt(node: NodeM): string {
         const apiSpec = this.getApiSpec(node);
+        if (!apiSpec || !apiSpec.endpoints || apiSpec.endpoints.length === 0) {
+            return null;
+        }
         const endpoint = apiSpec.endpoints[0];
         const title = node.title()
         const description = endpoint.description || "No description provided.";
@@ -115,7 +123,6 @@ function jsonToSpec(json: string): any {
         const apiSpec = parseApiSpec(dereferencedJson);
         return apiSpec
     } catch (e) {
-        console.error("Error parsing OpenAPI spec:", e);
         return null;
     }
 }

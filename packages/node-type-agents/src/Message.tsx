@@ -1,68 +1,7 @@
 import React from "react";
 import {Box, Card, CardContent, Typography} from '@mui/material';
-import {BaseMessage, BaseMessageProps} from "@forest/node-components/src/chat";
+import {BaseMessage} from "@forest/node-components/src/chat";
 
-
-export interface ToolCallMessageProps extends BaseMessageProps {
-    toolName: string;
-    parameters: Record<string, any>;
-    result?: any;
-}
-
-export class ToolCallMessage extends BaseMessage {
-    toolName: string;
-    parameters: Record<string, any>;
-    result?: any;
-
-    constructor({toolName, parameters, result, ...baseProps}: ToolCallMessageProps) {
-        super(baseProps);
-        this.toolName = toolName;
-        this.parameters = parameters;
-        this.result = result;
-    }
-
-    render(): React.ReactNode {
-        return (
-            <Box sx={{display: 'flex', justifyContent: 'flex-start', marginBottom: 2}}>
-                <Card sx={{bgcolor: 'white'}}>
-                    <CardContent>
-                        <Typography variant="subtitle2" gutterBottom>
-                            Tool Call: {this.toolName}
-                        </Typography>
-                        <Box component="pre" sx={{
-                            whiteSpace: 'pre-wrap',
-                            wordBreak: 'break-all',
-                            padding: 1,
-                            borderRadius: 1
-                        }}>
-                            <Typography variant="body2">
-                                <b>Input:</b> {JSON.stringify(this.parameters, null, 2)}
-                            </Typography>
-                        </Box>
-                        {this.result && (
-                            <Box component="pre" sx={{
-                                marginTop: 1,
-                                whiteSpace: 'pre-wrap',
-                                wordBreak: 'break-all',
-                                padding: 1,
-                                borderRadius: 1
-                            }}>
-                                <Typography variant="body2">
-                                    {JSON.stringify(this.result, null, 2)}
-                                </Typography>
-                            </Box>
-                        )}
-                        {this.content && <Typography variant="body1" sx={{marginTop: 1}}>{this.content}</Typography>}
-                    </CardContent>
-                </Card>
-            </Box>
-        );
-    }
-
-    toJson(): object {
-        return super.toJson();
-    }
-}
 
 export interface AgentCallingMessageProps {
     agentName: string;
@@ -123,7 +62,7 @@ export class AgentResponseMessage extends BaseMessage {
     result: string;
 
     constructor({agentName, result, author}: AgentResponseMessageProps) {
-        super({content: `Response from ${agentName}: ${result} `, author: author, role: 'assistant', time: ''});
+        super({content: `You got response from ${agentName}: ${result} `, author: author, role: 'user', time: ''});
         this.agentName = agentName;
         this.result = result;
     }
@@ -154,5 +93,101 @@ export class AgentResponseMessage extends BaseMessage {
                 </Card>
             </Box>
         );
+    }
+}
+
+export class ToolCallingMessage extends BaseMessage {
+    toolName: string;
+    parameters: Record<string, any>;
+
+    constructor({toolName, parameters, author}: ToolCallingMessageProps) {
+        super({content: `Calling Tool ${toolName} with parameters ${parameters}`, author, role: 'assistant', time: ''});
+        this.toolName = toolName;
+        this.parameters = parameters;
+    }
+
+    render(): React.ReactNode {
+        return (
+            <Box sx={{display: 'flex', justifyContent: 'flex-start', marginBottom: 2}}>
+                <Card sx={{bgcolor: 'white'}}>
+                    <CardContent>
+                        <Typography variant="subtitle2" gutterBottom>
+                            Tool Call: <b>{this.toolName}</b>
+                        </Typography>
+                        <Box component="pre" sx={{
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-all',
+                            padding: 1,
+                            borderRadius: 1,
+                            marginTop: 1
+                        }}>
+                            <Typography variant="body2">
+                                <b>Parameters:</b> {JSON.stringify(this.parameters, null, 2)}
+                            </Typography>
+                        </Box>
+                    </CardContent>
+                </Card>
+            </Box>
+        );
+    }
+
+    toJson(): object {
+        return {
+            content: this.content,
+            role: this.role
+        };
+    }
+}
+
+export class ToolResponseMessage extends BaseMessage {
+    toolName: string;
+    response: any;
+
+    constructor({toolName, response, author}: ToolResponseMessageProps) {
+        super({
+            content: `You got response from tool ${toolName}. The response is ${JSON.stringify(response)}`,
+            author,
+            role: 'assistant',
+            time: ''
+        });
+        this.toolName = toolName;
+        this.response = response;
+    }
+
+    render(): React.ReactNode {
+        return (
+            <Box sx={{display: 'flex', justifyContent: 'flex-start', marginBottom: 2}}>
+                <Card sx={{bgcolor: 'white'}}>
+                    <CardContent>
+                        <Typography variant="subtitle2" gutterBottom>
+                            Tool Response: <b>{this.toolName}</b>
+                        </Typography>
+                        {this.endpoint && (
+                            <Typography variant="body2">
+                                <b>Endpoint:</b> {this.endpoint}
+                            </Typography>
+                        )}
+                        <Box component="pre" sx={{
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-all',
+                            padding: 1,
+                            borderRadius: 1,
+                            marginTop: 1
+                        }}>
+                            <Typography variant="body2">
+                                <b>Response:</b> {JSON.stringify(this.response, null, 2)}
+                            </Typography>
+                        </Box>
+                    </CardContent>
+                </Card>
+            </Box>
+        );
+    }
+
+    toJson(): object {
+        return {
+            content: this.content,
+            role: this.role
+        };
     }
 }

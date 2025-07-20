@@ -30,13 +30,13 @@ export function ChatComponent({node}: { node: NodeVM }) {
             content: message.content,
             author: "user",
             role: "user",
-            time: new Date().toISOString(),
+            time: new Date().toISOString()
         });
         invokeAgent(node.nodeM, [userMsg])
     }
 
     return (
-        <Box sx={{width: "100%", height: "400px"}}>
+        <Box sx={{width: "100%", height: "800px"}}>
             <ChatViewImpl messages={messages} sendMessage={sendMessages} messageDisabled={messageDisabled}/>
         </Box>
     );

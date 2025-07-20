@@ -2,7 +2,7 @@ import {NodeM} from "@forest/schema";
 import {AgentNodeType} from "../AgentNode";
 import {BaseMessage, NormalMessage, SystemMessage} from "@forest/node-components/src/chat";
 import {fetchChatResponse} from "../llm";
-import {AgentCallingMessage, AgentResponseMessage} from "../Message";
+import {AgentCallingMessage, AgentResponseMessage, ToolCallingMessage, ToolResponseMessage} from "../Message";
 import {agentSessionState} from "../sessionState";
 import {AgentToolNodeType} from "../ToolNode";
 
@@ -10,10 +10,55 @@ async function getSystemMessage(nodeM: NodeM) {
     const treeM = nodeM.treeM;
     const agentChildren = treeM.getChildren(nodeM).filter((n) => n.nodeTypeName() === "AgentNodeType");
     const toolChildren = treeM.getChildren(nodeM).filter((n) => n.nodeTypeName() === "AgentToolNodeType");
-    const nodeTypeName = nodeM.nodeTypeName()
+    const nodeTypeName = nodeM.nodeTypeName();
     const agentNodeType = await nodeM.treeM.supportedNodesTypes(nodeTypeName) as AgentNodeType;
-    const toolNodeType = await nodeM.treeM.supportedNodesTypes("AgentToolNodeType") as AgentToolNodeType
+    const toolNodeType = await nodeM.treeM.supportedNodesTypes("AgentToolNodeType") as AgentToolNodeType;
     const title = nodeM.title();
+
+    let agentsSection = "";
+    if (agentChildren.length > 0) {
+        agentsSection = `<agents>
+${agentChildren.map(child => child.title()).join('\n')}
+</agents>
+`;
+    }
+
+    let toolsSection = "";
+    if (toolChildren.length > 0) {
+        toolsSection = `<tools>
+${toolChildren.map(child => toolNodeType.renderPrompt(child)).join('\n-------\n')}
+</tools>
+`;
+    }
+
+    let formatsSection = "";
+    if (agentChildren.length > 0) {
+        formatsSection += `<agent_calling>
+{
+ "type": "agent_calling",
+ "agent_name": agent name in string,
+ "message": the message to the agent
+}
+</agent_calling>
+`;
+    }
+    if (toolChildren.length > 0) {
+        formatsSection += `<tool_calling>
+{
+ "type": "tool_calling",
+ "tool_name": tool name in string,
+ "input": the input to the tool,
+}
+</tool_calling>
+`;
+    }
+    formatsSection += `<answer_user>
+{
+ "type": "answer_user",
+ "message": the message to the user
+}
+</answer_user>
+`;
 
     const systemMessage = new SystemMessage(`
 You are required to act as a smart AI agent.
@@ -22,38 +67,10 @@ Your context is the following:
 <context>
 ${agentNodeType.agentPromptYText(nodeM).toString()}
 </context>
-You can get help from the following agents:
-<agents>
-${agentChildren.map(child => child.title()).join('\n')}
-</agents>
-<tools>
-${toolChildren.map(child => toolNodeType.renderPrompt(child)).join('\n-------\n')}
-</tools>
-You are required to response to the request from the user.
+${agentsSection}${toolsSection}You are required to response to the request from the user.
 Your response must adopt one of the following JSON formats
 You must only output JSON
-<agent_calling>
-{
- "type": "agent_calling",
- "agent_name": agent name in string,
- "message": the message to the agent
-}
-</agent_calling>
-<tool_calling>
-{
- "type": "tool_calling",
- "tool_name": tool name in string,
- "input": the input to the tool,
-}
-</tool_calling>
-<user_response>
-{
- "type": "user_response",
- "message": the message to the user,
- "finish": true or false, make it true if you do not need to take any further actions
-}
-</user_response>
-`);
+${formatsSection}`);
     return systemMessage;
 }
 
@@ -64,10 +81,10 @@ async function getNextStep(nodeM: NodeM): Promise<string | undefined> {
     const agentChildren = treeM.getChildren(nodeM).filter((n) => n.nodeTypeName() === "AgentNodeType");
     const toolNodeType = await treeM.supportedNodesTypes("AgentToolNodeType") as AgentToolNodeType;
     const systemMessage = await getSystemMessage(nodeM);
-    const messagesWithSystem = [systemMessage, ...messages];
+    const messagesWithSystem = [...messages, systemMessage];
     const messagesToSubmit = messagesWithSystem.map(m => m.toJson());
     console.log(messagesToSubmit)
-    let response = await fetchChatResponse(messagesToSubmit as any, "o4-mini", agentSessionState.authToken);
+    let response = await fetchChatResponse(messagesToSubmit as any, "gpt-4.1", agentSessionState.authToken);
     console.log(response)
     try {
         response = response.substring(response.indexOf('{'), response.lastIndexOf('}') + 1);
@@ -80,7 +97,7 @@ async function getNextStep(nodeM: NodeM): Promise<string | undefined> {
     try {
         parsedResponse = JSON.parse(response);
     } catch {
-        parsedResponse = {type: "user_response", message: response, wait_user: true};
+        parsedResponse = {type: "answer_user", message: response, wait_user: true};
     }
 
     if (parsedResponse.type === "agent_calling") {
@@ -113,14 +130,12 @@ async function getNextStep(nodeM: NodeM): Promise<string | undefined> {
         } else {
             throw Error(`Agent ${agentName} not found`);
         }
-    } else if (parsedResponse.type === "user_response") {
+    } else if (parsedResponse.type === "answer_user") {
         const messageContent = parsedResponse.message;
-        const waitUser = parsedResponse.finish ?? true;
-
         if (messageContent) {
             const responseMessage = new NormalMessage({
                 content: messageContent,
-                author: "Chatbot",
+                author: nodeM.title(),
                 role: "assistant",
                 time: new Date().toISOString(),
             });
@@ -133,16 +148,16 @@ async function getNextStep(nodeM: NodeM): Promise<string | undefined> {
         const input = parsedResponse.input;
         const toolNodeM = treeM.getChildren(nodeM).find(child => child.nodeTypeName() === "AgentToolNodeType" && child.title() === toolName);
         if (toolNodeM) {
-            const toolCallingMessage = new AgentCallingMessage({
-                agentName: toolName,
-                message: JSON.stringify(input),
+            const toolCallingMessage = new ToolCallingMessage({
+                toolName: toolName,
+                parameters: input,
                 author: nodeM.title(),
             })
             agentSessionState.addMessage(nodeM, toolCallingMessage);
             const res = await toolNodeType.callApi(toolNodeM, input)
-            const toolResponseMessage = new AgentResponseMessage({
-                agentName: toolName,
-                result: JSON.stringify(res),
+            const toolResponseMessage = new ToolResponseMessage({
+                toolName: toolName,
+                response: res,
                 author: toolName,
             })
             agentSessionState.addMessage(nodeM, toolResponseMessage);
