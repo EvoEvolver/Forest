@@ -30,21 +30,8 @@ export interface ApiSpecWithRaw {
     raw: any;
 }
 
-export async function parseApiSpec(apiUrlOrJson: string): Promise<ApiSpec> {
+export function parseApiSpec(spec: any): ApiSpec {
     try {
-        let jsonText: string;
-        
-        // Check if the input is a URL (starts with http://, https://, or /)
-        if (apiUrlOrJson.startsWith('http://') || apiUrlOrJson.startsWith('https://') || apiUrlOrJson.startsWith('/')) {
-            const response = await fetch(apiUrlOrJson);
-            jsonText = await response.text();
-        } else {
-            // Treat as YAML string
-            jsonText = apiUrlOrJson;
-        }
-
-        const spec = JSON.parse(jsonText) as any;
-
         const endpoints: ApiEndpoint[] = [];
 
         // Handle both OpenAPI 3.0 and Swagger 2.0 formats

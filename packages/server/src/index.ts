@@ -31,6 +31,7 @@ import {setupYjsPersistence} from './y-websocket/utils';
 import {TreeMetadataManager} from './services/treeMetadata';
 import {TreeVisitManager} from './services/treeVisitTracker';
 import {createTreePermissionRouter} from "./routes";
+import apiProxyRouter from "./routes/apiProxyRouter.ts";
 
 // Initialize services and connections
 setMongoConnection();
@@ -68,6 +69,7 @@ function main(): void {
     app.use('/api/tree-permission', createTreePermissionRouter())
     app.use('/api/user', createUserRouter());
     app.use('/api', createNodeSnapshotRouter());
+    app.use('/api/api-proxy', apiProxyRouter)
 
     // Start server
     server.listen(config.port, config.host, async () => {

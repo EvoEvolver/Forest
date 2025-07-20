@@ -13,13 +13,13 @@
     "@forest/schema": "workspace:*",
     "@forest/user-system": "workspace:*",
     "@mui/icons-material": "^7.2.0",
+    "@mui/material": "^7.2.0",
     "axios": "^1.10.0",
+    "codemirror": "^6.0.2",
     "jotai": "^2.10.3",
     "react": "^19.1.0",
-    "codemirror": "^6.0.2",
     "y-codemirror.next": "^0.3.5",
-    "yjs": "^13.6.27",
-    "@mui/material": "^7.2.0"
+    "yjs": "^13.6.27"
   },
   "devDependencies": {
     "@types/node": "^24.0.13"

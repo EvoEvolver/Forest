@@ -1,41 +1,15 @@
 import React, {useEffect, useState} from 'react';
-import {Alert, Box, Card, CardContent, CircularProgress, Typography} from '@mui/material';
+import {Alert, Box, CircularProgress, Typography} from '@mui/material';
 import {ApiEndpoint, ApiSpec, parseApiSpec} from './apiParser';
 import EndpointCard from './EndpointCard';
+
 
 interface CardViewerProps {
     json?: string;
     title?: string;
 }
 
-const CardViewer: React.FC<CardViewerProps> = ({json}) => {
-    const [apiSpec, setApiSpec] = useState<ApiSpec | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    const loadApiSpec = async (jsonContent: string) => {
-        setLoading(true);
-        setError(null);
-
-        try {
-            const spec = await parseApiSpec(jsonContent);
-            setApiSpec(spec);
-        } catch (err: any) {
-            setError(`Failed to parse API specification: ${err.message}`);
-            setApiSpec(null);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        if (json) {
-            loadApiSpec(json);
-        } else {
-            setApiSpec(null);
-            setError(null);
-        }
-    }, [json]);
+const CardViewer: React.FC<CardViewerProps> = ({apiSpec, loading, error}: {apiSpec: ApiSpec, loading: boolean, error: string}) => {
 
     const baseUrl = apiSpec?.servers?.[0]?.url || '';
 
@@ -73,16 +47,6 @@ const CardViewer: React.FC<CardViewerProps> = ({json}) => {
         ));
     };
 
-    // Show empty state when no json is provided
-    if (!json) {
-        return (
-            <Box>
-                <Alert severity="info">
-                    No API specification provided.
-                </Alert>
-            </Box>
-        );
-    }
 
     return (
         <Box>
@@ -112,11 +76,11 @@ const CardViewer: React.FC<CardViewerProps> = ({json}) => {
 
             {/* API Overview */}
             {false && apiSpec && (<Box>
-                        {apiSpec.servers && apiSpec.servers.length > 0 && (
-                            <Typography variant="body2" sx={{fontFamily: 'monospace'}}>
-                                {apiSpec.servers[0].url}
-                            </Typography>
-                        )}
+                    {apiSpec.servers && apiSpec.servers.length > 0 && (
+                        <Typography variant="body2" sx={{fontFamily: 'monospace'}}>
+                            {apiSpec.servers[0].url}
+                        </Typography>
+                    )}
                 </Box>
             )}
 
@@ -128,5 +92,7 @@ const CardViewer: React.FC<CardViewerProps> = ({json}) => {
             )}
         </Box>)
 };
+
+
 
 export default CardViewer;

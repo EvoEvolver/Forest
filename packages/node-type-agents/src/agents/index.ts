@@ -4,12 +4,15 @@ import {BaseMessage, NormalMessage, SystemMessage} from "@forest/node-components
 import {fetchChatResponse} from "../llm";
 import {AgentCallingMessage, AgentResponseMessage} from "../Message";
 import {agentSessionState} from "../sessionState";
+import {AgentToolNodeType} from "../ToolNode";
 
 async function getSystemMessage(nodeM: NodeM) {
     const treeM = nodeM.treeM;
     const agentChildren = treeM.getChildren(nodeM).filter((n) => n.nodeTypeName() === "AgentNodeType");
+    const toolChildren = treeM.getChildren(nodeM).filter((n) => n.nodeTypeName() === "AgentToolNodeType");
     const nodeTypeName = nodeM.nodeTypeName()
-    const nodeType = await nodeM.treeM.supportedNodesTypes(nodeTypeName) as AgentNodeType;
+    const agentNodeType = await nodeM.treeM.supportedNodesTypes(nodeTypeName) as AgentNodeType;
+    const toolNodeType = await nodeM.treeM.supportedNodesTypes("AgentToolNodeType") as AgentToolNodeType
     const title = nodeM.title();
 
     const systemMessage = new SystemMessage(`
@@ -17,12 +20,15 @@ You are required to act as a smart AI agent.
 Your title as an agent is: ${title}
 Your context is the following:
 <context>
-${nodeType.agentPromptYText(nodeM).toString()}
+${agentNodeType.agentPromptYText(nodeM).toString()}
 </context>
 You can get help from the following agents:
 <agents>
 ${agentChildren.map(child => child.title()).join('\n')}
 </agents>
+<tools>
+${toolChildren.map(child => toolNodeType.renderPrompt(child)).join('\n-------\n')}
+</tools>
 You are required to response to the request from the user.
 Your response must adopt one of the following JSON formats
 You must only output JSON
@@ -33,6 +39,13 @@ You must only output JSON
  "message": the message to the agent
 }
 </agent_calling>
+<tool_calling>
+{
+ "type": "tool_calling",
+ "tool_name": tool name in string,
+ "input": the input to the tool,
+}
+</tool_calling>
 <user_response>
 {
  "type": "user_response",
@@ -49,6 +62,7 @@ async function getNextStep(nodeM: NodeM): Promise<string | undefined> {
     const treeM = nodeM.treeM;
     const messages = agentSessionState.messages.get(nodeM.id) || [];
     const agentChildren = treeM.getChildren(nodeM).filter((n) => n.nodeTypeName() === "AgentNodeType");
+    const toolNodeType = await treeM.supportedNodesTypes("AgentToolNodeType") as AgentToolNodeType;
     const systemMessage = await getSystemMessage(nodeM);
     const messagesWithSystem = [systemMessage, ...messages];
     const messagesToSubmit = messagesWithSystem.map(m => m.toJson());
@@ -114,7 +128,27 @@ async function getNextStep(nodeM: NodeM): Promise<string | undefined> {
         }
 
         return messageContent;
-    } else {
+    } else if (parsedResponse.type === "tool_calling") {
+        const toolName = parsedResponse.tool_name;
+        const input = parsedResponse.input;
+        const toolNodeM = treeM.getChildren(nodeM).find(child => child.nodeTypeName() === "AgentToolNodeType" && child.title() === toolName);
+        if (toolNodeM) {
+            const toolCallingMessage = new AgentCallingMessage({
+                agentName: toolName,
+                message: JSON.stringify(input),
+                author: nodeM.title(),
+            })
+            agentSessionState.addMessage(nodeM, toolCallingMessage);
+            const res = await toolNodeType.callApi(toolNodeM, input)
+            const toolResponseMessage = new AgentResponseMessage({
+                agentName: toolName,
+                result: JSON.stringify(res),
+                author: toolName,
+            })
+            agentSessionState.addMessage(nodeM, toolResponseMessage);
+        }
+    }
+    else {
         throw Error(`Unknown response type. Response: ${JSON.stringify(parsedResponse)}`);
     }
 }
