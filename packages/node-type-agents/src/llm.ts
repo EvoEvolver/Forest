@@ -6,7 +6,7 @@ const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort
 // @ts-ignore
 const devMode = import.meta.env.MODE === 'development'; // Check if in development mode
 
-export async function fetchChatResponse(messages: Message[], authToken: string | null): Promise<string> {
+export async function fetchChatResponse(messages: Message[], modelName, authToken: string | null): Promise<string> {
     if (messages.length === 0) {
         return "No messages to process.";
     }
@@ -32,7 +32,8 @@ export async function fetchChatResponse(messages: Message[], authToken: string |
                 "Authorization": `Bearer ${authToken}`, // Add JWT token
             },
             body: JSON.stringify({
-                messages: messageOpenAI
+                messages: messageOpenAI,
+                modelName: modelName
             })
         });
 

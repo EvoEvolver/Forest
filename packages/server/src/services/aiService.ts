@@ -14,13 +14,13 @@ export class AIService {
         return this.openai !== null;
     }
 
-    async generateResponse(messages: any[]): Promise<string> {
+    async generateResponse(messages: any[], modelName): Promise<string> {
         if (!this.openai) {
             throw new Error('AI service is not available. Please configure OpenAI API key.');
         }
 
         const response = await this.openai.chat.completions.create({
-            model: 'gpt-4.1-mini-2025-04-14',
+            model: modelName,
             messages: messages,
         });
 

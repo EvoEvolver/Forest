@@ -1,16 +1,15 @@
-import React, { useEffect, useRef } from 'react';
+import React, {useEffect, useRef} from 'react';
 import * as Y from 'yjs';
-import { EditorView, basicSetup } from 'codemirror';
-import { EditorState } from '@codemirror/state';
-import { markdown } from '@codemirror/lang-markdown';
-import { yCollab } from 'y-codemirror.next';
+import {basicSetup, EditorView} from 'codemirror';
+import {EditorState} from '@codemirror/state';
+import {yCollab} from 'y-codemirror.next';
 
 interface CollaborativeEditorProps {
     yText: Y.Text;
     langExtension: any;
 }
 
-const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ yText, langExtension }) => {
+const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({yText, langExtension}) => {
     const editorRef = useRef<HTMLDivElement>(null);
     const viewRef = useRef<EditorView | null>(null);
 
@@ -26,7 +25,7 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ yText, langEx
             extensions: [
                 basicSetup,
                 langExtension(),
-                yCollab(yText, { undoManager: yUndoManager }),
+                yCollab(yText, null, {undoManager: yUndoManager}),
                 EditorView.lineWrapping,
                 EditorView.theme({
                     "&": {
@@ -52,8 +51,8 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ yText, langEx
     }, [yText]);
 
     return (
-        <div className="collaborative-editor" style={{ height: '100%' }}>
-            <div ref={editorRef} style={{ height: '100%' }} />
+        <div className="collaborative-editor" style={{height: '100%'}}>
+            <div ref={editorRef} style={{height: '100%'}}/>
         </div>
     );
 };

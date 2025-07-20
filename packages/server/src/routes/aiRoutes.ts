@@ -18,7 +18,8 @@ export function createAIRouter(): Router {
         
         try {
             const messages = req.body.messages;
-            const result = await aiService.generateResponse(messages);
+            const modelName = req.body.modelName || 'gpt-4.1-mini-2025-04-14';
+            const result = await aiService.generateResponse(messages, modelName);
             
             console.log(`✅ AI response generated for user: ${req.user?.email}`);
             res.send({ result });

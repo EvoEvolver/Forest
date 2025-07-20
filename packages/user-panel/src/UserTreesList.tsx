@@ -308,7 +308,7 @@ export const UserTreesList = ({}) => {
                                                 }}
                                                 onClick={() => handleOpenTree(tree.treeId)}
                                             >
-                                                {tree.treeId.slice(0, 8) + '...'}
+                                                {tree.treeId!==null?tree.treeId.slice(0, 8) + '...':"No ID"}
                                             </Typography>
 
                                         </TableCell>

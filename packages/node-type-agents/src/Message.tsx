@@ -3,7 +3,6 @@ import {Box, Card, CardContent, Typography} from '@mui/material';
 import {BaseMessage, BaseMessageProps} from "@forest/node-components/src/chat";
 
 
-
 export interface ToolCallMessageProps extends BaseMessageProps {
     toolName: string;
     parameters: Record<string, any>;
@@ -65,7 +64,7 @@ export class ToolCallMessage extends BaseMessage {
     }
 }
 
-export interface AgentCallingMessageProps{
+export interface AgentCallingMessageProps {
     agentName: string;
     message: string;
     author: string
@@ -108,8 +107,7 @@ export class AgentCallingMessage extends BaseMessage {
     toJson(): object {
         return {
             content: this.content,
-            role: this.role,
-            time: this.time,
+            role: this.role
         };
     }
 }
@@ -128,6 +126,10 @@ export class AgentResponseMessage extends BaseMessage {
         super({content: `Response from ${agentName}: ${result} `, author: author, role: 'assistant', time: ''});
         this.agentName = agentName;
         this.result = result;
+    }
+
+    toJson(): object {
+        return super.toJson();
     }
 
     render(): React.ReactNode {

@@ -31,7 +31,6 @@ export abstract class BaseMessage {
         return {
             content: this.content,
             role: this.role,
-            time: this.time,
         };
     }
 }
