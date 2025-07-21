@@ -18,7 +18,7 @@ export const AppBarLeft = ({setCurrentPage, currentPage}) => {
             sx={{
                 backgroundColor: '#fafafa',
                 border: '1px solid #c6c6c6',
-                borderRadius: '8px',
+                borderRadius: '16px',
                 padding: '8px 16px',
                 minHeight: '48px',
                 alignItems: 'center',
@@ -54,7 +54,7 @@ export const AppBarRight = () => {
             sx={{
                 backgroundColor: '#fafafa',
                 border: '1px solid #c6c6c6',
-                borderRadius: '8px',
+                borderRadius: '16px',
                 padding: '8px 16px',
                 minHeight: '48px',
                 alignItems: 'center',
