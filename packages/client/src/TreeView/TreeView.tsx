@@ -2,7 +2,8 @@ import React, {useEffect, useState} from 'react';
 import {Box, Card, Grid, Typography} from '@mui/material';
 import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import {listOfNodesForViewAtom, selectedNodeAtom, treeAtom} from "../TreeState/TreeState";
-import {NodeButtons} from "./HoverSidePanel";
+import {NodeButtons} from "./NodeButtons";
+import {HoverSidePanel} from "./HoverSidePanel";
 import {isMobileModeAtom} from "../appState";
 import {ColumnLeft} from "./ColumnLeft";
 import {ColumnRight} from "./ColumnRight";
@@ -25,11 +26,19 @@ const TreeView = () => {
     if (leaves.length === 0)
         return null
     return (
-        <Grid style={{height: "100%", width: "100%", backgroundColor: "#f0f0f0", padding: "70px 10px 10px 10px", boxSizing: "border-box"}} container spacing={1}>
-            {!mobileMode && <Grid size={3.5} style={{height: "100%"}}>
+        <div style={{
+            display: "flex", 
+            height: "100%", 
+            width: "100%", 
+            backgroundColor: "#f0f0f0", 
+            padding: "70px 10px 10px 10px", 
+            boxSizing: "border-box",
+            gap: "16px"
+        }}>
+            {!mobileMode && <div style={{width: "300px", flexShrink: 0, height: "100%"}}>
                 <ColumnLeft/>
-            </Grid>}
-            <Grid size={mobileMode ? 12 : 5} style={{height: "100%", overflow: "visible", zIndex: "1000"}}>
+            </div>}
+            <div style={{flex: 1, height: "100%", overflow: "visible", zIndex: "1000", minWidth: 0}}>
                <div>
                    <div>
                        {leaves.filter((n) => n.data["archived"]!==true).map((n)=><MiddleContents node={n} key={n.id}/>)}
@@ -53,11 +62,11 @@ const TreeView = () => {
                        </>
                    )}
                </div>
-            </Grid>
-            {!mobileMode && <Grid style={{height: "100%"}} size={3.5} className={"hide-mobile"}>
+            </div>
+            {!mobileMode && <div style={{width: "400px", flexShrink: 0, height: "100%"}} className={"hide-mobile"}>
                 <ColumnRight/>
-            </Grid>}
-        </Grid>
+            </div>}
+        </div>
     );
 };
 
@@ -98,7 +107,8 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
             {node.nodeType.render(node)}
             </thisNodeContext.Provider>
         </div>
-        <NodeButtons node={node} isVisible={isHovered}/>
+        <NodeButtons node={node}/>
+        <HoverSidePanel node={node} isVisible={isHovered}/>
     </div>
 }
 

@@ -165,7 +165,7 @@ const AwarenessStatus = () => {
             scrollToNode(selectedNodeId);
         }, 100)
     }
-    const transparency = "80";
+    const transparency = "FF"; // Full opacity
     return (
         <Stack direction="row" spacing={1}>
             {otherUsers.map(user => (
