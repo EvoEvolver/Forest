@@ -78,7 +78,7 @@ export class CustomNodeType extends NodeType {
         return ""
     }
 
-    ydataInitialize(node: NodeVM) {
+    ydataInitialize(node: NodeM) {
 
     }
 

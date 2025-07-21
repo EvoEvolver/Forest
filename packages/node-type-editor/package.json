@@ -27,7 +27,9 @@
     "@forest/node-components": "workspace:*",
     "@forest/client": "workspace:*",
     "@forest/issue-tracker": "workspace:*",
+    "@forest/user-system": "workspace:*",
     "react": "^19.1.0",
+    "uuid": "^9.0.1",
     "react-popper": "^2.3.0"
   }
 }

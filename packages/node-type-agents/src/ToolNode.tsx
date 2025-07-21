@@ -107,8 +107,8 @@ ${apiParameterPrompt}`
         }).then(response => response.json());
     }
 
-    ydataInitialize(node: NodeVM) {
-        const ydata = node.ydata
+    ydataInitialize(node: NodeM) {
+        const ydata = node.ydata()
         if (!ydata.has(AgentToolOpenApiSpecText)) {
             // @ts-ignore
             ydata.set(AgentToolOpenApiSpecText, new Y.Text())

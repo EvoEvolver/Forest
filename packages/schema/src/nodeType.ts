@@ -21,7 +21,7 @@ export abstract class NodeType {
 
     abstract renderPrompt(node: NodeM): string
 
-    ydataInitialize(node: NodeVM): void {
+    ydataInitialize(node: NodeM): void {
     }
 
     vdataInitialize(node: NodeVM): void {

@@ -149,7 +149,7 @@ export class NodeVM {
             nodeVM.tools = yjsMapNode.get("tools")
 
         nodeVM.nodeType = await nodeVM.getNodeType(treeVM.treeM.supportedNodesTypes)
-        nodeVM.nodeType.ydataInitialize(nodeVM)
+        nodeVM.nodeType.ydataInitialize(nodeVM.nodeM)
 
         return nodeVM
     }

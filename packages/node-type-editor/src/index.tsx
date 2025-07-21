@@ -8,6 +8,7 @@ import IssueList from "@forest/issue-tracker/src/components/IssueList/IssueList"
 import {treeId} from "@forest/client/src/appState";
 import {XmlFragment} from "yjs";
 import {BottomUpButton} from "./buttomUp";
+import {TopDownButton} from "./topDown";
 
 interface EditorNodeData {
 }
@@ -55,6 +56,7 @@ export class EditorNodeType extends NodeType {
     renderTool2(node: NodeVM): React.ReactNode {
         return <>
             <BottomUpButton node={node}/>
+            <TopDownButton node={node}/>
         </>
     }
 
@@ -62,7 +64,7 @@ export class EditorNodeType extends NodeType {
         return ""
     }
 
-    ydataInitialize(node: NodeVM) {
+    ydataInitialize(node: NodeM) {
     }
 }
 

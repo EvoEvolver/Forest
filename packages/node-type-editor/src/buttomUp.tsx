@@ -10,13 +10,15 @@ import {NormalMessage} from "@forest/node-components/src/chat";
 import {fetchChatResponse} from "@forest/node-components/src/llm";
 import {EditorNodeType} from ".";
 import {stageThisVersion} from "@forest/schema/src/stageService";
+import {useAtomValue} from "jotai";
+import { authTokenAtom } from "@forest/user-system/src/authStates";
 
-export const BottomUpButton: React.FC<{ node: NodeVM; authToken: string }> = ({node, authToken}) => {
+export const BottomUpButton: React.FC<{ node: NodeVM}> = ({node}) => {
     const [loading, setLoading] = React.useState(false);
     const [dialogOpen, setDialogOpen] = React.useState(false);
     const [originalContent, setOriginalContent] = React.useState<string | null>(null);
     const [revisedContent, setRevisedContent] = React.useState<string | null>(null);
-
+    const authToken = useAtomValue(authTokenAtom)
 
     const handleClick = async () => {
         setLoading(true);
@@ -57,7 +59,7 @@ export const BottomUpButton: React.FC<{ node: NodeVM; authToken: string }> = ({n
                 disabled={loading}
                 startIcon={loading ? <CircularProgress size={20}/> : null}
             >
-                Revise Content
+                Revise Content by children
             </Button>
             <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="lg" fullWidth>
                 <DialogTitle>Review Changes</DialogTitle>

@@ -37,8 +37,8 @@ export class AgentNodeType extends NodeType {
         return ""
     }
 
-    ydataInitialize(node: NodeVM) {
-        const ydata = node.ydata
+    ydataInitialize(node: NodeM) {
+        const ydata = node.ydata()
         if (!ydata.has(AgentPromptText)) {
             // @ts-ignore
             ydata.set(AgentPromptText, new Y.Text())
