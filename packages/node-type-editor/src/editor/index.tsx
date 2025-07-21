@@ -5,7 +5,7 @@ import {YjsProviderAtom} from "@forest/client/src/TreeState/YjsConnection";
 import {XmlFragment} from 'yjs';
 import Collaboration from '@tiptap/extension-collaboration'
 import {CollaborationCursor} from './Extensions/collaboration-cursor'
-import {BubbleMenu, EditorContent, useEditor} from '@tiptap/react'
+import {BubbleMenu, EditorContent} from '@tiptap/react'
 import Document from '@tiptap/extension-document'
 import Paragraph from '@tiptap/extension-paragraph'
 import Text from '@tiptap/extension-text'
@@ -21,25 +21,19 @@ import {usePopper} from "react-popper";
 import {LinkExtension, makeOnLinkActivated} from "./Extensions/link";
 import {NodeVM} from "@forest/schema";
 import {contentEditableContext} from "@forest/schema/src/viewContext";
+import {Editor} from "@tiptap/core";
 
 interface TiptapEditorProps {
     node: NodeVM,
-    label?: string
+    yXML: XmlFragment
 }
 
 const TiptapEditor = (props: TiptapEditorProps) => {
     const node = props.node
     const provider = useAtomValue(YjsProviderAtom)
-    const ydataLabel = props.label || "";
-    // This cannot be edited because it will break the existing docs
-    const ydataKey = "ydata" + ydataLabel;
-    let yXML = node.ydata.get(ydataKey);
-    if (!yXML) {
-        yXML = new XmlFragment();
-        node.ydata.set(ydataKey, yXML);
-    }
+    const yXML = props.yXML
     return <>
-        <EditorImpl yXML={yXML} provider={provider} dataLabel={ydataLabel} node={node}/>
+        <EditorImpl yXML={yXML} provider={provider} dataLabel="ydatapaperEditor" node={node}/>
     </>
 
 };
@@ -47,9 +41,19 @@ const TiptapEditor = (props: TiptapEditorProps) => {
 
 export default TiptapEditor;
 
-const EditorImpl = ({yXML, provider, dataLabel, node}) => {
-    const [hoverElements, setHoverElements] = useState([]);
-    const contentEditable = useContext(contentEditableContext)
+export function makeEditor(yXML, provider, contentEditable, onCommentActivated, onLinkActivated): Editor {
+
+    const commentExtension = CommentExtension.configure({
+        HTMLAttributes: {class: "comment"},
+        onCommentActivated: onCommentActivated || ((id, editor, options) => {
+        })
+    });
+
+    const linkExtension = LinkExtension.configure({
+        HTMLAttributes: {},
+        onLinkActivated: onLinkActivated || ((href, editor, options) => {
+        })
+    });
 
     const extensions = [
         Document,
@@ -61,55 +65,84 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
         Image,
         Bold,
         MathExtension.configure({evaluation: false}),
-        Collaboration.extend().configure({
+        commentExtension,
+        linkExtension
+    ];
+    if (yXML){
+        // @ts-ignore
+        extensions.push(Collaboration.extend().configure({
             fragment: yXML,
-        }),
-        CollaborationCursor.extend().configure({
+        }))
+    }
+    if (provider) {
+        // If a provider is available, we can use the collaboration extension
+        // @ts-ignore
+        extensions.push(CollaborationCursor.extend().configure({
             provider,
-        }),
-    ]
+        }));
+    }
 
-    const commentExtension = CommentExtension.configure({
-        HTMLAttributes: {class: "comment"},
-        onCommentActivated: makeOnCommentActivated(setHoverElements)
-    })
-    const linkExtension = LinkExtension.configure({
-        HTMLAttributes: {},
-        onLinkActivated: makeOnLinkActivated(setHoverElements)
-    })
-    extensions.push(commentExtension)
-    extensions.push(linkExtension)
+    const editor = new Editor({
+        enableContentCheck: true,
+        onContentError: ({disableCollaboration}) => {
+            console.error("Content error in Tiptap editor:", disableCollaboration);
+            disableCollaboration();
+        },
+        extensions: extensions,
+        editable: contentEditable !== false
+    });
+
+    return editor
+}
+
+const EditorImpl = ({yXML, provider, dataLabel, node}) => {
+    const [hoverElements, setHoverElements] = useState([]);
+    const contentEditable = useContext(contentEditableContext)
+    const onCommentActivated = makeOnCommentActivated(setHoverElements)
+    const onLinkActivated = makeOnLinkActivated(setHoverElements)
+    const [editor, setEditor] = useState<Editor | null>(null);
+
+    useEffect(() => {
+        // Initialize the editor when the component mounts
+        const editor = makeEditor(
+            yXML,
+            provider,
+            contentEditable,
+            onCommentActivated,
+            onLinkActivated
+        );
+        if (editor) {
+            node.vdata["tiptap_editor_" + dataLabel] = editor;
+            setEditor(editor)
+        }
+        return () => {
+            // Clean up the editor when the component unmounts
+            if (editor) {
+                editor.destroy();
+                delete node.vdata["tiptap_editor_" + dataLabel];
+            }
+        };
+    }, []);
 
     const handleClickComment = (event: React.MouseEvent<HTMLButtonElement>) => {
         const id = `comment-${Date.now()}`;
         editor?.commands.setComment(id, "");
-        commentExtension.options.onCommentActivated(id, editor, {"inputOn": true});
+        onCommentActivated(id, editor, {"inputOn": true});
     };
 
     const handleClickLink = (event: React.MouseEvent<HTMLButtonElement>) => {
         const href = " "
         editor?.commands.setLink({href});
-        linkExtension.options.onLinkActivated(href, editor, {"inputOn": true});
+        onLinkActivated(href, editor, {"inputOn": true});
     }
-
-    const editor = useEditor({
-        enableContentCheck: true,
-        onContentError: ({disableCollaboration}) => {
-            console.error("Content error in Tiptap editor:", disableCollaboration);
-            disableCollaboration()
-        },
-        extensions: extensions,
-        editable: contentEditable!==false
-    })
 
     // Destroy the editor when the component unmounts
     useEffect(() => {
         const editorFieldName = "tiptap_editor_" + dataLabel;
-        node.vdata[editorFieldName] = editor
-        return () => {
-            editor.destroy();
+        if (editor) {
+            node.vdata[editorFieldName] = editor
         }
-    }, []);
+    }, [editor, dataLabel, node]);
 
     if (!editor) {
         return null

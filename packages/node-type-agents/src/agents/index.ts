@@ -1,7 +1,7 @@
 import {NodeM} from "@forest/schema";
 import {AgentNodeType} from "../AgentNode";
 import {BaseMessage, NormalMessage, SystemMessage} from "@forest/node-components/src/chat";
-import {fetchChatResponse} from "../llm";
+import {fetchChatResponse} from "@forest/node-components/src/llm";
 import {AgentCallingMessage, AgentResponseMessage, ToolCallingMessage, ToolResponseMessage} from "../Message";
 import {agentSessionState} from "../sessionState";
 import {AgentToolNodeType} from "../ToolNode";

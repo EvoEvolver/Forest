@@ -1,23 +1,13 @@
 import React from 'react';
-import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    TextField,
-    Button,
-    Typography,
-    Chip,
-    Box
-} from '@mui/material';
-import { DataGrid, GridColDef, GridRenderCellParams, GridValueGetter } from '@mui/x-data-grid';
-import { NodeVM, NodeM } from '@forest/schema';
-import { httpUrl, treeId } from '../appState';
-import { userAtom } from '@forest/user-system/src/authStates';
-import { useAtomValue } from 'jotai';
-import { treeAtom } from '../TreeState/TreeState';
-import { MiddleContents } from './TreeView';
+import {Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Typography} from '@mui/material';
+import {DataGrid, GridColDef, GridRenderCellParams} from '@mui/x-data-grid';
+import {NodeM, NodeVM} from '@forest/schema';
+import {httpUrl, treeId} from '../appState';
+import {userAtom} from '@forest/user-system/src/authStates';
+import {useAtomValue} from 'jotai';
+import {treeAtom} from '../TreeState/TreeState';
 import {contentEditableContext} from "@forest/schema/src/viewContext";
+import {stageThisVersion} from "@forest/schema/src/stageService";
 
 interface StageVersionDialogProps {
     open: boolean;
@@ -34,7 +24,7 @@ interface Snapshot {
     date: string;
 }
 
-export const StageVersionDialog = ({ open, onClose, node }: StageVersionDialogProps) => {
+export const StageVersionDialog = ({open, onClose, node}: StageVersionDialogProps) => {
     const [tagName, setTagName] = React.useState('');
     const [existingTags, setExistingTags] = React.useState<string[]>([]);
     const [loading, setLoading] = React.useState(false);
@@ -54,13 +44,14 @@ export const StageVersionDialog = ({ open, onClose, node }: StageVersionDialogPr
     const fetchExistingSnapshots = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`${httpUrl}/api/nodeSnapshot?treeId=${treeId}&nodeId=${node.id}`);
-            
+            const response = await fetch(`${httpUrl}/api/nodeSnapshot?treeId=${node.treeVM.treeM.id()}&nodeId=${node.id}`);
+
             if (!response.ok) {
                 throw new Error('Failed to fetch snapshots');
             }
-            
+
             const data = await response.json();
+            console.log('response', data);
             setSnapshots(data.snapshots || []);
         } catch (error) {
             console.error('Failed to fetch existing snapshots:', error);
@@ -74,13 +65,13 @@ export const StageVersionDialog = ({ open, onClose, node }: StageVersionDialogPr
         try {
             setPreviewLoading(true);
             setPreviewNodeVM(null);
-            
+
             // Create NodeM from snapshot data (now it's a plain object)
             const nodeM = NodeM.fromSnapshot(snapshot.data);
-            
+
             // Create NodeVM from NodeM
             const nodeVM = await NodeVM.create(nodeM, tree);
-            
+
             setPreviewNodeVM(nodeVM);
         } catch (error) {
             console.error('Failed to load snapshot preview:', error);
@@ -89,42 +80,9 @@ export const StageVersionDialog = ({ open, onClose, node }: StageVersionDialogPr
         }
     };
 
-    const stageThisVersion = async (tag: string) => {
-        try {
-            // Create a simple serializable object from the node data
-            const nodeData = node.nodeM.getSnapshot()
-            const requestBody = {
-                treeId: treeId,
-                nodeId: node.id,
-                authorId: user?.id || "admin",
-                tag: tag,
-                data: nodeData
-            };
-            console.log('Saving snapshot for node:', node.id, 'with tag:', tag);
-            const response = await fetch(httpUrl + '/api/nodeSnapshot', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestBody)
-            });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to save snapshot');
-            }
-
-            console.log('Snapshot saved successfully');
-            // Refresh the existing tags after saving
-            await fetchExistingSnapshots();
-        } catch (error) {
-            console.error('Failed to save snapshot:', error);
-            // You might want to show an error notification to the user here
-        }
-    };
-
-    const handleSubmit = () => {
-        stageThisVersion(tagName.trim());
+    const handleSubmit = async () => {
+        await stageThisVersion(node, tagName.trim()).then(fetchExistingSnapshots)
     };
 
     const handleClose = () => {
@@ -153,15 +111,15 @@ export const StageVersionDialog = ({ open, onClose, node }: StageVersionDialogPr
                         }
                     }}
                 />
-                
+
                 {snapshots.length > 0 && (
                     <Box mt={2}>
                         <Typography variant="body2" color="textSecondary" gutterBottom>
                             Existing versions:
                         </Typography>
-                        <div style={{ height: 300, width: '100%' }}>
+                        <div style={{height: 300, width: '100%'}}>
                             <DataGrid
-                                rows={snapshots.map((s, i) => ({ ...s, id: i })) as Snapshot[]}
+                                rows={snapshots.map((s, i) => ({...s, id: i})) as Snapshot[]}
                                 columns={[
                                     {
                                         field: 'tag',
@@ -189,7 +147,7 @@ export const StageVersionDialog = ({ open, onClose, node }: StageVersionDialogPr
                                     }
                                 ] as GridColDef<Snapshot>[]}
                                 initialState={{
-                                    pagination: { paginationModel: { pageSize: 5, page: 0 } }
+                                    pagination: {paginationModel: {pageSize: 5, page: 0}}
                                 }}
                                 pageSizeOptions={[5]}
                                 disableRowSelectionOnClick
@@ -197,7 +155,7 @@ export const StageVersionDialog = ({ open, onClose, node }: StageVersionDialogPr
                         </div>
                     </Box>
                 )}
-                
+
                 {loading && (
                     <Box mt={2}>
                         <Typography variant="body2" color="textSecondary">
@@ -215,7 +173,7 @@ export const StageVersionDialog = ({ open, onClose, node }: StageVersionDialogPr
                 )}
 
                 {previewNodeVM && (
-                    <Box mt={2} sx={{ border: '1px solid #ddd', borderRadius: 1, p: 2 }}>
+                    <Box mt={2} sx={{border: '1px solid #ddd', borderRadius: 1, p: 2}}>
                         <contentEditableContext.Provider value={false}>
                             {previewNodeVM.nodeType.render(previewNodeVM)}
                         </contentEditableContext.Provider>
@@ -226,9 +184,9 @@ export const StageVersionDialog = ({ open, onClose, node }: StageVersionDialogPr
                 <Button onClick={handleClose} color="primary">
                     Cancel
                 </Button>
-                <Button 
-                    onClick={handleSubmit} 
-                    color="primary" 
+                <Button
+                    onClick={handleSubmit}
+                    color="primary"
                     variant="contained"
                 >
                     Stage Version
@@ -236,4 +194,5 @@ export const StageVersionDialog = ({ open, onClose, node }: StageVersionDialogPr
             </DialogActions>
         </Dialog>
     );
-}; 
+};
+

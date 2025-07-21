@@ -1,19 +1,10 @@
-import {Message} from "@forest/node-components/src/chat";
+import {httpUrl} from "@forest/schema/src/config";
 
-const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
-const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort}`
-
-// @ts-ignore
-const devMode = import.meta.env.MODE === 'development'; // Check if in development mode
-
-export async function fetchChatResponse(messages: Message[], modelName, authToken: string | null): Promise<string> {
+export async function fetchChatResponse(messages: { role: string, content: string }[],
+                                        modelName,
+                                        authToken: string | null): Promise<string> {
     if (messages.length === 0) {
         return "No messages to process.";
-    }
-
-    // Check authentication before making API call
-    if ((!authToken) && (!devMode)) {
-        throw new Error("AUTHENTICATION_REQUIRED");
     }
 
     const messageOpenAI = messages.map(msg => {
