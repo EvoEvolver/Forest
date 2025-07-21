@@ -22,43 +22,28 @@ export function ColumnLeft() {
                 position: "relative",
                 height: "100%",
                 width: collapsed ? collapsedWidth : expandedWidth,
-                transition: "all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1)",
                 overflow: "visible",    // let the button bleed out
             }}
         >
-            <Collapse
-                in={!collapsed}
-                orientation="horizontal"
-                timeout={400}
-                unmountOnExit
-                component={Box}            // makes it a Box so we can pass sx
-                sx={{ 
+            <Box
+                sx={{
                     height: "100%",
-                    '& .MuiCollapse-wrapperInner': {
-                        width: expandedWidth,
-                    }
-                }}    // <-- force full height
+                    width: expandedWidth,
+                    border: "1px solid #c6c6c6",
+                    borderRadius: "16px",
+                    boxSizing: "border-box",
+                    pt: 1,
+                    pb: 1,
+                    backgroundColor: "#fafafa",
+                    color: "black",
+                    overflowY: "auto",
+                    transform: collapsed ? "scale(0.9) translateX(-20px)" : "scale(1) translateX(0)",
+                    opacity: collapsed ? 0 : 1,
+                    transition: "all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1)",
+                }}
             >
-                <Box
-                    sx={{
-                        height: "100%",
-                        width: expandedWidth,
-                        border: "1px solid #c6c6c6",
-                        borderRadius: "16px",
-                        boxSizing: "border-box",
-                        pt: 1,
-                        pb: 1,
-                        backgroundColor: "#fafafa",
-                        color: "black",
-                        overflowY: "auto",
-                        transform: collapsed ? "scale(0.95)" : "scale(1)",
-                        opacity: collapsed ? 0 : 1,
-                        transition: "all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1)",
-                    }}
-                >
-                    <NavigatorLayer />
-                </Box>
-            </Collapse>
+                <NavigatorLayer />
+            </Box>
 
             <IconButton
                 disableRipple
