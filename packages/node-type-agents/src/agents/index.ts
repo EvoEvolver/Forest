@@ -67,7 +67,8 @@ Your context is the following:
 <context>
 ${agentNodeType.agentPromptYText(nodeM).toString()}
 </context>
-${agentsSection}${toolsSection}You are required to response to the request from the user.
+${agentsSection}${toolsSection}
+You are required to solve the problem and answer the user by reply a message with the type "answer_user".
 Your response must adopt one of the following JSON formats
 You must only output JSON
 ${formatsSection}`);
