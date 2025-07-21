@@ -22,31 +22,38 @@ export function ColumnLeft() {
                 position: "relative",
                 height: "100%",
                 width: collapsed ? collapsedWidth : expandedWidth,
-                transition: "width 0.3s ease",
+                transition: "all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1)",
                 overflow: "visible",    // let the button bleed out
             }}
         >
             <Collapse
                 in={!collapsed}
                 orientation="horizontal"
-                timeout={300}
+                timeout={400}
                 unmountOnExit
                 component={Box}            // makes it a Box so we can pass sx
-                sx={{ height: "100%" }}    // <-- force full height
+                sx={{ 
+                    height: "100%",
+                    '& .MuiCollapse-wrapperInner': {
+                        width: expandedWidth,
+                    }
+                }}    // <-- force full height
             >
                 <Box
                     sx={{
                         height: "100%",
                         width: expandedWidth,
-                        boxShadow: "0px 0px 20px rgba(0,0,0,0.1)",
                         border: "1px solid #c6c6c6",
-                        borderRadius: "10px",
+                        borderRadius: "16px",
                         boxSizing: "border-box",
                         pt: 1,
                         pb: 1,
                         backgroundColor: "#fafafa",
                         color: "black",
                         overflowY: "auto",
+                        transform: collapsed ? "scale(0.95)" : "scale(1)",
+                        opacity: collapsed ? 0 : 1,
+                        transition: "all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1)",
                     }}
                 >
                     <NavigatorLayer />
@@ -63,10 +70,15 @@ export function ColumnLeft() {
                     left: collapsed ? collapsedWidth - 1 : expandedWidth - 1,
                     transform: "translate(-50%, -50%)",
                     backgroundColor: "#fff",
-                    border: "1px solid #ccc",
-                    borderRadius: "4px",
+                    border: "1px solid #c6c6c6",
+                    borderRadius: "50%",
                     zIndex: 10,
-                    "&:hover": { backgroundColor: "#fff", opacity: 1 },
+                    transition: "all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1)",
+                    background: "linear-gradient(145deg, #ffffff, #f0f0f0)",
+                    "&:hover": { 
+                        backgroundColor: "#fff",
+                        transform: "translate(-50%, -50%) scale(1.1)"
+                    },
                 }}
             >
                 {collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}

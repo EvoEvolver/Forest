@@ -6,7 +6,7 @@ import {setupYDocAtom, YjsProviderAtom} from "./TreeState/YjsConnection";
 import LinearView from "./LinearView";
 import AuthModal from '../../user-system/src/AuthModal';
 import {subscriptionAtom, supabaseClientAtom, userAtom} from "../../user-system/src/authStates";
-import {AppBarLeft, AppBarRight, MyAppBar} from "./AppBar";
+import {AppBarLeft, AppBarRight} from "./AppBar";
 import {treeId} from "./appState";
 import {getPastelHexFromUsername, getRandomAnimal} from "@forest/user-system/src/helper";
 import {recordTreeVisit} from "./TreeState/treeVisitService";
@@ -78,8 +78,8 @@ export default function App() {
                 <Box
                     flexGrow={1}
                     overflow="auto"
-                    p={2}
-                    pt={`${appBarHeight}px`}
+                    p={0}
+                    pt={0}
                     bgcolor="background.default"
                     sx={{overflowX: 'hidden'}}
                 >

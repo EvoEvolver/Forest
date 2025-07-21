@@ -10,6 +10,11 @@ export const NodeContentFrame = ({children}) => {
         overflowX: 'hidden',
         wordBreak: "break-word",
         boxShadow: "none",
+        border: "1px solid #c6c6c6",
+        borderRadius: "16px",
+        backgroundColor: "#fafafa",
+        color: "black",
+        transition: "all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1)",
     }
     return <>
         <Card sx={sxDefault}>

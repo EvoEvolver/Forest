@@ -22,7 +22,7 @@ export const AppBarLeft = ({setCurrentPage, currentPage}) => {
                 padding: '8px 16px',
                 minHeight: '48px',
                 alignItems: 'center',
-                margin: '8px'
+                margin: '8px 10px'
             }}
         >
             <Button
@@ -58,7 +58,7 @@ export const AppBarRight = () => {
                 padding: '8px 16px',
                 minHeight: '48px',
                 alignItems: 'center',
-                margin: '8px'
+                margin: '8px 10px'
             }}
         >
             <AwarenessStatus/>

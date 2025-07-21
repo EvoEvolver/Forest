@@ -25,7 +25,7 @@ const TreeView = () => {
     if (leaves.length === 0)
         return null
     return (
-        <Grid style={{height: "100%", width: "100%"}} container spacing={1}>
+        <Grid style={{height: "100%", width: "100%", backgroundColor: "#f0f0f0", padding: "70px 10px 10px 10px", boxSizing: "border-box"}} container spacing={1}>
             {!mobileMode && <Grid size={3.5} style={{height: "100%"}}>
                 <ColumnLeft/>
             </Grid>}
@@ -54,9 +54,9 @@ const TreeView = () => {
                    )}
                </div>
             </Grid>
-            {/*{!mobileMode && <Grid style={{height: "100%"}} size={3.5} className={"hide-mobile"}>*/}
-            {/*    <ColumnRight/>*/}
-            {/*</Grid>}*/}
+            {!mobileMode && <Grid style={{height: "100%"}} size={3.5} className={"hide-mobile"}>
+                <ColumnRight/>
+            </Grid>}
         </Grid>
     );
 };
