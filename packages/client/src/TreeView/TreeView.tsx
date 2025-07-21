@@ -139,23 +139,23 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         setDragOver(null);
-        
+
         const draggedNodeId = e.dataTransfer.getData('nodeId');
         const draggedParentId = e.dataTransfer.getData('parentId');
-        
+
         // Don't drop on itself
         if (draggedNodeId === node.id) return;
-        
+
         // Only allow reordering within the same parent
         if (draggedParentId !== (node.parent || '')) return;
-        
+
         const rect = e.currentTarget.getBoundingClientRect();
         const y = e.clientY - rect.top;
         const height = rect.height;
-        
+
         // Determine if dropping above or below
         const dropAbove = y < height / 2;
-        
+
         // Calculate the shift needed
         // This will be handled by the setNodePosition atom
         setNodePosition({

@@ -22,6 +22,82 @@ interface childTypesForDisplay {
     "displayName": string,
 }
 
+
+interface AddNodeMenuItemProps {
+    node: NodeVM;
+    onClose: () => void;
+    mode: 'child' | 'sibling';
+}
+
+
+const AddNodeMenuItem = ({node, onClose, mode}: AddNodeMenuItemProps) => {
+    const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+    const addNewNode = useSetAtom(addNewNodeAtom);
+    const [availableTypesForDisplay, setAvailableTypesForDisplay] = React.useState<childTypesForDisplay[]>([]);
+
+    const availableTypeNames = node.nodeType.allowedChildrenTypes
+
+    useEffect(() => {
+        const fetchTypes = async () => {
+            const promises = availableTypeNames.map(async (typeName) => {
+                const nodeType = await node.treeVM.treeM.supportedNodesTypes(typeName);
+                return {
+                    name: typeName,
+                    displayName: nodeType.displayName
+                };
+            });
+            const availableTypes = await Promise.all(promises);
+            setAvailableTypesForDisplay(availableTypes);
+        };
+        fetchTypes();
+    }, [availableTypeNames, node.treeVM]);
+
+    const handleClick = (event: React.MouseEvent<HTMLLIElement>) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleClose = () => {
+        setAnchorEl(null);
+    };
+
+    const handleAdd = (nodeTypeName: string) => {
+
+        addNewNode({
+            parentId: node.id,
+            positionId: null,
+            nodeTypeName
+        });
+
+        handleClose();
+        onClose();
+    };
+
+    return (
+        <>
+            <MenuItem onClick={handleClick}>
+                <AddIcon/>
+            </MenuItem>
+            <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleClose}
+                anchorOrigin={{vertical: 'top', horizontal: 'right'}}
+                transformOrigin={{vertical: 'top', horizontal: 'left'}}
+            >
+                {availableTypesForDisplay.map((type) => (
+                    <MenuItem
+                        key={type.name}
+                        onClick={() => handleAdd(type.name)}
+                    >
+                        <ListItemText>{type.displayName}</ListItemText>
+                    </MenuItem>
+                ))}
+            </Menu>
+        </>
+    );
+};
+
+
 export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
     const theme = useTheme()
     const node = props.node;
@@ -34,6 +110,12 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
     const [availableTypesForDisplay, setAvailableTypesForDisplay] = React.useState<childTypesForDisplay[]>([]);
 
     const availableTypeNames = node.nodeType.allowedChildrenTypes
+
+    const parentId = node.parent;
+    let parentNode;
+    if (parentId) {
+        parentNode = useAtomValue(tree.nodeDict[parentId])
+    }
 
     useEffect(() => {
         const fetchTypes = async () => {
@@ -150,20 +232,12 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
                 }}
             >
                 {/* Add Children */}
-                {node.nodeType.allowAddingChildren && (
-                    <Tooltip title="Add Children" placement="left">
-                        <IconButton
-                            size="small"
-                            onClick={handleAddChildClick}
-                            sx={{
-                                color: theme.palette.success.main,
-                                '&:hover': { backgroundColor: theme.palette.success.light + '20' }
-                            }}
-                        >
-                            <AddIcon fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
-                )}
+                {node.nodeType.allowAddingChildren &&
+                    <AddNodeMenuItem node={node} onClose={handleClose} mode={"child"}/>
+                }
+                {parentId && parentNode.nodeType.allowAddingChildren &&
+                    <AddNodeMenuItem node={parentNode} onClose={handleClose} mode={"sibling"}/>
+                }
 
                 {/* Stage Version */}
                 <Tooltip title="Stage Version" placement="left">
