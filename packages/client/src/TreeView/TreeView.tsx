@@ -12,6 +12,8 @@ import {NodeTitle} from "./NodeTitle";
 import { thisNodeContext } from './NodeContext';
 import {updateChildrenCountAtom} from "../TreeState/childrenCount";
 import { NodeContentFrame } from './NodeContentFrame';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+
 
 const TreeView = () => {
     const leaves = useAtomValue(listOfNodesForViewAtom)
@@ -161,7 +163,7 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
         setNodePosition({
             nodeId: draggedNodeId,
             targetId: node.id,
-            shift: dropAbove ? -1 : 1
+            shift: dropAbove ? 0 : 1
         });
     }
 

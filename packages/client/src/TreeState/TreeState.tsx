@@ -76,6 +76,7 @@ export const setNodePositionAtom = atom(null, (get, set, props: {
     targetId: string,
     shift: number
 }) => {
+    console.log(props)
     const currTree = get(treeAtom)
     if (!currTree)
         return
@@ -113,7 +114,6 @@ export const setNodePositionAtom = atom(null, (get, set, props: {
         yArrayChildren.delete(currentIdx, 1)
         yArrayChildren.insert(newPosition, [props.nodeId])
     })
-
 })
 
 
