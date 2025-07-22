@@ -6,7 +6,7 @@ import {setupYDocAtom, YjsProviderAtom} from "./TreeState/YjsConnection";
 import LinearView from "./LinearView";
 import AuthModal from '../../user-system/src/AuthModal';
 import {subscriptionAtom, supabaseClientAtom, userAtom} from "../../user-system/src/authStates";
-import {MyAppBar} from "./AppBar";
+import {AppBarLeft, AppBarRight} from "./AppBar";
 import {treeId} from "./appState";
 import {getPastelHexFromUsername, getRandomAnimal} from "@forest/user-system/src/helper";
 import {recordTreeVisit} from "./TreeState/treeVisitService";
@@ -23,7 +23,6 @@ export default function App() {
     const setupYDoc = useSetAtom(setupYDocAtom);
 
     useEffect(() => {
-        document.body.style.overflow = 'hidden';
         if (treeId) {
             setupYDoc()
         }
@@ -55,14 +54,32 @@ export default function App() {
 
             <Box sx={{display: 'flex', flexDirection: 'column', height: '100dvh'}}>
                 <CssBaseline/>
-                <Box sx={{width: '100%'}}>
-                    <MyAppBar setCurrentPage={setCurrentPage} currentPage={currentPage}/>
+                <Box sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    width: '100%',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'stretch',
+                    backgroundColor: 'transparent',
+                    zIndex: 1000,
+                    pointerEvents: 'none' // Allow clicks to pass through empty areas
+                }}>
+                    <Box sx={{ pointerEvents: 'auto' }}>
+                        <AppBarLeft setCurrentPage={setCurrentPage} currentPage={currentPage}/>
+                    </Box>
+                    <Box sx={{ pointerEvents: 'auto' }}>
+                        <AppBarRight/>
+                    </Box>
                 </Box>
+
                 <Box
                     flexGrow={1}
                     overflow="auto"
-                    p={2}
-                    pt={`${appBarHeight}px`}
+                    p={0}
+                    pt={0}
                     bgcolor="background.default"
                     sx={{overflowX: 'hidden'}}
                 >
@@ -81,7 +98,7 @@ const TreeViewPage = () => {
     const tree = useAtomValue(treeAtom);
     if(!tree)
         return null;
-    return <Box style={{width: "100vw", height: "100%", flexGrow: 1, boxSizing: "border-box"}}>
+    return <Box style={{width: "100vw", height: "100%", flexGrow: 1, overflow: 'auto', boxSizing: "border-box"}}>
         <TreeView/>
     </Box>
 }

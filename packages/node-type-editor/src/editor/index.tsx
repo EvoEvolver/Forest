@@ -5,7 +5,7 @@ import {YjsProviderAtom} from "@forest/client/src/TreeState/YjsConnection";
 import {XmlFragment} from 'yjs';
 import Collaboration from '@tiptap/extension-collaboration'
 import {CollaborationCursor} from './Extensions/collaboration-cursor'
-import {BubbleMenu, EditorContent} from '@tiptap/react'
+import {BubbleMenu, EditorContent, useEditor} from '@tiptap/react'
 import Document from '@tiptap/extension-document'
 import Paragraph from '@tiptap/extension-paragraph'
 import Text from '@tiptap/extension-text'
@@ -38,24 +38,14 @@ const TiptapEditor = (props: TiptapEditorProps) => {
 
 };
 
-
 export default TiptapEditor;
 
-export function makeEditor(yXML, provider, contentEditable, onCommentActivated, onLinkActivated): Editor {
-
-    const commentExtension = CommentExtension.configure({
-        HTMLAttributes: {class: "comment"},
-        onCommentActivated: onCommentActivated || ((id, editor, options) => {
-        })
+function makeExtensions(yXML, provider, onCommentActivated, onLinkActivated) {
+    const onCommentActivatedHandler = onCommentActivated || ((id, editor, options) => {
     });
-
-    const linkExtension = LinkExtension.configure({
-        HTMLAttributes: {},
-        onLinkActivated: onLinkActivated || ((href, editor, options) => {
-        })
+    const onLinkActivatedHandler = onLinkActivated || ((href, editor, options) => {
     });
-
-    const extensions = [
+    return [
         Document,
         Paragraph,
         Text,
@@ -65,21 +55,24 @@ export function makeEditor(yXML, provider, contentEditable, onCommentActivated, 
         Image,
         Bold,
         MathExtension.configure({evaluation: false}),
-        commentExtension,
-        linkExtension
+        CommentExtension.configure({
+            HTMLAttributes: {class: "comment"},
+            onCommentActivated: onCommentActivatedHandler,
+        }),
+        LinkExtension.configure({
+            HTMLAttributes: {},
+            onLinkActivated: onLinkActivatedHandler,
+        }),
+        ...(yXML ? [Collaboration.extend().configure({fragment: yXML})] : []),
+        ...(provider ? [CollaborationCursor.extend().configure({provider})] : []),
     ];
-    if (yXML){
-        // @ts-ignore
-        extensions.push(Collaboration.extend().configure({
-            fragment: yXML,
-        }))
-    }
-    if (provider) {
-        // If a provider is available, we can use the collaboration extension
-        // @ts-ignore
-        extensions.push(CollaborationCursor.extend().configure({
-            provider,
-        }));
+}
+
+export function makeEditor(yXML, provider, contentEditable, onCommentActivated, onLinkActivated): Editor {
+
+    const extensions = makeExtensions(yXML, provider, onCommentActivated, onLinkActivated);
+    if (yXML) {
+        console.log(yXML)
     }
 
     const editor = new Editor({
@@ -95,57 +88,43 @@ export function makeEditor(yXML, provider, contentEditable, onCommentActivated, 
     return editor
 }
 
+
 const EditorImpl = ({yXML, provider, dataLabel, node}) => {
     const [hoverElements, setHoverElements] = useState([]);
-    const contentEditable = useContext(contentEditableContext)
-    const onCommentActivated = makeOnCommentActivated(setHoverElements)
-    const onLinkActivated = makeOnLinkActivated(setHoverElements)
-    const [editor, setEditor] = useState<Editor | null>(null);
+    const contentEditable = useContext(contentEditableContext);
+    const onCommentActivated = makeOnCommentActivated(setHoverElements);
+    const onLinkActivated = makeOnLinkActivated(setHoverElements);
 
-    useEffect(() => {
-        // Initialize the editor when the component mounts
-        const editor = makeEditor(
-            yXML,
-            provider,
-            contentEditable,
-            onCommentActivated,
-            onLinkActivated
-        );
-        if (editor) {
+    const editor = useEditor({
+        extensions: makeExtensions(yXML, provider, onCommentActivated, onLinkActivated),
+        editable: contentEditable !== false,
+        onCreate: ({editor}) => {
             node.vdata["tiptap_editor_" + dataLabel] = editor;
-            setEditor(editor)
-        }
-        return () => {
-            // Clean up the editor when the component unmounts
-            if (editor) {
-                editor.destroy();
-                delete node.vdata["tiptap_editor_" + dataLabel];
-            }
-        };
-    }, []);
+        },
+        onDestroy: () => {
+            delete node.vdata["tiptap_editor_" + dataLabel];
+        },
+        enableContentCheck: true,
+        onContentError: ({disableCollaboration}) => {
+            console.error("Content error in Tiptap editor:", disableCollaboration);
+            disableCollaboration();
+        },
+    });
 
-    const handleClickComment = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const handleClickComment = () => {
         const id = `comment-${Date.now()}`;
         editor?.commands.setComment(id, "");
         onCommentActivated(id, editor, {"inputOn": true});
     };
 
-    const handleClickLink = (event: React.MouseEvent<HTMLButtonElement>) => {
-        const href = " "
+    const handleClickLink = () => {
+        const href = " ";
         editor?.commands.setLink({href});
         onLinkActivated(href, editor, {"inputOn": true});
-    }
-
-    // Destroy the editor when the component unmounts
-    useEffect(() => {
-        const editorFieldName = "tiptap_editor_" + dataLabel;
-        if (editor) {
-            node.vdata[editorFieldName] = editor
-        }
-    }, [editor, dataLabel, node]);
+    };
 
     if (!editor) {
-        return null
+        return null;
     }
     return (
         <div className="column-half">
@@ -163,8 +142,8 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
             </BubbleMenu>
             <HoverElements hoverElements={hoverElements} editor={editor}/>
         </div>
-    )
-}
+    );
+};
 
 const HoverElement = ({el, render, editor}) => {
     const [referenceElement, setReferenceElement] = useState(null);

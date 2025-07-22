@@ -57,11 +57,11 @@ const AuthButton: React.FC = () => {
     if (!isAuthenticated) {
         return (
             <Button
-                color="inherit"
+                color="primary"
                 onClick={handleLoginClick}
-                startIcon={<AccountCircleIcon sx={{color: 'white'}}/>}
+                startIcon={<AccountCircleIcon sx={{color: 'black'}}/>}
                 sx={{
-                    color: 'white',
+                    color: 'black',
                     textTransform: 'none',
                     '&:hover': {
                         backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -76,23 +76,23 @@ const AuthButton: React.FC = () => {
     return (
         <>
             <Button
-                color="inherit"
+                color="primary"
                 onClick={handleUserMenuClick}
                 sx={{
-                    color: 'white',
+                    color: 'black',
                     textTransform: 'none',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 1,
                     '&:hover': {
-                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                        backgroundColor: 'rgba(100, 100, 100, 0.1)',
                     },
                 }}
             >
-                <Avatar sx={{width: 24, height: 24, bgcolor: 'rgba(255, 255, 255, 0.2)'}}>
+                <Avatar sx={{width: 24, height: 24, bgcolor: 'rgba(0, 0, 0, 0.8)'}}>
                     {user?.email?.charAt(0).toUpperCase()}
                 </Avatar>
-                <Typography variant="body2" sx={{color: 'white'}}>
+                <Typography variant="body2" sx={{color: 'black'}}>
                     {user?.email?.split('@')[0]}
                 </Typography>
             </Button>
