@@ -18,9 +18,9 @@ export const AppBarLeft = ({setCurrentPage, currentPage}) => {
             direction="row"
             spacing={2}
             sx={{
-                backgroundColor: '#fafafa',
-                border: '1px solid #c6c6c6',
-                borderRadius: '16px',
+                backgroundColor: '#ffffff',
+                boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                borderRadius: '10px',
                 padding: '8px 16px',
                 minHeight: '48px',
                 alignItems: 'center',
@@ -58,9 +58,9 @@ export const AppBarRight = () => {
             spacing={0}
             alignItems="center"
             sx={{
-                backgroundColor: '#fafafa',
-                border: '1px solid #c6c6c6',
-                borderRadius: '16px',
+                backgroundColor: '#ffffff',
+                boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                borderRadius: '10px',
                 padding: '8px 8px',
                 minHeight: '48px',
                 alignItems: 'center',
