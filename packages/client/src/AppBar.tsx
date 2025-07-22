@@ -8,6 +8,8 @@ import {jumpToNodeAtom, scrollToNodeAtom} from "./TreeState/TreeState";
 import Tooltip from "@mui/material/Tooltip";
 import AuthButton from "@forest/user-system/src/AuthButton";
 import {supabaseClientAtom} from "@forest/user-system/src/authStates";
+import SettingsIcon from "@mui/icons-material/Settings";
+import SettingsDialog from "./SettingsDialog";
 
 // Left side component - navigation buttons
 export const AppBarLeft = ({setCurrentPage, currentPage}) => {
@@ -45,6 +47,10 @@ export const AppBarLeft = ({setCurrentPage, currentPage}) => {
 export const AppBarRight = () => {
     const connectionStatus = useAtomValue(YjsConnectionStatusAtom);
     const supabaseClient = useAtomValue(supabaseClientAtom);
+    const [settingsOpen, setSettingsOpen] = useState(false);
+
+    const handleOpenSettings = () => setSettingsOpen(true);
+    const handleCloseSettings = () => setSettingsOpen(false);
 
     return (
         <Stack
@@ -68,6 +74,10 @@ export const AppBarRight = () => {
                 </span>
             }
             {supabaseClient && <AuthButton/>}
+            <Button onClick={handleOpenSettings} sx={{minWidth: 0, padding: 0, marginLeft: 1}}>
+                <SettingsIcon/>
+            </Button>
+            <SettingsDialog open={settingsOpen} onClose={handleCloseSettings}/>
         </Stack>
     );
 };
