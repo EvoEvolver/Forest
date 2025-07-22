@@ -1,11 +1,19 @@
 import {useAtomValue, useSetAtom} from "jotai";
-import {
-    addNewNodeAtom,
-    deleteNodeAtom,
-    treeAtom
-} from "../TreeState/TreeState";
+import {addNewNodeAtom, deleteNodeAtom, treeAtom} from "../TreeState/TreeState";
 import {useTheme} from "@mui/system";
-import {IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Tooltip} from "@mui/material";
+import {
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    IconButton,
+    ListItemText,
+    Menu,
+    MenuItem,
+    Tooltip
+} from "@mui/material";
 import React, {useEffect} from "react";
 import ArchiveIcon from '@mui/icons-material/Archive';
 import PsychologyIcon from '@mui/icons-material/Psychology';
@@ -15,7 +23,7 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import {NodeVM} from "@forest/schema";
 import {userAtom} from "@forest/user-system/src/authStates";
-import {httpUrl, treeId} from "../appState";
+import {StageVersionDialog} from "./StageVersionDialog";
 
 interface childTypesForDisplay {
     "name": string,
@@ -109,6 +117,12 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const [availableTypesForDisplay, setAvailableTypesForDisplay] = React.useState<childTypesForDisplay[]>([]);
 
+    // Stage version dialog state
+    const [stageDialogOpen, setStageDialogOpen] = React.useState(false);
+    // Confirmation dialog state for delete
+    const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+    const [pendingDeleteNodeId, setPendingDeleteNodeId] = React.useState<string | null>(null);
+
     const availableTypeNames = node.nodeType.allowedChildrenTypes
 
     const parentId = node.parent;
@@ -153,38 +167,14 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
         node.data['archived'] = true;
         node.commitDataChange()
     }
-    
+
     const unarchiveNode = () => {
         node.data['archived'] = false;
         node.commitDataChange()
     }
 
-    const stageVersion = async () => {
-        const snapshotData = node.nodeM.getSnapshot();
-        try {
-            const response = await fetch(httpUrl+'/api/nodeSnapshot', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    treeId: treeId,
-                    nodeId: node.id,
-                    authorId: user?.id || "",
-                    tag: "snapshot",
-                    data: snapshotData
-                })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to save snapshot');
-            }
-
-            console.log('Snapshot saved successfully');
-        } catch (error) {
-            console.error('Failed to save snapshot:', error);
-        }
+    const handleStageVersion = () => {
+        setStageDialogOpen(true);
     };
 
     const treeAgent = () => {
@@ -192,14 +182,14 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
     }
 
     const deleteNodeHandler = () => {
-        deleteNode({nodeId: node.id});
+        setPendingDeleteNodeId(node.id);
+        setDeleteDialogOpen(true);
     };
 
     const copyNodeLink = () => {
-        const treeMetadata = tree.metadata;
         let currentUrl = window.location.href;
         currentUrl = currentUrl.split('?')[0];
-        const nodeUrl = `${currentUrl}?id=${treeMetadata.treeId}&n=${node.id}`;
+        const nodeUrl = `${currentUrl}?id=${tree.treeM.id()}&n=${node.id}`;
 
         if (navigator.clipboard) {
             navigator.clipboard.writeText(nodeUrl);
@@ -243,13 +233,13 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
                 <Tooltip title="Stage Version" placement="left">
                     <IconButton
                         size="small"
-                        onClick={stageVersion}
+                        onClick={handleStageVersion}
                         sx={{
                             color: theme.palette.info.main,
-                            '&:hover': { backgroundColor: theme.palette.info.light + '20' }
+                            '&:hover': {backgroundColor: theme.palette.info.light + '20'}
                         }}
                     >
-                        <TagIcon fontSize="small" />
+                        <TagIcon fontSize="small"/>
                     </IconButton>
                 </Tooltip>
 
@@ -260,10 +250,10 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
                         onClick={treeAgent}
                         sx={{
                             color: theme.palette.primary.main,
-                            '&:hover': { backgroundColor: theme.palette.primary.light + '20' }
+                            '&:hover': {backgroundColor: theme.palette.primary.light + '20'}
                         }}
                     >
-                        <PsychologyIcon fontSize="small" />
+                        <PsychologyIcon fontSize="small"/>
                     </IconButton>
                 </Tooltip>
 
@@ -274,10 +264,10 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
                         onClick={node.data['archived'] ? unarchiveNode : archiveNode}
                         sx={{
                             color: theme.palette.warning.main,
-                            '&:hover': { backgroundColor: theme.palette.warning.light + '20' }
+                            '&:hover': {backgroundColor: theme.palette.warning.light + '20'}
                         }}
                     >
-                        <ArchiveIcon fontSize="small" />
+                        <ArchiveIcon fontSize="small"/>
                     </IconButton>
                 </Tooltip>
 
@@ -288,10 +278,10 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
                         onClick={copyNodeLink}
                         sx={{
                             color: theme.palette.secondary.main,
-                            '&:hover': { backgroundColor: theme.palette.secondary.light + '20' }
+                            '&:hover': {backgroundColor: theme.palette.secondary.light + '20'}
                         }}
                     >
-                        <InsertLinkIcon fontSize="small" />
+                        <InsertLinkIcon fontSize="small"/>
                     </IconButton>
                 </Tooltip>
 
@@ -304,11 +294,11 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
                             disabled={nodeChildren.length > 0 || node.parent === null}
                             sx={{
                                 color: theme.palette.error.main,
-                                '&:hover': { backgroundColor: theme.palette.error.light + '20' },
-                                '&:disabled': { color: theme.palette.action.disabled }
+                                '&:hover': {backgroundColor: theme.palette.error.light + '20'},
+                                '&:disabled': {color: theme.palette.action.disabled}
                             }}
                         >
-                            <DeleteIcon fontSize="small" />
+                            <DeleteIcon fontSize="small"/>
                         </IconButton>
                     </Tooltip>
                 )}
@@ -331,6 +321,44 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
                     </MenuItem>
                 ))}
             </Menu>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog
+                open={deleteDialogOpen}
+                onClose={() => setDeleteDialogOpen(false)}
+            >
+                <DialogTitle>Confirm Delete</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Are you sure you want to delete this node? This action cannot be undone.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDeleteDialogOpen(false)} color="primary">
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={() => {
+                            if (pendingDeleteNodeId) {
+                                deleteNode({nodeId: pendingDeleteNodeId});
+                            }
+                            setDeleteDialogOpen(false);
+                            setPendingDeleteNodeId(null);
+                        }}
+                        color="error"
+                        variant="contained"
+                    >
+                        Delete
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Stage Version Dialog */}
+            <StageVersionDialog
+                open={stageDialogOpen}
+                onClose={() => setStageDialogOpen(false)}
+                node={node}
+            />
         </>
     );
 };

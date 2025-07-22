@@ -106,7 +106,6 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewI
         <Card
             elevation={3}
             sx={{
-                maxWidth: 600,
                 margin: "0 auto",
                 padding: 2,
                 display: "flex",
