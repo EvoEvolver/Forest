@@ -49,16 +49,16 @@ export const AppBarRight = () => {
     return (
         <Stack
             direction="row"
-            spacing={2}
+            spacing={0}
             alignItems="center"
             sx={{
                 backgroundColor: '#fafafa',
                 border: '1px solid #c6c6c6',
                 borderRadius: '16px',
-                padding: '8px 16px',
+                padding: '8px 8px',
                 minHeight: '48px',
                 alignItems: 'center',
-                margin: '8px 10px'
+                margin: '8px 20px'
             }}
         >
             <AwarenessStatus/>

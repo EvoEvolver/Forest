@@ -4,6 +4,7 @@ import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import {listOfNodesForViewAtom, selectedNodeAtom, treeAtom, setNodePositionAtom} from "../TreeState/TreeState";
 import {NodeButtons} from "./NodeButtons";
 import {HoverSidePanel} from "./HoverSidePanel";
+import {HoverPlusButton} from "./HoverPlusButton";
 import {isMobileModeAtom} from "../appState";
 import {ColumnLeft} from "./ColumnLeft";
 import {ColumnRight} from "./ColumnRight";
@@ -104,6 +105,13 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
     const [dragOver, setDragOver] = useState<'top' | 'bottom' | null>(null);
     const [isDragIconHovered, setIsDragIconHovered] = useState(false);
     const setNodePosition = useSetAtom(setNodePositionAtom);
+    const tree = useAtomValue(treeAtom);
+
+    const parentId = node.parent;
+    let parentNode;
+    if (parentId) {
+        parentNode = useAtomValue(tree.nodeDict[parentId]);
+    }
 
     const handleClick = () => {
         //console.log(event.target)
@@ -211,6 +219,18 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
         <NodeButtons node={node}/>
         <HoverSidePanel node={node} isVisible={isHovered}/>
         <SelectedDot node={node}/>
+        
+        {/* Hover Plus Buttons for Adding Siblings */}
+        {parentNode && (
+            <>
+                <HoverPlusButton 
+                    node={node} 
+                    parentNode={parentNode} 
+                    isVisible={isHovered}
+                    position="bottom"
+                />
+            </>
+        )}
         
         {/* Drag Indicator Icon */}
         {node.nodeType.allowReshape && (isHovered || isDragIconHovered) && (

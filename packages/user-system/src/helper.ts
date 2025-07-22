@@ -7,8 +7,8 @@ export function getPastelHexFromUsername(username) {
 
     // Use hash to get hue in [0, 360)
     const hue = Math.abs(hash) % 360;
-    const saturation = 0.6; // 60%
-    const lightness = 0.8;  // 80%
+    const saturation = 0.8
+    const lightness = 0.7
 
     // Convert HSL to RGB
     const c = (1 - Math.abs(2 * lightness - 1)) * saturation;

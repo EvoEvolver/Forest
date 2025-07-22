@@ -47,8 +47,6 @@ export default function App() {
         recordTreeVisit(treeId, supabaseClient);
     }, [user]);
 
-    const appBarHeight = 55;
-
     return (
         <>
 

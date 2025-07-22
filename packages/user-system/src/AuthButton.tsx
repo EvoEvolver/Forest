@@ -59,13 +59,13 @@ const AuthButton: React.FC = () => {
             <Button
                 color="primary"
                 onClick={handleLoginClick}
-                startIcon={<AccountCircleIcon sx={{color: 'black'}}/>}
+                startIcon={<AccountCircleIcon sx={{color: 'rgba(78, 137, 192, 0.8)'}}/>}
                 sx={{
                     color: 'black',
                     textTransform: 'none',
                     '&:hover': {
                         backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    },
+                    }
                 }}
             >
                 Sign In
@@ -87,9 +87,10 @@ const AuthButton: React.FC = () => {
                     '&:hover': {
                         backgroundColor: 'rgba(100, 100, 100, 0.1)',
                     },
+                    margin: 0
                 }}
             >
-                <Avatar sx={{width: 24, height: 24, bgcolor: 'rgba(0, 0, 0, 0.8)'}}>
+                <Avatar sx={{width: 24, height: 24, bgcolor: 'rgba(78, 137, 192, 0.8)'}}>
                     {user?.email?.charAt(0).toUpperCase()}
                 </Avatar>
                 <Typography variant="body2" sx={{color: 'black'}}>
