@@ -9,10 +9,9 @@ export const NodeContentFrame = ({children}) => {
         overflowY: 'auto',
         overflowX: 'hidden',
         wordBreak: "break-word",
-        boxShadow: "none",
-        border: "1px solid #c6c6c6",
+        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
         borderRadius: "16px",
-        backgroundColor: "#fafafa",
+        backgroundColor: "#ffffff",
         color: "black",
         transition: "all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1)",
     }

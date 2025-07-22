@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
-import {Box, Card, Grid, Typography} from '@mui/material';
-import {useAtom, useAtomValue, useSetAtom} from "jotai";
-import {listOfNodesForViewAtom, selectedNodeAtom, treeAtom, setNodePositionAtom} from "../TreeState/TreeState";
+import {Box, Typography} from '@mui/material';
+import {useAtomValue, useSetAtom} from "jotai";
+import {listOfNodesForViewAtom, selectedNodeAtom, setNodePositionAtom, treeAtom} from "../TreeState/TreeState";
 import {NodeButtons} from "./NodeButtons";
 import {HoverSidePanel} from "./HoverSidePanel";
 import {HoverPlusButton} from "./HoverPlusButton";
@@ -10,9 +10,8 @@ import {ColumnLeft} from "./ColumnLeft";
 import {ColumnRight} from "./ColumnRight";
 import {NodeVM} from "@forest/schema"
 import {NodeTitle} from "./NodeTitle";
-import { thisNodeContext } from './NodeContext';
+import {thisNodeContext} from './NodeContext';
 import {updateChildrenCountAtom} from "../TreeState/childrenCount";
-import { NodeContentFrame } from './NodeContentFrame';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 
 
@@ -43,7 +42,7 @@ const TreeView = () => {
                     <ColumnLeft/>
                 </div>
             )}
-            
+
             {/* Fixed right column */}
             {!mobileMode && (
                 <div style={{
@@ -57,7 +56,7 @@ const TreeView = () => {
                     <ColumnRight/>
                 </div>
             )}
-            
+
             {/* Main content with grey background */}
             <div style={{
                 minHeight: "100vh",
@@ -72,7 +71,8 @@ const TreeView = () => {
             }}>
                 <div>
                     <div>
-                        {leaves.filter((n) => n.data["archived"]!==true).map((n)=><MiddleContents node={n} key={n.id}/>)}
+                        {leaves.filter((n) => n.data["archived"] !== true).map((n) => <MiddleContents node={n}
+                                                                                                      key={n.id}/>)}
                     </div>
                     {/* Archive section only if there are archived nodes */}
                     {leaves.some(n => n.data["archived"] === true) && (
@@ -82,12 +82,14 @@ const TreeView = () => {
                                     sx={{color: '#afafaf'}}
                                     onClick={() => setShowArchived(v => !v)}
                                 >
-                                    Archived ({leaves.filter(n => n.data["archived"]===true).length}) ({showArchived ? 'hide' : 'show'})
+                                    Archived ({leaves.filter(n => n.data["archived"] === true).length})
+                                    ({showArchived ? 'hide' : 'show'})
                                 </Typography>
                             </div>
                             {showArchived && (
                                 <Box style={{border: '1px dashed #555', borderRadius: 6, padding: 8, marginBottom: 8}}>
-                                    {leaves.filter((n) => n.data["archived"]===true).map((n)=><MiddleContents node={n} key={n.id}/>)}
+                                    {leaves.filter((n) => n.data["archived"] === true).map((n) => <MiddleContents
+                                        node={n} key={n.id}/>)}
                                 </Box>
                             )}
                         </>
@@ -133,11 +135,11 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
-        
+
         const rect = e.currentTarget.getBoundingClientRect();
         const y = e.clientY - rect.top;
         const height = rect.height;
-        
+
         if (y < height / 2) {
             setDragOver('top');
         } else {
@@ -182,17 +184,18 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
         style={{
             padding: '24px',
             marginBottom: '24px',
-            borderRadius: '24px',
+            borderRadius: '10px',
             display: 'flex',
             flexDirection: 'column',
+            maxWidth: '800px',
+            margin: '10px auto',
             position: "relative",
             color: 'black',
             backgroundColor: 'white',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            border: '1px solid #c6c6c6',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
             opacity: isDragging ? 0.5 : 1,
-            borderTop: dragOver === 'top' ? '3px solid #1976d2' : '1px solid #c6c6c6',
-            borderBottom: dragOver === 'bottom' ? '3px solid #1976d2' : '1px solid #c6c6c6',
+            borderTop: dragOver === 'top' ? '3px solid #1976d2' : '0px solid #c6c6c6',
+            borderBottom: dragOver === 'bottom' ? '3px solid #1976d2' : '0px solid #c6c6c6',
             transition: 'opacity 0.2s ease',
         }}
         onMouseEnter={() => setIsHovered(true)}
@@ -210,28 +213,28 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
             id={`node-${node.id}`}
         >
             <thisNodeContext.Provider value={node}>
-            <NodeTitle
-                node={node}
-            />
-            {node.nodeType.render(node)}
+                <NodeTitle
+                    node={node}
+                />
+                {node.nodeType.render(node)}
             </thisNodeContext.Provider>
         </div>
         <NodeButtons node={node}/>
         <HoverSidePanel node={node} isVisible={isHovered}/>
         <SelectedDot node={node}/>
-        
+
         {/* Hover Plus Buttons for Adding Siblings */}
         {parentNode && (
             <>
-                <HoverPlusButton 
-                    node={node} 
-                    parentNode={parentNode} 
+                <HoverPlusButton
+                    node={node}
+                    parentNode={parentNode}
                     isVisible={isHovered}
                     position="bottom"
                 />
             </>
         )}
-        
+
         {/* Drag Indicator Icon */}
         {node.nodeType.allowReshape && (isHovered || isDragIconHovered) && (
             <div
@@ -256,11 +259,11 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
                 onMouseEnter={() => setIsDragIconHovered(true)}
                 onMouseLeave={() => setIsDragIconHovered(false)}
             >
-                <DragIndicatorIcon 
-                    sx={{ 
+                <DragIndicatorIcon
+                    sx={{
                         color: '#666',
                         fontSize: '20px'
-                    }} 
+                    }}
                 />
             </div>
         )}
