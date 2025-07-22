@@ -197,7 +197,6 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
     >
-        <NodeBorder node={node}/>
         <div
             onClick={handleClick}
             id={`node-${node.id}`}
@@ -211,6 +210,7 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
         </div>
         <NodeButtons node={node}/>
         <HoverSidePanel node={node} isVisible={isHovered}/>
+        <SelectedDot node={node}/>
         
         {/* Drag Indicator Icon */}
         {node.nodeType.allowReshape && (isHovered || isDragIconHovered) && (
@@ -247,9 +247,27 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
     </div>
 }
 
-const NodeBorder = ({node}) => {
-    return null
-}
+const SelectedDot = ({node}) => {
+    let selectedNode = useAtomValue(selectedNodeAtom)
+    if (!selectedNode)
+        return null
+    const isSelected = selectedNode.id === node.id;
 
+    if (!isSelected)
+        return null
+    else
+        return <div
+            style={{
+                position: 'absolute',
+                left: '8px',
+                top: '35px', // Position near the title
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                backgroundColor: '#1976d2', // Blue color
+                zIndex: 10
+            }}
+        />
+}
 
 export default TreeView;
