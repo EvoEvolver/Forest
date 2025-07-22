@@ -47,7 +47,7 @@ const TreeView = () => {
             {!mobileMode && (
                 <div style={{
                     position: 'fixed',
-                    right: 10,
+                    right: 20,
                     top: 70,
                     bottom: 10,
                     width: 400,
@@ -61,6 +61,7 @@ const TreeView = () => {
             <div style={{
                 minHeight: "100vh",
                 width: "100%",
+                margin: "auto",
                 backgroundColor: "#f0f0f0",
                 paddingTop: "70px",
                 paddingBottom: "10px",
@@ -101,6 +102,7 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [dragOver, setDragOver] = useState<'top' | 'bottom' | null>(null);
+    const [isDragIconHovered, setIsDragIconHovered] = useState(false);
     const setNodePosition = useSetAtom(setNodePositionAtom);
 
     const handleClick = () => {
@@ -109,6 +111,7 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
     }
 
     const handleDragStart = (e: React.DragEvent) => {
+        e.stopPropagation();
         setIsDragging(true);
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('nodeId', node.id);
@@ -180,16 +183,16 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
             border: '1px solid #c6c6c6',
             opacity: isDragging ? 0.5 : 1,
-            cursor: node.nodeType.allowReshape ? 'move' : 'default',
             borderTop: dragOver === 'top' ? '3px solid #1976d2' : '1px solid #c6c6c6',
             borderBottom: dragOver === 'bottom' ? '3px solid #1976d2' : '1px solid #c6c6c6',
             transition: 'opacity 0.2s ease',
         }}
         onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        draggable={node.nodeType.allowReshape}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
+        onMouseLeave={() => {
+            setIsHovered(false);
+            setIsDragIconHovered(false);
+            setIsDragging(false);
+        }}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -208,6 +211,39 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
         </div>
         <NodeButtons node={node}/>
         <HoverSidePanel node={node} isVisible={isHovered}/>
+        
+        {/* Drag Indicator Icon */}
+        {node.nodeType.allowReshape && (isHovered || isDragIconHovered) && (
+            <div
+                style={{
+                    position: 'absolute',
+                    left: '-15px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    cursor: 'move',
+                    padding: '4px',
+                    borderRadius: '4px',
+                    backgroundColor: isDragIconHovered ? 'rgba(0,0,0,0.1)' : 'rgba(0,0,0,0.05)',
+                    transition: 'background-color 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999
+                }}
+                draggable={true}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                onMouseEnter={() => setIsDragIconHovered(true)}
+                onMouseLeave={() => setIsDragIconHovered(false)}
+            >
+                <DragIndicatorIcon 
+                    sx={{ 
+                        color: '#666',
+                        fontSize: '20px'
+                    }} 
+                />
+            </div>
+        )}
     </div>
 }
 
