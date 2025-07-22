@@ -6,6 +6,7 @@ import IssueDetail from '../IssueDetail/IssueDetail';
 import IssueDataGrid from './IssueDataGrid';
 import {useAtomValue} from "jotai";
 import {userAtom} from '@forest/user-system/src/authStates';
+import Slide from '@mui/material/Slide';
 
 interface IssueListProps {
     treeId: string;
@@ -192,7 +193,7 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
             setSuccessMessage('Issue created successfully');
         } catch (error) {
             console.error('Failed to create issue:', error);
-            const errorMessage = error instanceof Error ? error.message : 'Failed to create issue';
+            const rrorMessage = error instanceof Error ? error.message : 'Failed to create issue';
             setErrorMessage(errorMessage);
             throw error; // Re-throw to let the dialog handle it
         }
@@ -315,8 +316,10 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
             {/* Success/Error Snackbars */}
             <Snackbar
                 open={!!successMessage}
-                autoHideDuration={6000}
+                autoHideDuration={1500}
                 onClose={() => setSuccessMessage('')}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                TransitionComponent={Slide}
             >
                 <Alert onClose={() => setSuccessMessage('')} severity="success">
                     {successMessage}
@@ -325,8 +328,10 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
 
             <Snackbar
                 open={!!errorMessage}
-                autoHideDuration={6000}
+                autoHideDuration={1500}
                 onClose={() => setErrorMessage('')}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                TransitionComponent={Slide}
             >
                 <Alert onClose={() => setErrorMessage('')} severity="error">
                     {errorMessage}

@@ -7,6 +7,7 @@ import IssueDetailSidebar from './IssueDetailSidebar';
 import {useAtomValue} from 'jotai';
 import {userAtom} from '@forest/user-system/src/authStates';
 import issueServiceAtom from '../../services/issueService';
+import Slide from '@mui/material/Slide';
 
 interface IssueDetailProps {
     issue: Issue | null;
@@ -237,9 +238,10 @@ const IssueDetail: React.FC<IssueDetailProps> = ({
             {/* Login Error Snackbar */}
             <Snackbar
                 open={!!loginError}
-                autoHideDuration={6000}
+                autoHideDuration={1500}
                 onClose={() => setLoginError('')}
-                anchorOrigin={{vertical: 'top', horizontal: 'center'}}
+                anchorOrigin={{vertical: 'bottom', horizontal: 'center'}}
+                TransitionComponent={Slide}
             >
                 <Alert onClose={() => setLoginError('')} severity="warning" sx={{width: '100%'}}>
                     {loginError}

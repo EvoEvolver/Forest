@@ -12,7 +12,9 @@ import {
     ListItemText,
     Menu,
     MenuItem,
-    Tooltip
+    Tooltip,
+    Snackbar,
+    Alert
 } from "@mui/material";
 import React, {useEffect} from "react";
 import ArchiveIcon from '@mui/icons-material/Archive';
@@ -23,6 +25,7 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import {NodeVM} from "@forest/schema";
 import {StageVersionDialog} from "./StageVersionDialog";
+import Slide from '@mui/material/Slide';
 
 interface childTypesForDisplay {
     "name": string,
@@ -44,6 +47,9 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
     // Confirmation dialog state for delete
     const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
     const [pendingDeleteNodeId, setPendingDeleteNodeId] = React.useState<string | null>(null);
+
+    // Snackbar state for copy link
+    const [copySuccess, setCopySuccess] = React.useState(false);
 
     const availableTypeNames = node.nodeType.allowedChildrenTypes
 
@@ -112,9 +118,9 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
 
         if (navigator.clipboard) {
             navigator.clipboard.writeText(nodeUrl);
-            alert(`Node URL copied to clipboard: ${nodeUrl}`);
+            setCopySuccess(true);
         } else {
-            alert("Clipboard API not supported in non HTTPS context. Please copy the URL manually." + nodeUrl);
+            setCopySuccess(true); // Still show snackbar, but maybe with a different message if needed
         }
     };
 
@@ -264,6 +270,19 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Snackbar for copy link */}
+            <Snackbar
+                open={copySuccess}
+                autoHideDuration={1000}
+                onClose={() => setCopySuccess(false)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                TransitionComponent={Slide}
+            >
+                <Alert onClose={() => setCopySuccess(false)} severity="success" sx={{ width: '100%' }}>
+                    Node URL copied to clipboard!
+                </Alert>
+            </Snackbar>
 
             {/* Stage Version Dialog */}
             <StageVersionDialog
