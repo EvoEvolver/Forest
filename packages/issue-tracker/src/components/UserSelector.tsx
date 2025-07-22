@@ -172,26 +172,29 @@ const UserSelector: React.FC<UserSelectorProps> = ({
                     helperText={maxUsers ? `Maximum ${maxUsers} users` : ''}
                 />
             )}
-            renderOption={(props, option) => (
-                <Box component="li" {...props} sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-                    <Avatar
-                        sx={{width: 32, height: 32}}
-                        src={option.avatar || undefined}
-                    >
-                        <PersonIcon fontSize="small"/>
-                    </Avatar>
-                    <Box>
-                        <Typography variant="body2" sx={{fontWeight: 500}}>
-                            {getUserDisplayName(option)}
-                        </Typography>
-                        {option.email && (
-                            <Typography variant="caption" color="text.secondary">
-                                {option.email}
+            renderOption={(props, option) => {
+                const { key, ...rest } = props;
+                return (
+                    <Box key={key} component="li" {...rest} sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+                        <Avatar
+                            sx={{width: 32, height: 32}}
+                            src={option.avatar || undefined}
+                        >
+                            <PersonIcon fontSize="small"/>
+                        </Avatar>
+                        <Box>
+                            <Typography variant="body2" sx={{fontWeight: 500}}>
+                                {getUserDisplayName(option)}
                             </Typography>
-                        )}
+                            {option.email && (
+                                <Typography variant="caption" color="text.secondary">
+                                    {option.email}
+                                </Typography>
+                            )}
+                        </Box>
                     </Box>
-                </Box>
-            )}
+                );
+            }}
             renderTags={(value, getTagProps) =>
                 value.map((option, index) => (
                     <Chip
