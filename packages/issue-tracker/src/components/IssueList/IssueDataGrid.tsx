@@ -27,6 +27,7 @@ import AssigneesCell from './columns/AssigneesCell';
 import TagsCell from './columns/TagsCell';
 import DueDateCell from './columns/DueDateCell';
 import ActionsCell from './columns/ActionsCell';
+import Tooltip from '@mui/material/Tooltip';
 
 interface IssueDataGridProps {
     issues: Issue[];
@@ -261,15 +262,18 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
     const CustomFooter = () => (
         <GridFooterContainer>
             <Box sx={{display: 'flex', alignItems: 'center', flex: 1}}>
-                <Button
-                    variant="contained"
-                    size="small"
-                    startIcon={<AddIcon/>}
-                    onClick={onCreateIssue}
-                    sx={{marginLeft: 1}}
-                >
-                    Create Issue
-                </Button>
+
+
+                <Tooltip title="Create Issue">
+                    <IconButton
+                        color="primary"
+                        size="small"
+                        onClick={onCreateIssue}
+                        sx={{marginLeft: 1}}
+                    >
+                        <AddIcon/>
+                    </IconButton>
+                </Tooltip>
                 <Box sx={{flex: 1}}/>
                 <GridPagination/>
             </Box>
@@ -376,7 +380,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
         if (simple) {
             const newPageSize = 5;
             setPageSize(newPageSize);
-            setPaginationModel(prev => ({ ...prev, pageSize: newPageSize }));
+            setPaginationModel(prev => ({...prev, pageSize: newPageSize}));
             return;
         }
 
@@ -392,7 +396,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
 
             const availableHeight = viewportHeight - headerHeight - filterControlsHeight - footerHeight - headerRowHeight - padding;
             const maxRows = Math.floor(availableHeight / rowHeight);
-            
+
             // Ensure we have at least 10 rows and at most 100 rows
             return Math.min(Math.max(maxRows, 10), 100);
         };
@@ -400,13 +404,13 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
         const handleResize = () => {
             const newPageSize = calculateOptimalPageSize();
             setPageSize(newPageSize);
-            setPaginationModel(prev => ({ ...prev, pageSize: newPageSize }));
+            setPaginationModel(prev => ({...prev, pageSize: newPageSize}));
         };
 
         // Set initial page size
         const newPageSize = calculateOptimalPageSize();
         setPageSize(newPageSize);
-        setPaginationModel(prev => ({ ...prev, pageSize: newPageSize }));
+        setPaginationModel(prev => ({...prev, pageSize: newPageSize}));
 
         // Add resize listener
         window.addEventListener('resize', handleResize);

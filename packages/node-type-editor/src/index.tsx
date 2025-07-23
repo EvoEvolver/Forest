@@ -50,7 +50,7 @@ export class EditorNodeType extends NodeType {
     }
 
     renderTool1(node: NodeVM): React.ReactNode {
-        return <TabPanel node={node}/>
+        return  <IssueList simple={true} treeId={node.treeVM.treeM.id()} nodeId={node.id}/>
     }
 
     renderTool2(node: NodeVM): React.ReactNode {
@@ -66,26 +66,4 @@ export class EditorNodeType extends NodeType {
 
     ydataInitialize(node: NodeM) {
     }
-}
-
-function TabPanel({node}:{node: NodeVM}) {
-    const [value, setValue] = React.useState(0);
-
-    const handleChange = (event: React.SyntheticEvent, newValue: number) => {
-        setValue(newValue);
-    };
-    return (
-        <Box sx={{ width: '100%' }}>
-            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                <Tabs value={value} onChange={handleChange}>
-                    <Tab label="Issues" />
-                    <Tab label="Todos" />
-                </Tabs>
-            </Box>
-            <Box sx={{ p: 2 }}>
-                {value === 0 && <IssueList simple={true} treeId={treeId} nodeId={node.id}/>}
-                {value === 1 && <TodoApp node={node}/>}
-            </Box>
-        </Box>
-    );
 }
