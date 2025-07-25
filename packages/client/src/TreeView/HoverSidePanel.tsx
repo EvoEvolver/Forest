@@ -1,5 +1,5 @@
 import {useAtomValue, useSetAtom} from "jotai";
-import {addNewNodeAtom, deleteNodeAtom, markedNodesAtom, toggleMarkedNodeAtom, treeAtom} from "../TreeState/TreeState";
+import {addNewNodeAtom, deleteNodeAtom, markedNodesAtom, toggleMarkedNodeAtom, treeAtom, setNodePositionAtom} from "../TreeState/TreeState";
 import {useTheme} from "@mui/system";
 import {
     Alert,
@@ -16,13 +16,14 @@ import {
     Snackbar,
     Tooltip
 } from "@mui/material";
-import React, {useEffect} from "react";
+import React, {useEffect, useState} from "react";
 import ArchiveIcon from '@mui/icons-material/Archive';
 import TagIcon from '@mui/icons-material/Tag';
 import InsertLinkIcon from '@mui/icons-material/InsertLink';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import {NodeVM} from "@forest/schema";
 import {StageVersionDialog} from "./StageVersionDialog";
 import Slide from '@mui/material/Slide';
@@ -32,7 +33,7 @@ interface childTypesForDisplay {
     "displayName": string,
 }
 
-export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
+export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDragging?: boolean, setIsDragging?: (dragging: boolean) => void }) => {
     const theme = useTheme()
     const node = props.node;
     const addNewNode = useSetAtom(addNewNodeAtom)
@@ -41,8 +42,10 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
     const nodeChildren = useAtomValue(node.children)
     const markedNodes = useAtomValue(markedNodesAtom)
     const toggleMarkedNode = useSetAtom(toggleMarkedNodeAtom)
+    const setNodePosition = useSetAtom(setNodePositionAtom)
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const [availableTypesForDisplay, setAvailableTypesForDisplay] = React.useState<childTypesForDisplay[]>([]);
+    const [isDragIconHovered, setIsDragIconHovered] = useState(false);
 
     // Stage version dialog state
     const [stageDialogOpen, setStageDialogOpen] = React.useState(false);
@@ -126,6 +129,18 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
         toggleMarkedNode(node.id);
     };
 
+    const handleDragStart = (e: React.DragEvent) => {
+        e.stopPropagation();
+        if (props.setIsDragging) props.setIsDragging(true);
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('nodeId', node.id);
+        e.dataTransfer.setData('parentId', node.parent || '');
+    }
+
+    const handleDragEnd = () => {
+        if (props.setIsDragging) props.setIsDragging(false);
+    }
+
     const isMarked = markedNodes.has(node.id);
 
     if (!props.isVisible) return null;
@@ -203,6 +218,30 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
                         {isMarked ? <CheckBoxIcon fontSize="small"/> : <CheckBoxOutlineBlankIcon fontSize="small"/>}
                     </IconButton>
                 </Tooltip>
+
+                {/* Drag Indicator */}
+                {node.nodeType.allowReshape && (
+                    <Tooltip title="Drag to Reorder" placement="left">
+                        <IconButton
+                            size="small"
+                            draggable={true}
+                            onDragStart={handleDragStart}
+                            onDragEnd={handleDragEnd}
+                            onMouseEnter={() => setIsDragIconHovered(true)}
+                            onMouseLeave={() => setIsDragIconHovered(false)}
+                            sx={{
+                                color: theme.palette.info.main,
+                                cursor: 'move',
+                                backgroundColor: isDragIconHovered ? 'rgba(0,0,0,0.1)' : 'transparent',
+                                '&:hover': {
+                                    backgroundColor: 'rgba(0,0,0,0.1)'
+                                }
+                            }}
+                        >
+                            <DragIndicatorIcon fontSize="small"/>
+                        </IconButton>
+                    </Tooltip>
+                )}
 
                 {/* Delete Node */}
                 {node.nodeType.allowReshape && nodeChildren.length === 0 && (

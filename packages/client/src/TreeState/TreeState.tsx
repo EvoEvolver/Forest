@@ -144,6 +144,7 @@ export const addNewNodeAtom = atom(null, (get, set, props: {
 
 export const selectedNodeIdAtom = atom("")
 
+// @ts-ignore
 export const markedNodesAtom = atom<Set<string>>(new Set())
 
 export const toggleMarkedNodeAtom = atom(null, (get, set, nodeId: string) => {

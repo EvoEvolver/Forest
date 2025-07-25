@@ -12,7 +12,6 @@ import {NodeVM} from "@forest/schema"
 import {NodeTitle} from "./NodeTitle";
 import {thisNodeContext} from './NodeContext';
 import {updateChildrenCountAtom} from "../TreeState/childrenCount";
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import {MarkedNodesBar} from './MarkedNodesBar';
 
 
@@ -109,7 +108,6 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [dragOver, setDragOver] = useState<'top' | 'bottom' | null>(null);
-    const [isDragIconHovered, setIsDragIconHovered] = useState(false);
     const setNodePosition = useSetAtom(setNodePositionAtom);
     const tree = useAtomValue(treeAtom);
 
@@ -205,7 +203,6 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => {
             setIsHovered(false);
-            setIsDragIconHovered(false);
             setIsDragging(false);
         }}
         onDragOver={handleDragOver}
@@ -224,7 +221,7 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
             </thisNodeContext.Provider>
         </div>
         <NodeButtons node={node}/>
-        <HoverSidePanel node={node} isVisible={isHovered}/>
+        <HoverSidePanel node={node} isVisible={isHovered} isDragging={isDragging} setIsDragging={setIsDragging}/>
         <SelectedDot node={node}/>
 
         {/* Hover Plus Buttons for Adding Siblings */}
@@ -239,38 +236,6 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
             </>
         )}
 
-        {/* Drag Indicator Icon */}
-        {node.nodeType.allowReshape && (isHovered || isDragIconHovered) && (
-            <div
-                style={{
-                    position: 'absolute',
-                    left: '-15px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    cursor: 'move',
-                    padding: '4px',
-                    borderRadius: '4px',
-                    backgroundColor: isDragIconHovered ? 'rgba(0,0,0,0.1)' : 'rgba(0,0,0,0.05)',
-                    transition: 'background-color 0.2s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 9999
-                }}
-                draggable={true}
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEnd}
-                onMouseEnter={() => setIsDragIconHovered(true)}
-                onMouseLeave={() => setIsDragIconHovered(false)}
-            >
-                <DragIndicatorIcon
-                    sx={{
-                        color: '#666',
-                        fontSize: '20px'
-                    }}
-                />
-            </div>
-        )}
     </div>
 }
 
