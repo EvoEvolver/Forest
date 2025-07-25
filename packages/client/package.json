@@ -15,6 +15,7 @@
     "@forest/node-type-agents": "workspace:*",
     "@forest/node-type-editor": "workspace:*",
     "@forest/node-type-reader": "workspace:*",
+    "@forest/agent-chat": "workspace:*",
     "@forest/node-types": "workspace:*",
     "@forest/schema": "workspace:*",
     "@forest/user-panel": "workspace:*",

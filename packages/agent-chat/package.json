@@ -1,0 +1,18 @@
+{
+  "name": "@forest/agent-chat",
+  "version": "1.0.0",
+  "main": "src/index.tsx",
+  "scripts": {
+  },
+  "dependencies": {
+    "@mui/icons-material": "^7.2.0",
+    "@mui/material": "^7.2.0",
+    "jotai": "^2.10.3",
+    "react": "^19.1.0",
+    "yjs": "^13.6.27",
+    "@forest/schema": "workspace:*",
+    "@forest/user-system": "workspace:*",
+    "@forest/client": "workspace:*",
+    "@mui/lab": "7.0.0-beta.14"
+  }
+}

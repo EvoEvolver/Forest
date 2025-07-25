@@ -2,10 +2,11 @@ import {NodeVM} from "@forest/schema";
 import React, {useEffect, useState} from "react";
 import {useAtomValue} from "jotai/index";
 import {authTokenAtom} from "@forest/user-system/src/authStates";
-import {BaseMessage, ChatViewImpl, NormalMessage} from "@forest/node-components/src/chat";
 import {Box} from "@mui/material";
 import {invokeAgent} from "./agents";
 import {agentSessionState} from "./sessionState";
+import {BaseMessage, NormalMessage} from "@forest/agent-chat/src/MessageTypes";
+import {ChatViewImpl} from "@forest/agent-chat/src/ChatViewImpl";
 
 
 export function ChatComponent({node}: { node: NodeVM }) {
@@ -25,9 +26,9 @@ export function ChatComponent({node}: { node: NodeVM }) {
     }, []);
 
     // Wrapper for ChatViewImpl: (message: Message) => Promise<void>
-    const sendMessages =  (message: { content: string; author: string; role: string; }) => {
+    const sendMessages =  async (content: string) => {
         const userMsg = new NormalMessage({
-            content: message.content,
+            content: content,
             author: "user",
             role: "user",
             time: new Date().toISOString()

@@ -1,4 +1,4 @@
-import {BaseMessage} from "@forest/node-components/src/chat";
+import {BaseMessage} from "@forest/agent-chat/src/MessageTypes";
 import {NodeM} from "@forest/schema";
 
 class AgentSessionState {

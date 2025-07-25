@@ -1,10 +1,10 @@
 import {NodeM} from "@forest/schema";
 import {AgentNodeType} from "../AgentNode";
-import {BaseMessage, NormalMessage, SystemMessage} from "@forest/node-components/src/chat";
-import {fetchChatResponse} from "@forest/node-components/src/llm";
-import {AgentCallingMessage, AgentResponseMessage, ToolCallingMessage, ToolResponseMessage} from "../Message";
+import {AgentCallingMessage, AgentResponseMessage, ToolCallingMessage, ToolResponseMessage} from "@forest/agent-chat/src/AgentMessageTypes";
 import {agentSessionState} from "../sessionState";
 import {AgentToolNodeType} from "../ToolNode";
+import {BaseMessage, NormalMessage, SystemMessage} from "@forest/agent-chat/src/MessageTypes";
+import {fetchChatResponse} from "@forest/agent-chat/src/llm";
 
 async function getSystemMessage(nodeM: NodeM) {
     const treeM = nodeM.treeM;

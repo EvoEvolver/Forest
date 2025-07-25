@@ -1,11 +1,6 @@
-import {AiChat} from "@forest/node-components/src/chat/aiChat";
-import {TodoApp} from "@forest/node-components/src/todoList";
 import {NodeM, NodeType, NodeVM} from "@forest/schema"
-import React, {useEffect} from "react";
+import React from "react";
 import TiptapEditor, {makeEditor} from "./editor";
-import { Tabs, Tab, Box } from '@mui/material';
-import IssueList from "@forest/issue-tracker/src/components/IssueList/IssueList";
-import {treeId} from "@forest/client/src/appState";
 import {XmlFragment} from "yjs";
 import {BottomUpButton} from "./buttomUp";
 import {TopDownButton} from "./topDown";
@@ -50,7 +45,7 @@ export class EditorNodeType extends NodeType {
     }
 
     renderTool1(node: NodeVM): React.ReactNode {
-        return  <IssueList simple={true} treeId={node.treeVM.treeM.id()} nodeId={node.id}/>
+
     }
 
     renderTool2(node: NodeVM): React.ReactNode {

@@ -1,27 +1,27 @@
-import React, { useState } from "react";
+import React, {useState} from "react";
 import {useAtomValue} from "jotai";
 import {selectedNodeAtom} from "../TreeState/TreeState";
 import {thisNodeContext} from "./NodeContext";
-import { NodeContentFrame } from "./NodeContentFrame";
+import {NodeContentFrame} from "./NodeContentFrame";
 import IssueList from "@forest/issue-tracker/src/components/IssueList/IssueList";
-import {AiChat} from "@forest/node-components/src/chat/aiChat";
-import { Box, ToggleButton, ToggleButtonGroup, Paper } from '@mui/material';
-import { useTheme } from '@mui/system';
+import {Box, Paper, ToggleButton, ToggleButtonGroup} from '@mui/material';
+import {useTheme} from '@mui/system';
 import BuildIcon from '@mui/icons-material/Build';
 import DescriptionIcon from '@mui/icons-material/Description';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
+import {CursorChat} from "@forest/agent-chat/src/CursorChat";
 
 type TabType = 'tools' | 'issues' | 'assistant';
 
 export function ColumnRight() {
     const node = useAtomValue(selectedNodeAtom);
     const [activeTab, setActiveTab] = useState<TabType>('tools');
-    
+
     if (!node)
         return null;
-    
+
     const theme = useTheme();
-    
+
     const handleTabChange = (event: React.MouseEvent<HTMLElement>, newTab: TabType | null) => {
         if (newTab !== null) {
             setActiveTab(newTab);
@@ -29,13 +29,13 @@ export function ColumnRight() {
     };
 
     return <Box sx={{
-        display: 'flex', 
-        flexDirection: 'column', 
-        height: '100%', 
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
         zIndex: 1,
         gap: 2,
     }}>
-        <Paper elevation={1} sx={{ p: 1 }}>
+        <Paper elevation={1} sx={{p: 1}}>
             <ToggleButtonGroup
                 value={activeTab}
                 exclusive
@@ -68,28 +68,28 @@ export function ColumnRight() {
                 }}
             >
                 <ToggleButton value="tools" aria-label="tools">
-                    <BuildIcon fontSize="small" />
+                    <BuildIcon fontSize="small"/>
                     Tools
                 </ToggleButton>
                 <ToggleButton value="issues" aria-label="issues">
-                    <DescriptionIcon fontSize="small" />
+                    <DescriptionIcon fontSize="small"/>
                     Issues
                 </ToggleButton>
                 <ToggleButton value="assistant" aria-label="assistant">
-                    <SmartToyIcon fontSize="small" />
+                    <SmartToyIcon fontSize="small"/>
                     Assistant
                 </ToggleButton>
             </ToggleButtonGroup>
         </Paper>
-        
+
         {activeTab === 'tools' && (
             <thisNodeContext.Provider value={node}>
-                <Box sx={{ flex: 1, minHeight: 0 }}>
+                <Box sx={{flex: 1, minHeight: 0}}>
                     <NodeContentFrame>
                         {node.nodeType.renderTool1(node)}
                     </NodeContentFrame>
                 </Box>
-                <Box sx={{ flex: 1, minHeight: 0 }}>
+                <Box sx={{flex: 1, minHeight: 0}}>
                     <NodeContentFrame>
                         {node.nodeType.renderTool2(node)}
                     </NodeContentFrame>
@@ -97,13 +97,13 @@ export function ColumnRight() {
             </thisNodeContext.Provider>
         )}
         {activeTab === 'issues' && (
-            <Box sx={{ flex: 1, overflow: 'hidden' }}>
+            <Box sx={{flex: 1, overflow: 'hidden'}}>
                 <IssueList simple={true} treeId={node.treeVM.treeM.id()} nodeId={node.id}/>
             </Box>
         )}
         {activeTab === 'assistant' && (
-            <Box sx={{ flex: 1, overflow: 'hidden' }}>
-                <AiChat node={node}></AiChat>
+            <Box sx={{flex: 1, overflow: 'hidden'}}>
+                <CursorChat selectedNode={node}></CursorChat>
             </Box>
         )}
     </Box>;

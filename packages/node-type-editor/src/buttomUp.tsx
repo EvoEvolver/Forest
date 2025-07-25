@@ -6,12 +6,12 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import {NodeM, NodeVM} from "@forest/schema";
-import {NormalMessage} from "@forest/node-components/src/chat";
-import {fetchChatResponse} from "@forest/node-components/src/llm";
 import {EditorNodeType} from ".";
 import {stageThisVersion} from "@forest/schema/src/stageService";
 import {useAtomValue} from "jotai";
 import { authTokenAtom } from "@forest/user-system/src/authStates";
+import {NormalMessage} from "@forest/agent-chat/src/MessageTypes";
+import {fetchChatResponse} from "@forest/agent-chat/src/llm";
 
 export const BottomUpButton: React.FC<{ node: NodeVM}> = ({node}) => {
     const [loading, setLoading] = React.useState(false);

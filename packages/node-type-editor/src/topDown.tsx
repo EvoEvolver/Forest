@@ -6,8 +6,6 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import {NodeJson, NodeM, NodeVM} from "@forest/schema";
-import {NormalMessage} from "@forest/node-components/src/chat";
-import {fetchChatResponse} from "@forest/node-components/src/llm";
 import {EditorNodeType} from ".";
 import {stageThisVersion} from "@forest/schema/src/stageService";
 import {useAtomValue} from "jotai";
@@ -16,6 +14,8 @@ import FormGroup from '@mui/material/FormGroup';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import {v4 as uuidv4} from "uuid";
+import {fetchChatResponse} from "@forest/agent-chat/src/llm";
+import {NormalMessage} from "@forest/agent-chat/src/MessageTypes";
 
 export const TopDownButton: React.FC<{ node: NodeVM }> = ({node}) => {
         const [loading, setLoading] = React.useState(false);
@@ -122,7 +122,12 @@ export const TopDownButton: React.FC<{ node: NodeVM }> = ({node}) => {
     }
 ;
 
-async function getTopDownNewChildren(node: NodeM, authToken: string): Promise<string[]> {
+interface TitleAndContent {
+    title: string;
+    content: string;
+}
+
+async function getTopDownNewChildren(node: NodeM, authToken: string): Promise<TitleAndContent[]> {
     const treeM = node.treeM;
     const editorNodeType = await treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
     const parentContent = editorNodeType.getEditorContent(node);

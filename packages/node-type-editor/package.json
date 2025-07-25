@@ -26,6 +26,7 @@
     "@forest/schema": "workspace:*",
     "@forest/node-components": "workspace:*",
     "@forest/client": "workspace:*",
+    "@forest/agent-chat": "workspace:*",
     "@forest/issue-tracker": "workspace:*",
     "@forest/user-system": "workspace:*",
     "react": "^19.1.0",

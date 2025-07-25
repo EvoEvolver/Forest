@@ -1,6 +1,6 @@
 import React from "react";
 import {Box, Card, CardContent, Typography} from '@mui/material';
-import {BaseMessage} from "@forest/node-components/src/chat";
+import {BaseMessage} from "./MessageTypes"
 
 
 export interface AgentCallingMessageProps {
@@ -96,6 +96,12 @@ export class AgentResponseMessage extends BaseMessage {
     }
 }
 
+interface ToolCallingMessageProps {
+    toolName: string;
+    parameters: any;
+    author: string;
+}
+
 export class ToolCallingMessage extends BaseMessage {
     toolName: string;
     parameters: Record<string, any>;
@@ -139,6 +145,12 @@ export class ToolCallingMessage extends BaseMessage {
     }
 }
 
+interface ToolResponseMessageProps {
+    toolName: string;
+    response: any;
+    author: string;
+}
+
 export class ToolResponseMessage extends BaseMessage {
     toolName: string;
     response: any;
@@ -162,11 +174,6 @@ export class ToolResponseMessage extends BaseMessage {
                         <Typography variant="subtitle2" gutterBottom>
                             Tool Response: <b>{this.toolName}</b>
                         </Typography>
-                        {this.endpoint && (
-                            <Typography variant="body2">
-                                <b>Endpoint:</b> {this.endpoint}
-                            </Typography>
-                        )}
                         <Box component="pre" sx={{
                             whiteSpace: 'pre-wrap',
                             wordBreak: 'break-all',
