@@ -144,6 +144,26 @@ export const addNewNodeAtom = atom(null, (get, set, props: {
 
 export const selectedNodeIdAtom = atom("")
 
+export const markedNodesAtom = atom<Set<string>>(new Set())
+
+export const toggleMarkedNodeAtom = atom(null, (get, set, nodeId: string) => {
+    const markedNodes = get(markedNodesAtom)
+    const newMarkedNodes = new Set(markedNodes)
+    
+    if (newMarkedNodes.has(nodeId)) {
+        newMarkedNodes.delete(nodeId)
+    } else {
+        newMarkedNodes.add(nodeId)
+    }
+    
+    set(markedNodesAtom, newMarkedNodes)
+})
+
+export const markedNodesCountAtom = atom((get) => {
+    const markedNodes = get(markedNodesAtom)
+    return markedNodes.size
+})
+
 export const scrollToNodeAtom = atom(null, (get, set, nodeId: string) => {
     const nodeElement = document.querySelector(`#node-${nodeId}`);
     if (nodeElement) {

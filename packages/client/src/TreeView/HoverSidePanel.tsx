@@ -1,7 +1,8 @@
 import {useAtomValue, useSetAtom} from "jotai";
-import {addNewNodeAtom, deleteNodeAtom, treeAtom} from "../TreeState/TreeState";
+import {addNewNodeAtom, deleteNodeAtom, markedNodesAtom, toggleMarkedNodeAtom, treeAtom} from "../TreeState/TreeState";
 import {useTheme} from "@mui/system";
 import {
+    Alert,
     Button,
     Dialog,
     DialogActions,
@@ -12,17 +13,16 @@ import {
     ListItemText,
     Menu,
     MenuItem,
-    Tooltip,
     Snackbar,
-    Alert
+    Tooltip
 } from "@mui/material";
 import React, {useEffect} from "react";
 import ArchiveIcon from '@mui/icons-material/Archive';
-import PsychologyIcon from '@mui/icons-material/Psychology';
 import TagIcon from '@mui/icons-material/Tag';
 import InsertLinkIcon from '@mui/icons-material/InsertLink';
-import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
+import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import {NodeVM} from "@forest/schema";
 import {StageVersionDialog} from "./StageVersionDialog";
 import Slide from '@mui/material/Slide';
@@ -39,6 +39,8 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
     const deleteNode = useSetAtom(deleteNodeAtom)
     const tree = useAtomValue(treeAtom)
     const nodeChildren = useAtomValue(node.children)
+    const markedNodes = useAtomValue(markedNodesAtom)
+    const toggleMarkedNode = useSetAtom(toggleMarkedNodeAtom)
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const [availableTypesForDisplay, setAvailableTypesForDisplay] = React.useState<childTypesForDisplay[]>([]);
 
@@ -102,10 +104,6 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
         setStageDialogOpen(true);
     };
 
-    const treeAgent = () => {
-        // Tree agent functionality - empty for now as in original
-    }
-
     const deleteNodeHandler = () => {
         setPendingDeleteNodeId(node.id);
         setDeleteDialogOpen(true);
@@ -123,6 +121,12 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
             setCopySuccess(true); // Still show snackbar, but maybe with a different message if needed
         }
     };
+
+    const handleToggleMarked = () => {
+        toggleMarkedNode(node.id);
+    };
+
+    const isMarked = markedNodes.has(node.id);
 
     if (!props.isVisible) return null;
 
@@ -153,25 +157,10 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
                         size="small"
                         onClick={handleStageVersion}
                         sx={{
-                            color: theme.palette.info.main,
-                            '&:hover': {backgroundColor: theme.palette.info.light + '20'}
+                            color: theme.palette.info.main
                         }}
                     >
                         <TagIcon fontSize="small"/>
-                    </IconButton>
-                </Tooltip>
-
-                {/* Tree Agent */}
-                <Tooltip title="Tree Agent" placement="left">
-                    <IconButton
-                        size="small"
-                        onClick={treeAgent}
-                        sx={{
-                            color: theme.palette.primary.main,
-                            '&:hover': {backgroundColor: theme.palette.primary.light + '20'}
-                        }}
-                    >
-                        <PsychologyIcon fontSize="small"/>
                     </IconButton>
                 </Tooltip>
 
@@ -181,8 +170,7 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
                         size="small"
                         onClick={node.data['archived'] ? unarchiveNode : archiveNode}
                         sx={{
-                            color: theme.palette.warning.main,
-                            '&:hover': {backgroundColor: theme.palette.warning.light + '20'}
+                            color: theme.palette.info.main
                         }}
                     >
                         <ArchiveIcon fontSize="small"/>
@@ -195,7 +183,7 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
                         size="small"
                         onClick={copyNodeLink}
                         sx={{
-                            color: theme.palette.secondary.main,
+                            color: theme.palette.info.main,
                             '&:hover': {backgroundColor: theme.palette.secondary.light + '20'}
                         }}
                     >
@@ -203,16 +191,28 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
                     </IconButton>
                 </Tooltip>
 
+                {/* Toggle Marked */}
+                <Tooltip title={isMarked ? "Unmark Node" : "Select Node"} placement="left">
+                    <IconButton
+                        size="small"
+                        onClick={handleToggleMarked}
+                        sx={{
+                            color: theme.palette.info.main
+                        }}
+                    >
+                        {isMarked ? <CheckBoxIcon fontSize="small"/> : <CheckBoxOutlineBlankIcon fontSize="small"/>}
+                    </IconButton>
+                </Tooltip>
+
                 {/* Delete Node */}
-                {node.nodeType.allowReshape && (
+                {node.nodeType.allowReshape && nodeChildren.length === 0 && (
                     <Tooltip title="Delete Node" placement="left">
                         <IconButton
                             size="small"
                             onClick={deleteNodeHandler}
                             disabled={nodeChildren.length > 0 || node.parent === null}
                             sx={{
-                                color: theme.palette.error.main,
-                                '&:hover': {backgroundColor: theme.palette.error.light + '20'},
+                                color: theme.palette.info.main,
                                 '&:disabled': {color: theme.palette.action.disabled}
                             }}
                         >
@@ -276,10 +276,10 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean }) => {
                 open={copySuccess}
                 autoHideDuration={1000}
                 onClose={() => setCopySuccess(false)}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                anchorOrigin={{vertical: 'bottom', horizontal: 'center'}}
                 TransitionComponent={Slide}
             >
-                <Alert onClose={() => setCopySuccess(false)} severity="success" sx={{ width: '100%' }}>
+                <Alert onClose={() => setCopySuccess(false)} severity="success" sx={{width: '100%'}}>
                     Node URL copied to clipboard!
                 </Alert>
             </Snackbar>

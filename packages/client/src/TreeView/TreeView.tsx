@@ -13,6 +13,7 @@ import {NodeTitle} from "./NodeTitle";
 import {thisNodeContext} from './NodeContext';
 import {updateChildrenCountAtom} from "../TreeState/childrenCount";
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import {MarkedNodesBar} from './MarkedNodesBar';
 
 
 const TreeView = () => {
@@ -96,6 +97,9 @@ const TreeView = () => {
                     )}
                 </div>
             </div>
+            
+            {/* Floating bottom bar for marked nodes */}
+            <MarkedNodesBar />
         </>
     );
 };
