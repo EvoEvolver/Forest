@@ -10,7 +10,8 @@ import {
     supabaseClientAtom,
     userAtom,
     userPermissionsAtom
-} from "./authStates";
+} from "./authStates"
+import { getUserMetadata } from "./userMetadata"
 
 const AuthButton: React.FC = () => {
     const user = useAtomValue(userAtom)
@@ -23,7 +24,21 @@ const AuthButton: React.FC = () => {
     const supabaseClient = useAtomValue(supabaseClientAtom)
 
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
+    const [userMetadata, setUserMetadata] = React.useState<{username: string, avatar: string | null} | null>(null)
     const open = Boolean(anchorEl)
+
+    React.useEffect(() => {
+        if (user?.id) {
+            getUserMetadata(user.id).then(metadata => {
+                setUserMetadata({
+                    username: metadata.username,
+                    avatar: metadata.avatar
+                })
+            })
+        } else {
+            setUserMetadata(null)
+        }
+    }, [user?.id])
 
     const handleLoginClick = () => {
         setAuthModalOpen(true)
@@ -90,11 +105,14 @@ const AuthButton: React.FC = () => {
                     margin: 0
                 }}
             >
-                <Avatar sx={{width: 24, height: 24, bgcolor: 'rgba(78, 137, 192, 0.8)'}}>
-                    {user?.email?.charAt(0).toUpperCase()}
+                <Avatar 
+                    src={userMetadata?.avatar || undefined}
+                    sx={{width: 24, height: 24, bgcolor: 'rgba(78, 137, 192, 0.8)'}}
+                >
+                    {!userMetadata?.avatar && (userMetadata?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase())}
                 </Avatar>
                 <Typography variant="body2" sx={{color: 'black'}}>
-                    {user?.email?.split('@')[0]}
+                    {userMetadata?.username || user?.email?.split('@')[0]}
                 </Typography>
             </Button>
 
@@ -116,7 +134,7 @@ const AuthButton: React.FC = () => {
                         Signed in as
                     </Typography>
                     <Typography variant="body1" fontWeight="medium">
-                        {user?.email}
+                        {userMetadata?.username || user?.email}
                     </Typography>
                 </Box>
                 <Divider/>
