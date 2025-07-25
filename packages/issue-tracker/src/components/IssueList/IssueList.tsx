@@ -6,15 +6,16 @@ import IssueDetail from '../IssueDetail/IssueDetail';
 import IssueDataGrid from './IssueDataGrid';
 import {useAtomValue} from "jotai";
 import {userAtom} from '@forest/user-system/src/authStates';
-import Slide from '@mui/material/Slide';
+import {TreeM} from '@forest/schema/src/model';
 
 interface IssueListProps {
     treeId: string;
     nodeId?: string;
     simple?: boolean;
+    treeM?: TreeM;
 }
 
-const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) => {
+const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false, treeM}) => {
     const [issues, setIssues] = useState<Issue[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
@@ -28,9 +29,36 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
     const [creatorFilter, setCreatorFilter] = useState<string>('all'); // 'all', 'me', 'specific-user-id'
     const [sortBy, setSortBy] = useState<string>('smart'); // 'smart', 'deadline', 'created', 'updated'
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+    
+    // Filter states for simple mode
+    const [showResolved, setShowResolved] = useState<boolean>(false);
+    const [showSubtreeIssues, setShowSubtreeIssues] = useState<boolean>(false);
 
     const issueService = useAtomValue(issueServiceAtom);
     const currentUser = useAtomValue(userAtom);
+
+    // Utility function to get all nodeIds in a subtree
+    const getSubtreeNodeIds = (nodeId: string, treeM: TreeM): string[] => {
+        const nodeIds: string[] = [nodeId];
+        const visited = new Set<string>([nodeId]);
+        
+        const traverse = (currentNodeId: string) => {
+            const node = treeM.getNode(currentNodeId);
+            if (!node) return;
+            
+            const children = treeM.getChildren(node);
+            for (const child of children) {
+                if (!visited.has(child.id)) {
+                    visited.add(child.id);
+                    nodeIds.push(child.id);
+                    traverse(child.id);
+                }
+            }
+        };
+        
+        traverse(nodeId);
+        return nodeIds;
+    };
 
     const createEmptyIssue = (): Issue => ({
         _id: '',
@@ -112,28 +140,37 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
         return sortBy === 'smart' ? smartSort(sorted) : sorted;
     };
 
-    // Filter issues based on assignee and creator filters
+    // Filter issues based on assignee and creator filters for large version, and simple mode filters
     const filterIssues = (issues: Issue[]): Issue[] => {
         if (!currentUser) return issues;
 
         let filtered = issues;
 
-        // Filter by assignee
-        if (assigneeFilter === 'me') {
-            filtered = filtered.filter(issue =>
-                issue.assignees?.some(assignee => assignee.userId === currentUser.id)
-            );
-        } else if (assigneeFilter !== 'all') {
-            filtered = filtered.filter(issue =>
-                issue.assignees?.some(assignee => assignee.userId === assigneeFilter)
-            );
-        }
+        if (simple) {
+            // Simple mode filters
+            if (!showResolved) {
+                filtered = filtered.filter(issue => issue.status !== 'resolved' && issue.status !== 'closed');
+            }
+            // Note: showSubtreeIssues functionality will be implemented later when subtree logic is added
+        } else {
+            // Large version filters
+            // Filter by assignee
+            if (assigneeFilter === 'me') {
+                filtered = filtered.filter(issue =>
+                    issue.assignees?.some(assignee => assignee.userId === currentUser.id)
+                );
+            } else if (assigneeFilter !== 'all') {
+                filtered = filtered.filter(issue =>
+                    issue.assignees?.some(assignee => assignee.userId === assigneeFilter)
+                );
+            }
 
-        // Filter by creator
-        if (creatorFilter === 'me') {
-            filtered = filtered.filter(issue => issue.creator.userId === currentUser.id);
-        } else if (creatorFilter !== 'all') {
-            filtered = filtered.filter(issue => issue.creator.userId === creatorFilter);
+            // Filter by creator
+            if (creatorFilter === 'me') {
+                filtered = filtered.filter(issue => issue.creator.userId === currentUser.id);
+            } else if (creatorFilter !== 'all') {
+                filtered = filtered.filter(issue => issue.creator.userId === creatorFilter);
+            }
         }
 
         return filtered;
@@ -143,30 +180,52 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
     useEffect(() => {
         let processed = issues;
 
-        if (!simple) {
-            // Apply filters for large version
-            processed = filterIssues(processed);
-        }
+        // Apply filters for both simple and large versions
+        processed = filterIssues(processed);
 
         // Apply sorting
         processed = sortIssues(processed, sortBy, sortOrder);
 
         setFilteredIssues(processed);
-    }, [issues, assigneeFilter, creatorFilter, sortBy, sortOrder, currentUser, simple]);
+    }, [issues, assigneeFilter, creatorFilter, sortBy, sortOrder, currentUser, simple, showResolved, showSubtreeIssues]);
 
-    // Fetch issues on component mount
+    // Fetch issues on component mount and when subtree filter changes
     useEffect(() => {
         loadIssues();
-    }, [treeId, nodeId]);
+    }, [treeId, nodeId, showSubtreeIssues]);
 
     const loadIssues = async () => {
         try {
             setLoading(true);
-            const params = {
-                ...(nodeId && {nodeId}),
-            };
-            const issuesData = await issueService.getIssuesByTree(treeId, params);
-            setIssues(issuesData);
+            
+            if (simple && showSubtreeIssues && nodeId && treeM) {
+                // For simple mode with subtree issues, get all nodeIds in subtree
+                const subtreeNodeIds = getSubtreeNodeIds(nodeId, treeM);
+                
+                // Fetch issues for all nodes in subtree
+                const allIssuesPromises = subtreeNodeIds.map(async (currentNodeId) => {
+                    const params = { nodeId: currentNodeId };
+                    return await issueService.getIssuesByTree(treeId, params);
+                });
+                
+                const allIssuesArrays = await Promise.all(allIssuesPromises);
+                // Flatten and deduplicate issues by _id
+                const issuesMap = new Map<string, Issue>();
+                allIssuesArrays.forEach(issuesArray => {
+                    issuesArray.forEach(issue => {
+                        issuesMap.set(issue._id, issue);
+                    });
+                });
+                
+                setIssues(Array.from(issuesMap.values()));
+            } else {
+                // Normal behavior: fetch issues for current node or all tree issues
+                const params = {
+                    ...(nodeId && {nodeId}),
+                };
+                const issuesData = await issueService.getIssuesByTree(treeId, params);
+                setIssues(issuesData);
+            }
         } catch (error) {
             console.error('Failed to load issues:', error);
             setErrorMessage('Failed to load issues');
@@ -193,7 +252,7 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
             setSuccessMessage('Issue created successfully');
         } catch (error) {
             console.error('Failed to create issue:', error);
-            const rrorMessage = error instanceof Error ? error.message : 'Failed to create issue';
+            const errorMessage = error instanceof Error ? error.message : 'Failed to create issue';
             setErrorMessage(errorMessage);
             throw error; // Re-throw to let the dialog handle it
         }
@@ -289,6 +348,11 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
                     sortOrder={sortOrder}
                     onSortOrderChange={setSortOrder}
                     treeId={treeId}
+                    // Simple mode filter props
+                    showResolved={showResolved}
+                    onShowResolvedChange={setShowResolved}
+                    showSubtreeIssues={showSubtreeIssues}
+                    onShowSubtreeIssuesChange={setShowSubtreeIssues}
                 />
             </Box>
             {/* Issue Detail Dialog */}
@@ -319,7 +383,6 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
                 autoHideDuration={1500}
                 onClose={() => setSuccessMessage('')}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-                TransitionComponent={Slide}
             >
                 <Alert onClose={() => setSuccessMessage('')} severity="success">
                     {successMessage}
@@ -331,7 +394,6 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false}) =
                 autoHideDuration={1500}
                 onClose={() => setErrorMessage('')}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-                TransitionComponent={Slide}
             >
                 <Alert onClose={() => setErrorMessage('')} severity="error">
                     {errorMessage}

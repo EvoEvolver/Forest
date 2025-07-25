@@ -5,8 +5,10 @@ import {
     Avatar,
     Box,
     Button,
+    Checkbox,
     Chip,
     FormControl,
+    FormControlLabel,
     IconButton,
     InputLabel,
     MenuItem,
@@ -47,6 +49,11 @@ interface IssueDataGridProps {
     sortOrder?: 'asc' | 'desc';
     onSortOrderChange?: (order: 'asc' | 'desc') => void;
     treeId?: string;
+    // Simple mode filter props
+    showResolved?: boolean;
+    onShowResolvedChange?: (show: boolean) => void;
+    showSubtreeIssues?: boolean;
+    onShowSubtreeIssuesChange?: (show: boolean) => void;
 }
 
 const IssueDataGrid: React.FC<IssueDataGridProps> = ({
@@ -67,6 +74,11 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                                                          sortOrder = 'asc',
                                                          onSortOrderChange,
                                                          treeId,
+                                                         // Simple mode filter props
+                                                         showResolved = false,
+                                                         onShowResolvedChange,
+                                                         showSubtreeIssues = false,
+                                                         onShowSubtreeIssuesChange,
                                                      }) => {
     const currentUser = useAtomValue(userAtom);
     const [treeMembers, setTreeMembers] = useState<Array<{
@@ -131,8 +143,37 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
 
     // Filter and Sort Controls Component
     const FilterSortControls = () => {
-        if (simple) return null;
+        if (simple) {
+            // Simple mode filters
+            return (
+                <Box sx={{p: 2, bgcolor: '#f8f9fa', borderBottom: '1px solid #e1e4e8'}}>
+                    <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={showResolved}
+                                    onChange={(e) => onShowResolvedChange?.(e.target.checked)}
+                                    size="small"
+                                />
+                            }
+                            label="Show resolved"
+                        />
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={showSubtreeIssues}
+                                    onChange={(e) => onShowSubtreeIssuesChange?.(e.target.checked)}
+                                    size="small"
+                                />
+                            }
+                            label="Show subtree issues"
+                        />
+                    </Stack>
+                </Box>
+            );
+        }
 
+        // Full mode filters
         return (
             <Box sx={{p: 2, bgcolor: '#f8f9fa', borderBottom: '1px solid #e1e4e8'}}>
                 <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
@@ -375,13 +416,50 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
         page: 0,
         pageSize: simple ? 5 : 25,
     });
+    
+    // Ref to measure the DataGrid container height
+    const containerRef = React.useRef<HTMLDivElement>(null);
 
     React.useEffect(() => {
         if (simple) {
-            const newPageSize = 5;
-            setPageSize(newPageSize);
-            setPaginationModel(prev => ({...prev, pageSize: newPageSize}));
-            return;
+            const calculateSimpleModePageSize = () => {
+                if (!containerRef.current) return 5; // fallback
+                
+                const containerHeight = containerRef.current.clientHeight;
+                const rowHeight = 35; // Row height from sx prop
+                const headerRowHeight = 35; // Header row height
+                const footerHeight = 52; // DataGrid footer height
+                const filterControlsHeight = simple ? 56 : 80; // Filter controls height - simple mode always shows filters
+                const padding = 8; // Some padding for safety
+                
+                const availableHeight = containerHeight - headerRowHeight - footerHeight - filterControlsHeight - padding;
+                const maxRows = Math.floor(availableHeight / rowHeight);
+                
+                // Ensure we have at least 1 row and at most 50 rows for simple mode
+                return Math.min(Math.max(maxRows, 1), 50);
+            };
+            
+            const handleResize = () => {
+                const newPageSize = calculateSimpleModePageSize();
+                setPageSize(newPageSize);
+                setPaginationModel(prev => ({...prev, pageSize: newPageSize}));
+            };
+            
+            // Initial calculation with a slight delay to ensure DOM is ready
+            const timeoutId = setTimeout(() => {
+                handleResize();
+            }, 100);
+            
+            // Add resize observer for more accurate height tracking
+            const resizeObserver = new ResizeObserver(handleResize);
+            if (containerRef.current) {
+                resizeObserver.observe(containerRef.current);
+            }
+            
+            return () => {
+                clearTimeout(timeoutId);
+                resizeObserver.disconnect();
+            };
         }
 
         // For large mode, calculate based on viewport height
@@ -415,13 +493,13 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
         // Add resize listener
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
-    }, [simple]);
+    }, [simple, showResolved, showSubtreeIssues]);
 
     // Dynamic pagination settings based on simple mode
-    const pageSizeOptions = simple ? [5] : [pageSize];
+    const pageSizeOptions = simple ? [pageSize] : [pageSize];
 
     return (
-        <Box sx={{height: '100%', display: 'flex', flexDirection: 'column'}}>
+        <Box ref={containerRef} sx={{height: '100%', display: 'flex', flexDirection: 'column'}}>
             <FilterSortControls/>
             <DataGrid
                 rows={issues}
