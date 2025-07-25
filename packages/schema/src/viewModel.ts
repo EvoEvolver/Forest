@@ -100,6 +100,18 @@ export class TreeVM {
         console.log("commit number: ", this.viewCommitNumber)
         this.set(this.viewCommitNumberAtom, this.viewCommitNumber)
     }
+
+    getNonReactiveNodeInfo(nodeId: string): {title: string, children: string[], parent: string | null} | null {
+        const nodeM = this.treeM.getNode(nodeId)
+        if (!nodeM) {
+            return null;
+        }
+        return {
+            title: nodeM.title(),
+            children: nodeM.children().toJSON(),
+            parent: nodeM.parent(),
+        }
+    }
 }
 
 

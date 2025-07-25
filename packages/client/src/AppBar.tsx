@@ -1,6 +1,7 @@
 import {AppBar, Avatar, Button, Stack, Toolbar} from "@mui/material";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import ArticleIcon from "@mui/icons-material/Article";
+import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import React, {useState} from "react";
 import {useAtomValue, useSetAtom} from "jotai";
 import {YjsConnectionStatusAtom, YjsProviderAtom} from "./TreeState/YjsConnection";
@@ -38,6 +39,12 @@ export const AppBarLeft = ({setCurrentPage, currentPage}) => {
                 variant={currentPage === 'linear' ? 'outlined' : 'text'}
             >
                 <ArticleIcon/>
+            </Button>
+            <Button
+                onClick={() => setCurrentPage('flow')}
+                variant={currentPage === 'flow' ? 'outlined' : 'text'}
+            >
+                <AccountTreeOutlinedIcon/>
             </Button>
         </Stack>
     );

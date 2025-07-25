@@ -164,6 +164,10 @@ export const markedNodesCountAtom = atom((get) => {
     return markedNodes.size
 })
 
+export const clearAllMarkedNodesAtom = atom(null, (get, set) => {
+    set(markedNodesAtom, new Set())
+})
+
 export const scrollToNodeAtom = atom(null, (get, set, nodeId: string) => {
     const nodeElement = document.querySelector(`#node-${nodeId}`);
     if (nodeElement) {
