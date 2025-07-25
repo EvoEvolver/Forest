@@ -1,5 +1,7 @@
 /* Basic editor styles */
 .tiptap {
+    border: none !important;
+    outline: none !important;
     /* List styles */
     /* Heading styles */
     /* Code and preformatted text styles */
@@ -7,6 +9,23 @@
     /* Task list specific styles */
     /* Give a remote user a caret */
     /* Render the username above the caret */
+}
+
+.tiptap:focus,
+.tiptap.ProseMirror-focused {
+    border: none !important;
+    outline: none !important;
+}
+
+/* Remove border from the editor content wrapper */
+.ProseMirror {
+    border: none !important;
+    outline: none !important;
+}
+
+.ProseMirror:focus {
+    border: none !important;
+    outline: none !important;
 }
 
 .tiptap a {
