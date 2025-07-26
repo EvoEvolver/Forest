@@ -4,6 +4,7 @@ import TiptapEditor, {makeEditor} from "./editor";
 import {XmlFragment} from "yjs";
 import {BottomUpButton} from "./buttomUp";
 import {TopDownButton} from "./topDown";
+import {ParentToSummaryButton} from "./parentToSummary";
 
 interface EditorNodeData {
 }
@@ -52,6 +53,7 @@ export class EditorNodeType extends NodeType {
         return <>
             <BottomUpButton node={node}/>
             <TopDownButton node={node}/>
+            <ParentToSummaryButton node={node}/>
         </>
     }
 

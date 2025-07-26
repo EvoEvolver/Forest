@@ -97,6 +97,12 @@ export class TreeM {
         return childrenNodes
     }
 
+    getParent(nodeM: NodeM): NodeM | undefined {
+        const parentId = nodeM.parent()
+        if (!parentId) return undefined
+        return this.getNode(parentId)
+    }
+
     getNode(nodeId: string): NodeM | undefined {
         const nodeYMap = this.nodeDict.get(nodeId)
         if (!nodeYMap) return undefined

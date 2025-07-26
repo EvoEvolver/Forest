@@ -16,6 +16,10 @@ import Checkbox from '@mui/material/Checkbox';
 import {v4 as uuidv4} from "uuid";
 import {fetchChatResponse} from "@forest/agent-chat/src/llm";
 import {NormalMessage} from "@forest/agent-chat/src/MessageTypes";
+import {Card} from "@mui/material";
+import CardContent from "@mui/material/CardContent";
+import Typography from "@mui/material/Typography";
+import AutoAwesomeMotionIcon from '@mui/icons-material/AutoAwesomeMotion';
 
 export const TopDownButton: React.FC<{ node: NodeVM }> = ({node}) => {
         const [loading, setLoading] = React.useState(false);
@@ -79,15 +83,33 @@ export const TopDownButton: React.FC<{ node: NodeVM }> = ({node}) => {
 
         return (
             <>
-                <Button
-                    variant="contained"
-                    color="primary"
+                <Card
+                    sx={{
+                        cursor: 'pointer',
+                        boxShadow: 3,
+                        '&:hover': {
+                            boxShadow: 6,
+                            transform: 'translateY(-2px)'
+                        },
+                        transition: 'all 0.2s ease-in-out',
+                        margin: "10px 0",
+                        borderRadius: "10px"
+                    }}
                     onClick={handleClick}
-                    disabled={loading}
-                    startIcon={loading ? <CircularProgress size={20}/> : null}
                 >
-                    Generate children nodes
-                </Button>
+                    <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <AutoAwesomeMotionIcon color="primary" />
+                        <div>
+                            <Typography variant="body1" component="div">
+                                Split into Children
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary">
+                                Break large node into smaller nodes
+                            </Typography>
+                        </div>
+                        {loading && <CircularProgress size={20} />}
+                    </CardContent>
+                </Card>
                 <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
                     <DialogTitle>Generate New Children</DialogTitle>
                     <DialogContent>
