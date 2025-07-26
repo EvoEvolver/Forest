@@ -37,7 +37,6 @@
     "@types/ws": "^8.18.1",
     "esbuild": "^0.24.0",
     "nodemon": "^3.1.7",
-    "ts-node": "^10.9.2",
-    "y-websocket": "^2.1.0"
+    "ts-node": "^10.9.2"
   }
 }

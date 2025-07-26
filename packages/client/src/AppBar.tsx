@@ -1,8 +1,7 @@
-import {AppBar, Avatar, Button, Stack, Toolbar, Paper, ToggleButton, ToggleButtonGroup} from "@mui/material";
+import {Avatar, Button, Paper, Stack, ToggleButton, ToggleButtonGroup} from "@mui/material";
 import {useTheme} from '@mui/system';
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import ArticleIcon from "@mui/icons-material/Article";
-import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import React, {useState} from "react";
 import {useAtomValue, useSetAtom} from "jotai";
 import {YjsConnectionStatusAtom, YjsProviderAtom} from "./TreeState/YjsConnection";
@@ -16,13 +15,13 @@ import EditDocumentIcon from '@mui/icons-material/EditDocument';
 // Left side component - navigation buttons
 export const AppBarLeft = ({setCurrentPage, currentPage}) => {
     const theme = useTheme();
-    
+
     const handlePageChange = (event: React.MouseEvent<HTMLElement>, newPage: string | null) => {
         if (newPage !== null) {
             setCurrentPage(newPage);
         }
     };
-    
+
     return (
         <Paper elevation={1} sx={{p: 1, borderRadius: 2, margin: '8px 10px'}}>
             <ToggleButtonGroup
