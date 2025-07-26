@@ -35,7 +35,7 @@ export function ColumnRight() {
         zIndex: 1,
         gap: 2,
     }}>
-        <Paper elevation={1} sx={{p: 1}}>
+        <Paper elevation={1} sx={{p: 1, borderRadius: 2}}>
             <ToggleButtonGroup
                 value={activeTab}
                 exclusive
@@ -46,7 +46,7 @@ export function ColumnRight() {
                 sx={{
                     '& .MuiToggleButton-root': {
                         border: 'none',
-                        borderRadius: 2,
+                        borderRadius: 12,
                         px: 2,
                         py: 1,
                         gap: 1,
@@ -97,7 +97,7 @@ export function ColumnRight() {
             </thisNodeContext.Provider>
         )}
         {activeTab === 'issues' && (
-            <Paper elevation={1} sx={{flex: 1, overflow: 'hidden', borderRadius: '10px'}}>
+            <Paper elevation={1} sx={{flex: 1, overflow: 'hidden', borderRadius: '10px', p: 1}}>
                 <IssueList simple={true} treeId={node.treeVM.treeM.id()} nodeId={node.id} treeM={node.treeVM.treeM}/>
             </Paper>
         )}
