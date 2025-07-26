@@ -2,6 +2,7 @@ import React, {useEffect, useRef, useState} from 'react'
 import {Box, Button, Card, CardContent, Paper, Stack, TextField, Typography,} from "@mui/material";
 import SendIcon from '@mui/icons-material/Send';
 import {BaseMessage} from "./MessageTypes";
+import {useDragContext} from "../../client/src/TreeView/DragContext";
 
 // Types for Messages
 export interface Message {
@@ -21,7 +22,8 @@ interface ChatViewImplProps {
 export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewImplProps) {
     const [message, setMessage] = useState("");
     const endRef = useRef(null);
-    const [username,] = useState("user")
+    const [username,] = useState("user");
+    const { setIsDraggingOverChat, draggedNodeId } = useDragContext();
 
     useEffect(() => {
         endRef.current?.scrollIntoView({behavior: "smooth"});
@@ -40,6 +42,32 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewI
         }
     };
 
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+        setIsDraggingOverChat(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        // Only set to false if we're actually leaving the chat area
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+            setIsDraggingOverChat(false);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        console.log("DragDropToChat")
+        e.preventDefault();
+        setIsDraggingOverChat(false);
+        
+        const draggedNodeId = e.dataTransfer.getData('nodeId');
+        if (draggedNodeId) {
+            // Insert the node ID into the text field
+            const nodeIdText = `{nodeId: ${draggedNodeId}}`;
+            setMessage((prev: string) => prev + nodeIdText);
+        }
+    };
+
     return (
         <Box
             sx={{
@@ -50,6 +78,9 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewI
                 height: "95%",
                 position: "relative", // Enable absolute positioning for child elements
             }}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
         >
             {/* Settings Icon */}
             <Box

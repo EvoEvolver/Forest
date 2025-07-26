@@ -15,11 +15,10 @@ import {NodeTitle} from "./NodeTitle";
 import {thisNodeContext} from './NodeContext';
 import {updateChildrenCountAtom} from "../TreeState/childrenCount";
 import {MarkedNodesBar} from './MarkedNodesBar';
-import {DragImage} from './DragImage';
-import {createPortal} from 'react-dom';
+import {DragProvider, useDragContext} from './DragContext';
 
 
-const TreeView = () => {
+const TreeViewContent = () => {
     const leaves = useAtomValue(listOfNodesForViewAtom)
     const mobileMode = useAtomValue(isMobileModeAtom)
     const tree = useAtomValue(treeAtom)
@@ -107,12 +106,17 @@ const TreeView = () => {
     );
 };
 
-const DragButton = ({node, isVisible, handleDragStart}: {node: NodeVM, isVisible: boolean, handleDragStart: (e: React.DragEvent) => void}) => {
-    
+const TreeView = () => {
+    return (
+        <DragProvider>
+            <TreeViewContent />
+        </DragProvider>
+    );
+};
 
-
+const DragButton = ({node, isVisible, handleDragStart, isDragging}: {node: NodeVM, isVisible: boolean, handleDragStart: (e: React.DragEvent) => void, isDragging: boolean}) => {
     if (!isVisible || !node.nodeType.allowReshape) return null;
-
+    
     return (
         <Tooltip title="Drag to Reorder" placement="left">
             <IconButton
@@ -128,6 +132,8 @@ const DragButton = ({node, isVisible, handleDragStart}: {node: NodeVM, isVisible
                     color: 'rgba(128, 128, 128, 0.8)',
                     cursor: 'move',
                     zIndex: 10,
+                    opacity: isDragging ? 0 : 1,
+                    transition: 'opacity 0.1s ease',
                     '&:hover': {
                         backgroundColor: 'rgba(128, 128, 128, 0.1)',
                         color: 'rgba(128, 128, 128, 1)',
@@ -145,11 +151,11 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [dragOver, setDragOver] = useState<'top' | 'bottom' | null>(null);
-    const [showDragImage, setShowDragImage] = useState(false);
     const setNodePosition = useSetAtom(setNodePositionAtom);
     const tree = useAtomValue(treeAtom);
-    const theme = useTheme();
+
     const nodeTitle = useAtomValue(node.title);
+    const { setDraggedNodeId } = useDragContext();
 
     const parentId = node.parent;
     let parentNode;
@@ -188,28 +194,24 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
     const handleDragStart = (e: React.DragEvent) => {
         console.log("DragStart")
         setIsDragging(true);
-        setShowDragImage(true);
+        setDraggedNodeId(node.id);
         e.stopPropagation();
-        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.effectAllowed = 'copyMove';
         e.dataTransfer.setData('nodeId', node.id);
         e.dataTransfer.setData('parentId', node.parent || '');
         
-        // Create a temporary DOM element for the drag image
-        const dragImageContainer = document.createElement('div');
-        dragImageContainer.style.cssText = `
-            position: fixed;
-            top: -9999px;
-            left: -9999px;
-            background: ${theme.palette.background.paper};
-            border: 1px solid ${theme.palette.divider};
+        // Create a drag image that matches DragFollowCursor styling
+        const dragImageEl = document.createElement('div');
+        dragImageEl.style.cssText = `
+            background: white;
+            border: 1px solid rgba(0, 0, 0, 0.12);
             border-radius: 6px;
             padding: 6px 12px;
             font-size: 13px;
             font-weight: 400;
-            color: ${theme.palette.text.primary};
+            color: rgba(0, 0, 0, 0.87);
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
             opacity: 0.8;
-            z-index: 10000;
             white-space: nowrap;
             font-family: inherit;
             max-width: 300px;
@@ -217,27 +219,18 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
             text-overflow: ellipsis;
             pointer-events: none;
         `;
+        dragImageEl.textContent = nodeTitle || 'Untitled Node';
         
-        const title = nodeTitle || 'Untitled Node';
-        dragImageContainer.textContent = title;
-        document.body.appendChild(dragImageContainer);
-        
-        // Position the drag image to the right of the cursor
-        // Setting offset to position it to the right and slightly below cursor
-        e.dataTransfer.setDragImage(dragImageContainer, -10, 10);
-        
-        // Clean up the temporary element after a short delay
-        setTimeout(() => {
-            if (document.body.contains(dragImageContainer)) {
-                document.body.removeChild(dragImageContainer);
-            }
-        }, 100);
+        // Temporarily add to DOM, set as drag image, then remove
+        document.body.appendChild(dragImageEl);
+        e.dataTransfer.setDragImage(dragImageEl, -15, 14);
+        setTimeout(() => document.body.removeChild(dragImageEl), 0);
     };
 
     const handleDragEnd = () => {
         console.log("DragEnd")
         setIsDragging(false);
-        setShowDragImage(false);
+        setDraggedNodeId(null);
     }
 
     const handleDrop = (e: React.DragEvent) => {
@@ -289,12 +282,10 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
             transition: 'opacity 0.2s ease',
         }}
         onMouseEnter={() => {
-                console.log("MouseEnter")
                 setIsHovered(true)
             }
         }
         onMouseLeave={() => {
-            console.log("MouseLeave")
             setIsHovered(false);
             setIsDragging(false);
         }}
@@ -317,7 +308,7 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
         <NodeButtons node={node}/>
         <HoverSidePanel node={node} isVisible={isHovered} isDragging={isDragging} setIsDragging={setIsDragging}/>
         <SelectedDot node={node}/>
-        <DragButton node={node} isVisible={isHovered} handleDragStart={handleDragStart}/>
+        <DragButton node={node} isVisible={isHovered} handleDragStart={handleDragStart} isDragging={isDragging}/>
 
         {/* Hover Plus Buttons for Adding Siblings */}
         {parentNode && (
@@ -331,17 +322,6 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
             </>
         )}
 
-        {/* Drag Image Portal */}
-        {showDragImage && createPortal(
-            <DragImage 
-                node={node} 
-                onDragEnd={() => {
-                    setIsDragging(false);
-                    setShowDragImage(false);
-                }} 
-            />,
-            document.body
-        )}
 
     </div>
 }
