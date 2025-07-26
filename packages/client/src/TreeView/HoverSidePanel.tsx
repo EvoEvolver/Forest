@@ -23,7 +23,6 @@ import InsertLinkIcon from '@mui/icons-material/InsertLink';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import {NodeVM} from "@forest/schema";
 import {StageVersionDialog} from "./StageVersionDialog";
 import Slide from '@mui/material/Slide';
@@ -44,7 +43,6 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDrag
     const toggleMarkedNode = useSetAtom(toggleMarkedNodeAtom)
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const [availableTypesForDisplay, setAvailableTypesForDisplay] = React.useState<childTypesForDisplay[]>([]);
-    const [isDragIconHovered, setIsDragIconHovered] = useState(false);
 
     // Stage version dialog state
     const [stageDialogOpen, setStageDialogOpen] = React.useState(false);
@@ -57,11 +55,6 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDrag
 
     const availableTypeNames = node.nodeType.allowedChildrenTypes
 
-    const parentId = node.parent;
-    let parentNode;
-    if (parentId) {
-        parentNode = useAtomValue(tree.nodeDict[parentId])
-    }
 
     useEffect(() => {
         const fetchTypes = async () => {
@@ -128,48 +121,6 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDrag
         toggleMarkedNode(node.id);
     };
 
-    const handleDragStart = (e: React.DragEvent) => {
-        console.log("handleDragStart")
-        if (props.setIsDragging) props.setIsDragging(true);
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('nodeId', node.id);
-        e.dataTransfer.setData('parentId', node.parent || '');
-        
-        // Create capsule-shaped drag image with node title
-        const dragImage = document.createElement('div');
-        dragImage.style.cssText = `
-            position: absolute;
-            top: -1000px;
-            left: -1000px;
-            background: ${theme.palette.primary.main};
-            color: ${theme.palette.primary.contrastText};
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 500;
-            white-space: nowrap;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 10000;
-        `;
-        const nodeTitle = node.data.title || 'Untitled Node';
-        dragImage.textContent = nodeTitle;
-        document.body.appendChild(dragImage);
-        
-        // Set the custom drag image
-        e.dataTransfer.setDragImage(dragImage, dragImage.offsetWidth / 2, dragImage.offsetHeight / 2);
-        
-        // Clean up the temporary element after drag starts
-        setTimeout(() => { 
-            if (document.body.contains(dragImage)) {
-                document.body.removeChild(dragImage);
-            }
-        }, 0);
-    }
-
-    const handleDragEnd = () => {
-        console.log("handleDragEnd")
-        if (props.setIsDragging) props.setIsDragging(false);
-    }
 
     const isMarked = markedNodes.has(node.id);
 
@@ -249,29 +200,6 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDrag
                     </IconButton>
                 </Tooltip>
 
-                {/* Drag Indicator */}
-                {node.nodeType.allowReshape && (
-                    <Tooltip title="Drag to Reorder" placement="left">
-                        <IconButton
-                            size="small"
-                            draggable={true}
-                            onDragStart={handleDragStart}
-                            onDragEnd={handleDragEnd}
-                            onMouseEnter={() => setIsDragIconHovered(true)}
-                            onMouseLeave={() => setIsDragIconHovered(false)}
-                            sx={{
-                                color: theme.palette.info.main,
-                                cursor: 'move',
-                                backgroundColor: isDragIconHovered ? 'rgba(0,0,0,0.1)' : 'transparent',
-                                '&:hover': {
-                                    backgroundColor: 'rgba(0,0,0,0.1)'
-                                }
-                            }}
-                        >
-                            <DragIndicatorIcon fontSize="small"/>
-                        </IconButton>
-                    </Tooltip>
-                )}
 
                 {/* Delete Node */}
                 {node.nodeType.allowReshape && nodeChildren.length === 0 && (

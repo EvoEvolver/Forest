@@ -1,7 +1,9 @@
 import React, {useEffect, useState} from 'react';
-import {Box, Typography} from '@mui/material';
+import {Box, Typography, IconButton, Tooltip} from '@mui/material';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import {useAtomValue, useSetAtom} from "jotai";
 import {listOfNodesForViewAtom, selectedNodeAtom, setNodePositionAtom, treeAtom} from "../TreeState/TreeState";
+import {useTheme} from "@mui/system";
 import {NodeButtons} from "./NodeButtons";
 import {HoverSidePanel} from "./HoverSidePanel";
 import {HoverPlusButton} from "./HoverPlusButton";
@@ -103,6 +105,79 @@ const TreeView = () => {
     );
 };
 
+const DragButton = ({node, isVisible}: {node: NodeVM, isVisible: boolean}) => {
+    const theme = useTheme();
+    const [isDragHovered, setIsDragHovered] = useState(false);
+
+    const handleDragStart = (e: React.DragEvent) => {
+        e.stopPropagation();
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('nodeId', node.id);
+        e.dataTransfer.setData('parentId', node.parent || '');
+        
+        // Create capsule-shaped drag image with node title
+        const dragImage = document.createElement('div');
+        dragImage.style.cssText = `
+            position: absolute;
+            top: -1000px;
+            left: -1000px;
+            background: ${theme.palette.primary.main};
+            color: ${theme.palette.primary.contrastText};
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+        `;
+        const nodeTitle = node.data.title || 'Untitled Node';
+        dragImage.textContent = nodeTitle;
+        document.body.appendChild(dragImage);
+        
+        // Set the custom drag image
+        e.dataTransfer.setDragImage(dragImage, dragImage.offsetWidth / 2, dragImage.offsetHeight / 2);
+        
+        // Clean up the temporary element after drag starts
+        setTimeout(() => { 
+            if (document.body.contains(dragImage)) {
+                document.body.removeChild(dragImage);
+            }
+        }, 0);
+    };
+
+    if (!isVisible || !node.nodeType.allowReshape) return null;
+
+    return (
+        <Tooltip title="Drag to Reorder" placement="left">
+            <IconButton
+                size="small"
+                draggable={true}
+                onDragStart={handleDragStart}
+                onMouseEnter={() => setIsDragHovered(true)}
+                onMouseLeave={() => setIsDragHovered(false)}
+                sx={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 8,
+                    width: 28,
+                    height: 28,
+                    backgroundColor: 'rgba(128, 128, 128, 0.3)',
+                    color: 'rgba(128, 128, 128, 0.8)',
+                    cursor: 'move',
+                    zIndex: 10,
+                    '&:hover': {
+                        backgroundColor: 'rgba(128, 128, 128, 0.5)',
+                        color: 'rgba(128, 128, 128, 1)',
+                    }
+                }}
+            >
+                <DragIndicatorIcon fontSize="small"/>
+            </IconButton>
+        </Tooltip>
+    );
+};
+
 export const MiddleContents = ({node}: { node: NodeVM }) => {
     let setSelectedNode = useSetAtom(selectedNodeAtom)
     const [isHovered, setIsHovered] = useState(false);
@@ -122,17 +197,6 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
         setSelectedNode(node.id)
     }
 
-    const handleDragStart = (e: React.DragEvent) => {
-        e.stopPropagation();
-        setIsDragging(true);
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('nodeId', node.id);
-        e.dataTransfer.setData('parentId', node.parent || '');
-    }
-
-    const handleDragEnd = () => {
-        setIsDragging(false);
-    }
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
@@ -223,6 +287,7 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
         <NodeButtons node={node}/>
         <HoverSidePanel node={node} isVisible={isHovered} isDragging={isDragging} setIsDragging={setIsDragging}/>
         <SelectedDot node={node}/>
+        <DragButton node={node} isVisible={isHovered}/>
 
         {/* Hover Plus Buttons for Adding Siblings */}
         {parentNode && (
