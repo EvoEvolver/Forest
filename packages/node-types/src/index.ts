@@ -6,6 +6,7 @@ const typeModules = {
     "CustomNodeType": () => import("@forest/node-components").then(m => new m.CustomNodeType()),
     "AgentNodeType": () => import("@forest/node-type-agents").then(m => new m.AgentNodeType()),
     "AgentToolNodeType": () => import("@forest/node-type-agents").then(m => new m.AgentToolNodeType()),
+    "CodeInterpreterNodeType": () => import("@forest/node-type-agents").then(m => new m.CodeInterpreterNodeType()),
     "EditorNodeType": async () => new EditorNodeType(),
     "ReaderNodeType": async () => new ReaderNodeType()
 };

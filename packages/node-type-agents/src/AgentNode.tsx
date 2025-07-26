@@ -13,7 +13,7 @@ export class AgentNodeType extends NodeType {
     allowReshape = true
     allowAddingChildren = true
     allowEditTitle = true
-    allowedChildrenTypes = ["AgentNodeType", "AgentToolNodeType"]
+    allowedChildrenTypes = ["AgentNodeType", "AgentToolNodeType", "CodeInterpreterNodeType", "EditorNodeType"]
 
     render(node: NodeVM): React.ReactNode {
         return <>
