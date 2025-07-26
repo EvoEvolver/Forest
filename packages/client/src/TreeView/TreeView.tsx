@@ -162,12 +162,11 @@ const DragButton = ({node, isVisible}: {node: NodeVM, isVisible: boolean}) => {
                     right: 8,
                     width: 28,
                     height: 28,
-                    backgroundColor: 'rgba(128, 128, 128, 0.3)',
                     color: 'rgba(128, 128, 128, 0.8)',
                     cursor: 'move',
                     zIndex: 10,
                     '&:hover': {
-                        backgroundColor: 'rgba(128, 128, 128, 0.5)',
+                        backgroundColor: 'rgba(128, 128, 128, 0.1)',
                         color: 'rgba(128, 128, 128, 1)',
                     }
                 }}
