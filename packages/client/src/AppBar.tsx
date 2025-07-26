@@ -1,4 +1,5 @@
-import {AppBar, Avatar, Button, Stack, Toolbar} from "@mui/material";
+import {AppBar, Avatar, Button, Stack, Toolbar, Paper, ToggleButton, ToggleButtonGroup} from "@mui/material";
+import {useTheme} from '@mui/system';
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import ArticleIcon from "@mui/icons-material/Article";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
@@ -11,42 +12,63 @@ import AuthButton from "@forest/user-system/src/AuthButton";
 import {supabaseClientAtom} from "@forest/user-system/src/authStates";
 import SettingsIcon from "@mui/icons-material/Settings";
 import SettingsDialog from "./SettingsDialog";
-
+import EditDocumentIcon from '@mui/icons-material/EditDocument';
 // Left side component - navigation buttons
 export const AppBarLeft = ({setCurrentPage, currentPage}) => {
+    const theme = useTheme();
+    
+    const handlePageChange = (event: React.MouseEvent<HTMLElement>, newPage: string | null) => {
+        if (newPage !== null) {
+            setCurrentPage(newPage);
+        }
+    };
+    
     return (
-        <Stack
-            direction="row"
-            spacing={2}
-            sx={{
-                backgroundColor: '#ffffff',
-                boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-                borderRadius: '10px',
-                padding: '8px 16px',
-                minHeight: '48px',
-                alignItems: 'center',
-                margin: '8px 10px'
-            }}
-        >
-            <Button
-                onClick={() => setCurrentPage('tree')}
-                variant={currentPage === 'tree' ? 'outlined' : 'text'}
+        <Paper elevation={1} sx={{p: 1, borderRadius: 2, margin: '8px 10px'}}>
+            <ToggleButtonGroup
+                value={currentPage}
+                exclusive
+                onChange={handlePageChange}
+                aria-label="page selection"
+                size="small"
+                sx={{
+                    '& .MuiToggleButton-root': {
+                        border: 'none',
+                        borderRadius: 12,
+                        px: 2,
+                        py: 1,
+                        gap: 1,
+                        fontSize: '0.875rem',
+                        fontWeight: 500,
+                        textTransform: 'none',
+                        color: theme.palette.text.secondary,
+                        '&.Mui-selected': {
+                            backgroundColor: theme.palette.primary.main,
+                            color: theme.palette.primary.contrastText,
+                            '&:hover': {
+                                backgroundColor: theme.palette.primary.dark,
+                            }
+                        },
+                        '&:hover': {
+                            backgroundColor: theme.palette.action.hover,
+                        }
+                    }
+                }}
             >
-                <AccountTreeIcon/>
-            </Button>
-            <Button
-                onClick={() => setCurrentPage('linear')}
-                variant={currentPage === 'linear' ? 'outlined' : 'text'}
-            >
-                <ArticleIcon/>
-            </Button>
-            <Button
-                onClick={() => setCurrentPage('flow')}
-                variant={currentPage === 'flow' ? 'outlined' : 'text'}
-            >
-                <AccountTreeOutlinedIcon/>
-            </Button>
-        </Stack>
+                <ToggleButton value="tree" aria-label="tree view">
+                    <EditDocumentIcon fontSize="small"/>
+                    Tree
+                </ToggleButton>
+                <ToggleButton value="linear" aria-label="linear view">
+                    <ArticleIcon fontSize="small"/>
+                    Linear
+                </ToggleButton>
+                <ToggleButton value="flow" aria-label="flow view">
+                    <AccountTreeIcon fontSize="small"/>
+                    Flow
+                </ToggleButton>
+            </ToggleButtonGroup>
+        </Paper>
     );
 };
 
