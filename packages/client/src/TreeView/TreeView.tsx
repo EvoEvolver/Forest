@@ -114,38 +114,37 @@ const TreeView = () => {
     );
 };
 
-const DragButton = ({node, isVisible, handleDragStart, isDragging}: {node: NodeVM, isVisible: boolean, handleDragStart: (e: React.DragEvent) => void, isDragging: boolean}) => {
+const DragButton = ({node, isVisible, handleDragStart, isDragging, handleDragEnd}: {node: NodeVM, isVisible: boolean, handleDragStart: (e: React.DragEvent) => void, isDragging: boolean, handleDragEnd: () => void}) => {
     if (!isVisible || !node.nodeType.allowReshape) return null;
-    
-    const iconButton = (
-        <IconButton
-            size="small"
-            draggable={true}
-            onDragStart={handleDragStart}
-            sx={{
-                position: 'absolute',
-                top: 8,
-                right: 8,
-                width: 28,
-                height: 28,
-                color: 'rgba(128, 128, 128, 0.8)',
-                cursor: 'move',
-                zIndex: 10,
-                opacity: isDragging ? 0 : 1,
-                transition: 'opacity 0.1s ease',
-                '&:hover': {
-                    backgroundColor: 'rgba(128, 128, 128, 0.1)',
-                    color: 'rgba(128, 128, 128, 1)',
-                }
-            }}
-        >
-            <DragIndicatorIcon fontSize="small"/>
-        </IconButton>
-    );
-
-    return isDragging ? iconButton : (
-        <Tooltip title="Drag to Reorder" placement="left">
-            {iconButton}
+    return (
+        <Tooltip title={isDragging ? "" : "Drag to Reorder"} placement="left">
+            <IconButton
+                size="small"
+                draggable={true}
+                onDragStart={handleDragStart}
+                onDragEnd={() => {
+                    console.log("DragEnd")
+                    handleDragEnd()
+                }}
+                sx={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 8,
+                    width: 28,
+                    height: 28,
+                    color: 'rgba(128, 128, 128, 0.8)',
+                    cursor: 'move',
+                    zIndex: 10,
+                    opacity: isDragging ? 0.5 : 1,
+                    transition: 'opacity 0.1s ease',
+                    '&:hover': {
+                        backgroundColor: 'rgba(128, 128, 128, 0.1)',
+                        color: 'rgba(128, 128, 128, 1)',
+                    }
+                }}
+            >
+                <DragIndicatorIcon fontSize="small"/>
+            </IconButton>
         </Tooltip>
     );
 };
@@ -201,7 +200,6 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
             setIsDragging(true);
         }, 50)
         setDraggedNodeId(node.id);
-        e.stopPropagation();
         e.dataTransfer.effectAllowed = 'copyMove';
         e.dataTransfer.setData('nodeId', node.id);
         e.dataTransfer.setData('parentId', node.parent || '');
@@ -298,7 +296,6 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        onDragEnd={handleDragEnd}
     >
         <div
             onClick={handleClick}
@@ -312,9 +309,9 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
             </thisNodeContext.Provider>
         </div>
         <NodeButtons node={node}/>
-        <HoverSidePanel node={node} isVisible={isHovered} isDragging={isDragging} setIsDragging={setIsDragging}/>
+        <HoverSidePanel node={node} isVisible={isHovered} isDragging={isDragging}/>
         <SelectedDot node={node}/>
-        <DragButton node={node} isVisible={isHovered} handleDragStart={handleDragStart} isDragging={isDragging}/>
+        <DragButton node={node} isVisible={isHovered} handleDragStart={handleDragStart} isDragging={isDragging} handleDragEnd={handleDragEnd}/>
 
         {/* Hover Plus Buttons for Adding Siblings */}
         {parentNode && (

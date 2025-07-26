@@ -32,7 +32,7 @@ interface childTypesForDisplay {
     "displayName": string,
 }
 
-export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDragging?: boolean, setIsDragging?: (dragging: boolean) => void }) => {
+export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDragging?: boolean}) => {
     const theme = useTheme()
     const node = props.node;
     const addNewNode = useSetAtom(addNewNodeAtom)
