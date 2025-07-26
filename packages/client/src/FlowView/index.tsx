@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import ReactFlow, {
     Background,
     Controls,
@@ -16,6 +16,7 @@ import {treeAtom} from '../TreeState/TreeState';
 import SmoothEdge from "./SmoothEdge";
 import ExpandableNode from './ExpandableNode'; // Import the new node type
 import {nodeStateAtom} from './nodeStateAtom'; // Import the state atom
+import {contentEditableContext} from "@forest/schema/src/viewContext";
 
 // Derive flow data with d3-hierarchy and expand/collapse logic
 const flowDataAtom = atom((get) => {
@@ -61,9 +62,9 @@ const flowDataAtom = atom((get) => {
 
     const root = d3.hierarchy(buildHierarchy(rootNodeData.id));
 
-    const nodeWidth = 200;
-    const nodeHeight = 50;
-    const treeLayout = d3.tree().nodeSize([nodeHeight, nodeWidth + 70]); // Add more spacing
+    const nodeWidth = 220;
+    const nodeHeight = 60;
+    const treeLayout = d3.tree().nodeSize([nodeHeight + 40, nodeWidth + 100]);
 
     const layoutRoot = treeLayout(root);
 
@@ -101,9 +102,9 @@ const flowDataAtom = atom((get) => {
         }
     });
 
-    // Simple centering
-    const offsetX = 50;
-    const offsetY = 50;
+    // Better centering with more space
+    const offsetX = 150;
+    const offsetY = 100;
 
     const centeredNodes = nodes.map(n => ({
         ...n,
@@ -132,6 +133,10 @@ const FlowVisualizer = () => {
     const [nodes, setNodes, onNodesChange] = useNodesState(flowData.nodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(flowData.edges);
 
+    // Memoize types to prevent ReactFlow warnings
+    const memoizedNodeTypes = useMemo(() => nodeTypes, []);
+    const memoizedEdgeTypes = useMemo(() => edgeTypes, []);
+
     React.useEffect(() => {
         // When the atom's data changes (e.g., on expand/collapse),
         // update the state in React Flow.
@@ -142,20 +147,47 @@ const FlowVisualizer = () => {
     if (nodes.length === 0) return null;
 
     return (
-        <div style={{width: '100vw', height: '100%'}}>
+        <div style={{width: '100vw', height: '100vh', background: '#fafafa'}}>
             <ReactFlow
                 nodes={nodes}
                 edges={edges}
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
-                nodeTypes={nodeTypes} // Register the custom node type
-                edgeTypes={edgeTypes}
+                nodeTypes={memoizedNodeTypes}
+                edgeTypes={memoizedEdgeTypes}
                 fitView
+                fitViewOptions={{
+                    padding: 0.2,
+                    minZoom: 0.5,
+                    maxZoom: 1.5
+                }}
+                defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
                 proOptions={{hideAttribution: true}}
+                style={{ background: '#fafafa' }}
             >
-                <Background/>
-                <MiniMap/>
-                <Controls/>
+                <Background
+                    color="#e0e0e0"
+                    gap={20}
+                    size={1}
+                    variant="dots"
+                />
+                <MiniMap
+                    nodeColor="#1976d2"
+                    maskColor="rgba(0, 0, 0, 0.1)"
+                    style={{
+                        background: '#fff',
+                        border: '1px solid #e0e0e0',
+                        borderRadius: 8
+                    }}
+                />
+                <Controls
+                    style={{
+                        background: '#fff',
+                        border: '1px solid #e0e0e0',
+                        borderRadius: 8,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                    }}
+                />
             </ReactFlow>
         </div>
     );
