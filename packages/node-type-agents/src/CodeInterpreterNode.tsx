@@ -6,6 +6,37 @@ import * as Y from "yjs";
 import {Box, Button, TextField, Typography, Paper} from "@mui/material";
 import axios from "axios";
 
+// Separate component for endpoint URL configuration
+const EndpointUrlConfig: React.FC<{ node: NodeVM }> = ({ node }) => {
+    const [endpointUrl, setEndpointUrl] = useState<string>(
+        node.ydata.get(CodeInterpreterEndpointUrl)?.toString() || ""
+    );
+
+    const handleEndpointChange = (value: string) => {
+        setEndpointUrl(value);
+        const yText = node.ydata.get(CodeInterpreterEndpointUrl) as Y.Text;
+        if (yText) {
+            yText.delete(0, yText.length);
+            yText.insert(0, value);
+        }
+    };
+
+    return (
+        <Box sx={{ width: "100%", height: "100%" }}>
+            <Box sx={{ mb: 2 }}>
+                <TextField
+                    fullWidth
+                    label="Endpoint URL"
+                    value={endpointUrl}
+                    onChange={(e) => handleEndpointChange(e.target.value)}
+                    placeholder="http://localhost:8000/interpret"
+                    size="small"
+                />
+            </Box>
+        </Box>
+    );
+};
+
 const CodeInterpreterCodeText = "CodeInterpreterCodeText"
 const CodeInterpreterEndpointUrl = "CodeInterpreterEndpointUrl"
 
@@ -83,32 +114,7 @@ export class CodeInterpreterNodeType extends NodeType {
     }
 
     renderTool1(node: NodeVM): React.ReactNode {
-        const [endpointUrl, setEndpointUrl] = useState<string>(
-            node.ydata.get(CodeInterpreterEndpointUrl)?.toString() || ""
-        );
-
-        const handleEndpointChange = (value: string) => {
-            setEndpointUrl(value);
-            const yText = node.ydata.get(CodeInterpreterEndpointUrl) as Y.Text;
-            if (yText) {
-                yText.delete(0, yText.length);
-                yText.insert(0, value);
-            }
-        };
-        return (
-            <Box sx={{ width: "100%", height: "100%" }}>
-                <Box sx={{ mb: 2 }}>
-                    <TextField
-                        fullWidth
-                        label="Endpoint URL"
-                        value={endpointUrl}
-                        onChange={(e) => handleEndpointChange(e.target.value)}
-                        placeholder="http://localhost:8000/interpret"
-                        size="small"
-                    />
-                </Box>
-            </Box>
-        );
+        return <EndpointUrlConfig node={node} />;
     }
 
     renderTool2(node: NodeVM): React.ReactNode {
