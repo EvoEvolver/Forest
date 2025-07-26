@@ -131,7 +131,7 @@ const DragButton = ({node, isVisible}: {node: NodeVM, isVisible: boolean}) => {
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             z-index: 10000;
         `;
-        const nodeTitle = node.data.title || 'Untitled Node';
+        const nodeTitle = node.nodeM.title() || 'Untitled Node';
         dragImage.textContent = nodeTitle;
         document.body.appendChild(dragImage);
         
