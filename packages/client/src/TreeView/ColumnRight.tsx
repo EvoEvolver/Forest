@@ -97,9 +97,9 @@ export function ColumnRight() {
             </thisNodeContext.Provider>
         )}
         {activeTab === 'issues' && (
-            <Box sx={{flex: 1, overflow: 'hidden'}}>
+            <Paper elevation={1} sx={{flex: 1, overflow: 'hidden', borderRadius: '10px'}}>
                 <IssueList simple={true} treeId={node.treeVM.treeM.id()} nodeId={node.id} treeM={node.treeVM.treeM}/>
-            </Box>
+            </Paper>
         )}
         {activeTab === 'assistant' && (
             <Box sx={{flex: 1, overflow: 'hidden'}}>

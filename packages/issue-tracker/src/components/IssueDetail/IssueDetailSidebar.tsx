@@ -14,6 +14,9 @@ import {
     TextField,
     Typography
 } from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import {
     AccountTree as TreeIcon,
     Add as AddIcon,
@@ -27,6 +30,7 @@ import {
 import type {Issue, UpdateIssueRequest} from '../../types/Issue';
 import AssigneeManager from '../AssigneeManager';
 import {getUserMetadata} from "@forest/user-system/src/userMetadata";
+import {useTheme} from "@mui/system";
 
 interface IssueDetailSidebarProps {
     issue: Issue;
@@ -88,6 +92,7 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
     const [newTag, setNewTag] = useState('');
     const [editingTagIndex, setEditingTagIndex] = useState<number | null>(null);
     const [editingTagValue, setEditingTagValue] = useState('');
+    const theme = useTheme()
 
     const handleAddTag = () => {
         if (newTag.trim() && !editData.tags?.includes(newTag.trim())) {
@@ -260,17 +265,19 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
                     Due Date & Time
                 </Typography>
                 {isEditing ? (
-                    <TextField
-                        fullWidth
-                        type="date"
-                        value={editData.dueDate ? editData.dueDate.split('T')[0] : ''}
-                        onChange={(e) => onEditDataChange({dueDate: e.target.value + 'T23:59:00'})}
-                        variant="outlined"
-                        size="small"
-                        InputLabelProps={{
-                            shrink: true,
-                        }}
-                    />
+                    <LocalizationProvider dateAdapter={AdapterDateFns}>
+                        <DatePicker
+                            value={editData.dueDate ? new Date(editData.dueDate) : null}
+                            onChange={(date) => onEditDataChange({dueDate: date ? date.toISOString().split('T')[0] + 'T23:59:00' : ''})}
+                            slotProps={{
+                                textField: {
+                                    fullWidth: true,
+                                    size: 'small',
+                                    variant: 'outlined'
+                                }
+                            }}
+                        />
+                    </LocalizationProvider>
                 ) : (
                     <Typography variant="body2" color="text.secondary">
                         {issue.dueDate ? new Date(issue.dueDate).toLocaleString() : 'No due date set'}
