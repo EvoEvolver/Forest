@@ -1,6 +1,6 @@
 import React, {useEffect} from 'react';
 import {RichTreeView} from '@mui/x-tree-view/RichTreeView';
-import {atom, useAtom, useAtomValue, useSetAtom, useStore} from "jotai";
+import {atom, useAtom, useAtomValue, useSetAtom} from "jotai";
 import {
     jumpToNodeAtom,
     lastSelectedNodeBeforeJumpIdAtom,
@@ -9,10 +9,7 @@ import {
     treeAtom
 } from "../TreeState/TreeState";
 import {useTreeViewApiRef} from "@mui/x-tree-view";
-import {Button} from "@mui/material";
-import UnfoldLessIcon from '@mui/icons-material/UnfoldLess';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { NodeVM } from '@forest/schema';
+import {NodeM, NodeVM} from '@forest/schema';
 
 export const NavigatorItemsAtom = atom((get) => {
         const tree = get(treeAtom)
@@ -39,7 +36,7 @@ export const NavigatorItemsAtom = atom((get) => {
             const children_ids = get(node.children)
             const children = children_ids.map((childId) => {
                 const childrenNodeAtom = tree.nodeDict[childId]
-                if(!childrenNodeAtom){
+                if (!childrenNodeAtom) {
                     return null
                 }
                 return get(childrenNodeAtom)
@@ -68,55 +65,24 @@ const selectedItemAtom = atom((get) => {
     return [selectedNode.id]
 })
 
-const letterLimit = 15
-const beforeJumpNodeTitleAtom = atom((get) => {
-    const currTree = get(treeAtom)
-    const lastSelectedNodeBeforeJumpId = get(lastSelectedNodeBeforeJumpIdAtom)
-    if (lastSelectedNodeBeforeJumpId == "") {
-        return ""
-    }
-    const title = get(get(currTree.nodeDict[lastSelectedNodeBeforeJumpId]).title)
-    if (title.length > letterLimit) {
-        return title.slice(0, letterLimit) + "..."
-    }
-    return title
-})
-
 const expandedItemsAtom = atom([])
 
-function getAncestorIds(get, node, nodeDict) {
-    const ancestors = []
-    let currNode = node
-    while (currNode.parent !== null) {
-        currNode = get(nodeDict[currNode.parent])
-        ancestors.push(currNode.id)
+function getAncestorIds(node: NodeVM){
+    if (!node || !node.nodeM) {
+        return []
     }
-    return ancestors.reverse()
-}
-
-export const NavigatorButtons = () => {
-    const beforeJumpNodeTitle = useAtomValue(beforeJumpNodeTitleAtom)
-    const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom)
-    const lastSelectedNodeBeforeJumpId = useAtomValue(lastSelectedNodeBeforeJumpIdAtom)
-    const [, setExpandedItems] = useAtom(expandedItemsAtom)
-    const jumpToNode = useSetAtom(jumpToNodeAtom)
-    const store = useStore()
-
-    const handleGoBack = () => {
-        jumpToNode(lastSelectedNodeBeforeJumpId)
+    const ancestorIds = []
+    let nodeM = node.nodeM
+    const treeM = nodeM.treeM;
+    while(true){
+        const parent: NodeM | undefined = treeM.getParent(nodeM)
+        if (!parent) {
+            break;
+        }
+        ancestorIds.push(parent.id)
+        nodeM = parent
     }
-    const handleFold = () => {
-        const ancestors = getAncestorIds(store.get, selectedNode, store.get(treeAtom).nodeDict)
-        setExpandedItems((oldExpandedItems) => {
-            return [selectedNode.id, ...ancestors]
-        })
-    }
-
-    return <>
-        <Button variant="contained" onClick={handleFold}><UnfoldLessIcon/></Button>
-        {lastSelectedNodeBeforeJumpId != "" && lastSelectedNodeBeforeJumpId != selectedNode.id &&
-            <Button variant="contained" onClick={handleGoBack}><ArrowBackIcon/>{beforeJumpNodeTitle}</Button>}
-    </>;
+    return ancestorIds;
 }
 
 export const NavigatorLayer = () => {
@@ -129,8 +95,9 @@ export const NavigatorLayer = () => {
     const scrollToNode = useSetAtom(scrollToNodeAtom)
     useEffect(() => {
         const currId = selectedNode.id
+        const parentIds = getAncestorIds(selectedNode)
         setExpandedItems((oldExpandedItems) => {
-            return [...new Set([currId, ...oldExpandedItems])]
+            return [...new Set([currId, ...parentIds, ...oldExpandedItems])]
         })
         const itemDom = apiRef.current.getItemDOMElement(selectedNode.id)
         if (itemDom) {
