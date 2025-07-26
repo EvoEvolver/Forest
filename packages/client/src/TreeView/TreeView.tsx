@@ -15,6 +15,8 @@ import {NodeTitle} from "./NodeTitle";
 import {thisNodeContext} from './NodeContext';
 import {updateChildrenCountAtom} from "../TreeState/childrenCount";
 import {MarkedNodesBar} from './MarkedNodesBar';
+import {DragImage} from './DragImage';
+import {createPortal} from 'react-dom';
 
 
 const TreeView = () => {
@@ -105,46 +107,9 @@ const TreeView = () => {
     );
 };
 
-const DragButton = ({node, isVisible}: {node: NodeVM, isVisible: boolean}) => {
-    const theme = useTheme();
-    const [isDragHovered, setIsDragHovered] = useState(false);
+const DragButton = ({node, isVisible, handleDragStart}: {node: NodeVM, isVisible: boolean, handleDragStart: (e: React.DragEvent) => void}) => {
+    
 
-    const handleDragStart = (e: React.DragEvent) => {
-        e.stopPropagation();
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('nodeId', node.id);
-        e.dataTransfer.setData('parentId', node.parent || '');
-        
-        // Create capsule-shaped drag image with node title
-        const dragImage = document.createElement('div');
-        dragImage.style.cssText = `
-            position: absolute;
-            top: -1000px;
-            left: -1000px;
-            background: ${theme.palette.primary.main};
-            color: ${theme.palette.primary.contrastText};
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 500;
-            white-space: nowrap;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 10000;
-        `;
-        const nodeTitle = node.nodeM.title() || 'Untitled Node';
-        dragImage.textContent = nodeTitle;
-        document.body.appendChild(dragImage);
-        
-        // Set the custom drag image
-        e.dataTransfer.setDragImage(dragImage, dragImage.offsetWidth / 2, dragImage.offsetHeight / 2);
-        
-        // Clean up the temporary element after drag starts
-        setTimeout(() => { 
-            if (document.body.contains(dragImage)) {
-                document.body.removeChild(dragImage);
-            }
-        }, 0);
-    };
 
     if (!isVisible || !node.nodeType.allowReshape) return null;
 
@@ -154,8 +119,6 @@ const DragButton = ({node, isVisible}: {node: NodeVM, isVisible: boolean}) => {
                 size="small"
                 draggable={true}
                 onDragStart={handleDragStart}
-                onMouseEnter={() => setIsDragHovered(true)}
-                onMouseLeave={() => setIsDragHovered(false)}
                 sx={{
                     position: 'absolute',
                     top: 8,
@@ -182,8 +145,11 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [dragOver, setDragOver] = useState<'top' | 'bottom' | null>(null);
+    const [showDragImage, setShowDragImage] = useState(false);
     const setNodePosition = useSetAtom(setNodePositionAtom);
     const tree = useAtomValue(treeAtom);
+    const theme = useTheme();
+    const nodeTitle = useAtomValue(node.title);
 
     const parentId = node.parent;
     let parentNode;
@@ -198,6 +164,7 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
 
 
     const handleDragOver = (e: React.DragEvent) => {
+        console.log("DragOver")
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
 
@@ -213,10 +180,68 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
     }
 
     const handleDragLeave = () => {
+        console.log("DragLeave")
         setDragOver(null);
     }
 
+
+    const handleDragStart = (e: React.DragEvent) => {
+        console.log("DragStart")
+        setIsDragging(true);
+        setShowDragImage(true);
+        e.stopPropagation();
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('nodeId', node.id);
+        e.dataTransfer.setData('parentId', node.parent || '');
+        
+        // Create a temporary DOM element for the drag image
+        const dragImageContainer = document.createElement('div');
+        dragImageContainer.style.cssText = `
+            position: fixed;
+            top: -9999px;
+            left: -9999px;
+            background: ${theme.palette.background.paper};
+            border: 1px solid ${theme.palette.divider};
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 13px;
+            font-weight: 400;
+            color: ${theme.palette.text.primary};
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            opacity: 0.8;
+            z-index: 10000;
+            white-space: nowrap;
+            font-family: inherit;
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            pointer-events: none;
+        `;
+        
+        const title = nodeTitle || 'Untitled Node';
+        dragImageContainer.textContent = title;
+        document.body.appendChild(dragImageContainer);
+        
+        // Position the drag image to the right of the cursor
+        // Setting offset to position it to the right and slightly below cursor
+        e.dataTransfer.setDragImage(dragImageContainer, -10, 10);
+        
+        // Clean up the temporary element after a short delay
+        setTimeout(() => {
+            if (document.body.contains(dragImageContainer)) {
+                document.body.removeChild(dragImageContainer);
+            }
+        }, 100);
+    };
+
+    const handleDragEnd = () => {
+        console.log("DragEnd")
+        setIsDragging(false);
+        setShowDragImage(false);
+    }
+
     const handleDrop = (e: React.DragEvent) => {
+        console.log("Drop")
         e.preventDefault();
         setDragOver(null);
 
@@ -263,14 +288,20 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
             borderBottom: dragOver === 'bottom' ? '3px solid #1976d2' : '0px solid #c6c6c6',
             transition: 'opacity 0.2s ease',
         }}
-        onMouseEnter={() => setIsHovered(true)}
+        onMouseEnter={() => {
+                console.log("MouseEnter")
+                setIsHovered(true)
+            }
+        }
         onMouseLeave={() => {
+            console.log("MouseLeave")
             setIsHovered(false);
             setIsDragging(false);
         }}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
+        onDragEnd={handleDragEnd}
     >
         <div
             onClick={handleClick}
@@ -286,7 +317,7 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
         <NodeButtons node={node}/>
         <HoverSidePanel node={node} isVisible={isHovered} isDragging={isDragging} setIsDragging={setIsDragging}/>
         <SelectedDot node={node}/>
-        <DragButton node={node} isVisible={isHovered}/>
+        <DragButton node={node} isVisible={isHovered} handleDragStart={handleDragStart}/>
 
         {/* Hover Plus Buttons for Adding Siblings */}
         {parentNode && (
@@ -298,6 +329,18 @@ export const MiddleContents = ({node}: { node: NodeVM }) => {
                     position="bottom"
                 />
             </>
+        )}
+
+        {/* Drag Image Portal */}
+        {showDragImage && createPortal(
+            <DragImage 
+                node={node} 
+                onDragEnd={() => {
+                    setIsDragging(false);
+                    setShowDragImage(false);
+                }} 
+            />,
+            document.body
         )}
 
     </div>
