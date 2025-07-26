@@ -1,5 +1,5 @@
 import {useAtomValue, useSetAtom} from "jotai";
-import {addNewNodeAtom, deleteNodeAtom, markedNodesAtom, toggleMarkedNodeAtom, treeAtom, setNodePositionAtom} from "../TreeState/TreeState";
+import {addNewNodeAtom, deleteNodeAtom, markedNodesAtom, toggleMarkedNodeAtom, treeAtom} from "../TreeState/TreeState";
 import {useTheme} from "@mui/system";
 import {
     Alert,
@@ -42,7 +42,6 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDrag
     const nodeChildren = useAtomValue(node.children)
     const markedNodes = useAtomValue(markedNodesAtom)
     const toggleMarkedNode = useSetAtom(toggleMarkedNodeAtom)
-    const setNodePosition = useSetAtom(setNodePositionAtom)
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const [availableTypesForDisplay, setAvailableTypesForDisplay] = React.useState<childTypesForDisplay[]>([]);
     const [isDragIconHovered, setIsDragIconHovered] = useState(false);
@@ -130,14 +129,45 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDrag
     };
 
     const handleDragStart = (e: React.DragEvent) => {
-        e.stopPropagation();
+        console.log("handleDragStart")
         if (props.setIsDragging) props.setIsDragging(true);
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('nodeId', node.id);
         e.dataTransfer.setData('parentId', node.parent || '');
+        
+        // Create capsule-shaped drag image with node title
+        const dragImage = document.createElement('div');
+        dragImage.style.cssText = `
+            position: absolute;
+            top: -1000px;
+            left: -1000px;
+            background: ${theme.palette.primary.main};
+            color: ${theme.palette.primary.contrastText};
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+        `;
+        const nodeTitle = node.data.title || 'Untitled Node';
+        dragImage.textContent = nodeTitle;
+        document.body.appendChild(dragImage);
+        
+        // Set the custom drag image
+        e.dataTransfer.setDragImage(dragImage, dragImage.offsetWidth / 2, dragImage.offsetHeight / 2);
+        
+        // Clean up the temporary element after drag starts
+        setTimeout(() => { 
+            if (document.body.contains(dragImage)) {
+                document.body.removeChild(dragImage);
+            }
+        }, 0);
     }
 
     const handleDragEnd = () => {
+        console.log("handleDragEnd")
         if (props.setIsDragging) props.setIsDragging(false);
     }
 
