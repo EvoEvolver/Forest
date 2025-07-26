@@ -41,8 +41,7 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewI
     };
 
     return (
-        <Card
-            elevation={3}
+        <Box
             sx={{
                 margin: "0 auto",
                 padding: 2,
@@ -119,6 +118,6 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewI
                     <SendIcon/>
                 </Button>
             </Box>
-        </Card>
+        </Box>
     );
 }

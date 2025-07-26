@@ -102,9 +102,9 @@ export function ColumnRight() {
             </Paper>
         )}
         {activeTab === 'assistant' && (
-            <Box sx={{flex: 1, overflow: 'hidden'}}>
+            <Paper elevation={1} sx={{flex: 1, overflow: 'hidden', borderRadius: '10px', p: 1}}>
                 <CursorChat selectedNode={node}></CursorChat>
-            </Box>
+            </Paper>
         )}
     </Box>;
 }

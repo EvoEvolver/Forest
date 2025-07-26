@@ -8,7 +8,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
-import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import DownloadIcon from '@mui/icons-material/Download';
 import {NodeM, NodeVM} from "@forest/schema";
 import {EditorNodeType} from ".";
 import {stageThisVersion} from "@forest/schema/src/stageService";
@@ -77,7 +77,7 @@ export const ParentToSummaryButton: React.FC<{ node: NodeVM}> = ({node}) => {
                 onClick={handleClick}
             >
                 <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <ArrowUpwardIcon color="primary" />
+                    <DownloadIcon color="primary" />
                     <div>
                         <Typography variant="body1" component="div">
                             Write paragraph from Parent
