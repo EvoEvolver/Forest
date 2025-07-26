@@ -1,5 +1,6 @@
 import {atom} from "jotai";
 
+export const currentPageAtom = atom('tree');
 
 export const isMobileModeAtom = atom(false)
 

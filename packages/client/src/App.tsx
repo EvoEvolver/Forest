@@ -1,13 +1,13 @@
 import React, {lazy, Suspense, useEffect, useState} from 'react';
 import {Box, CssBaseline} from "@mui/material";
-import {useAtom, useAtomValue, useSetAtom} from "jotai";
+import {atom, useAtom, useAtomValue, useSetAtom} from "jotai";
 import TreeView from "./TreeView/TreeView";
 import {setupYDocAtom, YjsProviderAtom} from "./TreeState/YjsConnection";
 import LinearView from "./LinearView";
 import AuthModal from '../../user-system/src/AuthModal';
 import {subscriptionAtom, supabaseClientAtom, userAtom} from "../../user-system/src/authStates";
 import {AppBarLeft, AppBarRight} from "./AppBar";
-import {treeId} from "./appState";
+import {currentPageAtom, treeId} from "./appState";
 import {getPastelHexFromUsername, getRandomAnimal} from "@forest/user-system/src/helper";
 import {recordTreeVisit} from "./TreeState/treeVisitService";
 import {treeAtom} from "./TreeState/TreeState";
@@ -15,10 +15,9 @@ import {treeAtom} from "./TreeState/TreeState";
 // @ts-ignore
 const FlowVisualizer = lazy(() => import('./FlowView'));
 
-
 export default function App() {
     const [subscription, setSubscription] = useAtom(subscriptionAtom);
-    const [currentPage, setCurrentPage] = useState('tree');
+    const [currentPage, setCurrentPage] = useAtom(currentPageAtom);
     const supabaseClient = useAtomValue(supabaseClientAtom)
     const setupYDoc = useSetAtom(setupYDocAtom);
 

@@ -1,4 +1,4 @@
-import React, {memo, useState, useEffect, useRef} from 'react';
+import React, {memo, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {Handle, NodeProps, Position} from 'reactflow';
 import {useAtomValue, useSetAtom} from 'jotai';
@@ -7,7 +7,7 @@ import {Box, Card, CardContent, IconButton, Paper, Typography} from '@mui/materi
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import {treeAtom} from "../TreeState/TreeState";
-import {contentEditableContext} from '@forest/schema/src/viewContext';
+import {NodePreview} from "./PreviewPage";
 
 const ExpandableNode = ({id, data}: NodeProps) => {
     const setNodeState = useSetAtom(nodeStateAtom(id));
@@ -88,14 +88,6 @@ const ExpandableNode = ({id, data}: NodeProps) => {
         setMouseInPreview(false);
     };
 
-    const renderNodeContent = () => {
-        try {
-            return node.nodeType.render(node);
-        } catch (error) {
-            return <Typography color="error">Error rendering node
-                content: {error?.message || 'Unknown error'}</Typography>;
-        }
-    };
 
     return (
         <>
@@ -207,14 +199,7 @@ const ExpandableNode = ({id, data}: NodeProps) => {
                     }}
                 >
                     <CardContent sx={{p: 2}}>
-                        <Typography variant="h6" gutterBottom sx={{color: '#1976d2', mb: 1}}>
-                            {nodeTitle}
-                        </Typography>
-                        <Box sx={{maxHeight: 400, overflow: 'auto'}}>
-                            <contentEditableContext.Provider value={false}>
-                                {renderNodeContent()}
-                            </contentEditableContext.Provider>
-                        </Box>
+                        <NodePreview node={node}/>
                     </CardContent>
                 </Card>,
                 document.body

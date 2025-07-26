@@ -15,8 +15,8 @@ import 'reactflow/dist/style.css';
 import {treeAtom} from '../TreeState/TreeState';
 import SmoothEdge from "./SmoothEdge";
 import ExpandableNode from './ExpandableNode'; // Import the new node type
-import {nodeStateAtom} from './nodeStateAtom'; // Import the state atom
-import {contentEditableContext} from "@forest/schema/src/viewContext";
+import {nodeStateAtom} from './nodeStateAtom';
+import {NodeVM} from "@forest/schema"; // Import the state atom
 
 // Derive flow data with d3-hierarchy and expand/collapse logic
 const flowDataAtom = atom((get) => {
@@ -26,9 +26,9 @@ const flowDataAtom = atom((get) => {
     const {nodeDict} = treeData;
 
     const rawNodes = Object.entries(nodeDict).map(([id, nodeAtom]) => {
-        const node = get(nodeAtom);
+        const node: NodeVM = get(nodeAtom);
         const title = get(node.title);
-        return {id, title, parentId: node.parent};
+        return {id, title, parentId: node.parent, childrenIds: get(node.children)};
     });
 
     const rootNodeData = rawNodes.find(n => !n.parentId);
@@ -40,7 +40,7 @@ const flowDataAtom = atom((get) => {
         const node = nodeDataMap.get(nodeId);
         if (!node) return null;
 
-        const children = rawNodes.filter(n => n.parentId === nodeId);
+        const children = node.childrenIds.map(childId => nodeDataMap.get(childId)).filter(Boolean);
         const nodeState = get(nodeStateAtom(nodeId));
 
         // If the node is collapsed, we don't include its children

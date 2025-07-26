@@ -2,8 +2,7 @@ import React from 'react';
 import {Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Typography} from '@mui/material';
 import {DataGrid, GridColDef, GridRenderCellParams} from '@mui/x-data-grid';
 import {NodeM, NodeVM} from '@forest/schema';
-import {httpUrl, treeId} from '../appState';
-import {userAtom} from '@forest/user-system/src/authStates';
+import {httpUrl} from '../appState';
 import {useAtomValue} from 'jotai';
 import {treeAtom} from '../TreeState/TreeState';
 import {contentEditableContext} from "@forest/schema/src/viewContext";
@@ -26,12 +25,10 @@ interface Snapshot {
 
 export const StageVersionDialog = ({open, onClose, node}: StageVersionDialogProps) => {
     const [tagName, setTagName] = React.useState('');
-    const [existingTags, setExistingTags] = React.useState<string[]>([]);
     const [loading, setLoading] = React.useState(false);
     const [previewNodeVM, setPreviewNodeVM] = React.useState<NodeVM | null>(null);
     const [previewLoading, setPreviewLoading] = React.useState(false);
     const [snapshots, setSnapshots] = React.useState<Snapshot[]>([]);
-    const user = useAtomValue(userAtom);
     const tree = useAtomValue(treeAtom);
 
     // Fetch existing snapshots when dialog opens
