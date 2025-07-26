@@ -161,7 +161,7 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDrag
                 </Tooltip>
 
                 {/* Archive/Unarchive */}
-                <Tooltip title={node.data['archived'] ? "Unarchive" : "Archive"} placement="left">
+                {node.nodeType.allowReshape && <Tooltip title={node.data['archived'] ? "Unarchive" : "Archive"} placement="left">
                     <IconButton
                         size="small"
                         onClick={node.data['archived'] ? unarchiveNode : archiveNode}
@@ -171,7 +171,7 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDrag
                     >
                         <ArchiveIcon fontSize="small"/>
                     </IconButton>
-                </Tooltip>
+                </Tooltip>}
 
                 {/* Copy Node Link */}
                 <Tooltip title="Copy Node Link" placement="left">

@@ -1,9 +1,8 @@
-import {NavigatorButtons, NavigatorLayer} from "./NavigatorLayer";
+import {NavigatorLayer} from "./NavigatorLayer";
 import React, {useState} from "react";
 import {selectedNodeAtom} from "../TreeState/TreeState";
 import {useAtomValue} from "jotai";
-import {NodeContentFrame} from "./NodeContentFrame";
-import {Box, Collapse, IconButton} from "@mui/material";
+import {Box, IconButton} from "@mui/material";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 
@@ -42,7 +41,7 @@ export function ColumnLeft() {
                     transition: "all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1)",
                 }}
             >
-                <NavigatorLayer />
+                <NavigatorLayer/>
             </Box>
 
             <IconButton
@@ -60,13 +59,13 @@ export function ColumnLeft() {
                     zIndex: 10,
                     transition: "all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1)",
                     background: "linear-gradient(145deg, #ffffff, #f0f0f0)",
-                    "&:hover": { 
+                    "&:hover": {
                         backgroundColor: "#fff",
                         transform: "translate(-50%, -50%) scale(1.1)"
                     },
                 }}
             >
-                {collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+                {collapsed ? <ChevronRightIcon/> : <ChevronLeftIcon/>}
             </IconButton>
         </Box>
     );
