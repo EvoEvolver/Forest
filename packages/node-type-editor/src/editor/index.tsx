@@ -16,7 +16,10 @@ import Image from '@tiptap/extension-image'
 import {CommentExtension, makeOnCommentActivated} from './Extensions/comment'
 import {MathExtension} from '@aarkue/tiptap-math-extension'
 import Bold from '@tiptap/extension-bold'
-import {Button} from "@mui/material";
+import {IconButton, Paper} from "@mui/material";
+import FormatBoldIcon from '@mui/icons-material/FormatBold';
+import CommentIcon from '@mui/icons-material/Comment';
+import LinkIcon from '@mui/icons-material/Link';
 import {usePopper} from "react-popper";
 import {LinkExtension, makeOnLinkActivated} from "./Extensions/link";
 import {NodeVM} from "@forest/schema";
@@ -130,15 +133,21 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
         <div className="column-half">
             <EditorContent editor={editor} className="main-group"/>
             <BubbleMenu editor={editor} tippyOptions={{duration: 100}}>
-                <Button
-                    variant="contained"
-                    size="small"
-                    onClick={() => editor.chain().focus().toggleBold().run()}
-                >
-                    Bold
-                </Button>
-                <Button variant="contained" size="small" onClick={handleClickComment}>Comment</Button>
-                <Button variant="contained" size="small" onClick={handleClickLink}>Link</Button>
+                <Paper elevation={3} sx={{ backgroundColor: 'white', padding: 0.5, display: 'flex', gap: 0.5 }}>
+                    <IconButton
+                        size="small"
+                        onClick={() => editor.chain().focus().toggleBold().run()}
+                        sx={{ color: 'black' }}
+                    >
+                        <FormatBoldIcon />
+                    </IconButton>
+                    <IconButton size="small" onClick={handleClickComment} sx={{ color: 'black' }}>
+                        <CommentIcon />
+                    </IconButton>
+                    <IconButton size="small" onClick={handleClickLink} sx={{ color: 'black' }}>
+                        <LinkIcon />
+                    </IconButton>
+                </Paper>
             </BubbleMenu>
             <HoverElements hoverElements={hoverElements} editor={editor}/>
         </div>
