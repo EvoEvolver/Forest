@@ -1,5 +1,5 @@
-import React, {useEffect, useMemo} from 'react';
-import {UncontrolledTreeEnvironment, Tree, InteractionMode, TreeDataProvider, Disposable} from 'react-complex-tree';
+import React, {useEffect, useState} from 'react';
+import {ControlledTreeEnvironment, Tree, InteractionMode} from 'react-complex-tree';
 import 'react-complex-tree/lib/style-modern.css';
 import {atom, useAtom, useAtomValue, useSetAtom} from "jotai";
 import {
@@ -71,46 +71,14 @@ export const NavigatorItemsAtom = atom((get) => {
 
 const selectedItemAtom = atom((get) => {
     const selectedNode = get(selectedNodeAtom)
+    if (!selectedNode || !selectedNode.id) {
+        return []
+    }
     return [selectedNode.id]
 })
 
 const expandedItemsAtom = atom<string[]>([])
-
-class ReactiveTreeDataProvider implements TreeDataProvider {
-    private data: Record<string, any>
-    private onDidChangeTreeDataEmitter = new EventTarget()
-
-    constructor(data: Record<string, any>) {
-        this.data = data
-    }
-
-    updateData(newData: Record<string, any>) {
-        this.data = newData
-        // Emit change event to trigger tree refresh
-        this.onDidChangeTreeDataEmitter.dispatchEvent(new CustomEvent('change'))
-    }
-
-    async getTreeItem(itemId: string) {
-        return this.data[itemId]
-    }
-
-    async onChangeItemChildren(itemId: string, newChildren: string[]) {
-        // Handle children changes if needed
-        return Promise.resolve()
-    }
-
-    onDidChangeTreeData(listener: (changedItemIds?: string[]) => void): Disposable {
-        const handleChange = () => {
-            listener(Object.keys(this.data))
-        }
-        this.onDidChangeTreeDataEmitter.addEventListener('change', handleChange)
-        return {
-            dispose: () => {
-                this.onDidChangeTreeDataEmitter.removeEventListener('change', handleChange)
-            }
-        }
-    }
-}
+const focusedItemAtom = atom<string | undefined>(undefined)
 
 function getAncestorIds(node: NodeVM){
     if (!node || !node.nodeM) {
@@ -135,6 +103,7 @@ export const NavigatorLayer = () => {
     console.log("navigatorItems", navigatorItems)
     const tree = useAtomValue(treeAtom)
     const [expandedItems, setExpandedItems] = useAtom(expandedItemsAtom)
+    const [focusedItem, setFocusedItem] = useAtom(focusedItemAtom)
     const selectedItems = useAtomValue(selectedItemAtom)
     const [selectedNode,] = useAtom(selectedNodeAtom)
     const jumpToNode = useSetAtom(jumpToNodeAtom)
@@ -142,21 +111,19 @@ export const NavigatorLayer = () => {
     const setNodePosition = useSetAtom(setNodePositionAtom)
     const moveNodeToSubtree = useSetAtom(moveNodeToSubtreeAtom)
     
-    // Create reactive data provider that updates when navigatorItems changes
-    const dataProvider = useMemo(() => {
-        return new ReactiveTreeDataProvider(navigatorItems)
-    }, [])
-    
-    // Update data provider when navigatorItems changes
-    useEffect(() => {
-        dataProvider.updateData(navigatorItems)
-    }, [navigatorItems, dataProvider])
+    console.log('NavigatorLayer render:', { selectedNode: selectedNode?.id, selectedItems, expandedItems, focusedItem })
     
     useEffect(() => {
-        const currId = selectedNode.id
+        if (!selectedNode || !selectedNode.id) {
+            return
+        }
         const parentIds = getAncestorIds(selectedNode)
+        console.log('NavigatorLayer: Expanding ancestors for selected node', selectedNode.id, 'ancestors:', parentIds)
         setExpandedItems((oldExpandedItems: string[]) => {
-            return [...new Set([currId, ...parentIds, ...oldExpandedItems])]
+            // Only expand ancestors, not the selected node itself
+            const newExpanded = [...new Set([...parentIds, ...oldExpandedItems])]
+            console.log('NavigatorLayer: Updated expanded items', newExpanded)
+            return newExpanded
         })
     }, [selectedNode, setExpandedItems]);
 
@@ -170,16 +137,18 @@ export const NavigatorLayer = () => {
 
     return (
         <>
-            <UncontrolledTreeEnvironment
-                dataProvider={dataProvider}
-                getItemTitle={(item) => item.data}
-                defaultInteractionMode={InteractionMode.DoubleClickItemToExpand}
+                <ControlledTreeEnvironment
+                    items={navigatorItems}
+                    getItemTitle={(item) => item.data}
+                    defaultInteractionMode={InteractionMode.DoubleClickItemToExpand}
                 viewState={{
                     'navigator-tree': {
+                        focusedItem,
                         expandedItems: [...expandedItems, 'virtual-root'], // Always expand virtual root
                         selectedItems,
                     }
                 }}
+                onFocusItem={(item) => setFocusedItem(item.index)}
                 onSelectItems={(items) => {
                     if (items.length > 0) {
                         const newItemId = String(items[0])
@@ -195,13 +164,13 @@ export const NavigatorLayer = () => {
                     }
                 }}
                 onExpandItem={(item) => {
-                    if (String(item) !== 'virtual-root') {
-                        setExpandedItems(prev => [...prev, String(item)])
+                    if (String(item.index) !== 'virtual-root') {
+                        setExpandedItems(prev => [...prev, String(item.index)])
                     }
                 }}
                 onCollapseItem={(item) => {
-                    if (String(item) !== 'virtual-root') {
-                        setExpandedItems(prev => prev.filter(id => id !== String(item)))
+                    if (String(item.index) !== 'virtual-root') {
+                        setExpandedItems(prev => prev.filter(id => id !== String(item.index)))
                     }
                 }}
                 onDrop={(items, target) => {
@@ -464,7 +433,7 @@ export const NavigatorLayer = () => {
                     rootItem="virtual-root"
                     treeLabel="Navigator"
                 />
-            </UncontrolledTreeEnvironment>
+            </ControlledTreeEnvironment>
         </>
     );
 };
