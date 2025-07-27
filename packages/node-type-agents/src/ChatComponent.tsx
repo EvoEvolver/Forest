@@ -37,7 +37,7 @@ export function ChatComponent({node}: { node: NodeVM }) {
     }
 
     return (
-        <Box sx={{width: "100%", height: "800px"}}>
+        <Box sx={{width: "100%", height: "60vh"}}>
             <ChatViewImpl messages={messages} sendMessage={sendMessages} messageDisabled={messageDisabled}/>
         </Box>
     );

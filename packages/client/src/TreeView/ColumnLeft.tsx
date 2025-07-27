@@ -12,7 +12,7 @@ export function ColumnLeft() {
         return null
 
     const [collapsed, setCollapsed] = useState(false);
-    const expandedWidth = 300;
+    const expandedWidth = "100%";
     const collapsedWidth = 40;
 
     return (

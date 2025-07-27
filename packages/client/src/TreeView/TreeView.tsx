@@ -39,7 +39,7 @@ const TreeViewContent = () => {
                     left: 10,
                     top: 70,
                     bottom: 10,
-                    width: 300,
+                    width: "20vw",
                     zIndex: 100
                 }}>
                     <ColumnLeft/>
@@ -53,7 +53,7 @@ const TreeViewContent = () => {
                     right: 20,
                     top: 70,
                     bottom: 10,
-                    width: 400,
+                    width: "20vw",
                     zIndex: 100
                 }}>
                     <ColumnRight/>
@@ -68,8 +68,8 @@ const TreeViewContent = () => {
                 backgroundColor: "#f0f0f0",
                 paddingTop: "70px",
                 paddingBottom: "10px",
-                paddingLeft: !mobileMode ? "326px" : "10px", // 300 + 16 gap + 10 padding
-                paddingRight: !mobileMode ? "426px" : "10px", // 400 + 16 gap + 10 padding
+                paddingLeft: !mobileMode ? "25vw" : "10px", // 300 + 16 gap + 10 padding
+                paddingRight: !mobileMode ? "25vw" : "10px", // 400 + 16 gap + 10 padding
                 boxSizing: "border-box"
             }}>
                 <div>

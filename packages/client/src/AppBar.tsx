@@ -1,4 +1,4 @@
-import {Avatar, Button, Paper, Stack, ToggleButton, ToggleButtonGroup} from "@mui/material";
+import {Avatar, Button, Paper, Stack, ToggleButton, ToggleButtonGroup, useMediaQuery} from "@mui/material";
 import {useTheme} from '@mui/system';
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import ArticleIcon from "@mui/icons-material/Article";
@@ -15,6 +15,7 @@ import EditDocumentIcon from '@mui/icons-material/EditDocument';
 // Left side component - navigation buttons
 export const AppBarLeft = ({setCurrentPage, currentPage}) => {
     const theme = useTheme();
+    const isNarrow = useMediaQuery(theme.breakpoints.down('md'));
 
     const handlePageChange = (event: React.MouseEvent<HTMLElement>, newPage: string | null) => {
         if (newPage !== null) {
@@ -23,7 +24,7 @@ export const AppBarLeft = ({setCurrentPage, currentPage}) => {
     };
 
     return (
-        <Paper elevation={1} sx={{p: 1, borderRadius: 2, margin: '8px 10px'}}>
+        <Paper elevation={1} sx={{p: 1, borderRadius: 2, margin: '8px 10px', width: "20vw"}}>
             <ToggleButtonGroup
                 value={currentPage}
                 exclusive
@@ -56,15 +57,15 @@ export const AppBarLeft = ({setCurrentPage, currentPage}) => {
             >
                 <ToggleButton value="tree" aria-label="tree view">
                     <EditDocumentIcon fontSize="small"/>
-                    Tree
+                    {!isNarrow && "Tree"}
                 </ToggleButton>
                 <ToggleButton value="linear" aria-label="linear view">
                     <ArticleIcon fontSize="small"/>
-                    Linear
+                    {!isNarrow && "Linear"}
                 </ToggleButton>
                 <ToggleButton value="flow" aria-label="flow view">
                     <AccountTreeIcon fontSize="small"/>
-                    Flow
+                    {!isNarrow && "Flow"}
                 </ToggleButton>
             </ToggleButtonGroup>
         </Paper>
@@ -73,6 +74,8 @@ export const AppBarLeft = ({setCurrentPage, currentPage}) => {
 
 // Right side component - status and auth
 export const AppBarRight = () => {
+    const theme = useTheme();
+    const isNarrow = useMediaQuery(theme.breakpoints.down('md'));
     const connectionStatus = useAtomValue(YjsConnectionStatusAtom);
     const supabaseClient = useAtomValue(supabaseClientAtom);
     const [settingsOpen, setSettingsOpen] = useState(false);
@@ -96,7 +99,7 @@ export const AppBarRight = () => {
             }}
         >
             <AwarenessStatus/>
-            {connectionStatus !== 'connected' &&
+            {connectionStatus !== 'connected' && !isNarrow &&
                 <span>
                     {connectionStatus === 'connecting' ? 'Connecting...(version not saved)' : 'Disconnected'}
                 </span>
