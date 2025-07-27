@@ -116,6 +116,84 @@ export const setNodePositionAtom = atom(null, (get, set, props: {
     })
 })
 
+/*
+* This atom is used to move a node between different subtrees/levels.
+* It can change the parent of a node and position it relative to a target sibling.
+* newParentId: the id of the new parent node
+* targetId: the id of the node that the current node should be moved relative to (must be child of newParentId)
+* shift: 0 = before target, 1 = after target
+*/
+export const moveNodeToSubtreeAtom = atom(null, (get, set, props: {
+    nodeId: string,
+    newParentId: string,
+    targetId: string,
+    shift: number
+}) => {
+    console.log('moveNodeToSubtree:', props)
+    const currTree = get(treeAtom)
+    if (!currTree)
+        return
+
+    const nodeDict = currTree.nodeDict
+    const nodeToMoveAtom = nodeDict[props.nodeId]
+    const nodeToMove = get(nodeToMoveAtom)
+
+    // Get the old parent node
+    const oldParentId = nodeToMove.parent
+    const oldParentNodeAtom = nodeDict[oldParentId]
+    const oldParentNode = get(oldParentNodeAtom)
+    const oldParentChildren = oldParentNode.nodeM.ymap.get("children")
+
+    // Get the new parent node
+    const newParentNodeAtom = nodeDict[props.newParentId]
+    if (!newParentNodeAtom) {
+        console.warn(`New parent with id ${props.newParentId} not found`)
+        return
+    }
+    const newParentNode = get(newParentNodeAtom)
+    const newParentChildren = newParentNode.nodeM.ymap.get("children")
+
+    // Find current position in old parent
+    const currentIdx = get(oldParentNode.children).indexOf(props.nodeId)
+    if (currentIdx === -1) {
+        console.warn(`Node with id ${props.nodeId} not found in old parent with id ${oldParentId}`)
+        return
+    }
+
+    // Handle special case where target is same as node being moved (empty folder case)
+    let newPosition = 0
+    if (props.targetId === props.nodeId) {
+        // Adding to empty folder - place at beginning
+        newPosition = 0
+    } else {
+        // Find target position in new parent
+        const targetIdx = get(newParentNode.children).indexOf(props.targetId)
+        if (targetIdx === -1) {
+            console.warn(`Target node with id ${props.targetId} not found in new parent with id ${props.newParentId}`)
+            return
+        }
+
+        // Calculate new position based on target position and shift
+        newPosition = targetIdx + props.shift
+        // Ensure new position is within bounds
+        newPosition = Math.max(0, Math.min(newPosition, newParentChildren.length))
+    }
+
+    // Perform the move in a transaction
+    oldParentChildren.doc.transact(() => {
+        // 1. Remove from old parent
+        oldParentChildren.delete(currentIdx, 1)
+        
+        // 2. Update the node's parent reference
+        nodeToMove.nodeM.ymap.set("parent", props.newParentId)
+        
+        // 3. Insert into new parent at calculated position
+        newParentChildren.insert(newPosition, [props.nodeId])
+    })
+    
+    console.log(`Moved node ${props.nodeId} from parent ${oldParentId} to parent ${props.newParentId} at position ${newPosition}`)
+})
+
 
 export const addNewNodeAtom = atom(null, (get, set, props: {
     parentId: string,

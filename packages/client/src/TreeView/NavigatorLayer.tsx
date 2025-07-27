@@ -7,6 +7,7 @@ import {
     scrollToNodeAtom,
     selectedNodeAtom,
     setNodePositionAtom,
+    moveNodeToSubtreeAtom,
     treeAtom
 } from "../TreeState/TreeState";
 import {NodeM, NodeVM} from '@forest/schema';
@@ -103,6 +104,7 @@ export const NavigatorLayer = () => {
     const jumpToNode = useSetAtom(jumpToNodeAtom)
     const scrollToNode = useSetAtom(scrollToNodeAtom)
     const setNodePosition = useSetAtom(setNodePositionAtom)
+    const moveNodeToSubtree = useSetAtom(moveNodeToSubtreeAtom)
     
     useEffect(() => {
         const currId = selectedNode.id
@@ -165,6 +167,35 @@ export const NavigatorLayer = () => {
                             return
                         }
                         
+                        // Early detection of cross-subtree move to influence virtual list logic
+                        let targetParentId: string
+                        if (target.targetType === 'between-items') {
+                            targetParentId = String((target as any).parentItem)
+                        } else if (target.targetType === 'item') {
+                            targetParentId = String((target as any).targetItem)
+                        } else {
+                            console.log('Unknown target type:', target.targetType)
+                            return
+                        }
+                        
+                        // Get current parent of dragged item
+                        let currentParentId: string
+                        try {
+                            const draggedNodeM = tree.treeM.getNode(draggedItemId)
+                            currentParentId = draggedNodeM.ymap.get('parent')
+                        } catch (error) {
+                            console.log('Error getting current parent:', error)
+                            return
+                        }
+                        
+                        const isCrossSubtree = currentParentId !== targetParentId
+                        console.log('Early move analysis:', {
+                            draggedItemId,
+                            currentParentId,
+                            targetParentId,
+                            isCrossSubtree
+                        })
+                        
                         // Get target item based on target type
                         if (target.targetType === 'between-items') {
                             // For between-items, get the original children order from tree metadata
@@ -201,39 +232,61 @@ export const NavigatorLayer = () => {
                             
                             console.log('Real parent children from tree metadata:', realChildren)
                             
-                            // Construct virtual list: [A, B, A', C, D] where A' is the dragged item at target position
-                            const virtualList = [...realChildren]
-                            virtualList.splice(childIndex, 0, draggedItemId + '_copy')
-                            console.log('Virtual list with copy:', virtualList, 'childIndex:', childIndex)
-                            
                             const linePosition = (target as any).linePosition
                             console.log('linePosition:', linePosition)
                             
-                            if (linePosition === 'bottom') {
-                                // Place after the item before the copy (childIndex - 1)
-                                if (childIndex > 0) {
-                                    const targetIndex = childIndex - 1
-                                    targetItemId = String(virtualList[targetIndex])
-                                    if (targetItemId.endsWith('_copy')) {
-                                        targetItemId = targetItemId.replace('_copy', '')
+                            if (isCrossSubtree) {
+                                // Cross-subtree: dragged item is not in the target parent's children
+                                // Use childIndex directly on the real children list
+                                if (linePosition === 'bottom') {
+                                    if (childIndex > 0) {
+                                        targetItemId = String(realChildren[childIndex - 1])
+                                        console.log('Cross-subtree bottom: place after', targetItemId, 'at index', childIndex - 1)
+                                    } else {
+                                        console.log('Cross-subtree: Cannot place before first item')
+                                        return
                                     }
-                                    console.log('linePosition bottom: place after', targetItemId, 'at virtual index', targetIndex)
-                                } else {
-                                    console.log('Cannot place before first item')
-                                    return
+                                } else { // linePosition === 'top'
+                                    if (childIndex < realChildren.length) {
+                                        targetItemId = String(realChildren[childIndex])
+                                        console.log('Cross-subtree top: place before', targetItemId, 'at index', childIndex)
+                                    } else {
+                                        console.log('Cross-subtree: Cannot place after last item')
+                                        return
+                                    }
                                 }
-                            } else { // linePosition === 'top'
-                                // Place before the item after the copy (childIndex + 1)
-                                if (childIndex + 1 < virtualList.length) {
-                                    const targetIndex = childIndex + 1
-                                    targetItemId = String(virtualList[targetIndex])
-                                    if (targetItemId.endsWith('_copy')) {
-                                        targetItemId = targetItemId.replace('_copy', '')
+                            } else {
+                                // Same-level: create virtual list with copy as before
+                                const virtualList = [...realChildren]
+                                virtualList.splice(childIndex, 0, draggedItemId + '_copy')
+                                console.log('Same-level virtual list with copy:', virtualList, 'childIndex:', childIndex)
+                                
+                                if (linePosition === 'bottom') {
+                                    // Place after the item before the copy (childIndex - 1)
+                                    if (childIndex > 0) {
+                                        const targetIndex = childIndex - 1
+                                        targetItemId = String(virtualList[targetIndex])
+                                        if (targetItemId.endsWith('_copy')) {
+                                            targetItemId = targetItemId.replace('_copy', '')
+                                        }
+                                        console.log('Same-level bottom: place after', targetItemId, 'at virtual index', targetIndex)
+                                    } else {
+                                        console.log('Same-level: Cannot place before first item')
+                                        return
                                     }
-                                    console.log('linePosition top: place before', targetItemId, 'at virtual index', targetIndex)
-                                } else {
-                                    console.log('Cannot place after last item')
-                                    return
+                                } else { // linePosition === 'top'
+                                    // Place before the item after the copy (childIndex + 1)
+                                    if (childIndex + 1 < virtualList.length) {
+                                        const targetIndex = childIndex + 1
+                                        targetItemId = String(virtualList[targetIndex])
+                                        if (targetItemId.endsWith('_copy')) {
+                                            targetItemId = targetItemId.replace('_copy', '')
+                                        }
+                                        console.log('Same-level top: place before', targetItemId, 'at virtual index', targetIndex)
+                                    } else {
+                                        console.log('Same-level: Cannot place after last item')
+                                        return
+                                    }
                                 }
                             }
                         } else if (target.targetType === 'item') {
@@ -285,20 +338,66 @@ export const NavigatorLayer = () => {
                             shift = 0
                         }
                         
-                        console.log('Calling setNodePosition with:', {
-                            nodeId: draggedItemId,
-                            targetId: targetItemId,
-                            shift: shift
+                        // Handle item drops for cross-subtree case
+                        if (target.targetType === 'item' && isCrossSubtree) {
+                            // For item drops, we always place at the beginning
+                            targetItemId = 'PLACEHOLDER' // We'll handle this case differently
+                        }
+                        
+                        console.log('Final target analysis:', {
+                            draggedItemId,
+                            targetItemId,
+                            targetParentId,
+                            currentParentId,
+                            isCrossSubtree
                         })
                         
                         try {
-                            setNodePosition({
-                                nodeId: draggedItemId,
-                                targetId: targetItemId,
-                                shift: shift
-                            })
+                            if (!isCrossSubtree) {
+                                // Same parent - use existing atom
+                                console.log('Same level move - using setNodePosition')
+                                setNodePosition({
+                                    nodeId: draggedItemId,
+                                    targetId: targetItemId,
+                                    shift: shift
+                                })
+                            } else {
+                                // Different parent - use new atom
+                                if (target.targetType === 'item') {
+                                    // For item drops, make it the first child
+                                    console.log('Cross-subtree item drop - making first child')
+                                    const newParentNodeM = tree.treeM.getNode(targetParentId)
+                                    const newParentChildren = newParentNodeM.ymap.get('children').toJSON()
+                                    if (newParentChildren.length > 0) {
+                                        // Use first child as target with shift=0 (place before)
+                                        moveNodeToSubtree({
+                                            nodeId: draggedItemId,
+                                            newParentId: targetParentId,
+                                            targetId: newParentChildren[0],
+                                            shift: 0
+                                        })
+                                    } else {
+                                        // No children, just add as first child
+                                        moveNodeToSubtree({
+                                            nodeId: draggedItemId,
+                                            newParentId: targetParentId,
+                                            targetId: draggedItemId, // Will be handled specially
+                                            shift: 0
+                                        })
+                                    }
+                                } else {
+                                    // For between-items drops
+                                    console.log('Cross-subtree between-items move - using moveNodeToSubtree')
+                                    moveNodeToSubtree({
+                                        nodeId: draggedItemId,
+                                        newParentId: targetParentId,
+                                        targetId: targetItemId,
+                                        shift: shift
+                                    })
+                                }
+                            }
                         } catch (error) {
-                            console.error('Error in setNodePosition:', error)
+                            console.error('Error in move operation:', error)
                         }
                     }
                 }}
