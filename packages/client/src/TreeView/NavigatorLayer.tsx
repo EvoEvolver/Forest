@@ -292,7 +292,7 @@ export const NavigatorLayer = () => {
                         } else if (target.targetType === 'item') {
                             targetItemId = String((target as any).targetItem)
                         } else {
-                            console.log('Unknown target type:', target.targetType)
+                            console.log('Unknown target type')
                             return
                         }
                         
@@ -364,17 +364,17 @@ export const NavigatorLayer = () => {
                             } else {
                                 // Different parent - use new atom
                                 if (target.targetType === 'item') {
-                                    // For item drops, make it the first child
-                                    console.log('Cross-subtree item drop - making first child')
+                                    // For item drops, make it the last child (align with UncontrolledTreeEnvironment)
+                                    console.log('Cross-subtree item drop - making last child')
                                     const newParentNodeM = tree.treeM.getNode(targetParentId)
                                     const newParentChildren = newParentNodeM.ymap.get('children').toJSON()
                                     if (newParentChildren.length > 0) {
-                                        // Use first child as target with shift=0 (place before)
+                                        // Use last child as target with shift=1 (place after)
                                         moveNodeToSubtree({
                                             nodeId: draggedItemId,
                                             newParentId: targetParentId,
-                                            targetId: newParentChildren[0],
-                                            shift: 0
+                                            targetId: newParentChildren[newParentChildren.length - 1],
+                                            shift: 1
                                         })
                                     } else {
                                         // No children, just add as first child
