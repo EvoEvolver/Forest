@@ -1,5 +1,5 @@
-import React, {useEffect} from 'react';
-import {UncontrolledTreeEnvironment, StaticTreeDataProvider, Tree, InteractionMode} from 'react-complex-tree';
+import React, {useEffect, useMemo} from 'react';
+import {UncontrolledTreeEnvironment, Tree, InteractionMode, TreeDataProvider, Disposable} from 'react-complex-tree';
 import 'react-complex-tree/lib/style-modern.css';
 import {atom, useAtom, useAtomValue, useSetAtom} from "jotai";
 import {
@@ -76,6 +76,42 @@ const selectedItemAtom = atom((get) => {
 
 const expandedItemsAtom = atom<string[]>([])
 
+class ReactiveTreeDataProvider implements TreeDataProvider {
+    private data: Record<string, any>
+    private onDidChangeTreeDataEmitter = new EventTarget()
+
+    constructor(data: Record<string, any>) {
+        this.data = data
+    }
+
+    updateData(newData: Record<string, any>) {
+        this.data = newData
+        // Emit change event to trigger tree refresh
+        this.onDidChangeTreeDataEmitter.dispatchEvent(new CustomEvent('change'))
+    }
+
+    async getTreeItem(itemId: string) {
+        return this.data[itemId]
+    }
+
+    async onChangeItemChildren(itemId: string, newChildren: string[]) {
+        // Handle children changes if needed
+        return Promise.resolve()
+    }
+
+    onDidChangeTreeData(listener: (changedItemIds?: string[]) => void): Disposable {
+        const handleChange = () => {
+            listener(Object.keys(this.data))
+        }
+        this.onDidChangeTreeDataEmitter.addEventListener('change', handleChange)
+        return {
+            dispose: () => {
+                this.onDidChangeTreeDataEmitter.removeEventListener('change', handleChange)
+            }
+        }
+    }
+}
+
 function getAncestorIds(node: NodeVM){
     if (!node || !node.nodeM) {
         return []
@@ -106,6 +142,16 @@ export const NavigatorLayer = () => {
     const setNodePosition = useSetAtom(setNodePositionAtom)
     const moveNodeToSubtree = useSetAtom(moveNodeToSubtreeAtom)
     
+    // Create reactive data provider that updates when navigatorItems changes
+    const dataProvider = useMemo(() => {
+        return new ReactiveTreeDataProvider(navigatorItems)
+    }, [])
+    
+    // Update data provider when navigatorItems changes
+    useEffect(() => {
+        dataProvider.updateData(navigatorItems)
+    }, [navigatorItems, dataProvider])
+    
     useEffect(() => {
         const currId = selectedNode.id
         const parentIds = getAncestorIds(selectedNode)
@@ -114,12 +160,18 @@ export const NavigatorLayer = () => {
         })
     }, [selectedNode, setExpandedItems]);
 
+    useEffect(() => {
+        setExpandedItems((oldExpandedItems: string[]) => {
+            // Filter out items that no longer exist in navigatorItems
+            return oldExpandedItems.filter(id => navigatorItems[id])
+        })
+    }, [navigatorItems, setExpandedItems]);
+
 
     return (
         <>
             <UncontrolledTreeEnvironment
-                key={JSON.stringify(Object.keys(navigatorItems)) + JSON.stringify(Object.values(navigatorItems).map(item => item.data))}
-                dataProvider={new StaticTreeDataProvider(navigatorItems, (item, data) => ({ ...item, data }))}
+                dataProvider={dataProvider}
                 getItemTitle={(item) => item.data}
                 defaultInteractionMode={InteractionMode.DoubleClickItemToExpand}
                 viewState={{
