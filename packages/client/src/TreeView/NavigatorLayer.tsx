@@ -1,5 +1,5 @@
 import React, {useEffect} from 'react';
-import {UncontrolledTreeEnvironment, StaticTreeDataProvider, Tree} from 'react-complex-tree';
+import {UncontrolledTreeEnvironment, StaticTreeDataProvider, Tree, InteractionMode} from 'react-complex-tree';
 import 'react-complex-tree/lib/style-modern.css';
 import {atom, useAtom, useAtomValue, useSetAtom} from "jotai";
 import {
@@ -121,6 +121,7 @@ export const NavigatorLayer = () => {
                 key={JSON.stringify(Object.keys(navigatorItems)) + JSON.stringify(Object.values(navigatorItems).map(item => item.data))}
                 dataProvider={new StaticTreeDataProvider(navigatorItems, (item, data) => ({ ...item, data }))}
                 getItemTitle={(item) => item.data}
+                defaultInteractionMode={InteractionMode.DoubleClickItemToExpand}
                 viewState={{
                     'navigator-tree': {
                         expandedItems: [...expandedItems, 'virtual-root'], // Always expand virtual root
