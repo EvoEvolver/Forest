@@ -118,6 +118,7 @@ export const NavigatorLayer = () => {
     return (
         <>
             <UncontrolledTreeEnvironment
+                key={JSON.stringify(Object.keys(navigatorItems)) + JSON.stringify(Object.values(navigatorItems).map(item => item.data))}
                 dataProvider={new StaticTreeDataProvider(navigatorItems, (item, data) => ({ ...item, data }))}
                 getItemTitle={(item) => item.data}
                 viewState={{
