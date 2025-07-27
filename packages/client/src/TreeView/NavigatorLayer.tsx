@@ -137,6 +137,16 @@ export const NavigatorLayer = () => {
 
     return (
         <>
+            <div style={{
+                '--rct-item-height': '24px',
+                '--rct-item-padding': '5px',
+                '--rct-item-margin': '2px',
+                '--rct-arrow-size': '10px',
+                '--rct-arrow-container-size': '20px',
+                '--rct-arrow-padding': '5px',
+                scale: '1.3',
+                transformOrigin: 'top left',
+            } as React.CSSProperties}>
                 <ControlledTreeEnvironment
                     items={navigatorItems}
                     getItemTitle={(item) => item.data}
@@ -434,6 +444,7 @@ export const NavigatorLayer = () => {
                     treeLabel="Navigator"
                 />
             </ControlledTreeEnvironment>
+            </div>
         </>
     );
 };
