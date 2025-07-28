@@ -124,6 +124,7 @@ const CustomTreeItem = forwardRef<HTMLLIElement, UseTreeItem2Parameters>(
 
         const handleDragOver = (e: React.DragEvent) => {
             e.preventDefault();
+            e.stopPropagation(); // Prevent event bubbling to parent nodes
             e.dataTransfer.dropEffect = 'move';
             
             const rect = e.currentTarget.getBoundingClientRect();
@@ -139,7 +140,8 @@ const CustomTreeItem = forwardRef<HTMLLIElement, UseTreeItem2Parameters>(
             }
         };
 
-        const handleDragLeave = () => {
+        const handleDragLeave = (e: React.DragEvent) => {
+            e.stopPropagation(); // Prevent event bubbling to parent nodes
             setDragOver(null);
         };
 
@@ -153,6 +155,7 @@ const CustomTreeItem = forwardRef<HTMLLIElement, UseTreeItem2Parameters>(
 
         const handleDrop = (e: React.DragEvent) => {
             e.preventDefault();
+            e.stopPropagation(); // Prevent event bubbling to parent nodes
             const draggedItemId = e.dataTransfer.getData('text/plain');
             
             if (draggedItemId === itemId) {
