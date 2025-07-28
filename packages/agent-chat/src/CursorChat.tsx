@@ -5,6 +5,9 @@ import {BaseMessage, HtmlMessage, NormalMessage} from "./MessageTypes";
 import {httpUrl} from "@forest/schema/src/config";
 import {treeId} from "@forest/client/src/appState";
 
+// @ts-ignore
+const WORKER_URL = import.meta.env.VITE_WORKER_URL;
+
 export const CursorChat: React.FC = ({selectedNode}: { selectedNode: NodeVM }) => {
     const [messages, setMessages] = useState<BaseMessage[]>([]);
     const [disabled, setDisabled] = useState(false);
@@ -12,7 +15,7 @@ export const CursorChat: React.FC = ({selectedNode}: { selectedNode: NodeVM }) =
 
     const sendTreeToSuperReader = async (question: string) => {
         try {
-            const response = await fetch('http://localhost:8081/search_and_answer', {
+            const response = await fetch(WORKER_URL+'/search_and_answer', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

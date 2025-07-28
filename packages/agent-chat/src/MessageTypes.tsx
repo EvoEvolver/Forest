@@ -1,9 +1,11 @@
 import React from 'react'
-import {Box, Card, CardContent, Chip, Typography,} from "@mui/material";
+import {Box, Card, CardContent, Chip, Tooltip, Typography,} from "@mui/material";
 import {useAtomValue, useSetAtom} from "jotai/index";
-import {jumpToNodeAtom, treeAtom} from "@forest/client/src/TreeState/TreeState";
+import {jumpToNodeAtom, scrollToNodeAtom, treeAtom} from "@forest/client/src/TreeState/TreeState";
 import {treeId} from "@forest/client/src/appState";
 
+// @ts-ignore
+const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL
 
 export type MessageRole = "user" | "assistant" | "system"
 
@@ -38,17 +40,24 @@ export abstract class BaseMessage {
 }
 
 
-function GoToNode({nodeId}: { nodeId: string }) {
+function GoToNode({index, nodeId}: { index: number, nodeId: string }) {
     const jumpToNode = useSetAtom(jumpToNodeAtom)
+    const scrollToNode = useSetAtom(scrollToNodeAtom)
     const tree = useAtomValue(treeAtom)
     const getTitle = (id: string): string => {
         return tree.treeM.getNode(id).title()
     }
     const handleClick = () => {
         jumpToNode(nodeId)
+        setTimeout(() => {
+            scrollToNode(nodeId)
+        }, 100)
     }
     return (
-        <Chip sx={{marginInline: "3px"}} onClick={handleClick} variant="filled" size="small" color="primary"  label={getTitle(nodeId) || "Node " + nodeId.slice(0,4)} />
+        <Tooltip title={getTitle(nodeId) || "(Untitled)"}>
+            <Chip sx={{marginInline: "3px"}} onClick={handleClick} variant="filled" size="small" color="primary"
+                  label={index}/>
+        </Tooltip>
     );
 }
 
@@ -61,7 +70,7 @@ export class HtmlMessage extends BaseMessage {
         const parseHtmlContent = (html: string): React.ReactNode => {
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
-
+            let nodeLinkIndex = 0;
             const processNode = (node: Node): React.ReactNode => {
                 if (node.nodeType === Node.TEXT_NODE) {
                     return node.textContent;
@@ -72,12 +81,13 @@ export class HtmlMessage extends BaseMessage {
 
                     if (element.tagName === 'A') {
                         const href = element.getAttribute('href');
-                        if (href && (href.includes('treer.ai') || href.includes('localhost:29999') || href.includes('localhost:39999'))) {
+                        if (href && (href.includes(FRONTEND_URL) || href.includes('localhost:29999') || href.includes('localhost:39999'))) {
                             const url = new URL(href);
                             const linkTreeId = url.searchParams.get('id');
                             const nodeId = url.searchParams.get('n');
                             if (nodeId && linkTreeId === treeId) {
-                                return <GoToNode key={nodeId} nodeId={nodeId}/>;
+                                nodeLinkIndex++;
+                                return <GoToNode index={nodeLinkIndex} key={nodeId} nodeId={nodeId}/>;
                             }
                         }
                     }

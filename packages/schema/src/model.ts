@@ -2,7 +2,7 @@ import * as Y from 'yjs'
 import {Doc as YDoc, Map as YMap} from 'yjs'
 import {WebsocketProvider} from "./y-websocket";
 import {v4} from "uuid";
-import {NodeType} from "./nodeType.ts";
+import {NodeType} from "./nodeType";
 
 export interface NodeJson {
     id: string,
