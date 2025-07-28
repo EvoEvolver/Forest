@@ -24,7 +24,7 @@ export const AppBarLeft = ({setCurrentPage, currentPage}) => {
     };
 
     return (
-        <Paper elevation={1} sx={{p: 1, borderRadius: 2, margin: '8px 10px', width: "20vw"}}>
+        <Paper elevation={1} sx={{p: 1, borderRadius: 2, margin: '8px 10px', width: "20vw", display: 'flex', justifyContent: 'center'}}>
             <ToggleButtonGroup
                 value={currentPage}
                 exclusive

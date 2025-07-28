@@ -34,7 +34,7 @@ export function ColumnRight() {
         zIndex: 1,
         gap: 2,
     }}>
-        <Paper elevation={1} sx={{p: 1, borderRadius: 2}}>
+        <Paper elevation={1} sx={{p: 1, borderRadius: 2, display: 'flex', justifyContent: 'center'}}>
             <ToggleButtonGroup
                 value={activeTab}
                 exclusive

@@ -156,7 +156,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                                     size="small"
                                 />
                             }
-                            label="Inactive issues"
+                            label="Inactive"
                         />
                         <FormControlLabel
                             control={
@@ -166,7 +166,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                                     size="small"
                                 />
                             }
-                            label="Subtree issues"
+                            label="Subtree"
                         />
                     </Stack>
                 </Box>
