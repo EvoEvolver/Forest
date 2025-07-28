@@ -4,21 +4,17 @@
 
 import { atom } from "jotai";
 import { selectedNodeAtom, treeAtom } from "../../TreeState/TreeState";
-import { NodeVM } from '@forest/schema';
+import {NodeM, NodeVM} from '@forest/schema';
 
 export const NavigatorItemsAtom = atom((get) => {
     const tree = get(treeAtom)
     get(tree.viewCommitNumberAtom)
-    let root: NodeVM
-    if (get(tree.metadata).rootId) {
-        // if rootId is set, use it to find the root node
-        root = get(tree.nodeDict[get(tree.metadata).rootId])
-    } else {
-        console.error("No rootId set in tree metadata. This may imply a bug.")
-    }
-    if (!root) {
+    let rootM: NodeM = tree.treeM.getRoot()
+    if (!rootM) {
+        console.warn("No root node found in the tree")
         return []
     }
+    const root = get(tree.nodeDict[rootM.id])
     let children_list = []
     const itemTree = [{
         id: root.id,
