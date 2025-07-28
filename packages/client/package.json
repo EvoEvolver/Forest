@@ -37,7 +37,6 @@
     "react-router": "^7.6.2",
     "reactflow": "^11.11.4",
     "uuid": "^9.0.1",
-    "y-websocket": "workspace:*",
     "yjs": "^13.6.27"
   },
   "devDependencies": {

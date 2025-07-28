@@ -1,6 +1,6 @@
 import {Map as YMap} from "yjs";
 import {atom, PrimitiveAtom} from "jotai";
-import {WebsocketProvider} from "y-websocket";
+import {WebsocketProvider} from "@forest/schema/src/y-websocket";
 import {treeId, wsUrl} from "../appState";
 import {scrollToNodeAtom, selectedNodeAtom, treeAtom} from "./TreeState";
 import {updateChildrenCountAtom} from "./childrenCount";

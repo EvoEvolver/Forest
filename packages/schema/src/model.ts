@@ -1,9 +1,8 @@
 import * as Y from 'yjs'
 import {Doc as YDoc, Map as YMap} from 'yjs'
-import {WebsocketProvider} from "y-websocket";
+import {WebsocketProvider} from "./y-websocket";
 import {v4} from "uuid";
 import {NodeType} from "./nodeType.ts";
-import {TreeVM} from "./viewModel.ts";
 
 export interface NodeJson {
     id: string,
@@ -106,7 +105,7 @@ export class TreeM {
     getNode(nodeId: string): NodeM | undefined {
         const nodeYMap = this.nodeDict.get(nodeId)
         if (!nodeYMap) return undefined
-        const nodeM =  new NodeM(nodeYMap, nodeId, this)
+        const nodeM = new NodeM(nodeYMap, nodeId, this)
         return nodeM
     }
 
