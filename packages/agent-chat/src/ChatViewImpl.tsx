@@ -23,7 +23,7 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewI
     const [message, setMessage] = useState("");
     const endRef = useRef(null);
     const [username,] = useState("user");
-    const { setIsDraggingOverChat, draggedNodeId } = useDragContext();
+    const { setIsDraggingOverChat, draggedNodeId, isDraggingOverChat } = useDragContext();
 
     useEffect(() => {
         endRef.current?.scrollIntoView({behavior: "smooth"});
@@ -77,6 +77,10 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewI
                 flexDirection: "column",
                 height: "95%",
                 position: "relative", // Enable absolute positioning for child elements
+                border: isDraggingOverChat ? '2px solid #1976d2' : '2px solid transparent',
+                borderRadius: 2,
+                backgroundColor: isDraggingOverChat ? 'rgba(25, 118, 210, 0.04)' : 'transparent',
+                transition: 'all 0.2s ease-in-out',
             }}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}

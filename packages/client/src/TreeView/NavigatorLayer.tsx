@@ -16,6 +16,7 @@ import {
 } from "../TreeState/TreeState";
 import {useTreeViewApiRef} from "@mui/x-tree-view";
 import {NodeM, NodeVM} from '@forest/schema';
+import {useDragContext} from './DragContext';
 
 export const NavigatorItemsAtom = atom((get) => {
         const tree = get(treeAtom)
@@ -113,15 +114,20 @@ const CustomTreeItem = forwardRef<HTMLLIElement, UseTreeItem2Parameters>(
         const expandIcon = status.expanded ? <ExpandMore /> : <ChevronRight />;
 
         const handleDragStart = (e: React.DragEvent) => {
-            e.dataTransfer.setData('text/plain', itemId);
-            e.dataTransfer.effectAllowed = 'move';
-            setIsDragging(true);
+            setTimeout(() => { // wait for the node to change, otherwise will cause bug
+                setIsDragging(true);
+            }, 50);
+            setDraggedNodeId(itemId); // Set DragContext state for chat functionality
+            e.dataTransfer.effectAllowed = 'copyMove'; // Match TreeView implementation
+            e.dataTransfer.setData('nodeId', itemId); // Primary data for chat compatibility
+            e.dataTransfer.setData('text/plain', itemId); // Fallback for NavigatorLayer internal use
             currentDraggedItemId = itemId; // Set global state
         };
 
         const handleDragEnd = () => {
             setIsDragging(false);
             currentDraggedItemId = null; // Clear global state
+            setDraggedNodeId(null); // Clear DragContext state
         };
 
         const handleDragOver = async (e: React.DragEvent) => {
@@ -196,6 +202,7 @@ const CustomTreeItem = forwardRef<HTMLLIElement, UseTreeItem2Parameters>(
         const moveNodeToSubtree = useSetAtom(moveNodeToSubtreeAtom);
         const tree = useAtomValue(treeAtom);
         const selectedNode = useAtomValue(selectedNodeAtom);
+        const { setDraggedNodeId } = useDragContext();
         
         // Check if this item is currently selected
         const isSelected = selectedNode && selectedNode.id === itemId;
