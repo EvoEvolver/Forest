@@ -241,29 +241,42 @@ export const UserPanel = ({}) => {
     return (
         <Box
             sx={{
-                margin: 'auto',
-                padding: "20px",
-                minHeight: "100vh"
+                padding: { xs: 2, sm: 3 },
+                height: '100%',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column'
             }}
         >
-            <Grid container spacing={3} sx={{width: '100vw', margin: 'auto'}}>
+            <Grid container spacing={3} sx={{ 
+                flexGrow: 1,
+                overflow: 'hidden',
+                maxWidth: '100%',
+                margin: 0,
+                width: '100%'
+            }}>
                 {/* User Profile Section */}
                 <Grid
                     size={{
                         xs: 12,
-                        md: 2,
-                        lg: 2
+                        md: 3,
+                        lg: 3
+                    }}
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        minHeight: 0
                     }}
                 >
                     <DashboardCard title="Profile">
-                        <Box sx={{textAlign: 'center', py: 2}}>
-                            <Box sx={{position: 'relative', display: 'inline-block', mb: 2}}>
+                        <Box sx={{textAlign: 'center', py: { xs: 1, md: 2 }}}>
+                            <Box sx={{position: 'relative', display: 'inline-block', mb: { xs: 1, md: 2 }}}>
                                 <Tooltip title="Click to change avatar">
                                     <Avatar
                                         src={avatarUrl || undefined}
                                         sx={{
-                                            width: 80,
-                                            height: 80,
+                                            width: { xs: 60, md: 80 },
+                                            height: { xs: 60, md: 80 },
                                             cursor: isUploadingAvatar ? 'default' : 'pointer',
                                             '&:hover': {
                                                 opacity: isUploadingAvatar ? 1 : 0.8
@@ -320,8 +333,12 @@ export const UserPanel = ({}) => {
                                 </Alert>
                             )}
 
-                            <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 2}}>
-                                <Typography variant="h5" component="div">
+                            <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: { xs: 1, md: 2 }}}>
+                                <Typography variant="h5" component="div" sx={{
+                                    fontSize: { xs: '1rem', md: '1.25rem' },
+                                    textAlign: 'center',
+                                    wordBreak: 'break-word'
+                                }}>
                                     {user?.name}
                                 </Typography>
                                 <IconButton
@@ -332,7 +349,11 @@ export const UserPanel = ({}) => {
                                     <EditIcon fontSize="small"/>
                                 </IconButton>
                             </Box>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
+                            <Typography variant="body2" color="text.secondary" gutterBottom sx={{
+                                fontSize: { xs: '0.75rem', md: '0.875rem' },
+                                textAlign: 'center',
+                                wordBreak: 'break-word'
+                            }}>
                                 {user?.email}
                             </Typography>
 
@@ -352,16 +373,37 @@ export const UserPanel = ({}) => {
                 <Grid
                     size={{
                         xs: 12,
-                        md: 10,
-                        lg: 10
+                        md: 9,
+                        lg: 9
+                    }}
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        minHeight: 0,
+                        overflow: 'hidden'
                     }}
                 >
                     <AuthGuard>
-                        <Grid container spacing={3}>
-                            <Grid size={12} sx={{height: '50vh', overflow: 'auto', margin: "5px"}}>
+                        <Grid container spacing={2} sx={{ 
+                            flexGrow: 1,
+                            overflow: 'hidden',
+                            margin: 0,
+                            width: '100%'
+                        }}>
+                            <Grid size={12} sx={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                minHeight: 0,
+                                flex: '1 1 50%'
+                            }}>
                                 <UserTreesList/>
                             </Grid>
-                            <Grid size={12} sx={{height: '50vh', overflow: 'auto', margin: "5px"}}>
+                            <Grid size={12} sx={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                minHeight: 0,
+                                flex: '1 1 50%'
+                            }}>
                                 <VisitedTreesList/>
                             </Grid>
                         </Grid>

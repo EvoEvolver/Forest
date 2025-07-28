@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, CardContent, Typography, Stack, Box } from "@mui/material";
+import { Card, CardContent, Typography, Stack, Box, SxProps, Theme } from "@mui/material";
 
 type Props = {
   title?: string;
@@ -11,6 +11,7 @@ type Props = {
   headsubtitle?: string | React.ReactNode;
   children?: React.ReactNode;
   middlecontent?: string | React.ReactNode;
+  sx?: SxProps<Theme>;
 };
 
 const DashboardCard = ({
@@ -23,9 +24,10 @@ const DashboardCard = ({
   headtitle,
   headsubtitle,
   middlecontent,
+  sx,
 }: Props) => {
   return (
-    <Card sx={{ height: '100%' }}>
+    <Card sx={{ height: '100%', ...sx }}>
       {title && (
         <CardContent sx={{ pb: title ? 1 : 2 }}>
           <Box
@@ -42,7 +44,14 @@ const DashboardCard = ({
           </Box>
         </CardContent>
       )}
-      <CardContent sx={{ pt: title ? 0 : 2, fontSize: '0.875rem' }}>
+      <CardContent sx={{ 
+        pt: title ? 0 : 2, 
+        fontSize: '0.875rem',
+        height: title ? 'calc(100% - 64px)' : '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden'
+      }}>
         {children}
       </CardContent>
     </Card>

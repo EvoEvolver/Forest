@@ -152,7 +152,7 @@ export const VisitedTreesList = () => {
 
     if (loading) {
         return (
-            <Box>
+            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <DashboardCard title="Recently Visited Trees">
                     <Box display="flex" justifyContent="center" p={2}>
                         <CircularProgress size={20}/>
@@ -164,7 +164,7 @@ export const VisitedTreesList = () => {
 
     if (error) {
         return (
-            <Box>
+            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <DashboardCard title="Recently Visited Trees">
                     <Alert severity="error" sx={{m: 1}}>
                         {error}
@@ -178,7 +178,7 @@ export const VisitedTreesList = () => {
     }
 
     return (
-        <Box>
+        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             <DashboardCard 
                 title={`Recently Visited Trees (${trees.length})`}
                 action={
@@ -188,50 +188,56 @@ export const VisitedTreesList = () => {
                         </IconButton>
                     </Tooltip>
                 }
+                sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
             >
                 {trees.length === 0 ? (
-                    <Typography variant="body2" color="text.secondary" textAlign="center" py={3} fontSize="0.8rem">
+                    <Typography variant="body2" color="text.secondary" textAlign="center" py={3} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
                         No visited trees yet. Start exploring to see your visit history!
                     </Typography>
                 ) : (
                     <Box sx={{
                         width: '100%',
                         overflow: 'auto',
+                        flexGrow: 1,
                         '& .MuiTable-root': {
-                            fontSize: '0.8rem'
+                            fontSize: { xs: '0.7rem', md: '0.8rem' }
                         }
                     }}>
                         <Table
                             aria-label="visited trees table"
                             size="small"
                             sx={{
-                                whiteSpace: "nowrap"
+                                minWidth: { xs: 300, md: 650 },
+                                '& .MuiTableCell-root': {
+                                    padding: { xs: '4px 8px', md: '8px 16px' },
+                                    fontSize: { xs: '0.7rem', md: '0.8rem' }
+                                }
                             }}
                         >
                             <TableHead>
                                 <TableRow>
                                     <TableCell sx={{py: 1}}>
-                                        <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
+                                        <Typography variant="subtitle2" fontWeight={600} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
                                             Id
                                         </Typography>
                                     </TableCell>
                                     <TableCell sx={{ py: 1 }}>
-                                        <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
+                                        <Typography variant="subtitle2" fontWeight={600} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
                                             Details
                                         </Typography>
                                     </TableCell>
                                     <TableCell sx={{ py: 1 }}>
-                                        <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
+                                        <Typography variant="subtitle2" fontWeight={600} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
                                             Last Visited
                                         </Typography>
                                     </TableCell>
                                     <TableCell sx={{ py: 1 }}>
-                                        <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
+                                        <Typography variant="subtitle2" fontWeight={600} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
                                             Ownership
                                         </Typography>
                                     </TableCell>
                                     <TableCell align="right" sx={{ py: 1 }}>
-                                        <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
+                                        <Typography variant="subtitle2" fontWeight={600} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
                                             Actions
                                         </Typography>
                                     </TableCell>

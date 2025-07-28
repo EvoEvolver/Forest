@@ -273,7 +273,7 @@ export const UserTreesList = ({}) => {
 
     if (loading) {
         return (
-            <Box sx={{width: 650, height: 250}}>
+            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <DashboardCard title="My Trees">
                     <Box display="flex" justifyContent="center" p={2}>
                         <CircularProgress size={20}/>
@@ -285,7 +285,7 @@ export const UserTreesList = ({}) => {
 
     if (error) {
         return (
-            <Box sx={{width: 650, height: 250}}>
+            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <DashboardCard title="My Trees">
                     <Alert severity="error" sx={{m: 1}}>
                         {error}
@@ -299,7 +299,7 @@ export const UserTreesList = ({}) => {
     }
 
     return (
-        <Box>
+        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             <DashboardCard
                 title={`My Trees (${trees.length})`}
                 action={
@@ -308,7 +308,7 @@ export const UserTreesList = ({}) => {
                             variant="contained"
                             onClick={handleCreateTreeClick}
                             size="small"
-                            sx={{fontSize: '0.75rem', py: 0.5, px: 1}}
+                            sx={{fontSize: { xs: '0.65rem', md: '0.75rem' }, py: 0.5, px: 1}}
                         >
                             Create New Tree
                         </Button>
@@ -319,50 +319,56 @@ export const UserTreesList = ({}) => {
                         </Tooltip>
                     </Box>
                 }
+                sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
             >
                 {trees.length === 0 ? (
-                    <Typography variant="body2" color="text.secondary" textAlign="center" py={3} fontSize="0.8rem">
+                    <Typography variant="body2" color="text.secondary" textAlign="center" py={3} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
                         You haven't created any trees yet. Click "Create new tree" to get started!
                     </Typography>
                 ) : (
                     <Box sx={{
                         width: '100%',
                         overflow: 'auto',
+                        flexGrow: 1,
                         '& .MuiTable-root': {
-                            fontSize: '0.8rem'
+                            fontSize: { xs: '0.7rem', md: '0.8rem' }
                         }
                     }}>
                         <Table
                             aria-label="user trees table"
                             size="small"
                             sx={{
-                                whiteSpace: "nowrap"
+                                minWidth: { xs: 300, md: 650 },
+                                '& .MuiTableCell-root': {
+                                    padding: { xs: '4px 8px', md: '8px 16px' },
+                                    fontSize: { xs: '0.7rem', md: '0.8rem' }
+                                }
                             }}
                         >
                             <TableHead>
                                 <TableRow>
                                     <TableCell sx={{py: 1}}>
-                                        <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
+                                        <Typography variant="subtitle2" fontWeight={600} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
                                             Id
                                         </Typography>
                                     </TableCell>
                                     <TableCell sx={{py: 1}}>
-                                        <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
+                                        <Typography variant="subtitle2" fontWeight={600} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
                                             Details
                                         </Typography>
                                     </TableCell>
                                     <TableCell sx={{py: 1}}>
-                                        <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
+                                        <Typography variant="subtitle2" fontWeight={600} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
                                             Last Accessed
                                         </Typography>
                                     </TableCell>
                                     <TableCell sx={{py: 1}}>
-                                        <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
+                                        <Typography variant="subtitle2" fontWeight={600} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
                                             Size
                                         </Typography>
                                     </TableCell>
                                     <TableCell align="right" sx={{py: 1}}>
-                                        <Typography variant="subtitle2" fontWeight={600} fontSize="0.8rem">
+                                        <Typography variant="subtitle2" fontWeight={600} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
                                             Actions
                                         </Typography>
                                     </TableCell>
