@@ -1,6 +1,20 @@
 import React, {useEffect, useState} from 'react';
 import {ControlledTreeEnvironment, Tree, InteractionMode} from 'react-complex-tree';
 import 'react-complex-tree/lib/style-modern.css';
+
+// // Add CSS for font size control using the actual react-complex-tree classes
+// const navigatorTreeStyles = `
+// .navigator-tree-container .rct-tree-item-li {
+//     font-size: 20px !important;
+// }
+// `;
+
+// // Inject styles into head
+// if (typeof document !== 'undefined') {
+//     const styleElement = document.createElement('style');
+//     styleElement.textContent = navigatorTreeStyles;
+//     document.head.appendChild(styleElement);
+// }
 import {atom, useAtom, useAtomValue, useSetAtom} from "jotai";
 import {
     jumpToNodeAtom,
@@ -53,7 +67,7 @@ export const NavigatorItemsAtom = atom((get) => {
             // Add current node
             items[nodeId] = {
                 index: nodeId,
-                data: get(nodeVM.title) || "(Untitled)",
+                data: <div style={{fontSize: '20px'}}>{get(nodeVM.title) || "(Untitled)"}</div>,
                 children: children.map(child => child.id),
                 isFolder: children.length > 0
             }
@@ -137,16 +151,17 @@ export const NavigatorLayer = () => {
 
     return (
         <>
-            <div style={{
-                '--rct-item-height': '24px',
-                '--rct-item-padding': '5px',
-                '--rct-item-margin': '2px',
-                '--rct-arrow-size': '10px',
-                '--rct-arrow-container-size': '20px',
-                '--rct-arrow-padding': '5px',
-                scale: '1.3',
-                transformOrigin: 'top left',
-            } as React.CSSProperties}>
+            <div 
+                className="navigator-tree-container"
+                style={{
+                    '--rct-item-height': 'auto',
+                    '--rct-item-padding': '5px',
+                    '--rct-item-margin': '2px',
+                    '--rct-arrow-size': '10px',
+                    '--rct-arrow-container-size': '20px',
+                    '--rct-arrow-padding': '5px',
+                } as React.CSSProperties}
+            >
                 <ControlledTreeEnvironment
                     items={navigatorItems}
                     getItemTitle={(item) => item.data}
