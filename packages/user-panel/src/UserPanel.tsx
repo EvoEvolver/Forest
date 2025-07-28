@@ -16,15 +16,15 @@ import {
     Typography
 } from '@mui/material';
 import {Edit as EditIcon, PhotoCamera as PhotoCameraIcon} from '@mui/icons-material';
-import {subscriptionAtom, userAtom} from "@forest/user-system/src/authStates";
+import {userAtom} from "@forest/user-system/src/authStates";
 import {UserTreesList} from './UserTreesList';
 import {useAtom} from "jotai/index";
 import {VisitedTreesList} from './VisitedTreesList';
 import DashboardCard from './DashboardCard';
 import {setupSupabaseClient} from '@forest/user-system/src/supabase';
+import {AuthGuard} from './AuthGuard';
 
 export const UserPanel = ({}) => {
-    const [, setSubscription] = useAtom(subscriptionAtom);
     const [user, setUser] = useAtom(userAtom);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [newDisplayName, setNewDisplayName] = useState('');
@@ -36,9 +36,6 @@ export const UserPanel = ({}) => {
     const [avatarUploadError, setAvatarUploadError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    useEffect(() => {
-        setSubscription()
-    }, []);
 
     useEffect(() => {
         if (user?.name) {
@@ -359,14 +356,16 @@ export const UserPanel = ({}) => {
                         lg: 10
                     }}
                 >
-                    <Grid container spacing={3}>
-                        <Grid size={12} sx={{height: '50vh', overflow: 'auto', margin: "5px"}}>
-                            <UserTreesList/>
+                    <AuthGuard>
+                        <Grid container spacing={3}>
+                            <Grid size={12} sx={{height: '50vh', overflow: 'auto', margin: "5px"}}>
+                                <UserTreesList/>
+                            </Grid>
+                            <Grid size={12} sx={{height: '50vh', overflow: 'auto', margin: "5px"}}>
+                                <VisitedTreesList/>
+                            </Grid>
                         </Grid>
-                        <Grid size={12} sx={{height: '50vh', overflow: 'auto', margin: "5px"}}>
-                            <VisitedTreesList/>
-                        </Grid>
-                    </Grid>
+                    </AuthGuard>
                 </Grid>
             </Grid>
 

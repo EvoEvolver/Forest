@@ -45,7 +45,12 @@ export const VisitedTreesList = () => {
     const user = useAtomValue(userAtom);
 
     const fetchVisitedTrees = async () => {
-        if (!authToken || !user) setLoading(false);
+        // Don't fetch if not authenticated
+        if (!authToken || !user) {
+            setLoading(false);
+            setError('Please log in to view visited trees');
+            return;
+        }
 
         try {
             setLoading(true);
@@ -132,7 +137,17 @@ export const VisitedTreesList = () => {
     };
 
     useEffect(() => {
-        fetchVisitedTrees();
+        // Only fetch if we have both auth token and user
+        if (authToken && user) {
+            fetchVisitedTrees();
+        } else {
+            // Set initial state for unauthenticated users
+            setLoading(false);
+            setTrees([]);
+            if (!authToken && !user) {
+                setError('Please log in to view visited trees');
+            }
+        }
     }, [authToken, user]);
 
     if (loading) {

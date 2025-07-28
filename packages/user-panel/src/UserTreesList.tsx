@@ -156,7 +156,13 @@ export const UserTreesList = ({}) => {
     };
 
     const fetchUserTrees = async () => {
-        if (!authToken || !user) setLoading(false);
+        // Don't fetch if not authenticated
+        if (!authToken || !user) {
+            setLoading(false);
+            setError('Please log in to view your trees');
+            return;
+        }
+        
         try {
             setLoading(true);
             setError(null);
@@ -252,7 +258,17 @@ export const UserTreesList = ({}) => {
     };
 
     useEffect(() => {
-        fetchUserTrees();
+        // Only fetch if we have both auth token and user
+        if (authToken && user) {
+            fetchUserTrees();
+        } else {
+            // Set initial state for unauthenticated users
+            setLoading(false);
+            setTrees([]);
+            if (!authToken && !user) {
+                setError('Please log in to view your trees');
+            }
+        }
     }, [authToken, user]);
 
     if (loading) {
