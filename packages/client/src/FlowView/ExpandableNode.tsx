@@ -3,11 +3,15 @@ import {createPortal} from 'react-dom';
 import {Handle, NodeProps, Position} from 'reactflow';
 import {useAtomValue, useSetAtom} from 'jotai';
 import {nodeStateAtom} from './nodeStateAtom';
-import {Box, Card, CardContent, IconButton, Paper, Typography} from '@mui/material';
+import {Box, Card, CardContent, IconButton, Menu, MenuItem, Paper, Typography} from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import {treeAtom} from "../TreeState/TreeState";
+import {jumpToNodeAtom, scrollToNodeAtom, treeAtom} from "../TreeState/TreeState";
 import {NodePreview} from "./PreviewPage";
+import {currentPageAtom} from "../appState";
+
+
+
 
 const ExpandableNode = ({id, data}: NodeProps) => {
     const setNodeState = useSetAtom(nodeStateAtom(id));
@@ -17,6 +21,7 @@ const ExpandableNode = ({id, data}: NodeProps) => {
     const showTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const [mousePosition, setMousePosition] = useState({x: 0, y: 0});
+    const [contextMenu, setContextMenu] = useState<null | { x: number; y: number }>( null);
 
     const toggleCollapse = () => {
         if (!data.isExpandable)
@@ -28,6 +33,21 @@ const ExpandableNode = ({id, data}: NodeProps) => {
     const nodeAtom = nodeDict[id]
     const node = useAtomValue(nodeAtom)
     const nodeTitle = useAtomValue(node.title)
+
+    const setCurrentPage = useSetAtom(currentPageAtom);
+    const jumpToNode = useSetAtom(jumpToNodeAtom);
+    const scrollToNode = useSetAtom(scrollToNodeAtom)
+    const goToNodeInTreeView = () => {
+        setCurrentPage("tree");
+        setTimeout(() => {
+            jumpToNode(node.id);
+            setTimeout(() => {
+                scrollToNode(node.id);
+            }, 100)
+        }, 300);
+
+    };
+
 
     // Effect to manage preview visibility based on mouse states
     useEffect(() => {
@@ -72,7 +92,7 @@ const ExpandableNode = ({id, data}: NodeProps) => {
 
     const handleMouseEnter = (event: React.MouseEvent<HTMLElement>) => {
         const rect = event.currentTarget.getBoundingClientRect();
-        setMousePosition({x: rect.right + 10, y: rect.top});
+        setMousePosition({x: rect.left, y: rect.top});
         setMouseInNode(true);
     };
 
@@ -88,14 +108,58 @@ const ExpandableNode = ({id, data}: NodeProps) => {
         setMouseInPreview(false);
     };
 
+    const handleContextMenu = (event: React.MouseEvent) => {
+        event.preventDefault();
+        setContextMenu(
+            contextMenu === null
+                ? { x: event.clientX + 2, y: event.clientY - 6 }
+                : null
+        );
+    };
+
+    const handleCloseContextMenu = () => {
+        setContextMenu(null);
+    };
+
+    const handleGoToTreeView = () => {
+        goToNodeInTreeView()
+        handleCloseContextMenu();
+    };
+
 
     return (
         <>
+            {showPreview && createPortal(
+                <Card
+                    onMouseEnter={handlePreviewMouseEnter}
+                    onMouseLeave={handlePreviewMouseLeave}
+                    sx={{
+                        position: 'fixed',
+                        left: 20,
+                        top: "50vh",
+                        maxWidth: 500,
+                        maxHeight: 500,
+                        overflow: 'auto',
+                        boxShadow: 6,
+                        border: '2px solid #1976d2',
+                        borderRadius: 3,
+                        backgroundColor: 'white',
+                        zIndex: 10000,
+                        transform: 'translateY(-50%)',
+                    }}
+                >
+                    <CardContent sx={{p: 2}}>
+                        <NodePreview node={node}/>
+                    </CardContent>
+                </Card>,
+                document.body
+            )}
             <Paper
                 elevation={2}
                 onClick={toggleCollapse}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
+                onContextMenu={handleContextMenu}
                 sx={{
                     p: 2,
                     border: '1px solid #e0e0e0',
@@ -179,31 +243,20 @@ const ExpandableNode = ({id, data}: NodeProps) => {
                     }}
                 />
             </Paper>
-            {showPreview && createPortal(
-                <Card
-                    onMouseEnter={handlePreviewMouseEnter}
-                    onMouseLeave={handlePreviewMouseLeave}
-                    sx={{
-                        position: 'fixed',
-                        left: mousePosition.x,
-                        top: mousePosition.y,
-                        maxWidth: 500,
-                        maxHeight: 500,
-                        overflow: 'auto',
-                        boxShadow: 6,
-                        border: '2px solid #1976d2',
-                        borderRadius: 3,
-                        backgroundColor: 'white',
-                        zIndex: 10000,
-                        transform: 'translateY(-50%)',
-                    }}
-                >
-                    <CardContent sx={{p: 2}}>
-                        <NodePreview node={node}/>
-                    </CardContent>
-                </Card>,
-                document.body
-            )}
+            <Menu
+                open={contextMenu !== null}
+                onClose={handleCloseContextMenu}
+                anchorReference="anchorPosition"
+                anchorPosition={
+                    contextMenu !== null
+                        ? { top: contextMenu.y, left: contextMenu.x }
+                        : undefined
+                }
+            >
+                <MenuItem onClick={handleGoToTreeView}>
+                    Go to Tree View
+                </MenuItem>
+            </Menu>
         </>
     );
 };
