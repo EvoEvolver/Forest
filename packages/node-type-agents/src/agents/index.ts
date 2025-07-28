@@ -1,6 +1,11 @@
 import {NodeM} from "@forest/schema";
 import {AgentNodeType} from "../AgentNode";
-import {AgentCallingMessage, AgentResponseMessage, ToolCallingMessage, ToolResponseMessage} from "@forest/agent-chat/src/AgentMessageTypes";
+import {
+    AgentCallingMessage,
+    AgentResponseMessage,
+    ToolCallingMessage,
+    ToolResponseMessage
+} from "@forest/agent-chat/src/AgentMessageTypes";
 import {agentSessionState} from "../sessionState";
 import {AgentToolNodeType} from "../ToolNode";
 import {BaseMessage, NormalMessage, SystemMessage} from "@forest/agent-chat/src/MessageTypes";
@@ -156,6 +161,20 @@ async function getNextStep(nodeM: NodeM): Promise<string | undefined> {
             })
             agentSessionState.addMessage(nodeM, toolCallingMessage);
             const res = await toolNodeType.callApi(toolNodeM, input)
+
+            // Check for URLs starting with https://storage.treer.ai in the response
+            const resString = typeof res === 'string' ? res : JSON.stringify(res);
+            const urlRegex = /https:\/\/storage\.treer\.ai\/[^\s"]+/g;
+            const matches = resString.match(urlRegex);
+            if (matches) {
+                for (const url of matches) {
+                    agentSessionState.files.push({
+                        fileUrl: url,
+                        fileDescription: `File from ${toolName} tool`
+                    });
+                }
+            }
+
             const toolResponseMessage = new ToolResponseMessage({
                 toolName: toolName,
                 response: res,
@@ -163,14 +182,13 @@ async function getNextStep(nodeM: NodeM): Promise<string | undefined> {
             })
             agentSessionState.addMessage(nodeM, toolResponseMessage);
         }
-    }
-    else {
+    } else {
         throw Error(`Unknown response type. Response: ${JSON.stringify(parsedResponse)}`);
     }
 }
 
 export async function invokeAgent(nodeM: NodeM, messages: BaseMessage[]) {
-    for(let message of messages) {
+    for (let message of messages) {
         agentSessionState.addMessage(nodeM, message)
     }
     while (true) {

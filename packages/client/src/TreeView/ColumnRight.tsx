@@ -76,7 +76,7 @@ export function ColumnRight() {
                 </ToggleButton>
                 <ToggleButton value="assistant" aria-label="assistant">
                     <SmartToyIcon fontSize="small"/>
-                    Assistant
+                    AI
                 </ToggleButton>
             </ToggleButtonGroup>
         </Paper>

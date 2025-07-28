@@ -1,14 +1,22 @@
 import {BaseMessage} from "@forest/agent-chat/src/MessageTypes";
 import {NodeM} from "@forest/schema";
 
+
+class AgentFile {
+    fileUrl: string;
+    fileDescription: string;
+}
+
 class AgentSessionState {
     messages: Map<string, Array<BaseMessage>>
     updateCallback: Map<string, () => void>
     authToken: string | undefined;
+    files: AgentFile[];
 
     constructor() {
         this.messages = new Map();
         this.updateCallback = new Map();
+        this.files = [];
     }
 
     addMessage(nodeM: NodeM, message: BaseMessage) {

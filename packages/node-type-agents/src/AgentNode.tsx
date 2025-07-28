@@ -4,7 +4,8 @@ import CollaborativeEditor from "./CodeEditor";
 import {markdown} from "@codemirror/lang-markdown";
 import * as Y from "yjs";
 import {ChatComponent} from "./ChatComponent";
-import {Box} from "@mui/material";
+import {Box, List, ListItem, ListItemText, Typography, Link, Button, Stack} from "@mui/material";
+import {agentSessionState} from "./sessionState";
 
 const AgentPromptText = "AgentPromptText"
 
@@ -29,8 +30,45 @@ export class AgentNodeType extends NodeType {
     }
 
     renderTool2(node: NodeVM): React.ReactNode {
-        return <>
-        </>
+        const handleRefresh = () => {
+            node.requestRender();
+        };
+
+        return <Box sx={{width: "100%", height: "100%", padding: 2}}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                <Typography variant="h6">
+                    Agent Files
+                </Typography>
+                <Button variant="outlined" size="small" onClick={handleRefresh}>
+                    Refresh
+                </Button>
+            </Stack>
+            {agentSessionState.files.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                    No files available
+                </Typography>
+            ) : (
+                <List>
+                    {agentSessionState.files.map((file, index) => (
+                        <ListItem key={index} sx={{ pl: 0 }}>
+                            <ListItemText
+                                primary={
+                                    <Link 
+                                        href={file.fileUrl} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        sx={{ wordBreak: "break-all" }}
+                                    >
+                                        {file.fileUrl}
+                                    </Link>
+                                }
+                                secondary={file.fileDescription}
+                            />
+                        </ListItem>
+                    ))}
+                </List>
+            )}
+        </Box>
     }
 
     renderPrompt(node: NodeM): string {
