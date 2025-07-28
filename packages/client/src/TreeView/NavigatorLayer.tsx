@@ -165,7 +165,7 @@ export const NavigatorLayer = () => {
                 <ControlledTreeEnvironment
                     items={navigatorItems}
                     getItemTitle={(item) => item.data}
-                    defaultInteractionMode={InteractionMode.DoubleClickItemToExpand}
+                    // defaultInteractionMode={InteractionMode.DoubleClickItemToExpand}
                 viewState={{
                     'navigator-tree': {
                         focusedItem,
