@@ -101,7 +101,7 @@ export function ColumnRight() {
             </Paper>
         )}
         {activeTab === 'assistant' && (
-            <Paper elevation={1} sx={{flex: 1, overflow: 'hidden', borderRadius: '10px', p: 1}}>
+            <Paper elevation={1} sx={{flex: 1, overflow: 'hidden', borderRadius: '10px'}}>
                 <CursorChat selectedNode={node}></CursorChat>
             </Paper>
         )}
