@@ -243,7 +243,7 @@ export const UserPanel = ({}) => {
             sx={{
                 margin: 'auto',
                 padding: "20px",
-                height: "100vh"
+                minHeight: "100vh"
             }}
         >
             <Grid container spacing={3} sx={{width: '100vw', margin: 'auto'}}>

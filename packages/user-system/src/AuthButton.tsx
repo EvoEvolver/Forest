@@ -9,7 +9,8 @@ import {
     isAuthenticatedAtom,
     supabaseClientAtom,
     userAtom,
-    userPermissionsAtom
+    userPermissionsAtom,
+    userPanelModalOpenAtom
 } from "./authStates"
 import { getUserMetadata } from "./userMetadata"
 
@@ -22,6 +23,7 @@ const AuthButton: React.FC = () => {
     const setAuthToken = useSetAtom(authTokenAtom)
     const setUserPermissions = useSetAtom(userPermissionsAtom)
     const supabaseClient = useAtomValue(supabaseClientAtom)
+    const setUserPanelModalOpen = useSetAtom(userPanelModalOpenAtom)
 
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
     const [userMetadata, setUserMetadata] = React.useState<{username: string, avatar: string | null} | null>(null)
@@ -139,11 +141,9 @@ const AuthButton: React.FC = () => {
                 </Box>
                 <Divider/>
                 <MenuItem onClick={() => {
-                    // redirect to user panel via react router at /user
                     setAnchorEl(null)
                     setAuthModalOpen(false)
-                    // setShowUserPanel(true)
-                    window.location.href = '/user'
+                    setUserPanelModalOpen(true)
                 }}>
                     <AccountCircleIcon sx={{mr: 1}}/>
                     My account

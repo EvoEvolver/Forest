@@ -26,6 +26,9 @@ export const supabaseClientAtom: Atom<any> = atom<any>(null)
 // Auth modal open state
 export const authModalOpenAtom = atom(false)
 
+// User Panel Modal State
+export const userPanelModalOpenAtom = atom(false)
+
 
 // User permissions (draft)
 export interface UserPermissions {
