@@ -23,8 +23,9 @@
     "jotai": "^2.10.3",
     "react": "^19.1.0",
     "uuid": "^9.0.1",
-    "y-websocket": "workspace:*",
-    "yjs": "^13.6.27"
+    "yjs": "^13.6.27",
+    "lib0": "^0.2.102",
+    "y-protocols": "^1.0.5"
   },
   "devDependencies": {
     "@types/node": "^24.0.14",
