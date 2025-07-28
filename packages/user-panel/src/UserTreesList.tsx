@@ -58,9 +58,7 @@ export const UserTreesList = ({}) => {
         const loadNodeTypes = async () => {
             const nodeTypeNames = [
                 "EditorNodeType",
-                "AgentNodeType", 
-                "ReaderNodeType",
-                "CustomNodeType"
+                "AgentNodeType"
             ];
             
             const promises = nodeTypeNames.map(async (typeName) => {
