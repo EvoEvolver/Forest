@@ -22,8 +22,6 @@ interface ChatViewImplProps {
 export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewImplProps) {
     const [message, setMessage] = useState("");
     const endRef = useRef(null);
-    const [username,] = useState("user");
-    const { setIsDraggingOverChat, draggedNodeId, isDraggingOverChat } = useDragContext();
 
     useEffect(() => {
         endRef.current?.scrollIntoView({behavior: "smooth"});
@@ -42,32 +40,6 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewI
         }
     };
 
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'copy';
-        setIsDraggingOverChat(true);
-    };
-
-    const handleDragLeave = (e: React.DragEvent) => {
-        // Only set to false if we're actually leaving the chat area
-        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-            setIsDraggingOverChat(false);
-        }
-    };
-
-    const handleDrop = (e: React.DragEvent) => {
-        console.log("DragDropToChat")
-        e.preventDefault();
-        setIsDraggingOverChat(false);
-        
-        const draggedNodeId = e.dataTransfer.getData('nodeId');
-        if (draggedNodeId) {
-            // Insert the node ID into the text field
-            const nodeIdText = `{nodeId: ${draggedNodeId}}`;
-            setMessage((prev: string) => prev + nodeIdText);
-        }
-    };
-
     return (
         <Box
             sx={{
@@ -77,14 +49,11 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewI
                 flexDirection: "column",
                 height: "95%",
                 position: "relative", // Enable absolute positioning for child elements
-                border: isDraggingOverChat ? '2px solid #1976d2' : '2px solid transparent',
+                border: '2px solid transparent',
                 borderRadius: 2,
-                backgroundColor: isDraggingOverChat ? 'rgba(25, 118, 210, 0.04)' : 'transparent',
+                backgroundColor: 'transparent',
                 transition: 'all 0.2s ease-in-out',
             }}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
         >
             {/* Settings Icon */}
             <Box

@@ -9,33 +9,15 @@ import {agentSessionState} from "./sessionState";
 
 const AgentPromptText = "AgentPromptText"
 
-export class AgentNodeType extends NodeType {
-    displayName = "Agent"
-    allowReshape = true
-    allowAddingChildren = true
-    allowEditTitle = true
-    allowedChildrenTypes = ["AgentNodeType", "AgentToolNodeType", "CodeInterpreterNodeType", "EditorNodeType"]
+function AgentFilesComponent() {
+    const [files, setFiles] = React.useState(agentSessionState.files);
+    
+    const handleRefresh = () => {
+        setFiles([...agentSessionState.files]);
+    };
 
-    render(node: NodeVM): React.ReactNode {
-        return <>
-            <ChatComponent node={node}/>
-        </>
-    }
-
-    renderTool1(node: NodeVM): React.ReactNode {
-        return <Box sx={{width: "100%", height: "100%"}}>
-            <h1>Agent context</h1>
-            <CollaborativeEditor yText={node.ydata.get(AgentPromptText)} langExtension={markdown}/>
-        </Box>
-    }
-
-    renderTool2(node: NodeVM): React.ReactNode {
-        const [files, setFiles] = React.useState(agentSessionState.files);
-        const handleRefresh = () => {
-            // Fetch the latest files from the agent session state
-            setFiles(agentSessionState.files);
-        };
-        return <Box sx={{width: "100%", height: "100%", padding: 2}}>
+    return (
+        <Box sx={{width: "100%", height: "100%", padding: 2}}>
             <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
                 <Typography variant="h6">
                     Agent Files
@@ -70,6 +52,31 @@ export class AgentNodeType extends NodeType {
                 </List>
             )}
         </Box>
+    );
+}
+
+export class AgentNodeType extends NodeType {
+    displayName = "Agent"
+    allowReshape = true
+    allowAddingChildren = true
+    allowEditTitle = true
+    allowedChildrenTypes = ["AgentNodeType", "AgentToolNodeType", "CodeInterpreterNodeType", "EditorNodeType"]
+
+    render(node: NodeVM): React.ReactNode {
+        return <>
+            <ChatComponent node={node}/>
+        </>
+    }
+
+    renderTool1(node: NodeVM): React.ReactNode {
+        return <Box sx={{width: "100%", height: "100%"}}>
+            <h1>Agent context</h1>
+            <CollaborativeEditor yText={node.ydata.get(AgentPromptText)} langExtension={markdown}/>
+        </Box>
+    }
+
+    renderTool2(node: NodeVM): React.ReactNode {
+        return <AgentFilesComponent />;
     }
 
     renderPrompt(node: NodeM): string {
