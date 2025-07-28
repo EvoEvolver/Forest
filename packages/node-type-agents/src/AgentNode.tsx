@@ -30,10 +30,11 @@ export class AgentNodeType extends NodeType {
     }
 
     renderTool2(node: NodeVM): React.ReactNode {
+        const [files, setFiles] = React.useState(agentSessionState.files);
         const handleRefresh = () => {
-            node.requestRender();
+            // Fetch the latest files from the agent session state
+            setFiles(agentSessionState.files);
         };
-
         return <Box sx={{width: "100%", height: "100%", padding: 2}}>
             <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
                 <Typography variant="h6">
@@ -43,13 +44,13 @@ export class AgentNodeType extends NodeType {
                     Refresh
                 </Button>
             </Stack>
-            {agentSessionState.files.length === 0 ? (
+            {files.length === 0 ? (
                 <Typography variant="body2" color="text.secondary">
                     No files available
                 </Typography>
             ) : (
                 <List>
-                    {agentSessionState.files.map((file, index) => (
+                    {files.map((file, index) => (
                         <ListItem key={index} sx={{ pl: 0 }}>
                             <ListItemText
                                 primary={
