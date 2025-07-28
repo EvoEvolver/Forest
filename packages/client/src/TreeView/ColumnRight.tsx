@@ -16,11 +16,10 @@ type TabType = 'tools' | 'issues' | 'assistant';
 export function ColumnRight() {
     const node = useAtomValue(selectedNodeAtom);
     const [activeTab, setActiveTab] = useState<TabType>('tools');
+    const theme = useTheme();
 
     if (!node)
         return null;
-
-    const theme = useTheme();
 
     const handleTabChange = (event: React.MouseEvent<HTMLElement>, newTab: TabType | null) => {
         if (newTab !== null) {

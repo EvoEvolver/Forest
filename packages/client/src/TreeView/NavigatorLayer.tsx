@@ -1,20 +1,10 @@
-import React, {useEffect, useState} from 'react';
-import {ControlledTreeEnvironment, Tree, InteractionMode} from 'react-complex-tree';
-import 'react-complex-tree/lib/style-modern.css';
-
-// // Add CSS for font size control using the actual react-complex-tree classes
-// const navigatorTreeStyles = `
-// .navigator-tree-container .rct-tree-item-li {
-//     font-size: 20px !important;
-// }
-// `;
-
-// // Inject styles into head
-// if (typeof document !== 'undefined') {
-//     const styleElement = document.createElement('style');
-//     styleElement.textContent = navigatorTreeStyles;
-//     document.head.appendChild(styleElement);
-// }
+import React, {useEffect, forwardRef} from 'react';
+import {RichTreeView} from '@mui/x-tree-view/RichTreeView';
+import {useTreeItem2} from '@mui/x-tree-view';
+import {TreeItem2Content, TreeItem2IconContainer, TreeItem2Root, TreeItem2GroupTransition} from '@mui/x-tree-view';
+import type {UseTreeItem2Parameters} from '@mui/x-tree-view';
+import {Box, IconButton} from '@mui/material';
+import {DragIndicator, ExpandMore, ChevronRight} from '@mui/icons-material';
 import {atom, useAtom, useAtomValue, useSetAtom} from "jotai";
 import {
     jumpToNodeAtom,
@@ -24,6 +14,7 @@ import {
     moveNodeToSubtreeAtom,
     treeAtom
 } from "../TreeState/TreeState";
+import {useTreeViewApiRef} from "@mui/x-tree-view";
 import {NodeM, NodeVM} from '@forest/schema';
 
 export const NavigatorItemsAtom = atom((get) => {
@@ -37,23 +28,18 @@ export const NavigatorItemsAtom = atom((get) => {
             console.error("No rootId set in tree metadata. This may imply a bug.")
         }
         if (!root) {
-            return {}
+            return []
         }
-        
-        const items: Record<string, any> = {
-            // Virtual root that contains the actual root node
-            'virtual-root': {
-                index: 'virtual-root',
-                data: 'Root',
-                children: [root.id],
-                isFolder: true
-            }
-        }
-        
-        // Add all nodes including the actual root
-        const addNode = (nodeVM: NodeVM): void => {
-            const nodeId = nodeVM.id
-            const children_ids = get(nodeVM.children)
+        let children_list = []
+        const itemTree = [{
+            id: root.id,
+            label: get(root.title),
+            children: children_list,
+        }]
+        // iterate itemTree to add children
+        const addChildren = (item: any) => {
+            const node = get(tree.nodeDict[item.id])
+            const children_ids = get(node.children)
             const children = children_ids.map((childId) => {
                 const childrenNodeAtom = tree.nodeDict[childId]
                 if (!childrenNodeAtom) {
@@ -64,22 +50,19 @@ export const NavigatorItemsAtom = atom((get) => {
                 return child != null
             })
 
-            // Add current node
-            items[nodeId] = {
-                index: nodeId,
-                data: <div style={{fontSize: '20px'}}>{get(nodeVM.title) || "(Untitled)"}</div>,
-                children: children.map(child => child.id),
-                isFolder: children.length > 0
-            }
-            
-            // Recursively add children
-            for (const child of children) {
-                addNode(child)
+            item.children = children.map((child) => {
+                return {
+                    id: child.id,
+                    label: get(child.title) || "(Untitled)",
+                    children: [],
+                }
+            })
+            for (const child of item.children) {
+                addChildren(child)
             }
         }
-        
-        addNode(root)
-        return items
+        addChildren(itemTree[0])
+        return itemTree
     }
 )
 
@@ -91,8 +74,7 @@ const selectedItemAtom = atom((get) => {
     return [selectedNode.id]
 })
 
-const expandedItemsAtom = atom<string[]>([])
-const focusedItemAtom = atom<string | undefined>(undefined)
+const expandedItemsAtom = atom([])
 
 function getAncestorIds(node: NodeVM){
     if (!node || !node.nodeM) {
@@ -112,357 +94,282 @@ function getAncestorIds(node: NodeVM){
     return ancestorIds;
 }
 
+// Custom Tree Item component with drag handle
+const CustomTreeItem = forwardRef<HTMLLIElement, UseTreeItem2Parameters>(
+    (props, ref) => {
+        const { id, itemId, label, disabled, children } = props;
+        const [dragOver, setDragOver] = React.useState<'top' | 'bottom' | 'center' | null>(null);
+        const [isDragging, setIsDragging] = React.useState(false);
+        
+        const {
+            getRootProps,
+            getContentProps,
+            getIconContainerProps,
+            getLabelProps,
+            getGroupTransitionProps,
+            status,
+        } = useTreeItem2({ id, itemId, children, label, disabled, rootRef: ref });
+
+        const expandIcon = status.expanded ? <ExpandMore /> : <ChevronRight />;
+
+        const handleDragStart = (e: React.DragEvent) => {
+            e.dataTransfer.setData('text/plain', itemId);
+            e.dataTransfer.effectAllowed = 'move';
+            setIsDragging(true);
+        };
+
+        const handleDragEnd = () => {
+            setIsDragging(false);
+        };
+
+        const handleDragOver = (e: React.DragEvent) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            
+            const rect = e.currentTarget.getBoundingClientRect();
+            const y = e.clientY - rect.top;
+            const height = rect.height;
+            
+            if (y < height / 3) {
+                setDragOver('top');
+            } else if (y > (height * 2) / 3) {
+                setDragOver('bottom');
+            } else {
+                setDragOver('center');
+            }
+        };
+
+        const handleDragLeave = () => {
+            setDragOver(null);
+        };
+
+        const setNodePosition = useSetAtom(setNodePositionAtom);
+        const moveNodeToSubtree = useSetAtom(moveNodeToSubtreeAtom);
+        const tree = useAtomValue(treeAtom);
+        const selectedNode = useAtomValue(selectedNodeAtom);
+        
+        // Check if this item is currently selected
+        const isSelected = selectedNode && selectedNode.id === itemId;
+
+        const handleDrop = (e: React.DragEvent) => {
+            e.preventDefault();
+            const draggedItemId = e.dataTransfer.getData('text/plain');
+            
+            if (draggedItemId === itemId) {
+                setDragOver(null);
+                return;
+            }
+
+            try {
+                // Get current parent information
+                const draggedNodeM = tree.treeM.getNode(draggedItemId);
+                const targetNodeM = tree.treeM.getNode(itemId);
+                const currentParentId = draggedNodeM.ymap.get('parent');
+                const targetParentId = targetNodeM.ymap.get('parent');
+
+                if (dragOver === 'center') {
+                    // Drop as child of target node
+                    const isCrossSubtree = currentParentId !== itemId;
+                    
+                    if (isCrossSubtree) {
+                        // Move to different parent
+                        moveNodeToSubtree({
+                            nodeId: draggedItemId,
+                            newParentId: itemId,
+                            targetId: draggedItemId, // Will be handled specially
+                            shift: 0
+                        });
+                    }
+                } else {
+                    // Drop as sibling (top or bottom)
+                    const isCrossSubtree = currentParentId !== targetParentId;
+                    const shift = dragOver === 'bottom' ? 1 : 0;
+                    
+                    if (isCrossSubtree) {
+                        // Move to different parent
+                        moveNodeToSubtree({
+                            nodeId: draggedItemId,
+                            newParentId: targetParentId,
+                            targetId: itemId,
+                            shift: shift
+                        });
+                    } else {
+                        // Same parent - reorder siblings
+                        setNodePosition({
+                            nodeId: draggedItemId,
+                            targetId: itemId,
+                            shift: shift
+                        });
+                    }
+                }
+
+                console.log('Drop successful:', { 
+                    draggedItemId, 
+                    targetItemId: itemId, 
+                    position: dragOver,
+                    isCrossSubtree: currentParentId !== (dragOver === 'center' ? itemId : targetParentId)
+                });
+            } catch (error) {
+                console.error('Error in drop operation:', error);
+            }
+            
+            setDragOver(null);
+        };
+
+        const rootProps = getRootProps();
+        const contentProps = getContentProps();
+
+        return (
+            <TreeItem2Root 
+                {...rootProps}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                sx={{
+                    position: 'relative',
+                    // Selected node styling
+                    backgroundColor: isSelected ? 'rgba(25, 118, 210, 0.08)' : 'transparent',
+                    boxShadow: isSelected ? '0 2px 8px rgba(25, 118, 210, 0.15)' : 'none',
+                    borderRadius: isSelected ? 1 : 0,
+                    transition: 'all 0.2s ease-in-out',
+                    // Left blue bar for selected item
+                    borderLeft: isSelected ? '4px solid #1976d2' : '4px solid transparent',
+                    paddingLeft: 0.5,
+                    marginLeft: -0.5,
+                    // Drag indicators
+                    '&::before': dragOver === 'top' ? {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: '2px',
+                        backgroundColor: 'primary.main',
+                        zIndex: 1000,
+                    } : {},
+                    '&::after': dragOver === 'bottom' ? {
+                        content: '""',
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: '2px',
+                        backgroundColor: 'primary.main',
+                        zIndex: 1000,
+                    } : {},
+                }}
+            >
+                <TreeItem2Content 
+                    {...contentProps}
+                    style={{
+                        backgroundColor: dragOver === 'center' ? 'rgba(0, 0, 0, 0.04)' : 'transparent',
+                        opacity: isDragging ? 0.5 : 1,
+                        transition: 'opacity 0.2s ease',
+                    }}
+                >
+                    <TreeItem2IconContainer {...getIconContainerProps()}>
+                        {status.expandable && expandIcon}
+                    </TreeItem2IconContainer>
+                    
+                    <Box 
+                        {...getLabelProps()} 
+                        sx={{ 
+                            flexGrow: 1, 
+                            display: 'flex', 
+                            alignItems: 'center',
+                            fontWeight: isSelected ? 600 : 400,
+                            color: isSelected ? 'primary.main' : 'inherit',
+                            transition: 'all 0.2s ease-in-out',
+                        }}
+                    >
+                        {label}
+                    </Box>
+                    
+                    <IconButton
+                        size="small"
+                        sx={{ 
+                            opacity: 0.6,
+                            '&:hover': { opacity: 1 },
+                            cursor: isDragging ? 'grabbing' : 'grab',
+                        }}
+                        draggable
+                        onDragStart={handleDragStart}
+                        onDragEnd={handleDragEnd}
+                    >
+                        <DragIndicator fontSize="small" />
+                    </IconButton>
+                </TreeItem2Content>
+                
+                {children && <TreeItem2GroupTransition {...getGroupTransitionProps()} />}
+            </TreeItem2Root>
+        );
+    }
+);
+
+CustomTreeItem.displayName = 'CustomTreeItem';
+
 export const NavigatorLayer = () => {
     const navigatorItems = useAtomValue(NavigatorItemsAtom)
-    console.log("navigatorItems", navigatorItems)
-    const tree = useAtomValue(treeAtom)
     const [expandedItems, setExpandedItems] = useAtom(expandedItemsAtom)
-    const [focusedItem, setFocusedItem] = useAtom(focusedItemAtom)
     const selectedItems = useAtomValue(selectedItemAtom)
     const [selectedNode,] = useAtom(selectedNodeAtom)
+    const apiRef = useTreeViewApiRef();
     const jumpToNode = useSetAtom(jumpToNodeAtom)
     const scrollToNode = useSetAtom(scrollToNodeAtom)
-    const setNodePosition = useSetAtom(setNodePositionAtom)
-    const moveNodeToSubtree = useSetAtom(moveNodeToSubtreeAtom)
-    
-    console.log('NavigatorLayer render:', { selectedNode: selectedNode?.id, selectedItems, expandedItems, focusedItem })
     
     useEffect(() => {
         if (!selectedNode || !selectedNode.id) {
-            return
+            return;
         }
+        const currId = selectedNode.id
         const parentIds = getAncestorIds(selectedNode)
-        console.log('NavigatorLayer: Expanding ancestors for selected node', selectedNode.id, 'ancestors:', parentIds)
-        setExpandedItems((oldExpandedItems: string[]) => {
-            // Only expand ancestors, not the selected node itself
-            const newExpanded = [...new Set([...parentIds, ...oldExpandedItems])]
-            console.log('NavigatorLayer: Updated expanded items', newExpanded)
-            return newExpanded
+        setExpandedItems((oldExpandedItems) => {
+            return [...new Set([currId, ...parentIds, ...oldExpandedItems])]
         })
-    }, [selectedNode, setExpandedItems]);
+        const itemDom = apiRef.current?.getItemDOMElement(selectedNode.id)
+        if (itemDom) {
+            itemDom.scrollIntoView({behavior: "smooth", inline: "center", block: "nearest"})
+        }
+    }, [selectedNode]);
 
-    useEffect(() => {
-        setExpandedItems((oldExpandedItems: string[]) => {
-            // Filter out items that no longer exist in navigatorItems
-            return oldExpandedItems.filter(id => navigatorItems[id])
-        })
-    }, [navigatorItems, setExpandedItems]);
+    const handleExpandedItemsChange = (_event: React.SyntheticEvent, itemIds: string[]) => {
+        setExpandedItems(itemIds)
+    };
 
+    const handleNewSelectedItemChange = (_event: React.SyntheticEvent, selection: any) => {
+        // Handle different possible formats
+        let itemId: string | null = null;
+        if (typeof selection === 'string') {
+            itemId = selection;
+        } else if (Array.isArray(selection) && selection.length > 0) {
+            itemId = selection[0];
+        }
+        
+        if (itemId) {
+            jumpToNode(itemId)
+            if (scrollToNode) {
+                setTimeout(() => {
+                    scrollToNode(itemId)
+                }, 100)
+            }
+        }
+    }
 
     return (
         <>
-            <div 
-                className="navigator-tree-container"
-                style={{
-                    '--rct-item-height': 'auto',
-                    '--rct-item-padding': '5px',
-                    '--rct-item-margin': '2px',
-                    '--rct-arrow-size': '10px',
-                    '--rct-arrow-container-size': '20px',
-                    '--rct-arrow-padding': '5px',
-                } as React.CSSProperties}
-            >
-                <ControlledTreeEnvironment
-                    items={navigatorItems}
-                    getItemTitle={(item) => item.data}
-                    defaultInteractionMode={InteractionMode.DoubleClickItemToExpand}
-                viewState={{
-                    'navigator-tree': {
-                        focusedItem,
-                        expandedItems: [...expandedItems, 'virtual-root'], // Always expand virtual root
-                        selectedItems,
-                    }
+            <RichTreeView
+                items={navigatorItems}
+                selectedItems={selectedItems}
+                expandedItems={expandedItems}
+                apiRef={apiRef}
+                onExpandedItemsChange={handleExpandedItemsChange}
+                onSelectedItemsChange={handleNewSelectedItemChange}
+                slots={{
+                    item: CustomTreeItem
                 }}
-                onFocusItem={(item) => setFocusedItem(item.index)}
-                onSelectItems={(items) => {
-                    if (items.length > 0) {
-                        const newItemId = String(items[0])
-                        // Don't select the virtual root
-                        if (newItemId !== 'virtual-root') {
-                            jumpToNode(newItemId)
-                            if (scrollToNode) {
-                                setTimeout(() => {
-                                    scrollToNode(newItemId)
-                                }, 100)
-                            }
-                        }
-                    }
-                }}
-                onExpandItem={(item) => {
-                    if (String(item.index) !== 'virtual-root') {
-                        setExpandedItems(prev => [...prev, String(item.index)])
-                    }
-                }}
-                onCollapseItem={(item) => {
-                    if (String(item.index) !== 'virtual-root') {
-                        setExpandedItems(prev => prev.filter(id => id !== String(item.index)))
-                    }
-                }}
-                onDrop={(items, target) => {
-                    if (items.length > 0 && target) {
-                        
-                        const draggedItemId = String(items[0].index || items[0])
-                        let targetItemId: string
-                        
-                        console.log('Drop event:', { items, target, draggedItemId })
-                        console.log('Target properties:', Object.keys(target))
-                        console.log('Target object full:', target)
-                        console.log('Available navigatorItems keys:', Object.keys(navigatorItems))
-                        
-                        // Don't allow dropping virtual root
-                        if (draggedItemId === 'virtual-root') {
-                            console.log('Cannot drag virtual root')
-                            return
-                        }
-                        
-                        // Early detection of cross-subtree move to influence virtual list logic
-                        let targetParentId: string
-                        if (target.targetType === 'between-items') {
-                            targetParentId = String((target as any).parentItem)
-                        } else if (target.targetType === 'item') {
-                            targetParentId = String((target as any).targetItem)
-                        } else {
-                            console.log('Unknown target type:', target.targetType)
-                            return
-                        }
-                        
-                        // Get current parent of dragged item
-                        let currentParentId: string
-                        try {
-                            const draggedNodeM = tree.treeM.getNode(draggedItemId)
-                            currentParentId = draggedNodeM.ymap.get('parent')
-                        } catch (error) {
-                            console.log('Error getting current parent:', error)
-                            return
-                        }
-                        
-                        const isCrossSubtree = currentParentId !== targetParentId
-                        console.log('Early move analysis:', {
-                            draggedItemId,
-                            currentParentId,
-                            targetParentId,
-                            isCrossSubtree
-                        })
-                        
-                        // Get target item based on target type
-                        if (target.targetType === 'between-items') {
-                            // For between-items, get the original children order from tree metadata
-                            const parentItemId = String((target as any).parentItem)
-                            const childIndex = (target as any).childIndex
-                            
-                            console.log('Between-items drop:', { parentItemId, childIndex })
-                            
-                            // Don't allow dropping on virtual root
-                            if (parentItemId === 'virtual-root') {
-                                console.log('Cannot drop on virtual root')
-                                return
-                            }
-                            
-                            // Get the real parent node from tree metadata
-                            const parentNodeAtom = tree.nodeDict[parentItemId]
-                            if (!parentNodeAtom) {
-                                console.log('Parent node not found in tree:', parentItemId)
-                                return
-                            }
-                            
-                            // Access the parent node directly from the tree
-                            let realChildren: string[] = []
-                            try {
-                                // Try to get children from the tree's internal structure
-                                const parentNodeM = tree.treeM.getNode(parentItemId)
-                                if (parentNodeM) {
-                                    realChildren = parentNodeM.ymap.get('children').toJSON()
-                                }
-                            } catch (error) {
-                                console.log('Error accessing tree metadata:', error)
-                                return
-                            }
-                            
-                            console.log('Real parent children from tree metadata:', realChildren)
-                            
-                            const linePosition = (target as any).linePosition
-                            console.log('linePosition:', linePosition)
-                            
-                            if (isCrossSubtree) {
-                                // Cross-subtree: dragged item is not in the target parent's children
-                                // Use childIndex directly on the real children list
-                                if (linePosition === 'bottom') {
-                                    if (childIndex > 0) {
-                                        targetItemId = String(realChildren[childIndex - 1])
-                                        console.log('Cross-subtree bottom: place after', targetItemId, 'at index', childIndex - 1)
-                                    } else {
-                                        console.log('Cross-subtree: Cannot place before first item')
-                                        return
-                                    }
-                                } else { // linePosition === 'top'
-                                    if (childIndex < realChildren.length) {
-                                        targetItemId = String(realChildren[childIndex])
-                                        console.log('Cross-subtree top: place before', targetItemId, 'at index', childIndex)
-                                    } else {
-                                        console.log('Cross-subtree: Cannot place after last item')
-                                        return
-                                    }
-                                }
-                            } else {
-                                // Same-level: create virtual list with copy as before
-                                const virtualList = [...realChildren]
-                                virtualList.splice(childIndex, 0, draggedItemId + '_copy')
-                                console.log('Same-level virtual list with copy:', virtualList, 'childIndex:', childIndex)
-                                
-                                if (linePosition === 'bottom') {
-                                    // Place after the item before the copy (childIndex - 1)
-                                    if (childIndex > 0) {
-                                        const targetIndex = childIndex - 1
-                                        targetItemId = String(virtualList[targetIndex])
-                                        if (targetItemId.endsWith('_copy')) {
-                                            targetItemId = targetItemId.replace('_copy', '')
-                                        }
-                                        console.log('Same-level bottom: place after', targetItemId, 'at virtual index', targetIndex)
-                                    } else {
-                                        console.log('Same-level: Cannot place before first item')
-                                        return
-                                    }
-                                } else { // linePosition === 'top'
-                                    // Place before the item after the copy (childIndex + 1)
-                                    if (childIndex + 1 < virtualList.length) {
-                                        const targetIndex = childIndex + 1
-                                        targetItemId = String(virtualList[targetIndex])
-                                        if (targetItemId.endsWith('_copy')) {
-                                            targetItemId = targetItemId.replace('_copy', '')
-                                        }
-                                        console.log('Same-level top: place before', targetItemId, 'at virtual index', targetIndex)
-                                    } else {
-                                        console.log('Same-level: Cannot place after last item')
-                                        return
-                                    }
-                                }
-                            }
-                        } else if (target.targetType === 'item') {
-                            targetItemId = String((target as any).targetItem)
-                        } else {
-                            console.log('Unknown target type')
-                            return
-                        }
-                        
-                        // Don't allow dropping on virtual root
-                        if (targetItemId === 'virtual-root') {
-                            console.log('Cannot drop on virtual root')
-                            return
-                        }
-                        
-                        // Validate that both nodes exist in navigatorItems
-                        if (!navigatorItems[draggedItemId]) {
-                            console.log('Dragged item not found in navigatorItems:', draggedItemId)
-                            return
-                        }
-                        
-                        if (!navigatorItems[targetItemId]) {
-                            console.log('Target item not found in navigatorItems:', targetItemId)
-                            return
-                        }
-                        
-                        console.log('Parsed IDs:', { draggedItemId, targetItemId })
-                        
-                        // Check if target is the dragged item itself (no movement needed)
-                        if (targetItemId === draggedItemId) {
-                            console.log('Target is same as dragged item, no movement needed')
-                            return
-                        }
-                        
-                        // Calculate shift based on linePosition
-                        let shift = 0
-                        if (target.targetType === 'between-items') {
-                            const linePosition = (target as any).linePosition
-                            if (linePosition === 'bottom') {
-                                // Place after the target item
-                                shift = 1
-                            } else { // linePosition === 'top'
-                                // Place before the target item
-                                shift = 0
-                            }
-                            console.log('linePosition:', linePosition, 'shift:', shift)
-                        } else if (target.targetType === 'item') {
-                            // Dropping on an item means making it a child (shift = 0)
-                            shift = 0
-                        }
-                        
-                        // Handle item drops for cross-subtree case
-                        if (target.targetType === 'item' && isCrossSubtree) {
-                            // For item drops, we always place at the beginning
-                            targetItemId = 'PLACEHOLDER' // We'll handle this case differently
-                        }
-                        
-                        console.log('Final target analysis:', {
-                            draggedItemId,
-                            targetItemId,
-                            targetParentId,
-                            currentParentId,
-                            isCrossSubtree
-                        })
-                        
-                        try {
-                            if (!isCrossSubtree) {
-                                // Same parent - use existing atom
-                                console.log('Same level move - using setNodePosition')
-                                setNodePosition({
-                                    nodeId: draggedItemId,
-                                    targetId: targetItemId,
-                                    shift: shift
-                                })
-                            } else {
-                                // Different parent - use new atom
-                                if (target.targetType === 'item') {
-                                    // For item drops, make it the last child (align with UncontrolledTreeEnvironment)
-                                    console.log('Cross-subtree item drop - making last child')
-                                    const newParentNodeM = tree.treeM.getNode(targetParentId)
-                                    const newParentChildren = newParentNodeM.ymap.get('children').toJSON()
-                                    if (newParentChildren.length > 0) {
-                                        // Use last child as target with shift=1 (place after)
-                                        moveNodeToSubtree({
-                                            nodeId: draggedItemId,
-                                            newParentId: targetParentId,
-                                            targetId: newParentChildren[newParentChildren.length - 1],
-                                            shift: 1
-                                        })
-                                    } else {
-                                        // No children, just add as first child
-                                        moveNodeToSubtree({
-                                            nodeId: draggedItemId,
-                                            newParentId: targetParentId,
-                                            targetId: draggedItemId, // Will be handled specially
-                                            shift: 0
-                                        })
-                                    }
-                                } else {
-                                    // For between-items drops
-                                    console.log('Cross-subtree between-items move - using moveNodeToSubtree')
-                                    moveNodeToSubtree({
-                                        nodeId: draggedItemId,
-                                        newParentId: targetParentId,
-                                        targetId: targetItemId,
-                                        shift: shift
-                                    })
-                                }
-                            }
-                        } catch (error) {
-                            console.error('Error in move operation:', error)
-                        }
-                    }
-                }}
-                canDragAndDrop={true}
-                canReorderItems={true}
-                canDropOnFolder={true}
-            >
-                <Tree 
-                    treeId="navigator-tree" 
-                    rootItem="virtual-root"
-                    treeLabel="Navigator"
-                />
-            </ControlledTreeEnvironment>
-            </div>
+            />
         </>
     );
 };
-
 
 

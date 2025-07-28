@@ -8,10 +8,10 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 
 export function ColumnLeft() {
     const selectedNode = useAtomValue(selectedNodeAtom)
+    const [collapsed, setCollapsed] = useState(false);
+    
     if (!selectedNode)
         return null
-
-    const [collapsed, setCollapsed] = useState(false);
     const expandedWidth = "100%";
     const collapsedWidth = 40;
 
