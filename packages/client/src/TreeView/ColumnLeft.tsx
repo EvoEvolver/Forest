@@ -51,7 +51,7 @@ export function ColumnLeft() {
                 sx={{
                     position: "absolute",
                     top: "50%",
-                    left: collapsed ? collapsedWidth - 1 : expandedWidth - 1,
+                    left: collapsed ? collapsedWidth - 1 : expandedWidth,
                     transform: "translate(-50%, -50%)",
                     backgroundColor: "#fff",
                     border: "1px solid #c6c6c6",

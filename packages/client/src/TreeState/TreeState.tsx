@@ -114,6 +114,8 @@ export const setNodePositionAtom = atom(null, (get, set, props: {
         yArrayChildren.delete(currentIdx, 1)
         yArrayChildren.insert(newPosition, [props.nodeId])
     })
+    
+    set(updateChildrenCountAtom, {});
 })
 
 /*
@@ -191,6 +193,7 @@ export const moveNodeToSubtreeAtom = atom(null, (get, set, props: {
         newParentChildren.insert(newPosition, [props.nodeId])
     })
     
+    set(updateChildrenCountAtom, {});
     console.log(`Moved node ${props.nodeId} from parent ${oldParentId} to parent ${props.newParentId} at position ${newPosition}`)
 })
 
