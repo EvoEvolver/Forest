@@ -122,6 +122,32 @@ const CustomTreeItem = forwardRef<HTMLLIElement, UseTreeItem2Parameters>(
             e.dataTransfer.setData('nodeId', itemId); // Primary data for chat compatibility
             e.dataTransfer.setData('text/plain', itemId); // Fallback for NavigatorLayer internal use
             currentDraggedItemId = itemId; // Set global state
+            
+            // Create a drag image that matches TreeView styling
+            const dragImageEl = document.createElement('div');
+            dragImageEl.style.cssText = `
+                background: white;
+                border: 1px solid rgba(0, 0, 0, 0.12);
+                border-radius: 6px;
+                padding: 6px 12px;
+                font-size: 13px;
+                font-weight: 400;
+                color: rgba(0, 0, 0, 0.87);
+                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                opacity: 0.8;
+                white-space: nowrap;
+                font-family: inherit;
+                max-width: 300px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                pointer-events: none;
+            `;
+            dragImageEl.textContent = label as string || 'Untitled Node';
+            
+            // Temporarily add to DOM, set as drag image, then remove
+            document.body.appendChild(dragImageEl);
+            e.dataTransfer.setDragImage(dragImageEl, -15, 14);
+            setTimeout(() => document.body.removeChild(dragImageEl), 0);
         };
 
         const handleDragEnd = () => {
