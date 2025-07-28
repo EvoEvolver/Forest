@@ -20,7 +20,7 @@ RUN mkdir -p forest
 RUN pnpm run build
 
 # Set the working directory to the final application
-WORKDIR /app/forest
+WORKDIR /app/build
 
 # Expose default Node.js port
 EXPOSE 3000
