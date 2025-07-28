@@ -6,6 +6,11 @@ import {
     Button,
     Chip,
     CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
     IconButton,
     Table,
     TableBody,
@@ -22,6 +27,7 @@ const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "
 const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort}`
 import DashboardCard from './DashboardCard';
 import {NodeJson, TreeJson, TreeMetadata} from '@forest/schema';
+import {supportedNodeTypes} from '@forest/node-types';
 
 interface UserTree {
     treeId: string;
@@ -31,14 +37,51 @@ interface UserTree {
     nodeCount: number;
 }
 
+interface NodeTypeForDisplay {
+    name: string;
+    displayName: string;
+}
+
 export const UserTreesList = ({}) => {
     const [trees, setTrees] = useState<UserTree[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [deletingTreeId, setDeletingTreeId] = useState<string | null>(null);
+    const [createTreeDialogOpen, setCreateTreeDialogOpen] = useState(false);
+    const [availableNodeTypes, setAvailableNodeTypes] = useState<NodeTypeForDisplay[]>([]);
 
     const authToken = useAtomValue(authTokenAtom);
     const user = useAtomValue(userAtom);
+
+    // Load available node types
+    useEffect(() => {
+        const loadNodeTypes = async () => {
+            const nodeTypeNames = [
+                "EditorNodeType",
+                "AgentNodeType", 
+                "ReaderNodeType",
+                "CustomNodeType"
+            ];
+            
+            const promises = nodeTypeNames.map(async (typeName) => {
+                try {
+                    const nodeType = await supportedNodeTypes(typeName);
+                    return {
+                        name: typeName,
+                        displayName: nodeType?.displayName || typeName
+                    };
+                } catch (error) {
+                    console.warn(`Failed to load node type ${typeName}:`, error);
+                    return null;
+                }
+            });
+            
+            const nodeTypes = await Promise.all(promises);
+            setAvailableNodeTypes(nodeTypes.filter(type => type !== null) as NodeTypeForDisplay[]);
+        };
+        
+        loadNodeTypes();
+    }, []);
 
     const handleApiResponse = async (response: Response, errorContext: string) => {
         if (!response.ok) {
@@ -53,7 +96,7 @@ export const UserTreesList = ({}) => {
         return data;
     };
 
-    const handleCreateTree = async () => {
+    const handleCreateTree = async (nodeTypeName: string = "EditorNodeType") => {
         const nodeId = uuidv4()
         const newRootJson: NodeJson = {
             title: "Root",
@@ -61,7 +104,7 @@ export const UserTreesList = ({}) => {
             id: nodeId,
             parent: null,
             data: {},
-            nodeTypeName: "EditorNodeType"
+            nodeTypeName: nodeTypeName
         }
         const newTreeMetadata: TreeMetadata = {
             rootId: newRootJson.id
@@ -92,6 +135,24 @@ export const UserTreesList = ({}) => {
             console.error("Error creating tree:", error);
             throw error;
         }
+    };
+
+    const handleCreateTreeClick = () => {
+        if (availableNodeTypes.length === 1) {
+            handleCreateTree(availableNodeTypes[0].name);
+            return;
+        }
+        
+        setCreateTreeDialogOpen(true);
+    };
+
+    const handleCloseCreateTreeDialog = () => {
+        setCreateTreeDialogOpen(false);
+    };
+
+    const handleSelectNodeType = (nodeTypeName: string) => {
+        handleCreateTree(nodeTypeName);
+        handleCloseCreateTreeDialog();
     };
 
     const fetchUserTrees = async () => {
@@ -229,7 +290,7 @@ export const UserTreesList = ({}) => {
                     <Box sx={{display: 'flex', gap: 1, alignItems: 'center'}}>
                         <Button
                             variant="contained"
-                            onClick={handleCreateTree}
+                            onClick={handleCreateTreeClick}
                             size="small"
                             sx={{fontSize: '0.75rem', py: 0.5, px: 1}}
                         >
@@ -382,6 +443,35 @@ export const UserTreesList = ({}) => {
                     </Box>
                 )}
             </DashboardCard>
+            
+            {/* Dialog for choosing root node type */}
+            <Dialog
+                open={createTreeDialogOpen}
+                onClose={handleCloseCreateTreeDialog}
+            >
+                <DialogTitle>Choose Root Node Type</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Select the type of root node for your new tree:
+                    </DialogContentText>
+                    {availableNodeTypes.map((type) => (
+                        <Button
+                            key={type.name}
+                            fullWidth
+                            variant="outlined"
+                            onClick={() => handleSelectNodeType(type.name)}
+                            sx={{ mb: 1, justifyContent: 'flex-start' }}
+                        >
+                            {type.displayName}
+                        </Button>
+                    ))}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseCreateTreeDialog} color="primary">
+                        Cancel
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };

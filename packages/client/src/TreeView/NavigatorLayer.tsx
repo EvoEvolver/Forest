@@ -98,7 +98,7 @@ function getAncestorIds(node: NodeVM){
 const CustomTreeItem = forwardRef<HTMLLIElement, UseTreeItem2Parameters>(
     (props, ref) => {
         const { id, itemId, label, disabled, children } = props;
-        const [dragOver, setDragOver] = React.useState<'top' | 'bottom' | 'center' | null>(null);
+        const [dragOver, setDragOver] = React.useState<'top' | 'bottom' | 'center' | 'invalid' | null>(null);
         const [isDragging, setIsDragging] = React.useState(false);
         
         const {
@@ -122,7 +122,7 @@ const CustomTreeItem = forwardRef<HTMLLIElement, UseTreeItem2Parameters>(
             setIsDragging(false);
         };
 
-        const handleDragOver = (e: React.DragEvent) => {
+        const handleDragOver = async (e: React.DragEvent) => {
             e.preventDefault();
             e.stopPropagation(); // Prevent event bubbling to parent nodes
             e.dataTransfer.dropEffect = 'move';
@@ -136,7 +136,32 @@ const CustomTreeItem = forwardRef<HTMLLIElement, UseTreeItem2Parameters>(
             } else if (y > (height * 2) / 3) {
                 setDragOver('bottom');
             } else {
-                setDragOver('center');
+                // Check if this is a valid drop target for center drop
+                const draggedItemId = e.dataTransfer.getData('text/plain');
+                if (draggedItemId && draggedItemId !== itemId) {
+                    try {
+                        const draggedNodeM = tree.treeM.getNode(draggedItemId);
+                        const targetNodeM = tree.treeM.getNode(itemId);
+                        
+                        const draggedNodeTypeName = draggedNodeM.nodeTypeName();
+                        const targetNodeTypeName = targetNodeM.nodeTypeName();
+                        
+                        // Get target node type to check allowed children types
+                        const targetNodeType = await tree.treeM.supportedNodesTypes(targetNodeTypeName);
+                        const allowedChildTypes = targetNodeType.allowedChildrenTypes;
+                        
+                        if (allowedChildTypes.includes(draggedNodeTypeName)) {
+                            setDragOver('center');
+                        } else {
+                            setDragOver('invalid');
+                        }
+                    } catch (error) {
+                        console.warn('Error checking drag compatibility:', error);
+                        setDragOver('center'); // Fallback to allow drop, let handleDrop decide
+                    }
+                } else {
+                    setDragOver('center');
+                }
             }
         };
 
@@ -153,12 +178,18 @@ const CustomTreeItem = forwardRef<HTMLLIElement, UseTreeItem2Parameters>(
         // Check if this item is currently selected
         const isSelected = selectedNode && selectedNode.id === itemId;
 
-        const handleDrop = (e: React.DragEvent) => {
+        const handleDrop = async (e: React.DragEvent) => {
             e.preventDefault();
             e.stopPropagation(); // Prevent event bubbling to parent nodes
             const draggedItemId = e.dataTransfer.getData('text/plain');
             
             if (draggedItemId === itemId) {
+                setDragOver(null);
+                return;
+            }
+
+            // Don't allow drop if dragOver state is invalid
+            if (dragOver === 'invalid') {
                 setDragOver(null);
                 return;
             }
@@ -172,6 +203,24 @@ const CustomTreeItem = forwardRef<HTMLLIElement, UseTreeItem2Parameters>(
 
                 if (dragOver === 'center') {
                     // Drop as child of target node
+                    
+                    // Check if target node allows this node type as child
+                    const draggedNodeM = tree.treeM.getNode(draggedItemId);
+                    const targetNodeM = tree.treeM.getNode(itemId);
+                    
+                    const draggedNodeTypeName = draggedNodeM.nodeTypeName();
+                    const targetNodeTypeName = targetNodeM.nodeTypeName();
+                    
+                    // Get target node type to check allowed children types
+                    const targetNodeType = await tree.treeM.supportedNodesTypes(targetNodeTypeName);
+                    const allowedChildTypes = targetNodeType.allowedChildrenTypes;
+                    
+                    if (!allowedChildTypes.includes(draggedNodeTypeName)) {
+                        console.warn(`Cannot drop ${draggedNodeTypeName} into ${targetNodeTypeName}. Allowed types: ${allowedChildTypes.join(', ')}`);
+                        setDragOver(null);
+                        return;
+                    }
+                    
                     const isCrossSubtree = currentParentId !== itemId;
                     
                     if (isCrossSubtree) {
@@ -265,9 +314,12 @@ const CustomTreeItem = forwardRef<HTMLLIElement, UseTreeItem2Parameters>(
                 <TreeItem2Content 
                     {...contentProps}
                     style={{
-                        backgroundColor: dragOver === 'center' ? 'rgba(0, 0, 0, 0.04)' : 'transparent',
+                        backgroundColor: dragOver === 'center' ? 'rgba(0, 0, 0, 0.04)' : 
+                                       dragOver === 'invalid' ? 'rgba(244, 67, 54, 0.08)' : 'transparent',
                         opacity: isDragging ? 0.5 : 1,
-                        transition: 'opacity 0.2s ease',
+                        transition: 'opacity 0.2s ease, background-color 0.2s ease',
+                        border: dragOver === 'invalid' ? '2px dashed #f44336' : 'none',
+                        borderRadius: dragOver === 'invalid' ? '4px' : '0',
                     }}
                 >
                     <TreeItem2IconContainer {...getIconContainerProps()}>
