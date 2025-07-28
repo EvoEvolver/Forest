@@ -329,7 +329,8 @@ export const UserTreesList = ({}) => {
                     <Box sx={{
                         width: '100%',
                         overflow: 'auto',
-                        flexGrow: 1,
+                        flex: 1,
+                        minHeight: 0,
                         '& .MuiTable-root': {
                             fontSize: { xs: '0.7rem', md: '0.8rem' }
                         }

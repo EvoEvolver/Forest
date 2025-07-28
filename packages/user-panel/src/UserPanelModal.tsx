@@ -77,35 +77,17 @@ export const UserPanelModal: React.FC<UserPanelModalProps> = ({ open, onClose })
             {/* Modal Content */}
             <DialogContent
                 sx={{
-                    padding: 0,
+                    padding: 1,
+                    margin: 0,
                     height: '100%',
                     overflow: 'hidden',
                     backgroundColor: '#f5f5f5'
                 }}
             >
-                <Box
-                    sx={{
-                        height: '100%',
-                        overflow: 'auto',
-                        '&::-webkit-scrollbar': {
-                            width: '8px',
-                        },
-                        '&::-webkit-scrollbar-track': {
-                            background: 'rgba(0,0,0,0.1)',
-                        },
-                        '&::-webkit-scrollbar-thumb': {
-                            background: 'rgba(0,0,0,0.3)',
-                            borderRadius: '4px',
-                        },
-                        '&::-webkit-scrollbar-thumb:hover': {
-                            background: 'rgba(0,0,0,0.4)',
-                        },
-                    }}
-                >
-                    {/* Render UserPanel without the height constraint */}
-                    <Box sx={{ minHeight: '100%' }}>
-                        <UserPanel />
-                    </Box>
+
+                {/* Render UserPanel with full height */}
+                <Box sx={{ height: '100%', padding: 0 }}>
+                    <UserPanel />
                 </Box>
             </DialogContent>
         </Dialog>

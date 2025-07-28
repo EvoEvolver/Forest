@@ -241,17 +241,13 @@ export const UserPanel = ({}) => {
     return (
         <Box
             sx={{
-                padding: { xs: 2, sm: 3 },
+                padding: { xs: 1, sm: 5 },
                 height: '100%',
-                overflow: 'hidden',
-                display: 'flex',
-                flexDirection: 'column'
             }}
         >
             <Grid container spacing={3} sx={{ 
-                flexGrow: 1,
+                height: '100%',
                 overflow: 'hidden',
-                maxWidth: '100%',
                 margin: 0,
                 width: '100%'
             }}>
@@ -263,110 +259,112 @@ export const UserPanel = ({}) => {
                         lg: 3
                     }}
                     sx={{
+                        height: '100%',
                         display: 'flex',
-                        flexDirection: 'column',
-                        minHeight: 0
+                        flexDirection: 'column'
                     }}
                 >
-                    <DashboardCard title="Profile">
-                        <Box sx={{textAlign: 'center', py: { xs: 1, md: 2 }}}>
-                            <Box sx={{position: 'relative', display: 'inline-block', mb: { xs: 1, md: 2 }}}>
-                                <Tooltip title="Click to change avatar">
-                                    <Avatar
-                                        src={avatarUrl || undefined}
-                                        sx={{
-                                            width: { xs: 60, md: 80 },
-                                            height: { xs: 60, md: 80 },
-                                            cursor: isUploadingAvatar ? 'default' : 'pointer',
-                                            '&:hover': {
-                                                opacity: isUploadingAvatar ? 1 : 0.8
-                                            }
-                                        }}
-                                        alt="User Avatar"
-                                        onClick={handleAvatarClick}
-                                    >
-                                        {!avatarUrl && user?.name?.charAt(0)}
-                                    </Avatar>
-                                </Tooltip>
-                                {isUploadingAvatar && (
-                                    <Box
+                    <AuthGuard>
+                        <DashboardCard title="Profile">
+                            <Box sx={{textAlign: 'center', py: { xs: 1, md: 2 }}}>
+                                <Box sx={{position: 'relative', display: 'inline-block', mb: { xs: 1, md: 2 }}}>
+                                    <Tooltip title="Click to change avatar">
+                                        <Avatar
+                                            src={avatarUrl || undefined}
+                                            sx={{
+                                                width: { xs: 60, md: 80 },
+                                                height: { xs: 60, md: 80 },
+                                                cursor: isUploadingAvatar ? 'default' : 'pointer',
+                                                '&:hover': {
+                                                    opacity: isUploadingAvatar ? 1 : 0.8
+                                                }
+                                            }}
+                                            alt="User Avatar"
+                                            onClick={handleAvatarClick}
+                                        >
+                                            {!avatarUrl && user?.name?.charAt(0)}
+                                        </Avatar>
+                                    </Tooltip>
+                                    {isUploadingAvatar && (
+                                        <Box
+                                            sx={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                right: 0,
+                                                bottom: 0,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                                                borderRadius: '50%'
+                                            }}
+                                        >
+                                            <CircularProgress size={24} sx={{color: 'white'}}/>
+                                        </Box>
+                                    )}
+                                    <IconButton
                                         sx={{
                                             position: 'absolute',
-                                            top: 0,
-                                            left: 0,
-                                            right: 0,
-                                            bottom: 0,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                                            borderRadius: '50%'
+                                            bottom: -5,
+                                            right: -5,
+                                            backgroundColor: 'primary.main',
+                                            color: 'white',
+                                            width: 28,
+                                            height: 28,
+                                            '&:hover': {
+                                                backgroundColor: 'primary.dark'
+                                            }
                                         }}
+                                        size="small"
+                                        onClick={handleAvatarClick}
+                                        disabled={isUploadingAvatar}
                                     >
-                                        <CircularProgress size={24} sx={{color: 'white'}}/>
-                                    </Box>
+                                        <PhotoCameraIcon fontSize="small"/>
+                                    </IconButton>
+                                </Box>
+
+                                {avatarUploadError && (
+                                    <Alert severity="error" sx={{mb: 2, fontSize: '0.75rem'}}>
+                                        {avatarUploadError}
+                                    </Alert>
                                 )}
-                                <IconButton
-                                    sx={{
-                                        position: 'absolute',
-                                        bottom: -5,
-                                        right: -5,
-                                        backgroundColor: 'primary.main',
-                                        color: 'white',
-                                        width: 28,
-                                        height: 28,
-                                        '&:hover': {
-                                            backgroundColor: 'primary.dark'
-                                        }
-                                    }}
-                                    size="small"
-                                    onClick={handleAvatarClick}
-                                    disabled={isUploadingAvatar}
-                                >
-                                    <PhotoCameraIcon fontSize="small"/>
-                                </IconButton>
-                            </Box>
 
-                            {avatarUploadError && (
-                                <Alert severity="error" sx={{mb: 2, fontSize: '0.75rem'}}>
-                                    {avatarUploadError}
-                                </Alert>
-                            )}
-
-                            <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: { xs: 1, md: 2 }}}>
-                                <Typography variant="h5" component="div" sx={{
-                                    fontSize: { xs: '1rem', md: '1.25rem' },
+                                <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: { xs: 1, md: 2 }}}>
+                                    <Typography variant="h5" component="div" sx={{
+                                        fontSize: { xs: '1rem', md: '1.25rem' },
+                                        textAlign: 'center',
+                                        wordBreak: 'break-word'
+                                    }}>
+                                        {user?.name}
+                                    </Typography>
+                                    <IconButton
+                                        size="small"
+                                        onClick={handleEditClick}
+                                        sx={{p: 0.5}}
+                                    >
+                                        <EditIcon fontSize="small"/>
+                                    </IconButton>
+                                </Box>
+                                <Typography variant="body2" color="text.secondary" gutterBottom sx={{
+                                    fontSize: { xs: '0.75rem', md: '0.875rem' },
                                     textAlign: 'center',
                                     wordBreak: 'break-word'
                                 }}>
-                                    {user?.name}
+                                    {user?.email}
                                 </Typography>
-                                <IconButton
-                                    size="small"
-                                    onClick={handleEditClick}
-                                    sx={{p: 0.5}}
-                                >
-                                    <EditIcon fontSize="small"/>
-                                </IconButton>
-                            </Box>
-                            <Typography variant="body2" color="text.secondary" gutterBottom sx={{
-                                fontSize: { xs: '0.75rem', md: '0.875rem' },
-                                textAlign: 'center',
-                                wordBreak: 'break-word'
-                            }}>
-                                {user?.email}
-                            </Typography>
 
-                            {/* Hidden file input */}
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="image/jpeg,image/jpg,image/png,image/webp"
-                                style={{display: 'none'}}
-                                onChange={handleAvatarUpload}
-                            />
-                        </Box>
-                    </DashboardCard>
+                                {/* Hidden file input */}
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                                    style={{display: 'none'}}
+                                    onChange={handleAvatarUpload}
+                                />
+                            </Box>
+                        </DashboardCard>
+                    </AuthGuard>
                 </Grid>
 
                 {/* Right Side - Trees Lists */}
@@ -377,36 +375,37 @@ export const UserPanel = ({}) => {
                         lg: 9
                     }}
                     sx={{
+                        height: '100%',
                         display: 'flex',
-                        flexDirection: 'column',
-                        minHeight: 0,
-                        overflow: 'hidden'
+                        flexDirection: 'column'
                     }}
                 >
                     <AuthGuard>
-                        <Grid container spacing={2} sx={{ 
-                            flexGrow: 1,
-                            overflow: 'hidden',
-                            margin: 0,
-                            width: '100%'
+                        <Box sx={{ 
+                            display: 'flex',
+                            flexDirection: 'column',
+                            height: '100%',
+                            minHeight: '400px',
+                            gap: 2,
+                            overflow: 'hidden'
                         }}>
-                            <Grid size={12} sx={{
-                                display: 'flex',
-                                flexDirection: 'column',
+                            <Box sx={{
+                                flex: '1 1 0',
                                 minHeight: 0,
-                                flex: '1 1 50%'
+                                display: 'flex',
+                                flexDirection: 'column'
                             }}>
                                 <UserTreesList/>
-                            </Grid>
-                            <Grid size={12} sx={{
-                                display: 'flex',
-                                flexDirection: 'column',
+                            </Box>
+                            <Box sx={{
+                                flex: '1 1 0',
                                 minHeight: 0,
-                                flex: '1 1 50%'
+                                display: 'flex',
+                                flexDirection: 'column'
                             }}>
                                 <VisitedTreesList/>
-                            </Grid>
-                        </Grid>
+                            </Box>
+                        </Box>
                     </AuthGuard>
                 </Grid>
             </Grid>
