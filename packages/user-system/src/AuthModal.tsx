@@ -17,6 +17,7 @@ import EmailIcon from '@mui/icons-material/Email'
 import ParkIcon from '@mui/icons-material/Park'
 import {authModalOpenAtom, supabaseClientAtom} from './authStates';
 import {useAtomValue} from "jotai";
+import {saveUrlBeforeLogin} from "./authUtils";
 
 const AuthModal: React.FC = () => {
     const [authModalOpen, setAuthModalOpen] = useAtom(authModalOpenAtom)
@@ -29,6 +30,9 @@ const AuthModal: React.FC = () => {
     }
 
     const handleGithubLogin = async () => {
+        // Save current URL before redirecting to GitHub
+        saveUrlBeforeLogin()
+        
         const { error } = await supabaseClient.auth.signInWithOAuth({
             provider: 'github',
             options: {
@@ -44,6 +48,9 @@ const AuthModal: React.FC = () => {
         e.preventDefault()
         if (!email) return
 
+        // Save current URL before sending magic link
+        saveUrlBeforeLogin()
+        
         setLoading(true)
         const { error } = await supabaseClient.auth.signInWithOtp({
             email,

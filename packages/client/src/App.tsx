@@ -12,7 +12,7 @@ import {UserPanelModal} from "../../user-panel/src/UserPanelModal";
 import {getPastelHexFromUsername, getRandomAnimal} from "@forest/user-system/src/helper";
 import {recordTreeVisit} from "./TreeState/treeVisitService";
 import {treeAtom} from "./TreeState/TreeState";
-import {parseOAuthTokensFromHash, clearOAuthTokensFromUrl, hasOAuthTokensInUrl} from "../../user-system/src/authUtils";
+import {parseOAuthTokensFromHash, clearOAuthTokensFromUrl, hasOAuthTokensInUrl, clearSavedUrlBeforeLogin} from "../../user-system/src/authUtils";
 
 // @ts-ignore
 const FlowVisualizer = lazy(() => import('./FlowView'));
@@ -88,6 +88,8 @@ export default function App() {
                         console.log('OAuth session established successfully:', data.session.user.email)
                         // Clear tokens from URL
                         clearOAuthTokensFromUrl()
+                        // Clear any saved pre-login URL since login was successful
+                        clearSavedUrlBeforeLogin()
                     } else {
                         console.warn('No session returned from setSession')
                     }

@@ -3,6 +3,7 @@ import {Box, Button, Container, Paper, Stack, Typography} from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import {setupSupabaseClient} from "./supabase";
+import {getRedirectUrlAfterLogin, clearSavedUrlBeforeLogin} from "./authUtils";
 
 const AuthSuccessPage: React.FC = () => {
     // Handle authentication on this page
@@ -27,10 +28,17 @@ const AuthSuccessPage: React.FC = () => {
 
     const handleGoBack = () => {
         try {
-            // Simple browser back navigation
-            window.history.go(-1)
+            // Get the saved URL from before login
+            const redirectUrl = getRedirectUrlAfterLogin()
+            console.log('Redirecting to saved URL:', redirectUrl)
+            
+            // Clear the saved URL from localStorage
+            clearSavedUrlBeforeLogin()
+            
+            // Redirect to the saved URL
+            window.location.href = redirectUrl
         } catch (error) {
-            console.error('Error going back:', error)
+            console.error('Error redirecting to saved URL:', error)
             // Fallback to main app
             window.location.href = window.location.origin
         }
@@ -134,7 +142,7 @@ const AuthSuccessPage: React.FC = () => {
                                 }
                             }}
                         >
-                            Go Back
+                            Continue to App
                         </Button>
                     </Stack>
 

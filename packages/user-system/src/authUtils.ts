@@ -69,3 +69,50 @@ export function clearOAuthTokensFromUrl(): void {
 export function hasOAuthTokensInUrl(): boolean {
     return window.location.hash.includes('access_token=');
 }
+
+/**
+ * Save the current URL to localStorage before login
+ * This allows us to redirect back to the original page after authentication
+ */
+export function saveUrlBeforeLogin(): void {
+    const currentUrl = window.location.href;
+    localStorage.setItem('treer_pre_login_url', currentUrl);
+    console.log('Saved pre-login URL:', currentUrl);
+}
+
+/**
+ * Get the saved URL from before login
+ * Returns null if no URL was saved
+ */
+export function getSavedUrlBeforeLogin(): string | null {
+    return localStorage.getItem('treer_pre_login_url');
+}
+
+/**
+ * Clear the saved URL from localStorage
+ */
+export function clearSavedUrlBeforeLogin(): void {
+    localStorage.removeItem('treer_pre_login_url');
+}
+
+/**
+ * Get the URL to redirect to after successful login
+ * Returns the saved URL if it exists, otherwise returns the home page
+ */
+export function getRedirectUrlAfterLogin(): string {
+    const savedUrl = getSavedUrlBeforeLogin();
+    if (savedUrl) {
+        // Validate that the saved URL is from the same origin for security
+        try {
+            const url = new URL(savedUrl);
+            if (url.origin === window.location.origin) {
+                return savedUrl;
+            }
+        } catch (error) {
+            console.warn('Invalid saved URL:', savedUrl);
+        }
+    }
+    
+    // Fallback to home page
+    return window.location.origin;
+}
