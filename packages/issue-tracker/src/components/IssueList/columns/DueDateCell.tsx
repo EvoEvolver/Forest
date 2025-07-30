@@ -20,7 +20,7 @@ const DueDateCell: React.FC<DueDateCellProps> = ({value}) => {
                 fontWeight: isOverdue || isUpcoming ? 'bold' : 'normal',
             }}
         >
-      {dueDate.toLocaleDateString()} {dueDate.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
+      {dueDate.toLocaleDateString()}
     </span>
     );
 };

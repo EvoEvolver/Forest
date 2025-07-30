@@ -19,10 +19,10 @@ import {Edit as EditIcon, PhotoCamera as PhotoCameraIcon} from '@mui/icons-mater
 import {userAtom} from "@forest/user-system/src/authStates";
 import {UserTreesList} from './UserTreesList';
 import {useAtom} from "jotai/index";
-import {VisitedTreesList} from './VisitedTreesList';
-import DashboardCard from './DashboardCard';
+import {MyAssignedIssues} from './MyAssignedIssues';
 import {setupSupabaseClient} from '@forest/user-system/src/supabase';
 import {AuthGuard} from './AuthGuard';
+import DashboardCard from './DashboardCard';
 
 export const UserPanel = ({}) => {
     const [user, setUser] = useAtom(userAtom);
@@ -403,7 +403,7 @@ export const UserPanel = ({}) => {
                                 display: 'flex',
                                 flexDirection: 'column'
                             }}>
-                                <VisitedTreesList/>
+                                <MyAssignedIssues/>
                             </Box>
                         </Box>
                     </AuthGuard>

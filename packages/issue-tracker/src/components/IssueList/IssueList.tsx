@@ -13,9 +13,20 @@ interface IssueListProps {
     nodeId?: string;
     simple?: boolean;
     treeM?: TreeM;
+    hideFilters?: boolean;
+    defaultAssigneeFilter?: string;
+    defaultShowResolved?: boolean;
 }
 
-const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false, treeM}) => {
+const IssueList: React.FC<IssueListProps> = ({
+    treeId, 
+    nodeId, 
+    simple = false, 
+    treeM,
+    hideFilters = false,
+    defaultAssigneeFilter = 'all',
+    defaultShowResolved = false
+}) => {
     const [issues, setIssues] = useState<Issue[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
@@ -25,13 +36,13 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false, tr
     const [filteredIssues, setFilteredIssues] = useState<Issue[]>([]);
 
     // Filter and sort states for large version
-    const [assigneeFilter, setAssigneeFilter] = useState<string>('all'); // 'all', 'me', 'specific-user-id'
+    const [assigneeFilter, setAssigneeFilter] = useState<string>(defaultAssigneeFilter); // 'all', 'me', 'specific-user-id'
     const [creatorFilter, setCreatorFilter] = useState<string>('all'); // 'all', 'me', 'specific-user-id'
     const [sortBy, setSortBy] = useState<string>('smart'); // 'smart', 'deadline', 'created', 'updated'
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
     
     // Filter states for simple mode
-    const [showResolved, setShowResolved] = useState<boolean>(false);
+    const [showResolved, setShowResolved] = useState<boolean>(defaultShowResolved);
     const [showSubtreeIssues, setShowSubtreeIssues] = useState<boolean>(false);
 
     const issueService = useAtomValue(issueServiceAtom);
@@ -150,6 +161,17 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false, tr
             // Simple mode filters
             if (!showResolved) {
                 filtered = filtered.filter(issue => issue.status !== 'resolved' && issue.status !== 'closed');
+            }
+            
+            // Apply assignee filter even in simple mode
+            if (assigneeFilter === 'me') {
+                filtered = filtered.filter(issue =>
+                    issue.assignees?.some(assignee => assignee.userId === currentUser.id)
+                );
+            } else if (assigneeFilter !== 'all') {
+                filtered = filtered.filter(issue =>
+                    issue.assignees?.some(assignee => assignee.userId === assigneeFilter)
+                );
             }
             // Note: showSubtreeIssues functionality will be implemented later when subtree logic is added
         } else {
@@ -331,6 +353,7 @@ const IssueList: React.FC<IssueListProps> = ({treeId, nodeId, simple = false, tr
                     issues={filteredIssues}
                     loading={loading}
                     simple={simple}
+                    hideFilters={hideFilters}
                     onIssueSelect={setSelectedIssue}
                     onIssueEdit={handleEditIssue}
                     onIssueDelete={handleDeleteIssue}

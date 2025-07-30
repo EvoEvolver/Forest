@@ -6,6 +6,7 @@
     "dev": "vite"
   },
   "dependencies": {
+    "@forest/issue-tracker": "workspace:*",
     "@forest/node-types": "workspace:*",
     "@forest/schema": "workspace:*",
     "@forest/user-system": "workspace:*",

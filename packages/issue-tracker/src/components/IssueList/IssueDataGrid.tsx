@@ -35,6 +35,7 @@ interface IssueDataGridProps {
     issues: Issue[];
     loading: boolean;
     simple?: boolean;
+    hideFilters?: boolean;
     onIssueSelect: (issue: Issue) => void;
     onIssueEdit: (issue: Issue) => void;
     onIssueDelete: (issueId: string) => void;
@@ -60,6 +61,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                                                          issues,
                                                          loading,
                                                          simple = true,
+                                                         hideFilters = false,
                                                          onIssueSelect,
                                                          onIssueEdit,
                                                          onIssueDelete,
@@ -339,6 +341,15 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
             renderCell: (params: GridRenderCellParams) => (
                 <AssigneesCell value={params.value} treeId={treeId}/>
             ),
+        },
+        {
+            field: 'dueDate',
+            headerName: 'Due Date',
+            width: 120,
+            minWidth: 120,
+            renderCell: (params: GridRenderCellParams) => (
+                <DueDateCell value={params.value}/>
+            ),
         }
     ] : [
         {
@@ -500,7 +511,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
 
     return (
         <Box ref={containerRef} sx={{height: '100%', display: 'flex', flexDirection: 'column'}}>
-            <FilterSortControls/>
+            {!hideFilters && <FilterSortControls/>}
             <DataGrid
                 rows={issues}
                 columns={columns}
