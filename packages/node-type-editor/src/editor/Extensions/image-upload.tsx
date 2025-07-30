@@ -1,6 +1,7 @@
 import { Node, mergeAttributes, nodeInputRule } from '@tiptap/core';
 import { ReactNodeViewRenderer, NodeViewWrapper } from '@tiptap/react';
 import { Plugin } from '@tiptap/pm/state';
+import { NodeSelection } from '@tiptap/pm/state';
 import React, { useState, useCallback } from 'react';
 import { Box, CircularProgress, IconButton, Typography, Alert } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -99,66 +100,90 @@ const ImageUploadComponent = ({ node, updateAttributes, deleteNode }) => {
   // If image is successfully uploaded, show the image
   if (src && !uploading && !error) {
     return (
-      <NodeViewWrapper>
-        <Box 
-          position="relative" 
-          display="inline-block"
+      <NodeViewWrapper
+        as="span"
+        style={{ 
+          display: 'inline-block',
+          position: 'relative',
+          verticalAlign: 'baseline'
+        }}
+      >
+        <img 
+          src={src} 
+          alt={alt || 'Uploaded image'} 
+          style={{ 
+            maxWidth: '100%', 
+            height: 'auto',
+            borderRadius: '4px',
+            verticalAlign: 'baseline',
+            display: 'inline-block'
+          }} 
+          onLoad={() => {
+            // Ensure cursor positioning works after image loads
+            const selection = window.getSelection();
+            if (selection && selection.rangeCount > 0) {
+              // Force a repaint to fix cursor positioning
+              const range = selection.getRangeAt(0);
+              selection.removeAllRanges();
+              selection.addRange(range);
+            }
+          }}
+        />
+        <IconButton
+          className="delete-button"
+          size="small"
+          onClick={handleDelete}
           sx={{
-            '&:hover .delete-button': {
-              opacity: 1
+            position: 'absolute',
+            top: 4,
+            right: 4,
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            color: 'white',
+            opacity: 0,
+            transition: 'opacity 0.2s',
+            width: 20,
+            height: 20,
+            minWidth: 20,
+            '&:hover': {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              opacity: 1,
+            },
+            '.image-wrapper:hover &': {
+              opacity: 1,
             }
           }}
         >
-          <img 
-            src={src} 
-            alt={alt || 'Uploaded image'} 
-            style={{ 
-              maxWidth: '100%', 
-              height: 'auto',
-              borderRadius: '4px'
-            }} 
-          />
-          <IconButton
-            className="delete-button"
-            size="small"
-            onClick={handleDelete}
-            sx={{
-              position: 'absolute',
-              top: 8,
-              right: 8,
-              backgroundColor: 'rgba(0, 0, 0, 0.6)',
-              color: 'white',
-              opacity: 0,
-              transition: 'opacity 0.2s',
-              '&:hover': {
-                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-              }
-            }}
-          >
-            <DeleteIcon fontSize="small" />
-          </IconButton>
-        </Box>
+          <DeleteIcon sx={{ fontSize: 14 }} />
+        </IconButton>
       </NodeViewWrapper>
     );
   }
 
   // Show upload progress or error state
   return (
-    <NodeViewWrapper>
+    <NodeViewWrapper
+      as="span"
+      style={{ 
+        display: 'inline-block',
+        verticalAlign: 'baseline'
+      }}
+    >
       <Box
         sx={{
           border: dragOver ? '2px dashed #1976d2' : '2px dashed #ccc',
           borderRadius: 2,
-          p: 3,
+          p: 2,
           textAlign: 'center',
           backgroundColor: dragOver ? 'rgba(25, 118, 210, 0.1)' : 'rgba(0, 0, 0, 0.02)',
-          minHeight: 120,
-          display: 'flex',
+          minHeight: uploading || error ? 60 : 80,
+          minWidth: 200,
+          display: 'inline-flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           transition: 'all 0.2s',
-          cursor: 'pointer'
+          cursor: 'pointer',
+          verticalAlign: 'baseline'
         }}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -169,10 +194,10 @@ const ImageUploadComponent = ({ node, updateAttributes, deleteNode }) => {
             <CircularProgress 
               variant={uploadProgress > 0 ? "determinate" : "indeterminate"}
               value={uploadProgress}
-              size={40}
-              sx={{ mb: 2 }}
+              size={24}
+              sx={{ mb: 1 }}
             />
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="caption" color="text.secondary">
               Uploading... {uploadProgress > 0 && `${Math.round(uploadProgress)}%`}
             </Typography>
           </>
@@ -180,23 +205,23 @@ const ImageUploadComponent = ({ node, updateAttributes, deleteNode }) => {
 
         {error && (
           <>
-            <Alert severity="error" sx={{ mb: 2, width: '100%' }}>
+            <Typography variant="caption" color="error" sx={{ mb: 1, maxWidth: 180 }}>
               {error}
-            </Alert>
-            <Box>
-              <IconButton onClick={handleRetry} color="primary">
-                <RetryIcon />
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 0.5 }}>
+              <IconButton onClick={handleRetry} color="primary" size="small">
+                <RetryIcon fontSize="small" />
               </IconButton>
-              <IconButton onClick={handleDelete} color="error">
-                <DeleteIcon />
+              <IconButton onClick={handleDelete} color="error" size="small">
+                <DeleteIcon fontSize="small" />
               </IconButton>
             </Box>
           </>
         )}
 
         {!uploading && !error && (
-          <Typography variant="body2" color="text.secondary">
-            Drop an image here or paste from clipboard
+          <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 180, lineHeight: 1.2 }}>
+            Drop image here or paste from clipboard
           </Typography>
         )}
       </Box>
@@ -309,9 +334,15 @@ export const ImageUploadExtension = Node.create<ImageUploadOptions>({
     };
   },
 
-  group: 'block',
+  group: 'inline',
+
+  inline: true,
 
   draggable: true,
+
+  selectable: true,
+
+  atom: true,
 
   addAttributes() {
     return {
@@ -336,13 +367,30 @@ export const ImageUploadExtension = Node.create<ImageUploadOptions>({
   parseHTML() {
     return [
       {
-        tag: 'div[data-type="image-upload"]',
+        tag: 'span[data-type="image-upload"]',
+      },
+      {
+        tag: 'img[src]',
+        getAttrs: (element) => {
+          const src = (element as HTMLImageElement).getAttribute('src');
+          const alt = (element as HTMLImageElement).getAttribute('alt');
+          return src ? { src, alt, uploading: false, error: null } : false;
+        },
       },
     ];
   },
 
-  renderHTML({ HTMLAttributes }) {
-    return ['div', mergeAttributes({ 'data-type': 'image-upload' }, HTMLAttributes)];
+  renderHTML({ HTMLAttributes, node }) {
+    // If the image is uploaded successfully, render as img tag
+    if (node.attrs.src && !node.attrs.uploading && !node.attrs.error) {
+      return ['img', mergeAttributes(HTMLAttributes, {
+        src: node.attrs.src,
+        alt: node.attrs.alt || 'Uploaded image',
+        style: 'max-width: 100%; height: auto; border-radius: 4px; vertical-align: baseline;'
+      })];
+    }
+    // Otherwise render as placeholder span
+    return ['span', mergeAttributes({ 'data-type': 'image-upload' }, HTMLAttributes)];
   },
 
   addNodeView() {
@@ -373,10 +421,50 @@ export const ImageUploadExtension = Node.create<ImageUploadOptions>({
     ];
   },
 
-  // Handle paste events
+  // Handle paste events and improve cursor navigation
   addProseMirrorPlugins() {
     const extension = this;
     return [
+      // Keyboard navigation plugin for better cursor handling
+      new Plugin({
+        props: {
+          handleKeyDown: (view, event) => {
+            // Handle arrow keys around images for better navigation
+            if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+              const { state } = view;
+              const { selection } = state;
+              
+              // Check if we're at the edge of an image node
+              const $pos = event.key === 'ArrowLeft' ? selection.$from : selection.$to;
+              const nodePos = event.key === 'ArrowLeft' ? $pos.pos - 1 : $pos.pos;
+              const nodeAtPos = state.doc.nodeAt(nodePos);
+              
+              if (nodeAtPos && nodeAtPos.type === extension.type) {
+                // We're next to an image, let the default behavior handle it
+                return false;
+              }
+            }
+            
+            // Handle delete key to prevent accidental image deletion
+            if (event.key === 'Delete' || event.key === 'Backspace') {
+              const { state } = view;
+              const { selection } = state;
+              
+              if (selection.empty && selection instanceof NodeSelection) {
+                const node = selection.node;
+                if (node.type === extension.type && node.attrs.src) {
+                  // Prevent accidental deletion of images, require explicit delete button click
+                  event.preventDefault();
+                  return true;
+                }
+              }
+            }
+            
+            return false;
+          },
+        },
+      }),
+      // Paste handling plugin
       new Plugin({
         props: {
           handlePaste: (view, event, slice) => {

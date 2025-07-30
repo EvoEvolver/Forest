@@ -5,7 +5,7 @@ import {YjsProviderAtom} from "@forest/client/src/TreeState/YjsConnection";
 import {XmlFragment} from 'yjs';
 import Collaboration from '@tiptap/extension-collaboration'
 import {CollaborationCursor} from './Extensions/collaboration-cursor'
-import {BubbleMenu, EditorContent, useEditor} from '@tiptap/react'
+import {EditorContent, useEditor} from '@tiptap/react'
 import Document from '@tiptap/extension-document'
 import Paragraph from '@tiptap/extension-paragraph'
 import Text from '@tiptap/extension-text'
@@ -16,11 +16,6 @@ import Image from '@tiptap/extension-image'
 import {CommentExtension, makeOnCommentActivated} from './Extensions/comment'
 import {MathExtension} from '@aarkue/tiptap-math-extension'
 import Bold from '@tiptap/extension-bold'
-import {IconButton, Paper} from "@mui/material";
-import FormatBoldIcon from '@mui/icons-material/FormatBold';
-import CommentIcon from '@mui/icons-material/Comment';
-import LinkIcon from '@mui/icons-material/Link';
-import ImageIcon from '@mui/icons-material/Image';
 import {usePopper} from "react-popper";
 import {LinkExtension, makeOnLinkActivated} from "./Extensions/link";
 import {ImageUploadExtension} from "./Extensions/image-upload";
@@ -95,6 +90,7 @@ export function makeEditor(yXML, provider, contentEditable, onCommentActivated, 
 }
 
 
+
 const EditorImpl = ({yXML, provider, dataLabel, node}) => {
     const [hoverElements, setHoverElements] = useState([]);
     const contentEditable = useContext(contentEditableContext);
@@ -117,21 +113,6 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
         },
     });
 
-    const handleClickComment = () => {
-        const id = `comment-${Date.now()}`;
-        editor?.commands.setComment(id, "");
-        onCommentActivated(id, editor, {"inputOn": true});
-    };
-
-    const handleClickLink = () => {
-        const href = " ";
-        editor?.commands.setLink({href});
-        onLinkActivated(href, editor, {"inputOn": true});
-    };
-
-    const handleClickImage = () => {
-        editor?.commands.insertImageUpload({ uploading: false });
-    };
 
     if (!editor) {
         return null;
@@ -139,26 +120,6 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
     return (
         <div className="column-half">
             <EditorContent editor={editor} className="main-group"/>
-            <BubbleMenu editor={editor} tippyOptions={{duration: 100}}>
-                <Paper elevation={3} sx={{ backgroundColor: 'white', padding: 0.5, display: 'flex', gap: 0.5 }}>
-                    <IconButton
-                        size="small"
-                        onClick={() => editor.chain().focus().toggleBold().run()}
-                        sx={{ color: 'black' }}
-                    >
-                        <FormatBoldIcon />
-                    </IconButton>
-                    <IconButton size="small" onClick={handleClickComment} sx={{ color: 'black' }}>
-                        <CommentIcon />
-                    </IconButton>
-                    <IconButton size="small" onClick={handleClickLink} sx={{ color: 'black' }}>
-                        <LinkIcon />
-                    </IconButton>
-                    <IconButton size="small" onClick={handleClickImage} sx={{ color: 'black' }}>
-                        <ImageIcon />
-                    </IconButton>
-                </Paper>
-            </BubbleMenu>
             <HoverElements hoverElements={hoverElements} editor={editor}/>
         </div>
     );

@@ -142,3 +142,37 @@ body {
     overflow: hidden;
 }
 
+/* Image upload and inline image styles */
+.tiptap img {
+    max-width: 100%;
+    height: auto;
+    vertical-align: baseline;
+    display: inline-block;
+    border-radius: 4px;
+}
+
+.tiptap [data-type="image-upload"] {
+    display: inline-block;
+    vertical-align: baseline;
+}
+
+/* Ensure cursor is visible around images */
+.ProseMirror .ProseMirror-selectednode {
+    outline: 2px solid #68CEF8;
+    border-radius: 4px;
+}
+
+/* Better cursor positioning for inline images */
+.tiptap p {
+    line-height: 1.6;
+}
+
+/* Ensure images don't break text flow */
+.tiptap span[data-type="image-upload"] {
+    margin: 0 2px;
+}
+
+.tiptap img {
+    margin: 0 2px;
+}
+

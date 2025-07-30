@@ -23,6 +23,7 @@ import InsertLinkIcon from '@mui/icons-material/InsertLink';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
+import ImageIcon from '@mui/icons-material/Image';
 import {NodeVM} from "@forest/schema";
 import {StageVersionDialog} from "./StageVersionDialog";
 import Slide from '@mui/material/Slide';
@@ -121,6 +122,14 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDrag
         toggleMarkedNode(node.id);
     };
 
+    const handleInsertImage = () => {
+        // Get the TipTap editor instance from the node's vdata using the standard key
+        const editor = node.vdata["tiptap_editor_ydatapaperEditor"];
+        if (editor && editor.commands) {
+            editor.commands.insertImageUpload({ uploading: false });
+        }
+    };
+
 
     const isMarked = markedNodes.has(node.id);
 
@@ -200,6 +209,21 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDrag
                     </IconButton>
                 </Tooltip>
 
+                {/* Insert Image - Only show for EditorNodeType */}
+                {node.nodeM.nodeTypeName() === 'EditorNodeType' && (
+                    <Tooltip title="Insert Image" placement="left">
+                        <IconButton
+                            size="small"
+                            onClick={handleInsertImage}
+                            sx={{
+                                color: theme.palette.info.main,
+                                '&:hover': {backgroundColor: theme.palette.secondary.light + '20'}
+                            }}
+                        >
+                            <ImageIcon fontSize="small"/>
+                        </IconButton>
+                    </Tooltip>
+                )}
 
                 {/* Delete Node */}
                 {node.nodeType.allowReshape && nodeChildren.length === 0 && (
