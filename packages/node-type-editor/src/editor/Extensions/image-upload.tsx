@@ -191,14 +191,38 @@ const ImageUploadComponent = ({ node, updateAttributes, deleteNode }) => {
       >
         {uploading && (
           <>
-            <CircularProgress 
-              variant={uploadProgress > 0 ? "determinate" : "indeterminate"}
-              value={uploadProgress}
-              size={24}
-              sx={{ mb: 1 }}
-            />
+            {uploadProgress > 0 ? (
+              <Box sx={{ position: 'relative', display: 'inline-flex', mb: 1 }}>
+                <CircularProgress 
+                  variant="determinate"
+                  value={uploadProgress}
+                  size={24}
+                />
+                <Box
+                  sx={{
+                    top: 0,
+                    left: 0,
+                    bottom: 0,
+                    right: 0,
+                    position: 'absolute',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Typography variant="caption" sx={{ fontSize: '8px', fontWeight: 'bold' }}>
+                    {`${Math.round(uploadProgress)}`}
+                  </Typography>
+                </Box>
+              </Box>
+            ) : (
+              <CircularProgress size={24} sx={{ mb: 1 }} />
+            )}
             <Typography variant="caption" color="text.secondary">
-              Uploading... {uploadProgress > 0 && `${Math.round(uploadProgress)}%`}
+              {uploadProgress > 0 
+                ? `Uploading ${Math.round(uploadProgress)}%` 
+                : 'Starting upload...'
+              }
             </Typography>
           </>
         )}
@@ -263,9 +287,36 @@ export const uploadImage = async (file: File, updateAttributes: (attrs: Partial<
     console.log('📤 Sending upload request to:', uploadUrl);
     console.log('📦 FormData prepared, file appended as "image"');
     
-    const response = await fetch(uploadUrl, {
-      method: 'POST',
-      body: formData,
+    // Use XMLHttpRequest for progress tracking
+    const response = await new Promise<Response>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          const progress = (event.loaded / event.total) * 100;
+          console.log(`📊 Upload progress: ${progress.toFixed(1)}%`);
+          updateAttributes({ uploadProgress: progress });
+        }
+      });
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          const response = new Response(xhr.responseText, {
+            status: xhr.status,
+            statusText: xhr.statusText
+          });
+          resolve(response);
+        } else {
+          reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
+        }
+      });
+
+      xhr.addEventListener('error', () => {
+        reject(new Error('Network error'));
+      });
+
+      xhr.open('POST', uploadUrl);
+      xhr.send(formData);
     });
 
     console.log('📨 Upload response received, status:', response.status);
