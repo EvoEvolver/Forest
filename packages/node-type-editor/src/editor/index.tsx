@@ -20,8 +20,10 @@ import {IconButton, Paper} from "@mui/material";
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import CommentIcon from '@mui/icons-material/Comment';
 import LinkIcon from '@mui/icons-material/Link';
+import ImageIcon from '@mui/icons-material/Image';
 import {usePopper} from "react-popper";
 import {LinkExtension, makeOnLinkActivated} from "./Extensions/link";
+import {ImageUploadExtension} from "./Extensions/image-upload";
 import {NodeVM} from "@forest/schema";
 import {contentEditableContext} from "@forest/schema/src/viewContext";
 import {Editor} from "@tiptap/core";
@@ -56,6 +58,7 @@ function makeExtensions(yXML, provider, onCommentActivated, onLinkActivated) {
         OrderedList,
         ListItem,
         Image,
+        ImageUploadExtension,
         Bold,
         MathExtension.configure({evaluation: false}),
         CommentExtension.configure({
@@ -126,6 +129,10 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
         onLinkActivated(href, editor, {"inputOn": true});
     };
 
+    const handleClickImage = () => {
+        editor?.commands.insertImageUpload({ uploading: false });
+    };
+
     if (!editor) {
         return null;
     }
@@ -146,6 +153,9 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
                     </IconButton>
                     <IconButton size="small" onClick={handleClickLink} sx={{ color: 'black' }}>
                         <LinkIcon />
+                    </IconButton>
+                    <IconButton size="small" onClick={handleClickImage} sx={{ color: 'black' }}>
+                        <ImageIcon />
                     </IconButton>
                 </Paper>
             </BubbleMenu>
