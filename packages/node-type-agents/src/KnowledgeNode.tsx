@@ -4,6 +4,9 @@ import * as Y from "yjs";
 import {Box, TextField, Typography, Link} from "@mui/material";
 import axios from "axios";
 
+// @ts-ignore
+const WORKER_URL = import.meta.env.VITE_WORKER_URL || "https://worker.treer.ai";
+
 // Separate component for URL configuration
 const UrlConfig: React.FC<{ node: NodeVM }> = ({ node }) => {
     const [url, setUrl] = useState<string>(
@@ -107,7 +110,7 @@ Parameter: "question" (string): The question to ask the knowledge source.`
         }
 
         try {
-            const response = await axios.post('https://worker.treer.ai/search_and_answer', {
+            const response = await axios.post(WORKER_URL+'/search_and_answer', {
                 question: question,
                 treeUrl: treeUrl
             });
