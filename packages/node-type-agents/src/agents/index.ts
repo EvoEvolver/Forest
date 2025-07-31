@@ -10,14 +10,17 @@ import {agentSessionState} from "../sessionState";
 import {AgentToolNodeType} from "../ToolNode";
 import {BaseMessage, NormalMessage, SystemMessage} from "@forest/agent-chat/src/MessageTypes";
 import {fetchChatResponse} from "@forest/agent-chat/src/llm";
+import {KnowledgeNodeType} from "../KnowledgeNode";
 
 async function getSystemMessage(nodeM: NodeM) {
     const treeM = nodeM.treeM;
     const agentChildren = treeM.getChildren(nodeM).filter((n) => n.nodeTypeName() === "AgentNodeType");
     const toolChildren = treeM.getChildren(nodeM).filter((n) => n.nodeTypeName() === "AgentToolNodeType");
+    const knowledgeChildren = treeM.getChildren(nodeM).filter((n) => n.nodeTypeName() === "KnowledgeNodeType");
     const nodeTypeName = nodeM.nodeTypeName();
     const agentNodeType = await nodeM.treeM.supportedNodesTypes(nodeTypeName) as AgentNodeType;
     const toolNodeType = await nodeM.treeM.supportedNodesTypes("AgentToolNodeType") as AgentToolNodeType;
+    const knowledgeNodeType = await nodeM.treeM.supportedNodesTypes("KnowledgeNodeType");
     const title = nodeM.title();
 
     let agentsSection = "";
@@ -32,6 +35,7 @@ ${agentChildren.map(child => child.title()).join('\n')}
     if (toolChildren.length > 0) {
         toolsSection = `<tools>
 ${toolChildren.map(child => toolNodeType.renderPrompt(child)).join('\n-------\n')}
+${knowledgeChildren.map(child => knowledgeNodeType.renderPrompt(child)).join('\n-------\n')}
 </tools>
 `;
     }
@@ -181,6 +185,23 @@ async function getNextStep(nodeM: NodeM): Promise<string | undefined> {
                 author: toolName,
             })
             agentSessionState.addMessage(nodeM, toolResponseMessage);
+        } else if(toolName.startsWith("Search from knowledge source ")) {
+            const knowledgeNodeM = treeM.getChildren(nodeM).find(child => child.nodeTypeName() === "KnowledgeNodeType" && child.title() === toolName.replace("Search from knowledge source ", ""));
+            if (knowledgeNodeM) {
+                const toolCallingMessage = new ToolCallingMessage({
+                    toolName: toolName,
+                    parameters: input,
+                    author: nodeM.title(),
+                })
+                agentSessionState.addMessage(nodeM, toolCallingMessage);
+                const res = await KnowledgeNodeType.search(knowledgeNodeM, input);
+                const toolResponseMessage = new ToolResponseMessage({
+                    toolName: toolName,
+                    response: res,
+                    author: toolName,
+                })
+                agentSessionState.addMessage(nodeM, toolResponseMessage);
+            }
         }
     } else {
         throw Error(`Unknown response type. Response: ${JSON.stringify(parsedResponse)}`);

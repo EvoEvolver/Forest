@@ -7,8 +7,9 @@ const typeModules = {
     "AgentNodeType": () => import("@forest/node-type-agents").then(m => new m.AgentNodeType()),
     "AgentToolNodeType": () => import("@forest/node-type-agents").then(m => new m.AgentToolNodeType()),
     "CodeInterpreterNodeType": () => import("@forest/node-type-agents").then(m => new m.CodeInterpreterNodeType()),
+    "KnowledgeNodeType": () => import("@forest/node-type-agents").then(m => new m.KnowledgeNodeType()),
     "EditorNodeType": async () => new EditorNodeType(),
-    "ReaderNodeType": async () => new ReaderNodeType()
+    "ReaderNodeType": async () => new ReaderNodeType(),
 };
 
 // Cache for loaded types AND loading promises
