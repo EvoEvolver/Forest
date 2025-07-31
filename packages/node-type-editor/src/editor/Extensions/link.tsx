@@ -205,20 +205,60 @@ export function makeOnLinkActivated(setHoverElements) {
 
         // Find the DOM element corresponding to the active link
         // We look at the element at the cursor's current position
-        const {from} = editor.state.selection;
+        const {from, to} = editor.state.selection;
+        
+        // Try to find the link element at the current selection
+        let el = null;
+        
+        // First, try to find the element at the cursor position
         const domNode = editor.view.domAtPos(from).node;
-        let el = domNode.nodeType === Node.TEXT_NODE ? domNode.parentElement : domNode as HTMLElement;
-
-        // Ensure we've found the correct anchor tag
-        if (el.tagName !== 'A' || el.getAttribute('href') !== href) {
-            // As a fallback, query the DOM for the link. This is less precise if multiple identical links exist.
-            const foundEl = editor.view.dom.querySelector(`a[href="${href}"]`);
-            if (foundEl) {
-                el = foundEl;
-            } else {
-                setHoverElements(prev => {return prev.filter(el => el.source !== "link")})
-                return;
+        let candidateEl = domNode.nodeType === Node.TEXT_NODE ? domNode.parentElement : domNode as HTMLElement;
+        
+        // Check if we found the right anchor tag
+        if (candidateEl && candidateEl.tagName === 'A' && candidateEl.getAttribute('href') === href) {
+            el = candidateEl;
+        } else {
+            // If not found, search within the selection range for any anchor tag
+            // This handles cases where we just created a new link
+            for (let pos = from; pos <= to; pos++) {
+                try {
+                    const nodeAtPos = editor.view.domAtPos(pos).node;
+                    const elementAtPos = nodeAtPos.nodeType === Node.TEXT_NODE ? nodeAtPos.parentElement : nodeAtPos as HTMLElement;
+                    
+                    if (elementAtPos && elementAtPos.tagName === 'A') {
+                        el = elementAtPos;
+                        break;
+                    }
+                    
+                    // Also check parent elements
+                    let parent = elementAtPos?.parentElement;
+                    while (parent && parent !== editor.view.dom) {
+                        if (parent.tagName === 'A') {
+                            el = parent;
+                            break;
+                        }
+                        parent = parent.parentElement;
+                    }
+                    
+                    if (el) break;
+                } catch (e) {
+                    // Continue searching if position is invalid
+                    continue;
+                }
             }
+            
+            // Final fallback: query the DOM
+            if (!el) {
+                const foundEl = editor.view.dom.querySelector(`a[href="${href}"]`);
+                if (foundEl) {
+                    el = foundEl;
+                }
+            }
+        }
+        
+        if (!el) {
+            setHoverElements(prev => {return prev.filter(el => el.source !== "link")})
+            return;
         }
 
         // Create the hover element object to be rendered

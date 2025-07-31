@@ -58,7 +58,9 @@ function makeExtensions(yXML, provider, onCommentActivated, onLinkActivated) {
         ListItem,
         Image,
         ImageUploadExtension,
-        Bold,
+        Bold.configure({
+            inclusive: false, // Prevent bold from extending to new content
+        }),
         MathExtension.configure({evaluation: false}),
         CommentExtension.configure({
             HTMLAttributes: {class: "comment"},
@@ -129,6 +131,24 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
         onLinkActivated(href, editor, {"inputOn": true});
     };
 
+    const handleClickBold = () => {
+        const { state } = editor;
+        const { from, to } = state.selection;
+        
+        // Apply bold to the selected text
+        editor?.chain().focus().toggleBold().run();
+        
+        // Clear stored marks immediately after applying bold
+        setTimeout(() => {
+            // Clear stored marks to prevent bold from extending to new content
+            const transaction = editor.state.tr.setStoredMarks([]);
+            editor.view.dispatch(transaction);
+            
+            // Position cursor at the end of the selection
+            editor?.commands.setTextSelection(to);
+        }, 0);
+    };
+
     if (!editor) {
         return null;
     }
@@ -164,7 +184,7 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
                 <Paper elevation={3} sx={{ backgroundColor: 'white', padding: 0.5, display: 'flex', gap: 0.5 }}>
                     <IconButton
                         size="small"
-                        onClick={() => editor.chain().focus().toggleBold().run()}
+                        onClick={handleClickBold}
                         sx={{ color: 'black' }}
                     >
                         <FormatBoldIcon />
@@ -182,12 +202,15 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
     );
 };
 
-const HoverElement = ({el, render, editor}) => {
+const HoverElement = ({el, render, editor, source}) => {
     const [referenceElement, setReferenceElement] = useState(null);
     const [popperElement, setPopperElement] = useState(null);
 
+    // Use different placement for comments and links to avoid collision with BubbleMenu
+    const placement = (source === 'comment' || source === 'link') ? 'bottom-start' : 'top-start';
+
     const {styles, attributes} = usePopper(referenceElement, popperElement, {
-        placement: 'top-start',
+        placement: placement,
         modifiers: [
             {
                 name: 'offset',
@@ -216,12 +239,13 @@ const HoverElement = ({el, render, editor}) => {
 const HoverElements = ({hoverElements, editor}) => {
     return (
         <>
-            {hoverElements.map(({el, render}, index) => (
+            {hoverElements.map(({el, render, source}, index) => (
                 <HoverElement
                     key={index}
                     el={el}
                     render={render}
                     editor={editor}
+                    source={source}
                 />
             ))}
         </>

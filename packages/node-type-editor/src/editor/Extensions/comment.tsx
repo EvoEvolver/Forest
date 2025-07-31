@@ -39,6 +39,9 @@ export const CommentExtension = Mark.create<CommentOptions>({
         };
     },
 
+    // Prevent the comment mark from extending to new content
+    inclusive: false,
+
     // Inside CommentExtension, update the addAttributes method:
     addAttributes() {
         return {
@@ -192,6 +195,13 @@ export const CommentHover = ({hoveredEl, editor, options}) => {
     const handleCommentUpdate = () => {
         editor.commands.updateComment(commentId, editedComment);
         setIsEditing(false);
+        
+        // Clear stored marks after updating comment to prevent extension
+        setTimeout(() => {
+            // Clear any stored marks to prevent comment from extending to new content
+            const tr = editor.state.tr.setStoredMarks([]);
+            editor.view.dispatch(tr);
+        }, 0);
     };
 
     const removeHover = () => {
