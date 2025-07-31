@@ -2,6 +2,7 @@ import {NodeM, NodeType, NodeVM} from "@forest/schema";
 import React, {useState} from "react";
 import * as Y from "yjs";
 import {Box, TextField, Typography, Link} from "@mui/material";
+import axios from "axios";
 
 // Separate component for URL configuration
 const UrlConfig: React.FC<{ node: NodeVM }> = ({ node }) => {
@@ -93,8 +94,28 @@ Description: Ask question from the knowledge source.
 Parameter: "question" (string): The question to ask the knowledge source.`
     }
 
-    async search(node: NodeM, {question: string}): Promise<string> {
-        return `I don't have the capability to search external knowledge sources directly.`
+
+    static async search(node: NodeM, {question}: {question: string}): Promise<string> {
+        const treeUrl = node.ydata().get(KnowledgeNodeUrl)?.toString();
+        
+        if (!treeUrl) {
+            throw new Error("No URL configured for this knowledge node");
+        }
+        
+        if (!question.trim()) {
+            throw new Error("Question cannot be empty");
+        }
+
+        try {
+            const response = await axios.post('https://worker.treer.ai/search_and_answer', {
+                question: question,
+                treeUrl: treeUrl
+            });
+            
+            return response.data;
+        } catch (error: any) {
+            throw new Error(`Failed to search knowledge source: ${error.message}`);
+        }
     }
 
     ydataInitialize(node: NodeM) {
