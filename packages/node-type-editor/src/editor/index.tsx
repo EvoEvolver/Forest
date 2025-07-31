@@ -5,7 +5,7 @@ import {YjsProviderAtom} from "@forest/client/src/TreeState/YjsConnection";
 import {XmlFragment} from 'yjs';
 import Collaboration from '@tiptap/extension-collaboration'
 import {CollaborationCursor} from './Extensions/collaboration-cursor'
-import {EditorContent, useEditor} from '@tiptap/react'
+import {BubbleMenu, EditorContent, useEditor} from '@tiptap/react'
 import Document from '@tiptap/extension-document'
 import Paragraph from '@tiptap/extension-paragraph'
 import Text from '@tiptap/extension-text'
@@ -16,6 +16,10 @@ import Image from '@tiptap/extension-image'
 import {CommentExtension, makeOnCommentActivated} from './Extensions/comment'
 import {MathExtension} from '@aarkue/tiptap-math-extension'
 import Bold from '@tiptap/extension-bold'
+import {IconButton, Paper} from "@mui/material";
+import FormatBoldIcon from '@mui/icons-material/FormatBold';
+import CommentIcon from '@mui/icons-material/Comment';
+import LinkIcon from '@mui/icons-material/Link';
 import {usePopper} from "react-popper";
 import {LinkExtension, makeOnLinkActivated} from "./Extensions/link";
 import {ImageUploadExtension} from "./Extensions/image-upload";
@@ -113,6 +117,17 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
         },
     });
 
+    const handleClickComment = () => {
+        const id = `comment-${Date.now()}`;
+        editor?.commands.setComment(id, "");
+        onCommentActivated(id, editor, {"inputOn": true});
+    };
+
+    const handleClickLink = () => {
+        const href = " ";
+        editor?.commands.setLink({href});
+        onLinkActivated(href, editor, {"inputOn": true});
+    };
 
     if (!editor) {
         return null;
@@ -120,6 +135,48 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
     return (
         <div className="column-half">
             <EditorContent editor={editor} className="main-group"/>
+            <BubbleMenu 
+                editor={editor} 
+                tippyOptions={{duration: 100}}
+                shouldShow={({ editor, view, state, oldState, from, to }) => {
+                    // Don't show bubble menu when selecting image upload nodes
+                    const { selection } = state;
+                    const { $from, $to } = selection;
+                    
+                    // Check if selection contains any image upload nodes
+                    let hasImageUpload = false;
+                    state.doc.nodesBetween(from, to, (node) => {
+                        if (node.type.name === 'imageUpload') {
+                            hasImageUpload = true;
+                            return false; // Stop traversal
+                        }
+                    });
+                    
+                    // Don't show if selection contains image upload nodes
+                    if (hasImageUpload) {
+                        return false;
+                    }
+                    
+                    // Show bubble menu for text selections and regular content
+                    return !selection.empty;
+                }}
+            >
+                <Paper elevation={3} sx={{ backgroundColor: 'white', padding: 0.5, display: 'flex', gap: 0.5 }}>
+                    <IconButton
+                        size="small"
+                        onClick={() => editor.chain().focus().toggleBold().run()}
+                        sx={{ color: 'black' }}
+                    >
+                        <FormatBoldIcon />
+                    </IconButton>
+                    <IconButton size="small" onClick={handleClickComment} sx={{ color: 'black' }}>
+                        <CommentIcon />
+                    </IconButton>
+                    <IconButton size="small" onClick={handleClickLink} sx={{ color: 'black' }}>
+                        <LinkIcon />
+                    </IconButton>
+                </Paper>
+            </BubbleMenu>
             <HoverElements hoverElements={hoverElements} editor={editor}/>
         </div>
     );

@@ -32,6 +32,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import {NodeVM} from "@forest/schema";
 import {StageVersionDialog} from "./StageVersionDialog";
 import Slide from '@mui/material/Slide';
+import {Portal} from '@mui/material';
 
 interface childTypesForDisplay {
     "name": string,
@@ -439,13 +440,14 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDrag
                 node={node}
             />
 
-            {/* Image Upload Dialog */}
-            <Dialog
-                open={imageUploadOpen}
-                onClose={handleCloseImageUpload}
-                maxWidth="sm"
-                fullWidth
-            >
+            {/* Image Upload Dialog - Use Portal to prevent it from being unmounted when sidebar disappears */}
+            <Portal>
+                <Dialog
+                    open={imageUploadOpen}
+                    onClose={handleCloseImageUpload}
+                    maxWidth="sm"
+                    fullWidth
+                >
                 <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <CloudUploadIcon />
                     Upload Image
@@ -530,7 +532,8 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDrag
                         </Button>
                     </DialogActions>
                 )}
-            </Dialog>
+                </Dialog>
+            </Portal>
         </>
     );
 };
