@@ -42,6 +42,31 @@ export const canDropAsSibling = async (
 };
 
 /**
+ * Checks if moving a node would create a cycle (i.e., moving a node into one of its descendants)
+ */
+export const wouldCreateCycle = (
+    treeM: TreeM,
+    nodeId: string,
+    potentialParentId: string
+): boolean => {
+    if (nodeId === potentialParentId) {
+        return true;
+    }
+    
+    const potentialParentNode = treeM.getNode(potentialParentId);
+    if (!potentialParentNode) {
+        return false;
+    }
+    
+    const parentId = potentialParentNode.parent()
+    if (!parentId) {
+        return false;
+    }
+    
+    return wouldCreateCycle(treeM, nodeId, parentId);
+};
+
+/**
  * Validates drop compatibility for a drag operation
  */
 export const validateDropCompatibility = async (
@@ -56,6 +81,24 @@ export const validateDropCompatibility = async (
         
         if (!draggedNodeM || !targetNodeM) {
             return { isValid: false, reason: 'Node not found' };
+        }
+        
+        // Check for cycles before type validation
+        let potentialParentId: string;
+        if (dropPosition === 'center') {
+            potentialParentId = targetNodeId;
+        } else {
+            potentialParentId = targetNodeM.parent()
+            if (!potentialParentId) {
+                return { isValid: false, reason: 'Target has no parent' };
+            }
+        }
+        
+        if (wouldCreateCycle(treeM, draggedNodeId, potentialParentId)) {
+            return { 
+                isValid: false, 
+                reason: 'Cannot move node into its own descendant - would create a cycle' 
+            };
         }
         
         const draggedNodeTypeName = draggedNodeM.nodeTypeName();

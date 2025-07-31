@@ -5,6 +5,7 @@ import {v4 as uuidv4} from 'uuid';
 import {updateChildrenCountAtom} from "./childrenCount";
 import {treeId} from "../appState";
 import {NodeJson, NodeM, TreeM, TreeVM} from "@forest/schema"
+import {wouldCreateCycle} from "../TreeView/utils/NodeTypeUtils";
 
 const treeValueAtom: PrimitiveAtom<TreeVM> = atom()
 
@@ -135,10 +136,16 @@ export const moveNodeToSubtreeAtom = atom(null, (get, set, props: {
     const currTree = get(treeAtom)
     if (!currTree)
         return
+    const treeM: TreeM = currTree.treeM
 
     const nodeDict = currTree.nodeDict
     const nodeToMoveAtom = nodeDict[props.nodeId]
     const nodeToMove = get(nodeToMoveAtom)
+
+    if (wouldCreateCycle(treeM, props.nodeId, props.newParentId)) {
+        console.warn(`Cannot move node ${props.nodeId} to ${props.newParentId}: would create a loop`)
+        return
+    }
 
     // Get the old parent node
     const oldParentId = nodeToMove.parent
