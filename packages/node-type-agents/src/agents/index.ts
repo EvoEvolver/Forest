@@ -8,6 +8,7 @@ import {
 } from "@forest/agent-chat/src/AgentMessageTypes";
 import {agentSessionState} from "../sessionState";
 import {AgentToolNodeType} from "../ToolNode";
+import {MCPNodeType} from "../MCPNode";
 import {BaseMessage, NormalMessage, SystemMessage} from "@forest/agent-chat/src/MessageTypes";
 import {fetchChatResponse} from "@forest/agent-chat/src/llm";
 import {KnowledgeNodeType} from "../KnowledgeNode";
@@ -16,10 +17,12 @@ async function getSystemMessage(nodeM: NodeM) {
     const treeM = nodeM.treeM;
     const agentChildren = treeM.getChildren(nodeM).filter((n) => n.nodeTypeName() === "AgentNodeType");
     const toolChildren = treeM.getChildren(nodeM).filter((n) => n.nodeTypeName() === "AgentToolNodeType");
+    const mcpChildren = treeM.getChildren(nodeM).filter((n) => n.nodeTypeName() === "MCPNodeType");
     const knowledgeChildren = treeM.getChildren(nodeM).filter((n) => n.nodeTypeName() === "KnowledgeNodeType");
     const nodeTypeName = nodeM.nodeTypeName();
     const agentNodeType = await nodeM.treeM.supportedNodesTypes(nodeTypeName) as AgentNodeType;
     const toolNodeType = await nodeM.treeM.supportedNodesTypes("AgentToolNodeType") as AgentToolNodeType;
+    const mcpNodeType = await nodeM.treeM.supportedNodesTypes("MCPNodeType") as MCPNodeType;
     const knowledgeNodeType = await nodeM.treeM.supportedNodesTypes("KnowledgeNodeType");
     const title = nodeM.title();
 
@@ -32,12 +35,19 @@ ${agentChildren.map(child => child.title()).join('\n')}
     }
 
     let toolsSection = "";
-    if (toolChildren.length > 0) {
-        toolsSection = `<tools>
-${toolChildren.map(child => toolNodeType.renderPrompt(child)).join('\n-------\n')}
-${knowledgeChildren.map(child => knowledgeNodeType.renderPrompt(child)).join('\n-------\n')}
+    if (toolChildren.length > 0 || mcpChildren.length > 0 || knowledgeChildren.length > 0) {
+        const allToolPrompts = [
+            ...toolChildren.map(child => toolNodeType.renderPrompt(child)),
+            ...mcpChildren.map(child => mcpNodeType.renderPrompt(child)),
+            ...knowledgeChildren.map(child => knowledgeNodeType.renderPrompt(child))
+        ].filter(prompt => prompt && prompt.trim()); // Filter out empty prompts
+        
+        if (allToolPrompts.length > 0) {
+            toolsSection = `<tools>
+${allToolPrompts.join('\n-------\n')}
 </tools>
 `;
+        }
     }
 
     let formatsSection = "";
@@ -51,7 +61,7 @@ ${knowledgeChildren.map(child => knowledgeNodeType.renderPrompt(child)).join('\n
 </agent_calling>
 `;
     }
-    if (toolChildren.length > 0) {
+    if (toolChildren.length > 0 || mcpChildren.length > 0) {
         formatsSection += `<tool_calling>
 {
  "type": "tool_calling",
@@ -89,7 +99,10 @@ async function getNextStep(nodeM: NodeM): Promise<string | undefined> {
     const treeM = nodeM.treeM;
     const messages = agentSessionState.messages.get(nodeM.id) || [];
     const agentChildren = treeM.getChildren(nodeM).filter((n) => n.nodeTypeName() === "AgentNodeType");
+    const toolChildren = treeM.getChildren(nodeM).filter((n) => n.nodeTypeName() === "AgentToolNodeType");
+    const mcpChildren = treeM.getChildren(nodeM).filter((n) => n.nodeTypeName() === "MCPNodeType");
     const toolNodeType = await treeM.supportedNodesTypes("AgentToolNodeType") as AgentToolNodeType;
+    const mcpNodeType = await treeM.supportedNodesTypes("MCPNodeType") as MCPNodeType;
     const systemMessage = await getSystemMessage(nodeM);
     const messagesWithSystem = [...messages, systemMessage];
     const messagesToSubmit = messagesWithSystem.map(m => m.toJson());
@@ -156,8 +169,24 @@ async function getNextStep(nodeM: NodeM): Promise<string | undefined> {
     } else if (parsedResponse.type === "tool_calling") {
         const toolName = parsedResponse.tool_name;
         const input = parsedResponse.input;
-        const toolNodeM = treeM.getChildren(nodeM).find(child => child.nodeTypeName() === "AgentToolNodeType" && child.title() === toolName);
+        
+        // First try to find OpenAPI tool
+        const toolNodeM = toolChildren.find(child => child.title() === toolName);
+        
+        // Then try to find MCP tool
+        let mcpNodeM = null;
+        if (!toolNodeM) {
+            for (const mcpChild of mcpChildren) {
+                const connection = mcpNodeType.getMCPConnection(mcpChild);
+                if (connection && connection.connected && connection.tools.some(tool => tool.name === toolName)) {
+                    mcpNodeM = mcpChild;
+                    break;
+                }
+            }
+        }
+        
         if (toolNodeM) {
+            // Handle OpenAPI tool
             const toolCallingMessage = new ToolCallingMessage({
                 toolName: toolName,
                 parameters: input,
@@ -175,6 +204,36 @@ async function getNextStep(nodeM: NodeM): Promise<string | undefined> {
                     agentSessionState.files.push({
                         fileUrl: url,
                         fileDescription: `File from ${toolName} tool`
+                    });
+                }
+            }
+
+            const toolResponseMessage = new ToolResponseMessage({
+                toolName: toolName,
+                response: res,
+                author: toolName,
+            })
+            agentSessionState.addMessage(nodeM, toolResponseMessage);
+        } else if (mcpNodeM) {
+            // Handle MCP tool
+            const toolCallingMessage = new ToolCallingMessage({
+                toolName: toolName,
+                parameters: input,
+                author: nodeM.title(),
+            })
+            agentSessionState.addMessage(nodeM, toolCallingMessage);
+            
+            const res = await mcpNodeType.callMCPTool(mcpNodeM, toolName, input);
+
+            // Check for URLs starting with https://storage.treer.ai in the response
+            const resString = typeof res === 'string' ? res : JSON.stringify(res);
+            const urlRegex = /https:\/\/storage\.treer\.ai\/[^\s"]+/g;
+            const matches = resString.match(urlRegex);
+            if (matches) {
+                for (const url of matches) {
+                    agentSessionState.files.push({
+                        fileUrl: url,
+                        fileDescription: `File from MCP ${toolName} tool`
                     });
                 }
             }
