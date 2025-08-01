@@ -163,20 +163,31 @@ export const UniversalPasteHandler = Extension.create<UniversalPasteHandlerOptio
                     return;
                 }
                 
-                // Get cursor position for menu placement
+                // Get current cursor position
                 const { from } = editor.state.selection;
-                const coords = editor.view.coordsAtPos(from);
-                console.log('🔗 Cursor position:', { from, coords });
+                const view = editor.view;
                 
-                // Create virtual element for positioning
-                const virtualEl = document.createElement('div');
-                virtualEl.style.position = 'absolute';
-                virtualEl.style.top = `${coords.bottom}px`;
-                virtualEl.style.left = `${coords.left}px`;
-                virtualEl.style.width = '0px';
-                virtualEl.style.height = '0px';
-                virtualEl.style.pointerEvents = 'none';
-                document.body.appendChild(virtualEl);
+                // Get cursor coordinates (absolute position in viewport)
+                const coords = view.coordsAtPos(from);
+                
+                // Create a simple reference element positioned at cursor location
+                const referenceEl = document.createElement('div');
+                referenceEl.style.position = 'fixed';
+                referenceEl.style.top = `${coords.bottom}px`;  // Position just below cursor
+                referenceEl.style.left = `${coords.left}px`;
+                referenceEl.style.width = '1px';
+                referenceEl.style.height = '1px';
+                referenceEl.style.pointerEvents = 'none';
+                referenceEl.style.zIndex = '1000';
+                
+                // Add to document body so it's positioned relative to viewport
+                document.body.appendChild(referenceEl);
+                
+                console.log('🔗 Created reference element at:', {
+                    top: coords.bottom,
+                    left: coords.left,
+                    coords
+                });
                 
                 // Create menu options
                 const options = createPasteSuggestionOptions(this.storage.pendingUrl);
@@ -184,14 +195,13 @@ export const UniversalPasteHandler = Extension.create<UniversalPasteHandlerOptio
                 // Create hover element for the existing hover system
                 const hoverElement = {
                     source: 'bookmark-paste',
-                    el: virtualEl,
+                    el: referenceEl,
                     render: () => (
                         <SuggestionMenu
                             options={options}
                             selectedIndex={this.storage.selectedIndex}
                             visible={true}
                             onSelect={(option, index) => this.editor.commands.selectBookmarkOption(option, index)}
-                            position={{ top: coords.bottom + 5, left: coords.left }}
                         />
                     )
                 };
@@ -206,8 +216,8 @@ export const UniversalPasteHandler = Extension.create<UniversalPasteHandlerOptio
                     console.log('🔗 No setHoverElements function available');
                 }
                 
-                // Store reference to virtual element for cleanup
-                this.storage.virtualElement = virtualEl;
+                // Store reference to element for cleanup
+                this.storage.virtualElement = referenceEl;
             },
 
             hideBookmarkSuggestionMenu: () => () => {
@@ -222,7 +232,7 @@ export const UniversalPasteHandler = Extension.create<UniversalPasteHandlerOptio
                     setHoverElements([]);
                 }
                 
-                // Clean up virtual element
+                // Clean up reference element
                 if (this.storage.virtualElement) {
                     document.body.removeChild(this.storage.virtualElement);
                     this.storage.virtualElement = null;

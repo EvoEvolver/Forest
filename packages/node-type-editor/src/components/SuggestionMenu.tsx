@@ -21,7 +21,6 @@ interface SuggestionMenuProps {
     options: SuggestionOption[];
     selectedIndex: number;
     onSelect: (option: SuggestionOption, index: number) => void;
-    position?: { top: number; left: number };
     visible?: boolean;
 }
 
@@ -29,7 +28,6 @@ export const SuggestionMenu: React.FC<SuggestionMenuProps> = ({
     options,
     selectedIndex,
     onSelect,
-    position = { top: 0, left: 0 },
     visible = true
 }) => {
     const menuRef = useRef<HTMLDivElement>(null);
@@ -55,10 +53,6 @@ export const SuggestionMenu: React.FC<SuggestionMenuProps> = ({
                 ref={menuRef}
                 elevation={8}
                 sx={{
-                    position: 'fixed',
-                    top: position.top,
-                    left: position.left,
-                    zIndex: 1300,
                     minWidth: 250,
                     maxWidth: 350,
                     backgroundColor: 'background.paper',
