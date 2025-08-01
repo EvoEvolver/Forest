@@ -7,7 +7,8 @@ import {
     Box,
     Fade
 } from '@mui/material';
-import TextFieldsIcon from '@mui/icons-material/TextFields';
+import LinkIcon from '@mui/icons-material/Link';
+import TitleIcon from '@mui/icons-material/Title';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 
 export interface SuggestionOption {
@@ -158,15 +159,21 @@ export const SuggestionMenu: React.FC<SuggestionMenuProps> = ({
 // Predefined options for paste suggestions
 export const createPasteSuggestionOptions = (url: string): SuggestionOption[] => [
     {
-        id: 'paste-text',
-        label: 'Paste as text',
-        description: 'Insert the URL as plain text',
-        icon: <TextFieldsIcon fontSize="small" />
+        id: 'paste-link',
+        label: 'Paste as link',
+        description: 'Insert as a clickable link',
+        icon: <LinkIcon fontSize="small" />
     },
     {
-        id: 'paste-bookmark',
-        label: 'Create bookmark',
-        description: 'Fetch website info and create a rich bookmark',
-        icon: <BookmarkIcon fontSize="small" />
-    }
+        id: 'paste-title',
+        label: 'Paste with title',
+        description: 'Fetch website title and insert as a link',
+        icon: <TitleIcon fontSize="small" />
+    },
+    // {
+    //     id: 'paste-bookmark',
+    //     label: 'Create bookmark', 
+    //     description: 'Fetch website info and create a rich bookmark',
+    //     icon: <BookmarkIcon fontSize="small" />
+    // }
 ];

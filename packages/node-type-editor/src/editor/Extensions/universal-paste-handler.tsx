@@ -202,7 +202,16 @@ export const UniversalPasteHandler = Extension.create<UniversalPasteHandlerOptio
                             options={options}
                             selectedIndex={this.storage.selectedIndex}
                             visible={true}
-                            onSelect={(option, index) => this.editor.commands.selectBookmarkOption(option, index)}
+                            onSelect={(option, index) => {
+                                // Use setTimeout to avoid transaction conflicts when clicking menu items
+                                setTimeout(() => {
+                                    try {
+                                        this.editor.commands.selectBookmarkOption(option, index);
+                                    } catch (error) {
+                                        console.warn('Transaction conflict ignored:', error);
+                                    }
+                                }, 0);
+                            }}
                         />
                     )
                 };
@@ -248,10 +257,20 @@ export const UniversalPasteHandler = Extension.create<UniversalPasteHandlerOptio
             selectCurrentBookmarkOption: () => () => {
                 const options = createPasteSuggestionOptions(this.storage.pendingUrl || '');
                 const selectedOption = options[this.storage.selectedIndex];
-                this.editor.commands.selectBookmarkOption(selectedOption, this.storage.selectedIndex);
+                
+                // Use setTimeout to avoid transaction conflicts in keyboard shortcuts
+                setTimeout(() => {
+                    try {
+                        this.editor.commands.selectBookmarkOption(selectedOption, this.storage.selectedIndex);
+                    } catch (error) {
+                        console.warn('Transaction conflict ignored:', error);
+                    }
+                }, 0);
+                
+                return true;
             },
 
-            selectBookmarkOption: (option: any, index: number) => async () => {
+            selectBookmarkOption: (option: any, index: number) => () => {
                 const { pendingUrl } = this.storage;
                 
                 if (!pendingUrl) {
@@ -261,35 +280,87 @@ export const UniversalPasteHandler = Extension.create<UniversalPasteHandlerOptio
                 
                 this.editor.commands.hideBookmarkSuggestionMenu();
                 
-                // Use current cursor position instead of stored position
-                const { from, to } = this.editor.state.selection;
-                
-                if (option.id === 'paste-text') {
-                    // Insert as plain text without extra formatting
-                    const view = this.editor.view;
-                    const { state, dispatch } = view;
-                    const transaction = state.tr.replaceWith(from, to, state.schema.text(pendingUrl));
-                    dispatch(transaction);
+                if (option.id === 'paste-link') {
+                    // Insert as clickable link using the existing LinkExtension
+                    this.editor.chain().focus().setLink({ href: pendingUrl }).insertContent(pendingUrl).run();
+                    
+                } else if (option.id === 'paste-title') {
+                    // Insert temporary loading text first
+                    const loadingText = 'Loading...';
+                    this.editor.chain().focus().insertContent(loadingText).run();
+                    
+                    // Move async operations outside of the command
+                    setTimeout(async () => {
+                        const timeoutId = setTimeout(() => {
+                            console.log('⏰ Title fetch timeout, reverting to URL');
+                            // Replace loading text with URL link
+                            try {
+                                const content = this.editor.getHTML();
+                                if (content.includes(loadingText)) {
+                                    const newContent = content.replace(loadingText, `<a href="${pendingUrl}">${pendingUrl}</a>`);
+                                    this.editor.commands.setContent(newContent);
+                                }
+                            } catch (error) {
+                                console.warn('HTML replacement failed, ignored:', error);
+                            }
+                        }, 15000);
+                        
+                        // Fetch metadata in background
+                        const bookmarkService = BookmarkService.getInstance();
+                        
+                        try {
+                            const metadata = await bookmarkService.fetchMetadata(pendingUrl);
+                            clearTimeout(timeoutId);
+                            
+                            // Replace loading text with title link
+                            const title = metadata.title || pendingUrl;
+                            try {
+                                const content = this.editor.getHTML();
+                                if (content.includes(loadingText)) {
+                                    const newContent = content.replace(loadingText, `<a href="${pendingUrl}">${title}</a>`);
+                                    this.editor.commands.setContent(newContent);
+                                }
+                            } catch (error) {
+                                console.warn('HTML replacement failed, ignored:', error);
+                            }
+                            
+                        } catch (error) {
+                            clearTimeout(timeoutId);
+                            console.error('Failed to fetch title:', error);
+                            
+                            // Fallback to URL link
+                            try {
+                                const content = this.editor.getHTML();
+                                if (content.includes(loadingText)) {
+                                    const newContent = content.replace(loadingText, `<a href="${pendingUrl}">${pendingUrl}</a>`);
+                                    this.editor.commands.setContent(newContent);
+                                }
+                            } catch (error) {
+                                console.warn('HTML replacement failed, ignored:', error);
+                            }
+                        }
+                    }, 0);
                     
                 } else if (option.id === 'paste-bookmark') {
-                    try {
-                        // Get the editor state and view for direct transaction handling
-                        const view = this.editor.view;
-                        const { state, dispatch } = view;
-                        
-                        // Get the bookmark node type from the editor
-                        const bookmarkType = this.editor.schema.nodes.bookmark;
-                        if (bookmarkType) {
-                            // Insert loading bookmark first
-                            const node = bookmarkType.create({ 
-                                url: pendingUrl, 
-                                loading: true 
-                            });
-                            const transaction = state.tr.replaceWith(from, to, node);
-                            dispatch(transaction);
-                            console.log('✅ Bookmark node inserted, fetching metadata...');
+                    // Get the editor state and view for direct transaction handling
+                    const view = this.editor.view;
+                    const { state, dispatch } = view;
+                    const { from, to } = this.editor.state.selection;
+                    
+                    // Get the bookmark node type from the editor
+                    const bookmarkType = this.editor.schema.nodes.bookmark;
+                    if (bookmarkType) {
+                        // Insert loading bookmark first
+                        const node = bookmarkType.create({ 
+                            url: pendingUrl, 
+                            loading: true 
+                        });
+                        const transaction = state.tr.replaceWith(from, to, node);
+                        dispatch(transaction);
+                        console.log('✅ Bookmark node inserted, fetching metadata...');
 
-                            // Find the inserted node position for updates
+                        // Move async operations outside of the command
+                        setTimeout(async () => {
                             const nodePos = from;
                             
                             // Create update callback similar to image upload
@@ -323,28 +394,38 @@ export const UniversalPasteHandler = Extension.create<UniversalPasteHandlerOptio
                                 }
                             };
                             
-                            // Fetch metadata in background
-                            const bookmarkService = BookmarkService.getInstance();
-                            const metadata = await bookmarkService.fetchMetadata(pendingUrl);
-                            
-                            // Update the bookmark with fetched metadata
-                            updateCallback({
-                                url: pendingUrl,
-                                title: metadata.title,
-                                description: metadata.description,
-                                favicon: metadata.favicon,
-                                loading: false
-                            });
-                            
-                            // Call callback if provided
-                            this.options.onBookmarkCreated?.(pendingUrl, metadata);
-                        }
-                        
-                    } catch (error) {
-                        console.error('Failed to create bookmark:', error);
-                        
-                        // Fallback to text insertion
-                        this.editor.commands.insertContentAt({ from, to }, pendingUrl);
+                            try {
+                                // Fetch metadata in background
+                                const bookmarkService = BookmarkService.getInstance();
+                                const metadata = await bookmarkService.fetchMetadata(pendingUrl);
+                                
+                                // Update the bookmark with fetched metadata
+                                updateCallback({
+                                    url: pendingUrl,
+                                    title: metadata.title,
+                                    description: metadata.description,
+                                    favicon: metadata.favicon,
+                                    loading: false
+                                });
+                                
+                                // Call callback if provided
+                                this.options.onBookmarkCreated?.(pendingUrl, metadata);
+                                
+                            } catch (error) {
+                                console.error('Failed to create bookmark:', error);
+                                
+                                // Find and delete the loading bookmark node on error
+                                const currentState = view.state;
+                                for (let pos = Math.max(0, nodePos - 5); pos <= Math.min(currentState.doc.content.size, nodePos + 5); pos++) {
+                                    const node = currentState.doc.nodeAt(pos);
+                                    if (node && node.type === bookmarkType && node.attrs.loading) {
+                                        const deleteTransaction = currentState.tr.delete(pos, pos + 1);
+                                        view.dispatch(deleteTransaction);
+                                        break;
+                                    }
+                                }
+                            }
+                        }, 0);
                     }
                 }
             }
@@ -356,7 +437,7 @@ export const UniversalPasteHandler = Extension.create<UniversalPasteHandlerOptio
             ArrowDown: () => {
                 if (!this.storage.showBookmarkMenu) return false;
                 
-                this.storage.selectedIndex = this.storage.selectedIndex === 1 ? 0 : 1;
+                this.storage.selectedIndex = (this.storage.selectedIndex + 1) % 3; // Cycle through 0, 1, 2
                 this.editor.commands.updateBookmarkSuggestionMenu();
                 return true;
             },
@@ -364,7 +445,7 @@ export const UniversalPasteHandler = Extension.create<UniversalPasteHandlerOptio
             ArrowUp: () => {
                 if (!this.storage.showBookmarkMenu) return false;
                 
-                this.storage.selectedIndex = this.storage.selectedIndex === 0 ? 1 : 0;
+                this.storage.selectedIndex = (this.storage.selectedIndex - 1 + 3) % 3; // Cycle through 2, 1, 0
                 this.editor.commands.updateBookmarkSuggestionMenu();
                 return true;
             },
