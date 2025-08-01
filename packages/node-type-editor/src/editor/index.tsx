@@ -22,7 +22,9 @@ import CommentIcon from '@mui/icons-material/Comment';
 import LinkIcon from '@mui/icons-material/Link';
 import {usePopper} from "react-popper";
 import {LinkExtension, makeOnLinkActivated} from "./Extensions/link";
-import {ImageUploadExtension} from "./Extensions/image-upload";
+import {ImageUploadExtension, uploadImage} from "./Extensions/image-upload";
+import {UniversalPasteHandler} from "./Extensions/universal-paste-handler";
+import {BookmarkNode} from "./Extensions/bookmark-node";
 import {NodeVM} from "@forest/schema";
 import {contentEditableContext} from "@forest/schema/src/viewContext";
 import {Editor} from "@tiptap/core";
@@ -44,7 +46,7 @@ const TiptapEditor = (props: TiptapEditorProps) => {
 
 export default TiptapEditor;
 
-function makeExtensions(yXML, provider, onCommentActivated, onLinkActivated) {
+function makeExtensions(yXML, provider, onCommentActivated, onLinkActivated, setHoverElements) {
     const onCommentActivatedHandler = onCommentActivated || ((id, editor, options) => {
     });
     const onLinkActivatedHandler = onLinkActivated || ((href, editor, options) => {
@@ -70,14 +72,22 @@ function makeExtensions(yXML, provider, onCommentActivated, onLinkActivated) {
             HTMLAttributes: {},
             onLinkActivated: onLinkActivatedHandler,
         }),
+        BookmarkNode,
+        UniversalPasteHandler.configure({
+            onBookmarkCreated: (url, metadata) => {
+                console.log('Bookmark created:', url, metadata);
+            },
+            setHoverElements: setHoverElements,
+            uploadImage: uploadImage
+        }),
         ...(yXML ? [Collaboration.extend().configure({fragment: yXML})] : []),
         ...(provider ? [CollaborationCursor.extend().configure({provider})] : []),
     ];
 }
 
-export function makeEditor(yXML, provider, contentEditable, onCommentActivated, onLinkActivated): Editor {
+export function makeEditor(yXML, provider, contentEditable, onCommentActivated, onLinkActivated, setHoverElements): Editor {
 
-    const extensions = makeExtensions(yXML, provider, onCommentActivated, onLinkActivated);
+    const extensions = makeExtensions(yXML, provider, onCommentActivated, onLinkActivated, setHoverElements);
     if (yXML) {
         console.log(yXML)
     }
@@ -104,7 +114,7 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
     const onLinkActivated = makeOnLinkActivated(setHoverElements);
 
     const editor = useEditor({
-        extensions: makeExtensions(yXML, provider, onCommentActivated, onLinkActivated),
+        extensions: makeExtensions(yXML, provider, onCommentActivated, onLinkActivated, setHoverElements),
         editable: contentEditable !== false,
         onCreate: ({editor}) => {
             node.vdata["tiptap_editor_" + dataLabel] = editor;

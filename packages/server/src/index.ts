@@ -21,6 +21,7 @@ import {createVisitRouter} from './routes/visitRoutes';
 import {issueRoutes, ReminderService} from '@forest/issue-tracker-server'
 import { createUserRouter } from './routes/userRoutes';
 import { createNodeSnapshotRouter } from './routes/nodeSnapshotRoutes';
+import { metadataRoutes } from './routes/metadataRoutes';
 
 // Import WebSocket handler
 import {WebSocketHandler} from './websocket/websocketHandler';
@@ -73,6 +74,7 @@ function main(): void {
     app.use('/api', createNodeSnapshotRouter());
     app.use('/api/api-proxy', apiProxyRouter)
     app.use('/api/images', imageRoutes);
+    app.use('/api/metadata', metadataRoutes);
 
     // Start server
     server.listen(config.port, config.host, async () => {
