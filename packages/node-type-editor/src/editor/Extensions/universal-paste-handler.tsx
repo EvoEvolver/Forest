@@ -126,8 +126,9 @@ export const UniversalPasteHandler = Extension.create<UniversalPasteHandlerOptio
                             
                             if (urls.length === 1 && urls[0] === text) {
                                 console.log('🔗 Single URL detected, showing suggestion menu');
-                                // Prevent default paste behavior
+                                // Prevent all default paste behavior
                                 event.preventDefault();
+                                event.stopPropagation();
                                 
                                 // Store the URL and position
                                 const { from, to } = view.state.selection;
@@ -264,8 +265,11 @@ export const UniversalPasteHandler = Extension.create<UniversalPasteHandlerOptio
                 const { from, to } = this.editor.state.selection;
                 
                 if (option.id === 'paste-text') {
-                    // Insert as plain text
-                    this.editor.commands.insertContentAt({ from, to }, pendingUrl);
+                    // Insert as plain text without extra formatting
+                    const view = this.editor.view;
+                    const { state, dispatch } = view;
+                    const transaction = state.tr.replaceWith(from, to, state.schema.text(pendingUrl));
+                    dispatch(transaction);
                     
                 } else if (option.id === 'paste-bookmark') {
                     try {
