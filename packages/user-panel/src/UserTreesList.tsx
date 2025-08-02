@@ -49,6 +49,8 @@ export const UserTreesList = ({}) => {
     const [deletingTreeId, setDeletingTreeId] = useState<string | null>(null);
     const [createTreeDialogOpen, setCreateTreeDialogOpen] = useState(false);
     const [availableNodeTypes, setAvailableNodeTypes] = useState<NodeTypeForDisplay[]>([]);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [pendingDeleteTreeId, setPendingDeleteTreeId] = useState<string | null>(null);
 
     const authToken = useAtomValue(authTokenAtom);
     const user = useAtomValue(userAtom);
@@ -191,8 +193,13 @@ export const UserTreesList = ({}) => {
         }
     };
 
+    const handleDeleteTreeClick = (treeId: string) => {
+        setPendingDeleteTreeId(treeId);
+        setDeleteDialogOpen(true);
+    };
+
     const handleDeleteTree = async (treeId: string) => {
-        if (!authToken || !confirm('Are you sure you want to delete this tree?')) {
+        if (!authToken) {
             return;
         }
 
@@ -223,7 +230,7 @@ export const UserTreesList = ({}) => {
 
         } catch (err) {
             console.error('Error deleting tree:', err);
-            alert(`Failed to delete tree: ${err instanceof Error ? err.message : 'Unknown error'}`);
+            setError(`Failed to delete tree: ${err instanceof Error ? err.message : 'Unknown error'}`);
         } finally {
             setDeletingTreeId(null);
         }
@@ -444,7 +451,7 @@ export const UserTreesList = ({}) => {
                                             <Tooltip title="Delete Tree">
                                                 <IconButton
                                                     size="small"
-                                                    onClick={() => handleDeleteTree(tree.treeId)}
+                                                    onClick={() => handleDeleteTreeClick(tree.treeId)}
                                                     disabled={deletingTreeId === tree.treeId}
                                                     color="error"
                                                     sx={{p: 0.5}}
@@ -490,6 +497,37 @@ export const UserTreesList = ({}) => {
                 <DialogActions>
                     <Button onClick={handleCloseCreateTreeDialog} color="primary">
                         Cancel
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog
+                open={deleteDialogOpen}
+                onClose={() => setDeleteDialogOpen(false)}
+            >
+                <DialogTitle>Confirm Delete</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Are you sure you want to delete this tree? This action cannot be undone.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDeleteDialogOpen(false)} color="primary">
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={() => {
+                            if (pendingDeleteTreeId) {
+                                handleDeleteTree(pendingDeleteTreeId);
+                            }
+                            setDeleteDialogOpen(false);
+                            setPendingDeleteTreeId(null);
+                        }}
+                        color="error"
+                        variant="contained"
+                    >
+                        Delete
                     </Button>
                 </DialogActions>
             </Dialog>
