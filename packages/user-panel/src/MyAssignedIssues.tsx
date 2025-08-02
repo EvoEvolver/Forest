@@ -82,7 +82,7 @@ export const MyAssignedIssues: React.FC = () => {
 
     if (loading) {
         return (
-            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
                 <DashboardCard title="Remaining Issues Assigned To Me">
                     <Box display="flex" justifyContent="center" p={2}>
                         <CircularProgress size={20}/>
@@ -94,7 +94,7 @@ export const MyAssignedIssues: React.FC = () => {
 
     if (error || !availableTreeId) {
         return (
-            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
                 <DashboardCard title="Remaining Issues Assigned To Me">
                     <Alert severity="info" sx={{m: 1}}>
                         {error || 'No trees available'}
@@ -106,7 +106,7 @@ export const MyAssignedIssues: React.FC = () => {
 
     // Custom wrapper around IssueList that sets the title
     return (
-        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
             <DashboardCard 
                 title="Remaining Issues Assigned To Me"
                 sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}

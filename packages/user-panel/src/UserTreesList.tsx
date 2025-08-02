@@ -599,7 +599,7 @@ export const UserTreesList = ({}) => {
 
     if (error) {
         return (
-            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
                 <DashboardCard title="My Trees">
                     <Alert severity="error" sx={{m: 1}}>
                         {error}
@@ -613,7 +613,7 @@ export const UserTreesList = ({}) => {
     }
 
     return (
-        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
             <DashboardCard
                 title={`My Trees (${trees.length})`}
                 sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
