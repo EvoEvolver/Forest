@@ -9,7 +9,7 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 export function ColumnLeft() {
     const selectedNode = useAtomValue(selectedNodeAtom)
     const [collapsed, setCollapsed] = useState(false);
-    
+
     if (!selectedNode)
         return null
     const expandedWidth = "100%";
@@ -20,7 +20,7 @@ export function ColumnLeft() {
             sx={{
                 position: "relative",
                 height: "100%",
-                width: collapsed ? collapsedWidth : expandedWidth,
+                width: expandedWidth,
                 overflow: "visible",    // let the button bleed out
             }}
         >
