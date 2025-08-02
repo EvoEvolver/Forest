@@ -103,36 +103,25 @@ export const UserPanel = ({}) => {
     return (
         <Box
             sx={{
-                padding: { xs: 1 },
+                padding: { xs: 2 },
                 height: '100%',
+                display: 'flex',
+                flexDirection: 'column'
             }}
         >
-            <Grid container
-                  spacing={1}
-                  direction="row"
-                  sx={{
-                      height: '100%',
-                      overflow: 'hidden',
-                      margin: 0,
-                      width: '100%'
-                  }}
-            >
-                <Grid
-                    size={{
-                        xs: 12
-                    }}
-                >
-                    <TopBar setActiveTab={setTab} activeTab={tab}/>
-                </Grid>
-                <Grid container spacing={3}
+            {/* Top Bar  */}
+            <Box sx={{ flexShrink: 0 }}>
+                <TopBar setActiveTab={setTab} activeTab={tab}/>
+            </Box>
+
+            {/* Main Content Area */}
+            <Box sx={{ flex: 1, minHeight: 0, marginTop: 2 }}>
+                <Grid container
+                      spacing={3}
                       sx={{
                           height: '100%',
-                          overflow: 'hidden',
                           margin: 0,
                           width: '100%'
-                      }}
-                      size={{
-                          xs: 12
                       }}
                 >
                     {/* User Profile Section */}
@@ -143,9 +132,7 @@ export const UserPanel = ({}) => {
                             lg: 1.5
                         }}
                         sx={{
-                            height: '100%',
-                            display: 'flex',
-                            flexDirection: 'column'
+                            height: '100%'
                         }}
                     >
                         <UserProfile
@@ -157,7 +144,7 @@ export const UserPanel = ({}) => {
                         />
                     </Grid>
 
-                    {/* Right Side - Trees Lists */}
+                    {/* main contents */}
                     <Grid
                         size={{
                             xs: 12,
@@ -173,7 +160,7 @@ export const UserPanel = ({}) => {
                         <MainContentSection tabId={tab} />
                     </Grid>
                 </Grid>
-            </Grid>
+            </Box>
 
             {/* Edit Display Name Dialog */}
             <EditDisplayNameDialog
