@@ -2,6 +2,7 @@ import React from 'react';
 import { Box } from '@mui/material';
 import { UserTreesList } from './UserTreesList';
 import { MyAssignedIssues } from './MyAssignedIssues';
+import { Profile } from './Profile';
 import { AuthGuard } from './AuthGuard';
 import { TabId } from './TopBar';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -57,17 +58,9 @@ export const MainContentSection: React.FC<MainContentSectionProps> = ({ tabId })
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}
                             transition={{ duration: 0.05 }}
-                            style={{
-                                flex: '1 1 0',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: 'gray',
-                                minHeight: 0
-                            }}
+                            style={{ flex: '1 1 0', display: 'flex', flexDirection: 'column', minHeight: 0 }}
                         >
-                            Profile content goes here
+                            <Profile />
                         </motion.div>
                     )}
                 </AnimatePresence>

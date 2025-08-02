@@ -16,7 +16,7 @@ export const UserPanel = ({}) => {
     const [updateError, setUpdateError] = useState<string | null>(null);
     const [updateSuccess, setUpdateSuccess] = useState(false);
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-    const [tab, setTab] = useState<TabId | null>(null);
+    const [tab, setTab] = useState<TabId>('trees');
 
     useEffect(() => {
         if (user?.name) {
