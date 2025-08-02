@@ -4,17 +4,17 @@ import {
     Alert,
     Box,
     CircularProgress,
-    List,
-    ListItem,
-    ListItemText,
-    Chip,
-    Typography,
-    Paper
+    Chip
 } from '@mui/material';
+import {DataGrid, GridColDef, GridRenderCellParams} from '@mui/x-data-grid';
 import {userAtom, authTokenAtom} from '@forest/user-system/src/authStates';
-import {IssueList} from '@forest/issue-tracker';
 import {issueServiceAtom} from '@forest/issue-tracker/src/services/issueService';
 import {Issue} from '@forest/issue-tracker/src/types/Issue';
+import IssueDetail from '@forest/issue-tracker/src/components/IssueDetail/IssueDetail';
+import TitleCell from '@forest/issue-tracker/src/components/IssueList/columns/TitleCell';
+import AssigneesCell from '@forest/issue-tracker/src/components/IssueList/columns/AssigneesCell';
+import DueDateCell from '@forest/issue-tracker/src/components/IssueList/columns/DueDateCell';
+import PriorityCell from '@forest/issue-tracker/src/components/IssueList/columns/PriorityCell';
 import DashboardCard from './DashboardCard';
 
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
@@ -25,9 +25,13 @@ interface TreePermission {
     permissionType: string;
 }
 
+interface IssueWithTreeTitle extends Issue {
+    treeTitle?: string;
+}
+
 export const MyAssignedIssues: React.FC = () => {
-    const [permittedTrees, setPermittedTrees] = useState<TreePermission[]>([]);
-    const [allIssues, setAllIssues] = useState<Issue[]>([]);
+    const [allIssues, setAllIssues] = useState<IssueWithTreeTitle[]>([]);
+    const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -55,7 +59,6 @@ export const MyAssignedIssues: React.FC = () => {
             if (response.ok) {
                 const data = await response.json();
                 if (data.permissions && data.permissions.length > 0) {
-                    setPermittedTrees(data.permissions);
                     await fetchIssuesFromAllTrees(data.permissions);
                 } else {
                     setError('No trees available. Create or visit a tree to see assigned issues.');
@@ -75,17 +78,22 @@ export const MyAssignedIssues: React.FC = () => {
     // Fetch issues from all permitted trees and filter for current user assignments
     const fetchIssuesFromAllTrees = async (trees: TreePermission[]) => {
         try {
-            const issuePromises = trees.map(tree => 
-                issueService.getIssuesByTree(tree.treeId)
-            );
+            // Fetch issues and tree metadata in parallel
+            const treeIds = trees.map(tree => tree.treeId);
+            const [allIssuesArrays, treeMetadataMap] = await Promise.all([
+                Promise.all(trees.map(tree => issueService.getIssuesByTree(tree.treeId))),
+                fetchTreeMetadata(treeIds)
+            ]);
             
-            const allIssuesArrays = await Promise.all(issuePromises);
-            
-            // Flatten and deduplicate issues by _id
-            const issuesMap = new Map<string, Issue>();
+            // Flatten and deduplicate issues by _id, adding tree titles
+            const issuesMap = new Map<string, IssueWithTreeTitle>();
             allIssuesArrays.forEach(issuesArray => {
                 issuesArray.forEach(issue => {
-                    issuesMap.set(issue._id, issue);
+                    const issueWithTitle: IssueWithTreeTitle = {
+                        ...issue,
+                        treeTitle: treeMetadataMap[issue.treeId]?.title || 'Unknown Tree'
+                    };
+                    issuesMap.set(issue._id, issueWithTitle);
                 });
             });
             
@@ -104,6 +112,32 @@ export const MyAssignedIssues: React.FC = () => {
             setError('Failed to load assigned issues');
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Fetch tree metadata for multiple trees using the new endpoint
+    const fetchTreeMetadata = async (treeIds: string[]): Promise<{ [key: string]: { title: string } }> => {
+        try {
+            const response = await fetch(`${httpUrl}/api/trees/metadata`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${authToken}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ treeIds })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log("treeMetadata",data);
+                return data;
+            } else {
+                console.error('Failed to fetch tree metadata');
+                return {};
+            }
+        } catch (err) {
+            console.error('Error fetching tree metadata:', err);
+            return {};
         }
     };
 
@@ -135,6 +169,29 @@ export const MyAssignedIssues: React.FC = () => {
         );
     }
 
+    // Issue update handlers
+    const handleIssueUpdate = async (issueId: string, updates: any) => {
+        try {
+            await issueService.updateIssue(issueId, updates);
+            // Refresh issues after update
+            await fetchUserPermittedTrees();
+        } catch (error) {
+            console.error('Failed to update issue:', error);
+            throw error;
+        }
+    };
+
+    const handleAddComment = async (issueId: string, comment: { userId: string; content: string }) => {
+        try {
+            await issueService.addComment(issueId, comment);
+            // Refresh issues after adding comment
+            await fetchUserPermittedTrees();
+        } catch (error) {
+            console.error('Failed to add comment:', error);
+            throw error;
+        }
+    };
+
     // Custom wrapper around IssueList that sets the title
     return (
         <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -143,24 +200,42 @@ export const MyAssignedIssues: React.FC = () => {
                 sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
             >
                 <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                    <MultiTreeIssueListWrapper issues={allIssues} loading={loading} />
+                    <MultiTreeIssueListWrapper 
+                        issues={allIssues} 
+                        loading={loading} 
+                        onIssueSelect={setSelectedIssue}
+                    />
                 </Box>
             </DashboardCard>
+            
+            {/* Issue Detail Dialog */}
+            <IssueDetail
+                issue={selectedIssue}
+                open={!!selectedIssue}
+                onClose={() => setSelectedIssue(null)}
+                onUpdate={handleIssueUpdate}
+                onAddComment={handleAddComment}
+                onDelete={async (issueId: string) => {
+                    await issueService.deleteIssue(issueId);
+                    await fetchUserPermittedTrees(); // Refresh the list
+                }}
+                onRefreshIssue={async (issueId: string) => {
+                    return await issueService.getIssueById(issueId);
+                }}
+                isCreatingNew={false}
+            />
         </Box>
     );
 };
 
-// Multi-tree issue list wrapper that displays issues from all permitted trees
-const MultiTreeIssueListWrapper: React.FC<{issues: Issue[], loading: boolean}> = ({issues, loading}) => {
-    if (loading) {
-        return (
-            <Box display="flex" justifyContent="center" p={2}>
-                <CircularProgress size={20}/>
-            </Box>
-        );
-    }
-
-    if (issues.length === 0) {
+// Multi-tree issue list wrapper using DataGrid to match existing IssueList design
+const MultiTreeIssueListWrapper: React.FC<{
+    issues: IssueWithTreeTitle[], 
+    loading: boolean,
+    onIssueSelect: (issue: Issue) => void
+}> = ({issues, loading, onIssueSelect}) => {
+    
+    if (issues.length === 0 && !loading) {
         return (
             <Alert severity="info" sx={{m: 1}}>
                 No issues assigned to you found across all your trees.
@@ -168,96 +243,98 @@ const MultiTreeIssueListWrapper: React.FC<{issues: Issue[], loading: boolean}> =
         );
     }
 
-    // Sort issues by priority and due date
-    const sortedIssues = [...issues].sort((a, b) => {
-        // Priority order: high -> medium -> low
-        const priorityOrder = { high: 3, medium: 2, low: 1 };
-        const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
-        const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
-        
-        if (aPriority !== bPriority) {
-            return bPriority - aPriority; // Higher priority first
-        }
-        
-        // If same priority, sort by due date (earlier first)
-        const aDate = a.dueDate ? new Date(a.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
-        const bDate = b.dueDate ? new Date(b.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
-        return aDate - bDate;
-    });
+    // Tree Title Cell component
+    const TreeTitleCell: React.FC<{value: string}> = ({value}) => (
+        <Chip 
+            label={value || 'Unknown Tree'} 
+            size="small"
+            variant="outlined"
+            sx={{ maxWidth: '100%' }}
+        />
+    );
 
-    const getPriorityColor = (priority: string) => {
-        switch (priority) {
-            case 'high': return 'error';
-            case 'medium': return 'warning';
-            case 'low': return 'default';
-            default: return 'default';
+    // Define columns similar to simple mode IssueList but with tree title
+    const columns: GridColDef[] = [
+        {
+            field: 'title',
+            headerName: 'Issue',
+            minWidth: 200,
+            flex: 2,
+            renderCell: (params: GridRenderCellParams) => (
+                <TitleCell value={params.value} row={params.row} onSelect={onIssueSelect}/>
+            ),
+        },
+        {
+            field: 'treeTitle',
+            headerName: 'Tree',
+            minWidth: 120,
+            flex: 1,
+            renderCell: (params: GridRenderCellParams) => (
+                <TreeTitleCell value={params.value}/>
+            ),
+        },
+        {
+            field: 'priority',
+            headerName: 'Priority',
+            width: 100,
+            minWidth: 100,
+            renderCell: (params: GridRenderCellParams) => (
+                <PriorityCell value={params.value}/>
+            ),
+        },
+        {
+            field: 'assignees',
+            headerName: 'Assignees',
+            minWidth: 120,
+            flex: 1,
+            renderCell: (params: GridRenderCellParams) => (
+                <AssigneesCell value={params.value} treeId={params.row.treeId}/>
+            ),
+        },
+        {
+            field: 'dueDate',
+            headerName: 'Due Date',
+            width: 120,
+            minWidth: 120,
+            renderCell: (params: GridRenderCellParams) => (
+                <DueDateCell value={params.value}/>
+            ),
         }
-    };
+    ];
 
-    const formatDueDate = (dueDate: string) => {
-        const date = new Date(dueDate);
-        const now = new Date();
-        const diffTime = date.getTime() - now.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        if (diffDays < 0) {
-            return `Overdue by ${Math.abs(diffDays)} days`;
-        } else if (diffDays === 0) {
-            return 'Due today';
-        } else if (diffDays === 1) {
-            return 'Due tomorrow';
-        } else {
-            return `Due in ${diffDays} days`;
-        }
-    };
-    
     return (
-        <Box sx={{ height: '100%', overflow: 'auto' }}>
-            <List dense>
-                {sortedIssues.map((issue) => (
-                    <ListItem key={issue._id} sx={{ mb: 1 }}>
-                        <Paper 
-                            elevation={1} 
-                            sx={{ 
-                                width: '100%', 
-                                p: 2,
-                                '&:hover': { 
-                                    backgroundColor: 'grey.50' 
-                                }
-                            }}
-                        >
-                            <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-                                <Box flex={1}>
-                                    <Typography variant="subtitle2" component="div" sx={{ fontWeight: 'bold' }}>
-                                        {issue.title}
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                                        Tree ID: {issue.treeId}
-                                    </Typography>
-                                    {issue.description && (
-                                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                                            {issue.description.substring(0, 100)}
-                                            {issue.description.length > 100 ? '...' : ''}
-                                        </Typography>
-                                    )}
-                                </Box>
-                                <Box display="flex" flexDirection="column" alignItems="flex-end" gap={1}>
-                                    <Chip 
-                                        label={issue.priority} 
-                                        color={getPriorityColor(issue.priority) as any}
-                                        size="small"
-                                    />
-                                    {issue.dueDate && (
-                                        <Typography variant="caption" color="text.secondary">
-                                            {formatDueDate(issue.dueDate)}
-                                        </Typography>
-                                    )}
-                                </Box>
-                            </Box>
-                        </Paper>
-                    </ListItem>
-                ))}
-            </List>
+        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <DataGrid
+                rows={issues}
+                columns={columns}
+                loading={loading}
+                pageSizeOptions={[5, 10, 25]}
+                initialState={{
+                    pagination: { paginationModel: { pageSize: 5 } },
+                }}
+                getRowId={(row) => row._id}
+                disableRowSelectionOnClick
+                hideFooterSelectedRowCount
+                sx={{
+                    width: '100%',
+                    flex: 1,
+                    border: 'none',
+                    '& .MuiDataGrid-columnHeaders': {
+                        backgroundColor: '#f5f5f5',
+                        minHeight: '35px !important',
+                        maxHeight: '35px !important',
+                    },
+                    '& .MuiDataGrid-columnHeader': {
+                        minHeight: '35px !important',
+                        maxHeight: '35px !important',
+                    },
+                    '& .MuiDataGrid-cell': {
+                        padding: '4px',
+                        display: 'flex',
+                    },
+                }}
+                rowHeight={35}
+            />
         </Box>
     );
 };

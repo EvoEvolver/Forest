@@ -45,6 +45,25 @@ export function createTreeRouter(treeService: TreeService): Router {
         }
     });
 
+    // Get metadata for multiple trees endpoint
+    router.post('/trees/metadata', authenticateToken, async (req: AuthenticatedRequest, res) => {
+        console.log(`Fetching metadata for multiple trees for user: ${req.user?.email}`);
+        try {
+            const { treeIds } = req.body;
+            
+            if (!treeIds || !Array.isArray(treeIds)) {
+                res.status(400).json({ error: 'treeIds array is required' });
+                return;
+            }
+
+            const metadataMap = await treeService.getMultipleTreeMetadata(treeIds);
+            res.json(metadataMap);
+        } catch (error) {
+            console.error(`Error fetching metadata for multiple trees:`, error);
+            res.status(500).json({ error: 'Failed to fetch tree metadata' });
+        }
+    });
+    
     // Delete tree endpoint
     router.delete('/trees/:treeId', authenticateToken, (req: AuthenticatedRequest, res) => {
         const treeId = req.params.treeId;
@@ -65,6 +84,8 @@ export function createTreeRouter(treeService: TreeService): Router {
             }
         }
     });
+
+
 
     return router;
 } 
