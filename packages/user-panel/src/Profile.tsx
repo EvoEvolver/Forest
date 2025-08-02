@@ -26,7 +26,6 @@ import {themeModeAtom} from "../../theme";
 
 export const Profile: React.FC = () => {
     const [user] = useAtom(userAtom);
-    const theme = useTheme();
     const [isEditingName, setIsEditingName] = useState(false);
     const [displayName, setDisplayName] = useState('');
     const [tempDisplayName, setTempDisplayName] = useState('');

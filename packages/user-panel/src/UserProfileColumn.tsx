@@ -2,7 +2,7 @@
 import React from 'react';
 import {
     Box,
-    Typography,
+    Typography, useTheme,
 } from '@mui/material';
 import { UserAvatar } from './UserAvatar';
 import { UserDisplayName } from './UserDisplayName';
@@ -17,13 +17,14 @@ interface UserProfileProps {
     onEditClick: () => void;
 }
 
-export const UserProfile: React.FC<UserProfileProps> = ({
-                                                                          user,
-                                                                          avatarUrl,
-                                                                          setAvatarUrl,
-                                                                          setUser,
-                                                                          onEditClick
-                                                                      }) => {
+export const UserProfileColumn: React.FC<UserProfileProps> = ({
+      user,
+      avatarUrl,
+      setAvatarUrl,
+      setUser,
+      onEditClick
+  }) => {
+    const theme = useTheme();
     return (
         <AuthGuard>
             <DashboardCard title="" sx={{ backgroundColor: 'transparent' }}>

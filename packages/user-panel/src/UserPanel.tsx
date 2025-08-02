@@ -5,7 +5,7 @@ import { useAtom } from "jotai/index";
 import { setupSupabaseClient } from '@forest/user-system/src/supabase';
 import TopBar, {TabId} from "./TopBar";
 import { EditDisplayNameDialog } from './EditDisplayNameDialog';
-import {UserProfile} from "./UserProfile";
+import {UserProfileColumn} from "./UserProfileColumn";
 import {MainContentSection} from "./MainContentSecion";
 
 export const UserPanel = ({}) => {
@@ -135,7 +135,7 @@ export const UserPanel = ({}) => {
                             height: '100%'
                         }}
                     >
-                        <UserProfile
+                        <UserProfileColumn
                             user={user}
                             avatarUrl={avatarUrl}
                             setAvatarUrl={setAvatarUrl}

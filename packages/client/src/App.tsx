@@ -13,6 +13,7 @@ import {getPastelHexFromUsername, getRandomAnimal} from "@forest/user-system/src
 import {recordTreeVisit} from "./TreeState/treeVisitService";
 import {treeAtom} from "./TreeState/TreeState";
 import {parseOAuthTokensFromHash, clearOAuthTokensFromUrl, hasOAuthTokensInUrl, clearSavedUrlBeforeLogin} from "../../user-system/src/authUtils";
+import {useTheme} from "@mui/system";
 
 // @ts-ignore
 const FlowVisualizer = lazy(() => import('./FlowView'));
@@ -23,6 +24,7 @@ export default function App() {
     const [userPanelModalOpen, setUserPanelModalOpen] = useAtom(userPanelModalOpenAtom);
     const supabaseClient = useAtomValue(supabaseClientAtom)
     const setupYDoc = useSetAtom(setupYDocAtom);
+    const theme = useTheme();
 
     useEffect(() => {
         if (treeId) {
@@ -122,7 +124,7 @@ export default function App() {
     return (
         <>
 
-            <Box sx={{display: 'flex', flexDirection: 'column', height: '100dvh'}}>
+            <Box sx={{display: 'flex', flexDirection: 'column', height: '100dvh', backgroundColor: theme.palette.background.default}}>
                 <CssBaseline/>
                 <Box sx={{
                     position: 'absolute',
@@ -133,7 +135,6 @@ export default function App() {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'stretch',
-                    backgroundColor: 'transparent',
                     zIndex: 1000,
                     pointerEvents: 'none' // Allow clicks to pass through empty areas
                 }}>
@@ -150,7 +151,6 @@ export default function App() {
                     overflow="auto"
                     p={0}
                     pt={0}
-                    bgcolor="background.default"
                     sx={{overflowX: 'hidden'}}
                 >
 

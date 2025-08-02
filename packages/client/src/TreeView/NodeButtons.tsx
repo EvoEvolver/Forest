@@ -105,7 +105,8 @@ export const NodeButtons = (props: { node: NodeVM }) => {
                 position: 'absolute',
                 left: '0',
                 width: "40%",
-                backgroundColor: theme.palette.primary.light
+                color: 'white',
+                backgroundColor: theme.palette.primary.main
             }}
         ><ArrowBackIcon></ArrowBackIcon>
         </Button>}
@@ -119,7 +120,8 @@ export const NodeButtons = (props: { node: NodeVM }) => {
                     position: 'absolute',
                     right: '0',
                     width: "40%",
-                    backgroundColor: theme.palette.primary.light
+                    color: 'white',
+                    backgroundColor: theme.palette.primary.main
                 }}
             >
                 <ArrowForwardIcon></ArrowForwardIcon> <span>({node.data['children_count']} more)</span>

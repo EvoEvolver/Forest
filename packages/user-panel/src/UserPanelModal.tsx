@@ -77,12 +77,12 @@ export const UserPanelModal: React.FC<UserPanelModalProps> = ({ open, onClose })
                     margin: 0,
                     height: '100%',
                     overflow: 'hidden',
-                    backgroundColor: '#f5f5f5'
+                    backgroundColor: theme.palette.background.paper
                 }}
             >
 
                 {/* Render UserPanel with full height */}
-                <Box sx={{ height: '100%', padding: 0 }}>
+                <Box sx={{ height: '100%', padding: 0}}>
                     <UserPanel />
                 </Box>
             </DialogContent>

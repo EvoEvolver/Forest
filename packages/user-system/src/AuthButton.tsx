@@ -78,7 +78,6 @@ const AuthButton: React.FC = () => {
                 onClick={handleLoginClick}
                 startIcon={<AccountCircleIcon sx={{color: 'rgba(78, 137, 192, 0.8)'}}/>}
                 sx={{
-                    color: 'black',
                     textTransform: 'none',
                     '&:hover': {
                         backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -96,7 +95,6 @@ const AuthButton: React.FC = () => {
                 color="primary"
                 onClick={handleUserMenuClick}
                 sx={{
-                    color: 'black',
                     textTransform: 'none',
                     display: 'flex',
                     alignItems: 'center',
@@ -113,7 +111,7 @@ const AuthButton: React.FC = () => {
                 >
                     {!userMetadata?.avatar && (userMetadata?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase())}
                 </Avatar>
-                <Typography variant="body2" sx={{color: 'black'}}>
+                <Typography variant="body2">
                     {userMetadata?.username || user?.email?.split('@')[0]}
                 </Typography>
             </Button>
