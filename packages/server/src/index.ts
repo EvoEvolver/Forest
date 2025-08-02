@@ -34,8 +34,8 @@ import {TreeVisitManager} from './services/treeVisitTracker';
 import {createTreePermissionRouter} from "./routes";
 import apiProxyRouter from "./routes/apiProxyRouter.ts";
 import mcpProxyRouter from "./routes/mcpProxyRouter";
-import { imageRoutes } from './routes/imageRoutes';
-import { initializeMinioService } from './services/minioService';
+// import { imageRoutes } from './routes/imageRoutes';
+// import { initializeMinioService } from './services/minioService';
 
 // Initialize services and connections
 setMongoConnection();
@@ -75,15 +75,15 @@ function main(): void {
     app.use('/api', createNodeSnapshotRouter());
     app.use('/api/api-proxy', apiProxyRouter)
     app.use('/api/mcp-proxy', mcpProxyRouter);
-    app.use('/api/images', imageRoutes);
+    // app.use('/api/images', imageRoutes);
     app.use('/api/metadata', metadataRoutes);
 
     // Start server
     server.listen(config.port, config.host, async () => {
         console.log(`Server running at http://${config.host}:${config.port}/`);
         
-        // Initialize MinIO service
-        await initializeMinioService();
+        // // Initialize MinIO service
+        // await initializeMinioService();
         
         // Start daily reminders cron job
         reminderService.startDailyReminders();

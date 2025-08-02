@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useRef, useCallback} from 'react';
 import {useAtomValue} from 'jotai';
 import type {GridColDef, GridRenderCellParams} from '@mui/x-data-grid';
 import {DataGrid, GridFooterContainer, GridPagination} from '@mui/x-data-grid';
@@ -14,6 +14,7 @@ import {
     DialogContentText,
     DialogTitle,
     IconButton,
+    Popover,
     Tooltip,
     Typography
 } from '@mui/material';
@@ -25,6 +26,7 @@ const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort
 import DashboardCard from './DashboardCard';
 import {NodeJson, TreeJson, TreeMetadata} from '@forest/schema';
 import {supportedNodeTypes} from '@forest/node-types';
+import MiniFlowView from './MiniFlowView';
 
 interface UserTree {
     treeId: string;
@@ -50,6 +52,23 @@ export const UserTreesList = ({}) => {
         page: 0,
         pageSize: 25,
     });
+    
+    // Hover preview state
+    const [previewState, setPreviewState] = useState<{
+        treeId: string | null;
+        treeData: TreeJson | null;
+        anchorEl: HTMLElement | null;
+        isOpen: boolean;
+    }>({
+        treeId: null,
+        treeData: null,
+        anchorEl: null,
+        isOpen: false
+    });
+    const [loadingTreeData, setLoadingTreeData] = useState(false);
+    const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const isOverPopoverRef = useRef<boolean>(false);
 
     const authToken = useAtomValue(authTokenAtom);
     const user = useAtomValue(userAtom);
@@ -154,6 +173,38 @@ export const UserTreesList = ({}) => {
         handleCloseCreateTreeDialog();
     };
 
+    const fetchTreeData = useCallback(async (treeId: string): Promise<TreeJson | null> => {
+        if (!authToken) {
+            return null;
+        }
+
+        try {
+            setLoadingTreeData(true);
+            const url = `${httpUrl}/api/trees/${treeId}`;
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${authToken}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                console.error('Failed to fetch tree data:', response.status);
+                return null;
+            }
+
+            const data = await response.json();
+            return data.tree || data || null;
+        } catch (err) {
+            console.error('Error fetching tree data:', err);
+            return null;
+        } finally {
+            setLoadingTreeData(false);
+        }
+    }, [authToken]);
+
     const fetchUserTrees = async () => {
         // Don't fetch if not authenticated
         if (!authToken || !user) {
@@ -233,6 +284,71 @@ export const UserTreesList = ({}) => {
     const handleOpenTree = (treeId: string) => {
         window.location.href = `${window.location.origin}/?id=${treeId}`;
     };
+
+    const showPreview = useCallback(async (element: HTMLElement, treeId: string) => {
+        // Clear any pending hide timeout when showing
+        if (hideTimeoutRef.current) {
+            clearTimeout(hideTimeoutRef.current);
+            hideTimeoutRef.current = null;
+        }
+
+        const treeData = await fetchTreeData(treeId);
+        if (treeData) {
+            setPreviewState({
+                treeId,
+                treeData,
+                anchorEl: element,
+                isOpen: true
+            });
+        }
+    }, [fetchTreeData]);
+
+    const hidePreview = useCallback(() => {
+        // Only hide if not over popover
+        if (!isOverPopoverRef.current) {
+            setPreviewState({
+                treeId: null,
+                treeData: null,
+                anchorEl: null,
+                isOpen: false
+            });
+        }
+    }, []);
+
+    const handleRowHover = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+        const rowElement = event.currentTarget;
+        const treeId = rowElement.getAttribute('data-id');
+        
+        if (!treeId) return;
+
+        // Clear any existing timeout
+        if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current);
+        }
+
+        // Show preview after delay
+        hoverTimeoutRef.current = setTimeout(() => {
+            showPreview(rowElement, treeId);
+        }, 500); // Increased delay to 500ms
+    }, [showPreview]);
+
+    const handleRowLeave = useCallback(() => {
+        // Clear hover timeout
+        if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current);
+            hoverTimeoutRef.current = null;
+        }
+        
+        // Clear any existing hide timeout
+        if (hideTimeoutRef.current) {
+            clearTimeout(hideTimeoutRef.current);
+        }
+        
+        // Hide preview after a short delay (to allow moving to popover)
+        hideTimeoutRef.current = setTimeout(() => {
+            hidePreview();
+        }, 300);
+    }, [hidePreview]);
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -426,6 +542,18 @@ export const UserTreesList = ({}) => {
         }
     }, [authToken, user]);
 
+    // Cleanup timeouts on unmount
+    useEffect(() => {
+        return () => {
+            if (hoverTimeoutRef.current) {
+                clearTimeout(hoverTimeoutRef.current);
+            }
+            if (hideTimeoutRef.current) {
+                clearTimeout(hideTimeoutRef.current);
+            }
+        };
+    }, []);
+
     // Calculate optimal page size based on viewport height
     useEffect(() => {
         const calculateOptimalPageSize = () => {
@@ -516,6 +644,12 @@ export const UserTreesList = ({}) => {
                         getRowId={(row) => row.treeId}
                         disableRowSelectionOnClick
                         hideFooterSelectedRowCount
+                        slotProps={{
+                            row: {
+                                onMouseEnter: handleRowHover,
+                                onMouseLeave: handleRowLeave,
+                            }
+                        }}
                         initialState={{
                             sorting: {
                                 sortModel: [{ field: 'lastAccessed', sort: 'desc' }],
@@ -598,6 +732,69 @@ export const UserTreesList = ({}) => {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Tree Preview Popover */}
+            {previewState.isOpen && previewState.treeData && (
+                <Popover
+                    open={true}
+                    anchorEl={previewState.anchorEl}
+                    onClose={hidePreview}
+                    anchorOrigin={{
+                        vertical: 'center',
+                        horizontal: 'right',
+                    }}
+                    transformOrigin={{
+                        vertical: 'center',
+                        horizontal: 'left',
+                    }}
+                    sx={{
+                        pointerEvents: 'none',
+                        '& .MuiPopover-paper': {
+                            pointerEvents: 'auto',
+                            marginLeft: '20px',
+                            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                            borderRadius: '8px',
+                            overflow: 'visible',
+                        }
+                    }}
+                    disableRestoreFocus
+                    disableScrollLock
+                >
+                    <Box 
+                        sx={{ position: 'relative' }}
+                        onMouseEnter={() => {
+                            isOverPopoverRef.current = true;
+                            // Clear any pending hide timeout
+                            if (hideTimeoutRef.current) {
+                                clearTimeout(hideTimeoutRef.current);
+                                hideTimeoutRef.current = null;
+                            }
+                        }}
+                        onMouseLeave={() => {
+                            isOverPopoverRef.current = false;
+                            // Hide the preview when leaving popover
+                            hidePreview();
+                        }}
+                    >
+                        {loadingTreeData ? (
+                            <Box 
+                                sx={{ 
+                                    width: 400, 
+                                    height: 300, 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center',
+                                    backgroundColor: '#fafafa',
+                                }}
+                            >
+                                <CircularProgress size={30} />
+                            </Box>
+                        ) : (
+                            <MiniFlowView treeData={previewState.treeData} width={400} height={300} />
+                        )}
+                    </Box>
+                </Popover>
+            )}
         </Box>
     );
 };
