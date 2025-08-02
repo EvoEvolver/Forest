@@ -1,5 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {useAtomValue} from 'jotai';
+import type {GridColDef, GridRenderCellParams} from '@mui/x-data-grid';
+import {DataGrid, GridFooterContainer, GridPagination} from '@mui/x-data-grid';
 import {
     Alert,
     Box,
@@ -12,15 +14,10 @@ import {
     DialogContentText,
     DialogTitle,
     IconButton,
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableRow,
     Tooltip,
     Typography
 } from '@mui/material';
-import {Delete as DeleteIcon, Refresh as RefreshIcon} from '@mui/icons-material';
+import {Delete as DeleteIcon, Refresh as RefreshIcon, Add as AddIcon} from '@mui/icons-material';
 import {v4 as uuidv4} from 'uuid';
 import {authTokenAtom, userAtom} from '@forest/user-system/src/authStates';
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
@@ -49,6 +46,10 @@ export const UserTreesList = ({}) => {
     const [deletingTreeId, setDeletingTreeId] = useState<string | null>(null);
     const [createTreeDialogOpen, setCreateTreeDialogOpen] = useState(false);
     const [availableNodeTypes, setAvailableNodeTypes] = useState<NodeTypeForDisplay[]>([]);
+    const [paginationModel, setPaginationModel] = useState({
+        page: 0,
+        pageSize: 25,
+    });
 
     const authToken = useAtomValue(authTokenAtom);
     const user = useAtomValue(userAtom);
@@ -60,7 +61,7 @@ export const UserTreesList = ({}) => {
                 "EditorNodeType",
                 "AgentNodeType"
             ];
-            
+
             const promises = nodeTypeNames.map(async (typeName) => {
                 try {
                     const nodeType = await supportedNodeTypes(typeName);
@@ -73,11 +74,11 @@ export const UserTreesList = ({}) => {
                     return null;
                 }
             });
-            
+
             const nodeTypes = await Promise.all(promises);
             setAvailableNodeTypes(nodeTypes.filter(type => type !== null) as NodeTypeForDisplay[]);
         };
-        
+
         loadNodeTypes();
     }, []);
 
@@ -140,7 +141,7 @@ export const UserTreesList = ({}) => {
             handleCreateTree(availableNodeTypes[0].name);
             return;
         }
-        
+
         setCreateTreeDialogOpen(true);
     };
 
@@ -160,7 +161,7 @@ export const UserTreesList = ({}) => {
             setError('Please log in to view your trees');
             return;
         }
-        
+
         try {
             setLoading(true);
             setError(null);
@@ -255,6 +256,162 @@ export const UserTreesList = ({}) => {
         return "Tiny";
     };
 
+    // Custom footer component with Create New Tree button and pagination
+    const CustomFooter = () => (
+        <GridFooterContainer>
+            <Box sx={{display: 'flex', alignItems: 'center', flex: 1}}>
+                <Tooltip title="Create New Tree">
+                    <IconButton
+                        color="primary"
+                        size="small"
+                        onClick={handleCreateTreeClick}
+                        sx={{marginLeft: 1}}
+                    >
+                        <AddIcon/>
+                    </IconButton>
+                </Tooltip>
+                <Tooltip title="Refresh">
+                    <IconButton size="small" onClick={fetchUserTrees} sx={{marginLeft: 1}}>
+                        <RefreshIcon fontSize="small"/>
+                    </IconButton>
+                </Tooltip>
+                <Box sx={{flex: 1}}/>
+                <GridPagination/>
+            </Box>
+        </GridFooterContainer>
+    );
+
+    // Define columns for DataGrid
+    const columns: GridColDef[] = [
+        {
+            field: 'treeId',
+            headerName: 'Tree ID',
+            width: 120,
+            minWidth: 120,
+            align: 'center',
+            headerAlign: 'center',
+            renderCell: (params: GridRenderCellParams) => (
+                <Typography
+                    variant="subtitle2"
+                    fontWeight={600}
+                    fontSize="0.8rem"
+                    sx={{
+                        cursor: 'pointer',
+                        color: 'primary.main',
+                        '&:hover': {
+                            textDecoration: 'underline'
+                        }
+                    }}
+                    onClick={() => handleOpenTree(params.value)}
+                >
+                    {params.value !== null ? params.value.slice(0, 8) + '...' : "No ID"}
+                </Typography>
+            ),
+        },
+        {
+            field: 'title',
+            headerName: 'Title',
+            width: 200,
+            minWidth: 200,
+            flex: 1,
+            align: 'center',
+            headerAlign: 'center',
+            renderCell: (params: GridRenderCellParams) => (
+                <Box sx={{textAlign: 'center'}}>
+                    <Typography
+                        variant="subtitle2"
+                        fontWeight={600}
+                        fontSize="0.8rem"
+                        sx={{
+                            cursor: 'pointer',
+                            color: 'primary.main',
+                            '&:hover': {
+                                textDecoration: 'underline'
+                            }
+                        }}
+                        onClick={() => handleOpenTree(params.row.treeId)}
+                    >
+                        {params.value?.trim() ? params.value : 'Untitled'}
+                    </Typography>
+                </Box>
+            ),
+        },
+        {
+            field: 'createdAt',
+            headerName: 'Created',
+            width: 140,
+            minWidth: 140,
+            align: 'center',
+            headerAlign: 'center',
+            renderCell: (params: GridRenderCellParams) => (
+                <Typography color="textSecondary" variant="subtitle2" fontWeight={400} fontSize="0.75rem">
+                    {formatDate(params.value)}
+                </Typography>
+            ),
+        },
+        {
+            field: 'lastAccessed',
+            headerName: 'Last Accessed',
+            width: 140,
+            minWidth: 140,
+            align: 'center',
+            headerAlign: 'center',
+            renderCell: (params: GridRenderCellParams) => (
+                <Typography color="textSecondary" variant="subtitle2" fontWeight={400} fontSize="0.75rem">
+                    {formatDate(params.value)}
+                </Typography>
+            ),
+        },
+        {
+            field: 'nodeCount',
+            headerName: 'Size',
+            width: 120,
+            minWidth: 120,
+            align: 'center',
+            headerAlign: 'center',
+            renderCell: (params: GridRenderCellParams) => (
+                <Chip
+                    sx={{
+                        px: "4px",
+                        backgroundColor: getNodeCountColor(params.value),
+                        color: "#fff",
+                        fontSize: "0.65rem",
+                        height: 20
+                    }}
+                    size="small"
+                    label={`${getNodeCountLabel(params.value)} (${params.value})`}
+                />
+            ),
+        },
+        {
+            field: 'actions',
+            headerName: 'Actions',
+            width: 80,
+            minWidth: 80,
+            sortable: false,
+            disableColumnMenu: true,
+            align: 'center',
+            headerAlign: 'center',
+            renderCell: (params: GridRenderCellParams) => (
+                <Tooltip title="Delete Tree">
+                    <IconButton
+                        size="small"
+                        onClick={() => handleDeleteTree(params.row.treeId)}
+                        disabled={deletingTreeId === params.row.treeId}
+                        color="error"
+                        sx={{p: 0.5}}
+                    >
+                        {deletingTreeId === params.row.treeId ? (
+                            <CircularProgress size={14}/>
+                        ) : (
+                            <DeleteIcon fontSize="small"/>
+                        )}
+                    </IconButton>
+                </Tooltip>
+            ),
+        },
+    ];
+
     useEffect(() => {
         // Only fetch if we have both auth token and user
         if (authToken && user) {
@@ -268,6 +425,37 @@ export const UserTreesList = ({}) => {
             }
         }
     }, [authToken, user]);
+
+    // Calculate optimal page size based on viewport height
+    useEffect(() => {
+        const calculateOptimalPageSize = () => {
+            const viewportHeight = window.innerHeight;
+            const headerHeight = 64; // AppBar height
+            const footerHeight = 52; // DataGrid footer height
+            const rowHeight = 35; // Row height from sx prop
+            const headerRowHeight = 35; // Header row height
+            const padding = 40; // Some padding for safety
+
+            const availableHeight = viewportHeight - headerHeight - footerHeight - headerRowHeight - padding;
+            const maxRows = Math.floor(availableHeight / rowHeight);
+
+            // Ensure we have at least 10 rows and at most 100 rows
+            return Math.min(Math.max(maxRows, 10), 100);
+        };
+
+        const handleResize = () => {
+            const newPageSize = calculateOptimalPageSize();
+            setPaginationModel(prev => ({...prev, pageSize: newPageSize}));
+        };
+
+        // Set initial page size
+        const newPageSize = calculateOptimalPageSize();
+        setPaginationModel(prev => ({...prev, pageSize: newPageSize}));
+
+        // Add resize listener
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     if (loading) {
         return (
@@ -300,171 +488,88 @@ export const UserTreesList = ({}) => {
         <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             <DashboardCard
                 title={`My Trees (${trees.length})`}
-                action={
-                    <Box sx={{display: 'flex', gap: 1, alignItems: 'center'}}>
+                sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+            >
+                {trees.length === 0 ? (
+                    <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1}}>
+                        <Typography variant="body2" color="text.secondary" textAlign="center" py={3} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
+                            You haven't created any trees yet. Click the + button below to get started!
+                        </Typography>
                         <Button
                             variant="contained"
                             onClick={handleCreateTreeClick}
+                            startIcon={<AddIcon />}
                             size="small"
                             sx={{fontSize: { xs: '0.65rem', md: '0.75rem' }, py: 0.5, px: 1}}
                         >
                             Create New Tree
                         </Button>
-                        <Tooltip title="Refresh">
-                            <IconButton size="small" onClick={fetchUserTrees}>
-                                <RefreshIcon fontSize="small"/>
-                            </IconButton>
-                        </Tooltip>
                     </Box>
-                }
-                sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
-            >
-                {trees.length === 0 ? (
-                    <Typography variant="body2" color="text.secondary" textAlign="center" py={3} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
-                        You haven't created any trees yet. Click "Create new tree" to get started!
-                    </Typography>
                 ) : (
-                    <Box sx={{
-                        width: '100%',
-                        overflow: 'auto',
-                        flex: 1,
-                        minHeight: 0,
-                        '& .MuiTable-root': {
-                            fontSize: { xs: '0.7rem', md: '0.8rem' }
-                        }
-                    }}>
-                        <Table
-                            aria-label="user trees table"
-                            size="small"
-                            sx={{
-                                minWidth: { xs: 300, md: 650 },
-                                '& .MuiTableCell-root': {
-                                    padding: { xs: '4px 8px', md: '8px 16px' },
-                                    fontSize: { xs: '0.7rem', md: '0.8rem' }
-                                }
-                            }}
-                        >
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell sx={{py: 1}}>
-                                        <Typography variant="subtitle2" fontWeight={600} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
-                                            Id
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell sx={{py: 1}}>
-                                        <Typography variant="subtitle2" fontWeight={600} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
-                                            Details
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell sx={{py: 1}}>
-                                        <Typography variant="subtitle2" fontWeight={600} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
-                                            Last Accessed
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell sx={{py: 1}}>
-                                        <Typography variant="subtitle2" fontWeight={600} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
-                                            Size
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell align="right" sx={{py: 1}}>
-                                        <Typography variant="subtitle2" fontWeight={600} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
-                                            Actions
-                                        </Typography>
-                                    </TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {trees.map((tree) => (
-                                    <TableRow key={tree.treeId} sx={{'&:hover': {backgroundColor: 'action.hover'}}}>
-                                        <TableCell sx={{py: 0.5}}>
-                                            <Typography
-                                                variant="subtitle2"
-                                                fontWeight={600}
-                                                fontSize="0.8rem"
-                                                sx={{
-                                                    cursor: 'pointer',
-                                                    color: 'primary.main',
-                                                    '&:hover': {
-                                                        textDecoration: 'underline'
-                                                    }
-                                                }}
-                                                onClick={() => handleOpenTree(tree.treeId)}
-                                            >
-                                                {tree.treeId!==null?tree.treeId.slice(0, 8) + '...':"No ID"}
-                                            </Typography>
-
-                                        </TableCell>
-                                        <TableCell sx={{py: 0.5}}>
-                                            <Box>
-                                                <Typography
-                                                    variant="subtitle2"
-                                                    fontWeight={600}
-                                                    fontSize="0.8rem"
-                                                    sx={{
-                                                        cursor: 'pointer',
-                                                        color: 'primary.main',
-                                                        '&:hover': {
-                                                            textDecoration: 'underline'
-                                                        }
-                                                    }}
-                                                    onClick={() => handleOpenTree(tree.treeId)}
-                                                >
-                                                    {(tree.title?.trim() ? tree.title : 'Untitled')}
-                                                </Typography>
-                                                <Typography
-                                                    color="textSecondary"
-                                                    sx={{
-                                                        fontSize: "0.7rem",
-                                                    }}
-                                                >
-                                                    Created: {formatDate(tree.createdAt)}
-                                                </Typography>
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell sx={{py: 0.5}}>
-                                            <Typography color="textSecondary" variant="subtitle2" fontWeight={400}
-                                                        fontSize="0.75rem">
-                                                {formatDate(tree.lastAccessed)}
-                                            </Typography>
-                                        </TableCell>
-                                        <TableCell sx={{py: 0.5}}>
-                                            <Chip
-                                                sx={{
-                                                    px: "4px",
-                                                    backgroundColor: getNodeCountColor(tree.nodeCount),
-                                                    color: "#fff",
-                                                    fontSize: "0.65rem",
-                                                    height: 20
-                                                }}
-                                                size="small"
-                                                label={`${getNodeCountLabel(tree.nodeCount)} (${tree.nodeCount})`}
-                                            />
-                                        </TableCell>
-                                        <TableCell align="right" sx={{py: 0.5}}>
-                                            <Tooltip title="Delete Tree">
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => handleDeleteTree(tree.treeId)}
-                                                    disabled={deletingTreeId === tree.treeId}
-                                                    color="error"
-                                                    sx={{p: 0.5}}
-                                                >
-                                                    {deletingTreeId === tree.treeId ? (
-                                                        <CircularProgress size={14}/>
-                                                    ) : (
-                                                        <DeleteIcon fontSize="small"/>
-                                                    )}
-                                                </IconButton>
-                                            </Tooltip>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </Box>
+                    <DataGrid
+                        rows={trees}
+                        columns={columns}
+                        loading={loading}
+                        pageSizeOptions={[paginationModel.pageSize]}
+                        paginationModel={paginationModel}
+                        onPaginationModelChange={setPaginationModel}
+                        getRowId={(row) => row.treeId}
+                        disableRowSelectionOnClick
+                        hideFooterSelectedRowCount
+                        initialState={{
+                            sorting: {
+                                sortModel: [{ field: 'lastAccessed', sort: 'desc' }],
+                            },
+                        }}
+                        sx={{
+                            width: '100%',
+                            flex: 1,
+                            border: 'none',
+                            '& .MuiDataGrid-main': {
+                                overflow: 'hidden'
+                            },
+                            '& .MuiDataGrid-virtualScroller': {
+                                overflow: 'hidden !important'
+                            },
+                            '& .MuiDataGrid-virtualScrollerContent': {
+                                overflow: 'hidden'
+                            },
+                            '& .MuiDataGrid-virtualScrollerRenderZone': {
+                                overflow: 'hidden'
+                            },
+                            '& .MuiDataGrid-columnHeaders': {
+                                backgroundColor: '#f5f5f5',
+                                minHeight: '35px !important',
+                                maxHeight: '35px !important',
+                            },
+                            '& .MuiDataGrid-columnHeader': {
+                                minHeight: '35px !important',
+                                maxHeight: '35px !important',
+                            },
+                            '& .MuiDataGrid-cell': {
+                                padding: '4px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            },
+                            '& .MuiDataGrid-scrollbar': {
+                                display: 'none'
+                            },
+                            '& .MuiDataGrid-scrollbar--vertical': {
+                                display: 'none'
+                            },
+                            '& .MuiDataGrid-scrollbar--horizontal': {
+                                display: 'none'
+                            }
+                        }}
+                        rowHeight={35}
+                        slots={{
+                            footer: CustomFooter,
+                        }}
+                    />
                 )}
             </DashboardCard>
-            
+
             {/* Dialog for choosing root node type */}
             <Dialog
                 open={createTreeDialogOpen}
