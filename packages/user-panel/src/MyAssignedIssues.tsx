@@ -244,14 +244,30 @@ const MultiTreeIssueListWrapper: React.FC<{
     }
 
     // Tree Title Cell component
-    const TreeTitleCell: React.FC<{value: string}> = ({value}) => (
-        <Chip 
-            label={value || 'Unknown Tree'} 
-            size="small"
-            variant="outlined"
-            sx={{ maxWidth: '100%' }}
-        />
-    );
+    const TreeTitleCell: React.FC<{value: string, treeId: string}> = ({value, treeId}) => {
+        const handleTreeClick = () => {
+            // Navigate to the tree by opening it in the current window
+            const baseUrl = `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
+            window.location.href = `${baseUrl}/?id=${treeId}`;
+        };
+
+        return (
+            <Chip 
+                label={value || 'Unknown Tree'} 
+                size="small"
+                variant="outlined"
+                onClick={handleTreeClick}
+                sx={{ 
+                    maxWidth: '100%',
+                    cursor: 'pointer',
+                    '&:hover': {
+                        backgroundColor: 'primary.light',
+                        color: 'primary.contrastText'
+                    }
+                }}
+            />
+        );
+    };
 
     // Define columns similar to simple mode IssueList but with tree title
     const columns: GridColDef[] = [
@@ -270,7 +286,7 @@ const MultiTreeIssueListWrapper: React.FC<{
             minWidth: 120,
             flex: 1,
             renderCell: (params: GridRenderCellParams) => (
-                <TreeTitleCell value={params.value}/>
+                <TreeTitleCell value={params.value} treeId={params.row.treeId}/>
             ),
         },
         {
