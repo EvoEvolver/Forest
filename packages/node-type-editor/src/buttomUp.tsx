@@ -144,8 +144,7 @@ If there are any annotations in the original text, you should keep them as they 
         {
             content: prompt,
             author: "user",
-            role: "user",
-            time: new Date().toISOString()
+            role: "user"
         }
     )
     const response = await fetchChatResponse([message.toJson() as any], "gpt-4.1", authToken);

@@ -177,8 +177,7 @@ You should not put any HTML elements not appearing in the original content.
     const message = new NormalMessage({
         content: prompt,
         author: "user",
-        role: "user",
-        time: new Date().toISOString()
+        role: "user"
     });
 
     const response = await fetchChatResponse([message.toJson() as any], "gpt-4.1", authToken);

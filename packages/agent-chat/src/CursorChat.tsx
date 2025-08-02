@@ -42,8 +42,7 @@ export const CursorChat: React.FC = ({selectedNode}: { selectedNode: NodeVM }) =
         const userMsg = new NormalMessage({
             content: content,
             author: "user",
-            role: "user",
-            time: new Date().toISOString()
+            role: "user"
         });
         const messagesWithUserInput = [...messages, userMsg];
         setMessages(() => messagesWithUserInput);
@@ -56,7 +55,6 @@ export const CursorChat: React.FC = ({selectedNode}: { selectedNode: NodeVM }) =
         const assistantMsg = new HtmlMessage({
             content: result,
             role: "assistant",
-            time: new Date().toISOString(),
             author: "assistant"
         })
 

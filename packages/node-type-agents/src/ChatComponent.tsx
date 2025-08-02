@@ -7,6 +7,7 @@ import {invokeAgent} from "./agents";
 import {agentSessionState} from "./sessionState";
 import {BaseMessage, NormalMessage} from "@forest/agent-chat/src/MessageTypes";
 import {ChatViewImpl} from "@forest/agent-chat/src/ChatViewImpl";
+import {AgentNodeType} from "./AgentNode";
 
 
 export function ChatComponent({node}: { node: NodeVM }) {
@@ -30,10 +31,9 @@ export function ChatComponent({node}: { node: NodeVM }) {
         const userMsg = new NormalMessage({
             content: content,
             author: "user",
-            role: "user",
-            time: new Date().toISOString()
+            role: "user"
         });
-        invokeAgent(node.nodeM, [userMsg])
+        await invokeAgent(node.nodeM, [userMsg])
     }
 
     return (

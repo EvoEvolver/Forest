@@ -6,10 +6,72 @@ import CardViewer from "./openapi/CardViewer";
 import {json as jsonLang} from '@codemirror/lang-json';
 import {parseApiSpec} from "./openapi/apiParser";
 import {httpUrl} from "@forest/schema/src/config"
+import {ActionableNodeType, ActionParameter} from "./ActionableNodeType";
+import { AgentSessionState } from "./sessionState";
+import {ToolCallingMessage, ToolResponseMessage} from "@forest/agent-chat/src/AgentMessageTypes";
 
 const AgentToolOpenApiSpecText = "AgentToolOpenApiSpecText"
 
-export class AgentToolNodeType extends NodeType {
+export class AgentToolNodeType extends ActionableNodeType {
+    actionLabel(node: NodeM): string {
+        return "Call tool "+ node.title();
+    }
+    actionDescription(node: NodeM): string {
+        const apiSpec = this.getApiSpec(node);
+        if (!apiSpec || !apiSpec.endpoints || apiSpec.endpoints.length === 0) {
+            return "No API endpoints available";
+        }
+        const endpoint = apiSpec.endpoints[0];
+        const description = endpoint.description || "No description provided.";
+        return `${description}`;
+    }
+    actionParameters(node: NodeM): Record<string, ActionParameter> {
+        const apiSpec = this.getApiSpec(node);
+        if (!apiSpec || !apiSpec.endpoints || apiSpec.endpoints.length === 0) {
+            return {};
+        }
+        const endpoint = apiSpec.endpoints[0];
+        const parameters: Record<string, ActionParameter> = {};
+        if (endpoint.requestBody && endpoint.requestBody.content['application/json']) {
+            const schema = endpoint.requestBody.content['application/json'].schema;
+            parameters.requestBody = {
+                type: schema.type || "object",
+                description: schema.description || "Request body parameters"
+            };
+        }
+        return parameters;
+    }
+    async executeAction(node: NodeM, parameters: Record<string, any>, callerNode: NodeM, agentSessionState: AgentSessionState): Promise<any> {
+        // Handle other actionable nodes
+        const toolCallingMessage = new ToolCallingMessage({
+            toolName: node.title(),
+            parameters: parameters,
+            author: callerNode.title(),
+        });
+        agentSessionState.addMessage(callerNode, toolCallingMessage);
+
+        const res = this.callApi(node, parameters)
+
+        // Check for URLs starting with https://storage.treer.ai in the response
+        const resString = typeof res === 'string' ? res : JSON.stringify(res);
+        const urlRegex = /https:\/\/storage\.treer\.ai\/[^\s"]+/g;
+        const matches = resString.match(urlRegex);
+        if (matches) {
+            for (const url of matches) {
+                agentSessionState.files.push({
+                    fileUrl: url,
+                    fileDescription: `File from ${node.title()} tool`
+                });
+            }
+        }
+        const toolResponseMessage = new ToolResponseMessage({
+            toolName: node.title(),
+            response: res,
+            author: node.title(),
+        })
+        agentSessionState.addMessage(callerNode, toolResponseMessage);
+    }
+
     displayName = "Tool"
     allowReshape = true
     allowAddingChildren = false

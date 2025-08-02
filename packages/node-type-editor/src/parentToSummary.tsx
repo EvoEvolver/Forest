@@ -159,7 +159,7 @@ You should keep the links in the original content and put them in a proper place
             content: prompt,
             author: "user",
             role: "user",
-            time: new Date().toISOString()
+
         }
     )
     return await fetchChatResponse([message.toJson() as any], "gpt-4.1", authToken);

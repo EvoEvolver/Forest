@@ -188,7 +188,7 @@ If there are any annotations in the original text, you should keep them unless t
             content: prompt,
             author: "user",
             role: "user",
-            time: new Date().toISOString()
+
         }
     );
     

@@ -7,7 +7,7 @@ class AgentFile {
     fileDescription: string;
 }
 
-class AgentSessionState {
+export class AgentSessionState {
     messages: Map<string, Array<BaseMessage>>
     updateCallback: Map<string, () => void>
     authToken: string | undefined;
