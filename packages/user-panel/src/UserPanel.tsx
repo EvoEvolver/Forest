@@ -1,28 +1,12 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {
-    Alert,
-    Avatar,
-    Box,
-    Button,
-    CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    Grid,
-    IconButton,
-    TextField,
-    Tooltip,
-    Typography
-} from '@mui/material';
-import {Edit as EditIcon, PhotoCamera as PhotoCameraIcon} from '@mui/icons-material';
-import {userAtom} from "@forest/user-system/src/authStates";
-import {UserTreesList} from './UserTreesList';
-import {useAtom} from "jotai/index";
-import {MyAssignedIssues} from './MyAssignedIssues';
-import {setupSupabaseClient} from '@forest/user-system/src/supabase';
-import {AuthGuard} from './AuthGuard';
-import DashboardCard from './DashboardCard';
+import React, { useEffect, useState } from 'react';
+import { Box, Grid } from '@mui/material';
+import { userAtom } from "@forest/user-system/src/authStates";
+import { useAtom } from "jotai/index";
+import { setupSupabaseClient } from '@forest/user-system/src/supabase';
+import TopBar, {TabId} from "./TopBar";
+import { EditDisplayNameDialog } from './EditDisplayNameDialog';
+import {UserProfile} from "./UserProfile";
+import {MainContentSection} from "./MainContentSecion";
 
 export const UserPanel = ({}) => {
     const [user, setUser] = useAtom(userAtom);
@@ -32,10 +16,7 @@ export const UserPanel = ({}) => {
     const [updateError, setUpdateError] = useState<string | null>(null);
     const [updateSuccess, setUpdateSuccess] = useState(false);
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-    const [avatarUploadError, setAvatarUploadError] = useState<string | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
+    const [tab, setTab] = useState<TabId | null>(null);
 
     useEffect(() => {
         if (user?.name) {
@@ -119,346 +100,92 @@ export const UserPanel = ({}) => {
         }
     };
 
-    const handleAvatarClick = () => {
-        if (!isUploadingAvatar) {
-            fileInputRef.current?.click();
-        }
-    };
-
-    const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
-
-        // Validate file type
-        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-        if (!allowedTypes.includes(file.type)) {
-            setAvatarUploadError('Please upload a valid image file (JPEG, PNG, or WebP)');
-            return;
-        }
-
-        // Validate file size (5MB limit)
-        if (file.size > 5 * 1024 * 1024) {
-            setAvatarUploadError('File size must be less than 5MB');
-            return;
-        }
-
-        const supabase = setupSupabaseClient();
-        if (!supabase) {
-            setAvatarUploadError('Supabase client not available');
-            return;
-        }
-
-        // Check if user is authenticated
-        const {data: {user: currentUser}} = await supabase.auth.getUser();
-        if (!currentUser) {
-            setAvatarUploadError('User not authenticated');
-            return;
-        }
-
-        try {
-            setIsUploadingAvatar(true);
-            setAvatarUploadError(null);
-
-            // Create a unique filename with user ID as folder
-            const fileExtension = file.name.split('.').pop();
-            const fileName = `avatar_${Date.now()}.${fileExtension}`;
-            const filePath = `${user?.id}/${fileName}`;
-
-            // Upload file to Supabase Storage
-            const {data: uploadData, error: uploadError} = await supabase.storage
-                .from('avatars')
-                .upload(filePath, file, {
-                    cacheControl: '3600',
-                    upsert: true
-                });
-
-            if (uploadError) {
-                throw uploadError;
-            }
-
-            // Get public URL
-            const {data: urlData} = supabase.storage
-                .from('avatars')
-                .getPublicUrl(filePath);
-
-            const avatarUrl = urlData.publicUrl;
-
-            // Update user metadata with avatar URL
-            console.log('Updating user metadata with avatar URL:', avatarUrl);
-            const {data: updateData, error: updateError} = await supabase.auth.updateUser({
-                data: {
-                    avatar_url: avatarUrl
-                }
-            });
-
-            if (updateError) {
-                console.error('Error updating user metadata:', updateError);
-                throw updateError;
-            }
-
-            console.log('User metadata updated successfully:', updateData);
-
-            // Verify the update by getting fresh user data
-            const {data: {user: updatedUser}, error: getUserError} = await supabase.auth.getUser();
-            if (getUserError) {
-                console.error('Error getting updated user:', getUserError);
-            } else {
-                console.log('Updated user data:', updatedUser);
-                console.log('Updated user metadata:', updatedUser?.user_metadata);
-            }
-
-            // Update local state immediately
-            setAvatarUrl(avatarUrl);
-
-            // Update the user atom with the new avatar URL
-            if (user) {
-                const updatedUser = {
-                    ...user,
-                    user_metadata: {
-                        ...user.user_metadata,
-                        avatar_url: avatarUrl
-                    },
-                    avatar_url: avatarUrl
-                };
-                setUser(updatedUser);
-            }
-
-            // Show success message briefly - no need to refresh immediately
-            // The UI is already updated with the new avatar
-
-        } catch (error) {
-            console.error('Error uploading avatar:', error);
-            setAvatarUploadError(error instanceof Error ? error.message : 'Failed to upload avatar');
-        } finally {
-            setIsUploadingAvatar(false);
-            // Clear the file input
-            if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-            }
-        }
-    };
-
     return (
         <Box
             sx={{
-                padding: { xs: 1, sm: 5 },
+                padding: { xs: 1 },
                 height: '100%',
             }}
         >
-            <Grid container spacing={3} sx={{ 
-                height: '100%',
-                overflow: 'hidden',
-                margin: 0,
-                width: '100%'
-            }}>
-                {/* User Profile Section */}
+            <Grid container
+                  spacing={1}
+                  direction="row"
+                  sx={{
+                      height: '100%',
+                      overflow: 'hidden',
+                      margin: 0,
+                      width: '100%'
+                  }}
+            >
                 <Grid
                     size={{
-                        xs: 12,
-                        md: 3,
-                        lg: 3
-                    }}
-                    sx={{
-                        height: '100%',
-                        display: 'flex',
-                        flexDirection: 'column'
+                        xs: 12
                     }}
                 >
-                    <AuthGuard>
-                        <DashboardCard title="">
-                            <Box sx={{textAlign: 'center', py: { xs: 1, md: 2 }}}>
-                                {/*Avatar*/}
-                                <Box sx={{
-                                        position: 'relative',
-                                        display: 'flex',
-                                        justifyContent: 'center',
-                                        mb: { xs: 1, md: 2 }
-                                    }}
-                                >
-                                    <Tooltip title="Click to change avatar">
-                                        <Avatar
-                                            src={avatarUrl || undefined}
-                                            sx={{
-                                                width: '80%',
-                                                height: 'auto',
-                                                aspectRatio: '1/1',
-                                                cursor: isUploadingAvatar ? 'default' : 'pointer',
-                                                '&:hover': {
-                                                    opacity: isUploadingAvatar ? 1 : 0.8
-                                                }
-                                            }}
-                                            alt="User Avatar"
-                                            onClick={handleAvatarClick}
-                                        >
-                                            {!avatarUrl && user?.name?.charAt(0)}
-                                        </Avatar>
-                                    </Tooltip>
-                                    {isUploadingAvatar && (
-                                        <Box
-                                            sx={{
-                                                position: 'absolute',
-                                                top: 0,
-                                                left: 0,
-                                                right: 0,
-                                                bottom: 0,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                                                borderRadius: '50%'
-                                            }}
-                                        >
-                                            <CircularProgress size={24} sx={{color: 'white'}}/>
-                                        </Box>
-                                    )}
-                                </Box>
-
-                                {avatarUploadError && (
-                                    <Alert severity="error" sx={{mb: 2, fontSize: '0.75rem'}}>
-                                        {avatarUploadError}
-                                    </Alert>
-                                )}
-
-                                {/*username*/}
-                                <Box sx={{
-                                    display: 'grid',
-                                    gridTemplateColumns: '1fr auto 1fr',
-                                    alignItems: 'center',
-                                    mb: { xs: 1, md: 2 }
-                                }}>
-                                    <Box /> {/* Empty left column */}
-
-                                    <Typography variant="h5" component="div" sx={{
-                                        fontSize: { xs: '1rem', md: '1.25rem' },
-                                        textAlign: 'center',
-                                        wordBreak: 'break-word'
-                                    }}>
-                                        {user?.name}
-                                    </Typography>
-
-                                    <Box sx={{ display: 'flex', justifyContent: 'flex-start', paddingLeft: 0.5 }}>
-                                        <IconButton
-                                            size="small"
-                                            onClick={handleEditClick}
-                                            sx={{p: 0.5}}
-                                        >
-                                            <EditIcon fontSize="small"/>
-                                        </IconButton>
-                                    </Box>
-                                </Box>
-                                <Typography variant="body2" color="text.secondary" gutterBottom sx={{
-                                    fontSize: { xs: '0.75rem', md: '0.875rem' },
-                                    textAlign: 'center',
-                                    wordBreak: 'break-word'
-                                }}>
-                                    {user?.email}
-                                </Typography>
-
-                                {/* Hidden file input */}
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    accept="image/jpeg,image/jpg,image/png,image/webp"
-                                    style={{display: 'none'}}
-                                    onChange={handleAvatarUpload}
-                                />
-                            </Box>
-                        </DashboardCard>
-                    </AuthGuard>
+                    <TopBar setActiveTab={setTab} activeTab={tab}/>
                 </Grid>
-
-                {/* Right Side - Trees Lists */}
-                <Grid
-                    size={{
-                        xs: 12,
-                        md: 9,
-                        lg: 9
-                    }}
-                    sx={{
-                        height: '100%',
-                        display: 'flex',
-                        flexDirection: 'column'
-                    }}
+                <Grid container spacing={3}
+                      sx={{
+                          height: '100%',
+                          overflow: 'hidden',
+                          margin: 0,
+                          width: '100%'
+                      }}
+                      size={{
+                          xs: 12
+                      }}
                 >
-                    <AuthGuard>
-                        <Box sx={{ 
-                            display: 'flex',
-                            flexDirection: 'column',
+                    {/* User Profile Section */}
+                    <Grid
+                        size={{
+                            xs: 12,
+                            md: 2,
+                            lg: 1.5
+                        }}
+                        sx={{
                             height: '100%',
-                            minHeight: '400px',
-                            gap: 2,
-                            overflow: 'hidden'
-                        }}>
-                            <Box sx={{
-                                flex: '1 1 0',
-                                minHeight: 0,
-                                display: 'flex',
-                                flexDirection: 'column'
-                            }}>
-                                <UserTreesList/>
-                            </Box>
-                            <Box sx={{
-                                flex: '1 1 0',
-                                minHeight: 0,
-                                display: 'flex',
-                                flexDirection: 'column'
-                            }}>
-                                <MyAssignedIssues/>
-                            </Box>
-                        </Box>
-                    </AuthGuard>
+                            display: 'flex',
+                            flexDirection: 'column'
+                        }}
+                    >
+                        <UserProfile
+                            user={user}
+                            avatarUrl={avatarUrl}
+                            setAvatarUrl={setAvatarUrl}
+                            setUser={setUser}
+                            onEditClick={handleEditClick}
+                        />
+                    </Grid>
+
+                    {/* Right Side - Trees Lists */}
+                    <Grid
+                        size={{
+                            xs: 12,
+                            md: 10,
+                            lg: 10.5
+                        }}
+                        sx={{
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column'
+                        }}
+                    >
+                        <MainContentSection tabId={tab} />
+                    </Grid>
                 </Grid>
             </Grid>
 
             {/* Edit Display Name Dialog */}
-            <Dialog
+            <EditDisplayNameDialog
                 open={editDialogOpen}
                 onClose={handleDialogClose}
-                maxWidth="sm"
-                fullWidth
-            >
-                <DialogTitle>Edit Display Name</DialogTitle>
-                <DialogContent>
-                    <TextField
-                        autoFocus
-                        margin="dense"
-                        label="Display Name"
-                        type="text"
-                        fullWidth
-                        variant="outlined"
-                        value={newDisplayName}
-                        onChange={(e) => setNewDisplayName(e.target.value)}
-                        disabled={isUpdating}
-                        sx={{mt: 2}}
-                    />
-                    {updateError && (
-                        <Alert severity="error" sx={{mt: 2}}>
-                            {updateError}
-                        </Alert>
-                    )}
-                    {updateSuccess && (
-                        <Alert severity="success" sx={{mt: 2}}>
-                            Display name updated successfully! Refreshing...
-                        </Alert>
-                    )}
-                </DialogContent>
-                <DialogActions>
-                    <Button
-                        onClick={handleDialogClose}
-                        disabled={isUpdating}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        onClick={handleUpdateDisplayName}
-                        variant="contained"
-                        disabled={isUpdating || !newDisplayName.trim()}
-                        startIcon={isUpdating ? <CircularProgress size={16}/> : null}
-                    >
-                        {isUpdating ? 'Updating...' : 'Update'}
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                displayName={newDisplayName}
+                onDisplayNameChange={setNewDisplayName}
+                onUpdate={handleUpdateDisplayName}
+                isUpdating={isUpdating}
+                updateError={updateError}
+                updateSuccess={updateSuccess}
+            />
         </Box>
     );
 };

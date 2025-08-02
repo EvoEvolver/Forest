@@ -59,15 +59,11 @@ export const UserPanelModal: React.FC<UserPanelModalProps> = ({ open, onClose })
                 onClick={onClose}
                 sx={{
                     position: 'absolute',
-                    top: 16,
-                    right: 16,
+                    top: 4,
+                    right: 4,
                     zIndex: 1000,
-                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    backgroundColor: 'transparent',
                     backdropFilter: 'blur(4px)',
-                    '&:hover': {
-                        backgroundColor: 'rgba(255, 255, 255, 1)',
-                    },
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                 }}
                 size="large"
             >
