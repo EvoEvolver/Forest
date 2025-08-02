@@ -265,15 +265,23 @@ export const UserPanel = ({}) => {
                     }}
                 >
                     <AuthGuard>
-                        <DashboardCard title="Profile">
+                        <DashboardCard title="">
                             <Box sx={{textAlign: 'center', py: { xs: 1, md: 2 }}}>
-                                <Box sx={{position: 'relative', display: 'inline-block', mb: { xs: 1, md: 2 }}}>
+                                {/*Avatar*/}
+                                <Box sx={{
+                                        position: 'relative',
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        mb: { xs: 1, md: 2 }
+                                    }}
+                                >
                                     <Tooltip title="Click to change avatar">
                                         <Avatar
                                             src={avatarUrl || undefined}
                                             sx={{
-                                                width: { xs: 60, md: 80 },
-                                                height: { xs: 60, md: 80 },
+                                                width: '80%',
+                                                height: 'auto',
+                                                aspectRatio: '1/1',
                                                 cursor: isUploadingAvatar ? 'default' : 'pointer',
                                                 '&:hover': {
                                                     opacity: isUploadingAvatar ? 1 : 0.8
@@ -303,25 +311,6 @@ export const UserPanel = ({}) => {
                                             <CircularProgress size={24} sx={{color: 'white'}}/>
                                         </Box>
                                     )}
-                                    <IconButton
-                                        sx={{
-                                            position: 'absolute',
-                                            bottom: -5,
-                                            right: -5,
-                                            backgroundColor: 'primary.main',
-                                            color: 'white',
-                                            width: 28,
-                                            height: 28,
-                                            '&:hover': {
-                                                backgroundColor: 'primary.dark'
-                                            }
-                                        }}
-                                        size="small"
-                                        onClick={handleAvatarClick}
-                                        disabled={isUploadingAvatar}
-                                    >
-                                        <PhotoCameraIcon fontSize="small"/>
-                                    </IconButton>
                                 </Box>
 
                                 {avatarUploadError && (
@@ -330,7 +319,15 @@ export const UserPanel = ({}) => {
                                     </Alert>
                                 )}
 
-                                <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: { xs: 1, md: 2 }}}>
+                                {/*username*/}
+                                <Box sx={{
+                                    display: 'grid',
+                                    gridTemplateColumns: '1fr auto 1fr',
+                                    alignItems: 'center',
+                                    mb: { xs: 1, md: 2 }
+                                }}>
+                                    <Box /> {/* Empty left column */}
+
                                     <Typography variant="h5" component="div" sx={{
                                         fontSize: { xs: '1rem', md: '1.25rem' },
                                         textAlign: 'center',
@@ -338,13 +335,16 @@ export const UserPanel = ({}) => {
                                     }}>
                                         {user?.name}
                                     </Typography>
-                                    <IconButton
-                                        size="small"
-                                        onClick={handleEditClick}
-                                        sx={{p: 0.5}}
-                                    >
-                                        <EditIcon fontSize="small"/>
-                                    </IconButton>
+
+                                    <Box sx={{ display: 'flex', justifyContent: 'flex-start', paddingLeft: 0.5 }}>
+                                        <IconButton
+                                            size="small"
+                                            onClick={handleEditClick}
+                                            sx={{p: 0.5}}
+                                        >
+                                            <EditIcon fontSize="small"/>
+                                        </IconButton>
+                                    </Box>
                                 </Box>
                                 <Typography variant="body2" color="text.secondary" gutterBottom sx={{
                                     fontSize: { xs: '0.75rem', md: '0.875rem' },
