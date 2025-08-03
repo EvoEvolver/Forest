@@ -20,11 +20,13 @@ const MCPConnectionCacheText = "MCPConnectionCacheText";
 
 interface MCPServerConfig {
     serverUrl: string;
+    type?: 'websocket' | 'http'; // Auto-detected from URL if not specified
     auth?: {
         type: 'bearer' | 'basic' | 'none';
         token?: string;
         username?: string;
         password?: string;
+        headers?: Record<string, string>; // Custom headers for HTTP
     };
     timeout?: number;
 }
@@ -177,13 +179,20 @@ export class MCPNodeType extends NodeType {
             };
         }, [statusCheckInterval]);
 
-        const handleConnect = async (serverUrl: string) => {
+        const handleConnect = async (serverUrl: string, authHeaders?: Record<string, string>) => {
             setLoading(true);
             setError(null);
 
             try {
+                // Auto-detect connection type from URL
+                const connectionType = serverUrl.startsWith('http://') || serverUrl.startsWith('https://') ? 'http' : 'websocket';
+                
                 // Save server config
-                const config: MCPServerConfig = { serverUrl };
+                const config: MCPServerConfig = { 
+                    serverUrl,
+                    type: connectionType,
+                    auth: authHeaders ? { type: 'bearer', headers: authHeaders } : undefined
+                };
                 this.saveServerConfig(node.nodeM, config);
 
                 // Connect to MCP server
@@ -193,7 +202,8 @@ export class MCPNodeType extends NodeType {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         serverUrl,
-                        request: initRequest
+                        request: initRequest,
+                        headers: authHeaders
                     })
                 });
 
@@ -210,7 +220,8 @@ export class MCPNodeType extends NodeType {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         serverUrl,
-                        request: listToolsRequest
+                        request: listToolsRequest,
+                        headers: authHeaders
                     })
                 });
 
@@ -224,6 +235,7 @@ export class MCPNodeType extends NodeType {
                 // Create connection object
                 const newConnection: MCPConnection = {
                     serverUrl,
+                    type: connectionType,
                     connected: true,
                     serverInfo: connectResult.result,
                     tools,
@@ -239,9 +251,13 @@ export class MCPNodeType extends NodeType {
                 console.error('MCP connection error:', err);
                 setError(err.message || 'Failed to connect to MCP server');
                 
+                // Auto-detect connection type from URL
+                const connectionType = serverUrl.startsWith('http://') || serverUrl.startsWith('https://') ? 'http' : 'websocket';
+                
                 // Save disconnected state
                 const failedConnection: MCPConnection = {
                     serverUrl,
+                    type: connectionType,
                     connected: false,
                     tools: [],
                     resources: [],
@@ -302,13 +318,18 @@ export class MCPNodeType extends NodeType {
 
             const toolCallRequest = createMCPToolCall(toolName, params);
             
+            // Get auth headers from saved config
+            const config = this.getServerConfig(node.nodeM);
+            const authHeaders = config?.auth?.headers;
+            
             try {
                 const response = await fetch(`${httpUrl}/api/mcp-proxy/call-tool`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         serverUrl: connection.serverUrl,
-                        request: toolCallRequest
+                        request: toolCallRequest,
+                        headers: authHeaders
                     })
                 });
 
@@ -394,12 +415,17 @@ export class MCPNodeType extends NodeType {
 
         const toolCallRequest = createMCPToolCall(toolName, params);
         
+        // Get auth headers from saved config
+        const config = this.getServerConfig(node);
+        const authHeaders = config?.auth?.headers;
+        
         const response = await fetch(`${httpUrl}/api/mcp-proxy/call-tool`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 serverUrl: connection.serverUrl,
-                request: toolCallRequest
+                request: toolCallRequest,
+                headers: authHeaders
             })
         });
 

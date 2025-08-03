@@ -40,6 +40,7 @@ export interface MCPServerInfo {
 
 export interface MCPConnection {
     serverUrl: string;
+    type?: 'websocket' | 'http'; // Connection type
     connected: boolean;
     serverInfo?: MCPServerInfo;
     tools: MCPTool[];

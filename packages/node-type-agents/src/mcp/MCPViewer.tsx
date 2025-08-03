@@ -1,5 +1,5 @@
 import React from 'react';
-import {Alert, Box, CircularProgress, Typography, Button, TextField, Chip} from '@mui/material';
+import {Alert, Box, CircularProgress, Typography, Button, TextField, Chip, Collapse, FormControlLabel, Checkbox} from '@mui/material';
 import {MCPConnection, MCPTool} from './mcpParser';
 import MCPCard from './MCPCard';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -10,7 +10,7 @@ interface MCPViewerProps {
     connection: MCPConnection | null;
     loading: boolean;
     error: string | null;
-    onConnect: (serverUrl: string) => void;
+    onConnect: (serverUrl: string, authHeaders?: Record<string, string>) => void;
     onDisconnect: () => void;
     onRefresh: () => void;
     onExecuteTool?: (toolName: string, params: any) => Promise<any>;
@@ -26,10 +26,14 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
     onExecuteTool
 }) => {
     const [serverUrl, setServerUrl] = React.useState(connection?.serverUrl || '');
+    const [showAuthFields, setShowAuthFields] = React.useState(false);
+    const [authToken, setAuthToken] = React.useState('');
 
     const handleConnect = () => {
         if (serverUrl.trim()) {
-            onConnect(serverUrl.trim());
+            const isHttpConnection = serverUrl.startsWith('http://') || serverUrl.startsWith('https://');
+            const authHeaders = isHttpConnection && authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined;
+            onConnect(serverUrl.trim(), authHeaders);
         }
     };
 
@@ -79,7 +83,7 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
                         fullWidth
                         size="small"
                         label="MCP Server URL"
-                        placeholder="ws://localhost:3001 or stdio://path/to/server"
+                        placeholder="ws://localhost:3001 or https://api.githubcopilot.com/mcp/"
                         value={serverUrl}
                         onChange={(e) => setServerUrl(e.target.value)}
                         onKeyPress={handleKeyPress}
@@ -107,12 +111,49 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
                     )}
                 </Box>
 
+                {/* Authentication Section */}
+                <FormControlLabel
+                    control={
+                        <Checkbox
+                            checked={showAuthFields}
+                            onChange={(e) => setShowAuthFields(e.target.checked)}
+                            size="small"
+                        />
+                    }
+                    label="Use Authentication (for HTTP connections)"
+                    sx={{ mb: 1 }}
+                />
+
+                <Collapse in={showAuthFields}>
+                    <Box sx={{ mb: 2 }}>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            label="Bearer Token"
+                            type="password"
+                            placeholder="Enter your authentication token"
+                            value={authToken}
+                            onChange={(e) => setAuthToken(e.target.value)}
+                            disabled={loading}
+                            sx={{ mb: 1 }}
+                        />
+                        <Typography variant="caption" color="text.secondary">
+                            For GitHub MCP server, use your Personal Access Token
+                        </Typography>
+                    </Box>
+                </Collapse>
+
                 {/* Connection Status */}
                 {connection && (
                     <Box sx={{display: 'flex', alignItems: 'center', gap: 1, mb: 1}}>
                         <Chip
                             label={connection.connected ? 'Connected' : 'Disconnected'}
                             color={connection.connected ? 'success' : 'default'}
+                            size="small"
+                        />
+                        <Chip
+                            label={connection.type === 'http' ? 'HTTP' : 'WebSocket'}
+                            variant="outlined"
                             size="small"
                         />
                         {connection.serverInfo && (
