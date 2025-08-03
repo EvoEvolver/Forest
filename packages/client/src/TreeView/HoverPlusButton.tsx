@@ -96,10 +96,10 @@ export const HoverPlusButton = ({ node, parentNode, isVisible, position }: Hover
                             borderRadius: '50%',
                             width: '28px',
                             height: '28px',
-                            color: theme.palette.info.main,
+                            color: theme.palette.primary.main,
                             boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                             '&:hover': {
-                                backgroundColor: theme.palette.info.main + '20',
+                                backgroundColor: theme.palette.primary.main + '20',
                                 boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                             }
                         }}

@@ -59,10 +59,10 @@ export function ColumnLeft() {
                     borderRadius: "50%",
                     boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                     zIndex: 10,
-                    color: theme.palette.info.main,
+                    color: theme.palette.primary.main,
                     transition: "all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1)",
                     '&:hover': {
-                        backgroundColor: theme.palette.info.main + '20',
+                        backgroundColor: theme.palette.primary.main + '20',
                         boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                     }
                 }}

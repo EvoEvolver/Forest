@@ -153,7 +153,7 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDrag
                         size="small"
                         onClick={handleStageVersion}
                         sx={{
-                            color: theme.palette.info.main
+                            color: theme.palette.primary.main
                         }}
                     >
                         <TagIcon fontSize="small"/>
@@ -166,7 +166,7 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDrag
                         size="small"
                         onClick={node.data['archived'] ? unarchiveNode : archiveNode}
                         sx={{
-                            color: theme.palette.info.main
+                            color: theme.palette.primary.main
                         }}
                     >
                         <ArchiveIcon fontSize="small"/>
@@ -179,7 +179,7 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDrag
                         size="small"
                         onClick={copyNodeLink}
                         sx={{
-                            color: theme.palette.info.main,
+                            color: theme.palette.primary.main,
                             '&:hover': {backgroundColor: theme.palette.secondary.light + '20'}
                         }}
                     >
@@ -193,7 +193,7 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDrag
                         size="small"
                         onClick={handleToggleMarked}
                         sx={{
-                            color: theme.palette.info.main
+                            color: theme.palette.primary.main
                         }}
                     >
                         {isMarked ? <CheckBoxIcon fontSize="small"/> : <CheckBoxOutlineBlankIcon fontSize="small"/>}
@@ -208,7 +208,7 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDrag
                             onClick={deleteNodeHandler}
                             disabled={nodeChildren.length > 0 || node.parent === null}
                             sx={{
-                                color: theme.palette.info.main,
+                                color: theme.palette.primary.main,
                                 '&:disabled': {color: theme.palette.action.disabled}
                             }}
                         >

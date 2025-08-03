@@ -140,10 +140,10 @@ export const NodeButtons = (props: { node: NodeVM }) => {
                             borderRadius: '50%',
                             width: '32px',
                             height: '32px',
-                            color: theme.palette.success.main,
+                            color: theme.palette.primary.main,
                             boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                             '&:hover': {
-                                backgroundColor: theme.palette.success.light + '20',
+                                backgroundColor: theme.palette.primary.light + '20',
                                 boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                             }
                         }}
