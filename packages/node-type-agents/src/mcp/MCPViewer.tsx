@@ -1,5 +1,5 @@
 import React from 'react';
-import {Alert, Box, CircularProgress, Typography, Button, TextField, Chip} from '@mui/material';
+import {Alert, Box, CircularProgress, Typography, Button, TextField, Chip, Collapse, FormControlLabel, Checkbox, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemText, Switch} from '@mui/material';
 import {MCPConnection, MCPTool} from './mcpParser';
 import MCPCard from './MCPCard';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -10,10 +10,13 @@ interface MCPViewerProps {
     connection: MCPConnection | null;
     loading: boolean;
     error: string | null;
-    onConnect: (serverUrl: string) => void;
+    onConnect: (serverUrl: string, authHeaders?: Record<string, string>) => void;
     onDisconnect: () => void;
     onRefresh: () => void;
     onExecuteTool?: (toolName: string, params: any) => Promise<any>;
+    onToggleToolEnabled?: (toolName: string, enabled: boolean) => void;
+    onGetAllTools?: () => MCPTool[]; // Get all tools including disabled ones for management
+    onBulkToggleTools?: (enabled: boolean) => void; // Bulk enable/disable all tools
 }
 
 const MCPViewer: React.FC<MCPViewerProps> = ({
@@ -23,13 +26,55 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
     onConnect,
     onDisconnect,
     onRefresh,
-    onExecuteTool
+    onExecuteTool,
+    onToggleToolEnabled,
+    onGetAllTools,
+    onBulkToggleTools
 }) => {
     const [serverUrl, setServerUrl] = React.useState(connection?.serverUrl || '');
+    const [showAuthFields, setShowAuthFields] = React.useState(false);
+    const [authToken, setAuthToken] = React.useState('');
+    const [showToolManagement, setShowToolManagement] = React.useState(false);
+
+    const handleEnableAll = () => {
+        if (onBulkToggleTools) {
+            onBulkToggleTools(true);
+        } else if (onToggleToolEnabled && onGetAllTools) {
+            // Fallback to individual calls if bulk function not available
+            const allTools = onGetAllTools();
+            allTools.forEach(tool => {
+                onToggleToolEnabled(tool.name, true);
+            });
+        }
+    };
+
+    const handleDisableAll = () => {
+        if (onBulkToggleTools) {
+            onBulkToggleTools(false);
+        } else if (onToggleToolEnabled && onGetAllTools) {
+            // Fallback to individual calls if bulk function not available
+            const allTools = onGetAllTools();
+            allTools.forEach(tool => {
+                onToggleToolEnabled(tool.name, false);
+            });
+        }
+    };
+
+    const getEnabledToolsCount = () => {
+        if (!connection?.tools) return 0;
+        return connection.tools.length; // connection.tools now only contains enabled tools
+    };
+
+    const getTotalToolsCount = () => {
+        if (!onGetAllTools) return 0;
+        return onGetAllTools().length;
+    };
 
     const handleConnect = () => {
         if (serverUrl.trim()) {
-            onConnect(serverUrl.trim());
+            const isHttpConnection = serverUrl.startsWith('http://') || serverUrl.startsWith('https://');
+            const authHeaders = isHttpConnection && authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined;
+            onConnect(serverUrl.trim(), authHeaders);
         }
     };
 
@@ -60,6 +105,7 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
                         key={tool.name}
                         tool={tool}
                         onExecute={onExecuteTool}
+                        onToggleEnabled={onToggleToolEnabled}
                     />
                 ))}
             </Box>
@@ -79,7 +125,7 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
                         fullWidth
                         size="small"
                         label="MCP Server URL"
-                        placeholder="ws://localhost:3001 or stdio://path/to/server"
+                        placeholder="ws://localhost:3001 or https://api.githubcopilot.com/mcp/"
                         value={serverUrl}
                         onChange={(e) => setServerUrl(e.target.value)}
                         onKeyPress={handleKeyPress}
@@ -107,12 +153,49 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
                     )}
                 </Box>
 
+                {/* Authentication Section */}
+                <FormControlLabel
+                    control={
+                        <Checkbox
+                            checked={showAuthFields}
+                            onChange={(e) => setShowAuthFields(e.target.checked)}
+                            size="small"
+                        />
+                    }
+                    label="Use Authentication (for HTTP connections)"
+                    sx={{ mb: 1 }}
+                />
+
+                <Collapse in={showAuthFields}>
+                    <Box sx={{ mb: 2 }}>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            label="Bearer Token"
+                            type="password"
+                            placeholder="Enter your authentication token"
+                            value={authToken}
+                            onChange={(e) => setAuthToken(e.target.value)}
+                            disabled={loading}
+                            sx={{ mb: 1 }}
+                        />
+                        <Typography variant="caption" color="text.secondary">
+                            For GitHub MCP server, use your Personal Access Token
+                        </Typography>
+                    </Box>
+                </Collapse>
+
                 {/* Connection Status */}
                 {connection && (
                     <Box sx={{display: 'flex', alignItems: 'center', gap: 1, mb: 1}}>
                         <Chip
                             label={connection.connected ? 'Connected' : 'Disconnected'}
                             color={connection.connected ? 'success' : 'default'}
+                            size="small"
+                        />
+                        <Chip
+                            label={connection.type === 'http' ? 'HTTP' : 'WebSocket'}
+                            variant="outlined"
                             size="small"
                         />
                         {connection.serverInfo && (
@@ -161,12 +244,30 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
             {/* Tools Display */}
             {connection?.connected && !loading && (
                 <Box>
-                    {connection.tools.length > 0 ? (
+                    {getTotalToolsCount() > 0 ? (
                         <>
-                            <Typography variant="h5" sx={{mb: 3}}>
-                                Available Tools ({connection.tools.length})
-                            </Typography>
-                            {renderToolsByCategory()}
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+                                <Typography variant="h5">
+                                    Available Tools ({getEnabledToolsCount()}/{getTotalToolsCount()} enabled)
+                                </Typography>
+                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                    <Button
+                                        size="small"
+                                        variant="outlined"
+                                        onClick={() => setShowToolManagement(true)}
+                                        disabled={!onToggleToolEnabled || !onGetAllTools}
+                                    >
+                                        Manage Tools
+                                    </Button>
+                                </Box>
+                            </Box>
+                            {connection.tools.length > 0 ? (
+                                renderToolsByCategory()
+                            ) : (
+                                <Alert severity="info" sx={{ mb: 2 }}>
+                                    All tools are currently disabled. Use "Manage Tools" to enable some tools.
+                                </Alert>
+                            )}
                         </>
                     ) : (
                         <Alert severity="info">
@@ -218,6 +319,43 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
                     Enter an MCP server URL above to connect and view available tools.
                 </Alert>
             )}
+
+            {/* Tool Management Dialog */}
+            <Dialog
+                open={showToolManagement}
+                onClose={() => setShowToolManagement(false)}
+                maxWidth="md"
+                fullWidth
+            >
+                <DialogTitle>Manage MCP Tools</DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Enable or disable tools to control which ones are available to the AI model. 
+                        Disabled tools are completely hidden from the model.
+                    </Typography>
+                    <List>
+                        {onGetAllTools && onGetAllTools().map((tool) => (
+                            <ListItem key={tool.name} sx={{ px: 0 }}>
+                                <ListItemText
+                                    primary={tool.name}
+                                    secondary={tool.description || 'No description'}
+                                />
+                                <Switch
+                                    checked={tool.enabled !== false}
+                                    onChange={(e) => onToggleToolEnabled && onToggleToolEnabled(tool.name, e.target.checked)}
+                                />
+                            </ListItem>
+                        ))}
+                    </List>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleDisableAll}>Disable All</Button>
+                    <Button onClick={handleEnableAll}>Enable All</Button>
+                    <Button onClick={() => setShowToolManagement(false)} variant="contained">
+                        Done
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };

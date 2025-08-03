@@ -1,10 +1,48 @@
 import { Router, Request, Response } from 'express';
 import { WebSocket } from 'ws';
+import axios from 'axios';
 
 const mcpProxyRouter = Router();
 
 // Store active MCP connections
 const mcpConnections = new Map<string, WebSocket>();
+
+// Store HTTP MCP sessions (for session-based servers like GitHub)
+const mcpSessions = new Map<string, {
+    sessionId?: string;
+    serverInfo?: any;
+    capabilities?: any;
+    lastUsed: Date;
+}>();
+
+// Clean up old sessions every 30 minutes
+setInterval(() => {
+    const now = new Date();
+    const expiredSessions: string[] = [];
+    
+    mcpSessions.forEach((session, serverUrl) => {
+        const sessionAge = now.getTime() - session.lastUsed.getTime();
+        if (sessionAge > 2 * 60 * 60 * 1000) { // 2 hours
+            expiredSessions.push(serverUrl);
+        }
+    });
+    
+    expiredSessions.forEach(serverUrl => {
+        console.log('Cleaning up expired session for:', serverUrl);
+        mcpSessions.delete(serverUrl);
+    });
+}, 30 * 60 * 1000); // Every 30 minutes
+
+// Helper function to determine connection type from URL
+function getConnectionType(serverUrl: string): 'websocket' | 'http' {
+    if (serverUrl.startsWith('ws://') || serverUrl.startsWith('wss://')) {
+        return 'websocket';
+    } else if (serverUrl.startsWith('http://') || serverUrl.startsWith('https://')) {
+        return 'http';
+    }
+    // Default to websocket for backward compatibility
+    return 'websocket';
+}
 
 // Helper function to create WebSocket connection
 function createMCPConnection(serverUrl: string): Promise<WebSocket> {
@@ -39,6 +77,92 @@ function createMCPConnection(serverUrl: string): Promise<WebSocket> {
             reject(error);
         }
     });
+}
+
+// Helper function to send HTTP JSON-RPC request with session support
+async function sendHTTPMCPRequest(serverUrl: string, request: any, headers?: Record<string, string>): Promise<any> {
+    const requestId = Date.now().toString();
+    const jsonRpcRequest = {
+        jsonrpc: '2.0',
+        id: requestId,
+        method: request.method,
+        params: request.params || {}
+    };
+
+    const requestHeaders: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...headers
+    };
+
+    // For non-initialize requests, add session ID if available
+    if (request.method !== 'initialize') {
+        const session = mcpSessions.get(serverUrl);
+        if (session?.sessionId) {
+            requestHeaders['Mcp-Session-Id'] = session.sessionId;
+            // Update last used time
+            session.lastUsed = new Date();
+        }
+    }
+
+    console.log('MCP HTTP Request:', {
+        url: serverUrl,
+        method: request.method,
+        headers: requestHeaders,
+        data: jsonRpcRequest
+    });
+
+    try {
+        const response = await axios({
+            url: serverUrl,
+            method: 'POST',
+            headers: requestHeaders,
+            data: jsonRpcRequest,
+            timeout: 30000 // 30 second timeout
+        });
+
+        console.log('MCP HTTP Response:', response.status, response.data);
+
+        // For initialize requests, store session information
+        if (request.method === 'initialize' && response.status === 200) {
+            const sessionId = response.headers['mcp-session-id'] || 
+                            response.headers['Mcp-Session-Id'] ||
+                            response.data?.id || // Some servers might put session ID in response
+                            requestId; // Fallback to request ID
+            
+            mcpSessions.set(serverUrl, {
+                sessionId,
+                serverInfo: response.data?.result?.serverInfo,
+                capabilities: response.data?.result?.capabilities,
+                lastUsed: new Date()
+            });
+
+            console.log('Stored session for', serverUrl, 'with ID:', sessionId);
+        }
+
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            console.error('MCP HTTP Error:', {
+                status: error.response?.status,
+                statusText: error.response?.statusText,
+                data: error.response?.data,
+                headers: error.response?.headers
+            });
+            
+            // Special handling for session-related errors
+            if (error.response?.status === 400 && 
+                (error.response?.data?.includes?.('session') || error.response?.data?.includes?.('Session'))) {
+                // Clear invalid session and suggest reconnection
+                mcpSessions.delete(serverUrl);
+                throw new Error(`HTTP 400: ${error.response.data}. Session expired or invalid. Please reconnect.`);
+            }
+            
+            const errorMessage = error.response?.data?.error?.message || error.response?.data || error.response?.statusText || 'Request failed';
+            throw new Error(`HTTP ${error.response?.status || 500}: ${errorMessage}`);
+        }
+        console.error('Non-Axios error:', error);
+        throw error;
+    }
 }
 
 // Helper function to send JSON-RPC request
@@ -88,7 +212,7 @@ function sendMCPRequest(ws: WebSocket, request: any): Promise<any> {
 
 // Connect to MCP server
 mcpProxyRouter.post('/connect', async (req: Request, res: Response): Promise<void> => {
-    const { serverUrl, request } = req.body;
+    const { serverUrl, request, headers } = req.body;
     
     if (!serverUrl) {
         res.status(400).json({ error: 'serverUrl is required' });
@@ -101,18 +225,26 @@ mcpProxyRouter.post('/connect', async (req: Request, res: Response): Promise<voi
     }
 
     try {
-        // Check if connection already exists
-        let ws = mcpConnections.get(serverUrl);
+        const connectionType = getConnectionType(serverUrl);
         
-        if (!ws || ws.readyState !== WebSocket.OPEN) {
-            // Create new connection
-            ws = await createMCPConnection(serverUrl);
-            mcpConnections.set(serverUrl, ws);
-        }
+        if (connectionType === 'http') {
+            // For HTTP connections, send the request directly
+            const response = await sendHTTPMCPRequest(serverUrl, request, headers);
+            res.json(response);
+        } else {
+            // For WebSocket connections, use existing logic
+            let ws = mcpConnections.get(serverUrl);
+            
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                // Create new connection
+                ws = await createMCPConnection(serverUrl);
+                mcpConnections.set(serverUrl, ws);
+            }
 
-        // Send initialize request
-        const response = await sendMCPRequest(ws, request);
-        res.json(response);
+            // Send initialize request
+            const response = await sendMCPRequest(ws, request);
+            res.json(response);
+        }
 
     } catch (error) {
         console.error('MCP connect error:', error);
@@ -124,7 +256,7 @@ mcpProxyRouter.post('/connect', async (req: Request, res: Response): Promise<voi
 
 // List tools from MCP server
 mcpProxyRouter.post('/list-tools', async (req: Request, res: Response): Promise<void> => {
-    const { serverUrl, request } = req.body;
+    const { serverUrl, request, headers } = req.body;
     
     if (!serverUrl) {
         res.status(400).json({ error: 'serverUrl is required' });
@@ -137,15 +269,24 @@ mcpProxyRouter.post('/list-tools', async (req: Request, res: Response): Promise<
     }
 
     try {
-        const ws = mcpConnections.get(serverUrl);
+        const connectionType = getConnectionType(serverUrl);
         
-        if (!ws || ws.readyState !== WebSocket.OPEN) {
-            res.status(400).json({ error: 'MCP server not connected' });
-            return;
-        }
+        if (connectionType === 'http') {
+            // For HTTP connections, send the request directly
+            const response = await sendHTTPMCPRequest(serverUrl, request, headers);
+            res.json(response);
+        } else {
+            // For WebSocket connections, use existing logic
+            const ws = mcpConnections.get(serverUrl);
+            
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                res.status(400).json({ error: 'MCP server not connected' });
+                return;
+            }
 
-        const response = await sendMCPRequest(ws, request);
-        res.json(response);
+            const response = await sendMCPRequest(ws, request);
+            res.json(response);
+        }
 
     } catch (error) {
         console.error('MCP list-tools error:', error);
@@ -157,7 +298,7 @@ mcpProxyRouter.post('/list-tools', async (req: Request, res: Response): Promise<
 
 // Call MCP tool
 mcpProxyRouter.post('/call-tool', async (req: Request, res: Response): Promise<void> => {
-    const { serverUrl, request } = req.body;
+    const { serverUrl, request, headers } = req.body;
     
     if (!serverUrl) {
         res.status(400).json({ error: 'serverUrl is required' });
@@ -170,15 +311,24 @@ mcpProxyRouter.post('/call-tool', async (req: Request, res: Response): Promise<v
     }
 
     try {
-        const ws = mcpConnections.get(serverUrl);
+        const connectionType = getConnectionType(serverUrl);
         
-        if (!ws || ws.readyState !== WebSocket.OPEN) {
-            res.status(400).json({ error: 'MCP server not connected' });
-            return;
-        }
+        if (connectionType === 'http') {
+            // For HTTP connections, send the request directly
+            const response = await sendHTTPMCPRequest(serverUrl, request, headers);
+            res.json(response);
+        } else {
+            // For WebSocket connections, use existing logic
+            const ws = mcpConnections.get(serverUrl);
+            
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                res.status(400).json({ error: 'MCP server not connected' });
+                return;
+            }
 
-        const response = await sendMCPRequest(ws, request);
-        res.json(response);
+            const response = await sendMCPRequest(ws, request);
+            res.json(response);
+        }
 
     } catch (error) {
         console.error('MCP call-tool error:', error);
@@ -198,11 +348,18 @@ mcpProxyRouter.post('/disconnect', async (req: Request, res: Response): Promise<
     }
 
     try {
-        const ws = mcpConnections.get(serverUrl);
+        const connectionType = getConnectionType(serverUrl);
         
-        if (ws) {
-            ws.close();
-            mcpConnections.delete(serverUrl);
+        if (connectionType === 'http') {
+            // For HTTP connections, clear session
+            mcpSessions.delete(serverUrl);
+        } else {
+            // For WebSocket connections, close connection
+            const ws = mcpConnections.get(serverUrl);
+            if (ws) {
+                ws.close();
+                mcpConnections.delete(serverUrl);
+            }
         }
 
         res.json({ success: true });
@@ -216,14 +373,44 @@ mcpProxyRouter.post('/disconnect', async (req: Request, res: Response): Promise<
 });
 
 // Get connection status
-mcpProxyRouter.get('/status/:serverUrl', (req: Request, res: Response): void => {
+mcpProxyRouter.get('/status/:serverUrl', async (req: Request, res: Response): Promise<void> => {
     const serverUrl = decodeURIComponent(req.params.serverUrl);
-    const ws = mcpConnections.get(serverUrl);
+    const connectionType = getConnectionType(serverUrl);
     
-    res.json({
-        connected: ws && ws.readyState === WebSocket.OPEN,
-        readyState: ws ? ws.readyState : null
-    });
+    if (connectionType === 'http') {
+        // For HTTP endpoints, check session status
+        const session = mcpSessions.get(serverUrl);
+        
+        if (session) {
+            // Check if session is still valid (less than 1 hour old)
+            const now = new Date();
+            const sessionAge = now.getTime() - session.lastUsed.getTime();
+            const isSessionValid = sessionAge < 60 * 60 * 1000; // 1 hour
+            
+            res.json({
+                connected: isSessionValid,
+                type: 'http',
+                sessionId: session.sessionId,
+                serverInfo: session.serverInfo,
+                sessionAge: Math.floor(sessionAge / 1000) + ' seconds'
+            });
+        } else {
+            res.json({
+                connected: false,
+                type: 'http',
+                error: 'No active session'
+            });
+        }
+    } else {
+        // For WebSocket connections, use existing logic
+        const ws = mcpConnections.get(serverUrl);
+        
+        res.json({
+            connected: ws && ws.readyState === WebSocket.OPEN,
+            type: 'websocket',
+            readyState: ws ? ws.readyState : null
+        });
+    }
 });
 
 // List all connections

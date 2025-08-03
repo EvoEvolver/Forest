@@ -1,4 +1,4 @@
-import {NodeM, NodeType, NodeVM} from "@forest/schema";
+import {NodeM, NodeVM} from "@forest/schema";
 import React, {useEffect, useState} from "react";
 import * as Y from "yjs";
 import CollaborativeEditor from "./CodeEditor";
@@ -14,22 +14,27 @@ import {
     parseMCPTools
 } from "./mcp/mcpParser";
 import {httpUrl} from "@forest/schema/src/config";
+import {ActionableNodeType, Action, ActionParameter} from "./ActionableNodeType";
+import {AgentSessionState} from "./sessionState";
+import {ToolCallingMessage, ToolResponseMessage} from "@forest/agent-chat/src/AgentMessageTypes";
 
 const MCPServerConfigText = "MCPServerConfigText";
 const MCPConnectionCacheText = "MCPConnectionCacheText";
 
 interface MCPServerConfig {
     serverUrl: string;
+    type?: 'websocket' | 'http'; // Auto-detected from URL if not specified
     auth?: {
         type: 'bearer' | 'basic' | 'none';
         token?: string;
         username?: string;
         password?: string;
+        headers?: Record<string, string>; // Custom headers for HTTP
     };
     timeout?: number;
 }
 
-export class MCPNodeType extends NodeType {
+export class MCPNodeType extends ActionableNodeType {
     displayName = "MCP Tool"
     allowReshape = true
     allowAddingChildren = false
@@ -49,7 +54,7 @@ export class MCPNodeType extends NodeType {
         }
     }
 
-    getMCPConnection(node: NodeM): MCPConnection | null {
+    private getRawMCPConnection(node: NodeM): MCPConnection | null {
         // @ts-ignore
         const yText: Y.Text = node.ydata().get(MCPConnectionCacheText) as Y.Text;
         if (!yText) {
@@ -65,6 +70,24 @@ export class MCPNodeType extends NodeType {
         } catch (e) {
             return null;
         }
+    }
+
+    getMCPConnection(node: NodeM): MCPConnection | null {
+        const connection = this.getRawMCPConnection(node);
+        if (!connection) {
+            return null;
+        }
+        
+        // Apply tool enabled states and filter out disabled tools
+        this.applyToolEnabledStates(connection);
+        
+        // Return connection with only enabled tools - disabled tools are invisible to the model
+        const filteredConnection = {
+            ...connection,
+            tools: connection.tools.filter(tool => tool.enabled !== false)
+        };
+        
+        return filteredConnection;
     }
 
     private saveMCPConnection(node: NodeM, connection: MCPConnection) {
@@ -85,10 +108,39 @@ export class MCPNodeType extends NodeType {
         }
     }
 
+    private applyToolEnabledStates(connection: MCPConnection) {
+        // Get previously saved enabled states
+        const savedEnabledTools = connection.enabledTools;
+        
+        // If enabledTools is undefined, this is the first time - default all to enabled
+        // If enabledTools is an empty array, it means all tools were explicitly disabled
+        if (savedEnabledTools === undefined) {
+            // First time initialization - enable all tools
+            connection.tools = connection.tools.map(tool => ({
+                ...tool,
+                enabled: true
+            }));
+            connection.enabledTools = connection.tools.map(tool => tool.name);
+        } else {
+            // Apply saved enabled states
+            const savedEnabledSet = new Set(savedEnabledTools);
+            connection.tools = connection.tools.map(tool => ({
+                ...tool,
+                enabled: savedEnabledSet.has(tool.name)
+            }));
+            
+            // Update enabledTools array to match current state
+            connection.enabledTools = connection.tools
+                .filter(tool => tool.enabled !== false)
+                .map(tool => tool.name);
+        }
+    }
+
     render(node: NodeVM): React.ReactNode {
         const [connection, setConnection] = useState<MCPConnection | null>(this.getMCPConnection(node.nodeM));
         const [loading, setLoading] = useState(false);
         const [error, setError] = useState<string | null>(null);
+        const [statusCheckInterval, setStatusCheckInterval] = useState<NodeJS.Timeout | null>(null);
 
         // @ts-ignore
         const configYText: Y.Text = node.ydata.get(MCPServerConfigText) as Y.Text;
@@ -97,6 +149,7 @@ export class MCPNodeType extends NodeType {
 
         useEffect(() => {
             const observer = () => {
+                // Use filtered connection for UI display
                 const newConnection = this.getMCPConnection(node.nodeM);
                 setConnection(newConnection);
             };
@@ -107,13 +160,89 @@ export class MCPNodeType extends NodeType {
             };
         }, [cacheYText, node.nodeM]);
 
-        const handleConnect = async (serverUrl: string) => {
+        // Function to check connection status
+        const checkConnectionStatus = async (serverUrl: string) => {
+            try {
+                const encodedUrl = encodeURIComponent(serverUrl);
+                const response = await fetch(`${httpUrl}/api/mcp-proxy/status/${encodedUrl}`);
+                
+                if (response.ok) {
+                    const status = await response.json();
+                    
+                    // If server says disconnected but our local state says connected, update it
+                    if (connection && connection.connected && !status.connected) {
+                        console.log(`MCP connection lost for ${serverUrl}, updating status`);
+                        const disconnectedConnection: MCPConnection = {
+                            ...connection,
+                            connected: false,
+                            error: 'Connection lost'
+                        };
+                        this.saveMCPConnection(node.nodeM, disconnectedConnection);
+                        setConnection(disconnectedConnection);
+                        setError('Connection lost');
+                    }
+                }
+            } catch (err) {
+                // If we can't reach the proxy, assume disconnected
+                if (connection && connection.connected) {
+                    console.log(`MCP proxy unreachable for ${serverUrl}, assuming disconnected`);
+                    const disconnectedConnection: MCPConnection = {
+                        ...connection,
+                        connected: false,
+                        error: 'Proxy unreachable'
+                    };
+                    this.saveMCPConnection(node.nodeM, disconnectedConnection);
+                    setConnection(disconnectedConnection);
+                    setError('Proxy unreachable');
+                }
+            }
+        };
+
+        // Start/stop status checking based on connection state
+        useEffect(() => {
+            if (connection && connection.connected && connection.serverUrl) {
+                // Start periodic status checking every 10 seconds
+                const interval = setInterval(() => {
+                    checkConnectionStatus(connection.serverUrl);
+                }, 10000);
+                
+                setStatusCheckInterval(interval);
+                
+                return () => {
+                    clearInterval(interval);
+                };
+            } else {
+                // Stop status checking if disconnected
+                if (statusCheckInterval) {
+                    clearInterval(statusCheckInterval);
+                    setStatusCheckInterval(null);
+                }
+            }
+        }, [connection?.connected, connection?.serverUrl]);
+
+        // Cleanup on unmount
+        useEffect(() => {
+            return () => {
+                if (statusCheckInterval) {
+                    clearInterval(statusCheckInterval);
+                }
+            };
+        }, [statusCheckInterval]);
+
+        const handleConnect = async (serverUrl: string, authHeaders?: Record<string, string>) => {
             setLoading(true);
             setError(null);
 
             try {
+                // Auto-detect connection type from URL
+                const connectionType = serverUrl.startsWith('http://') || serverUrl.startsWith('https://') ? 'http' : 'websocket';
+                
                 // Save server config
-                const config: MCPServerConfig = { serverUrl };
+                const config: MCPServerConfig = { 
+                    serverUrl,
+                    type: connectionType,
+                    auth: authHeaders ? { type: 'bearer', headers: authHeaders } : undefined
+                };
                 this.saveServerConfig(node.nodeM, config);
 
                 // Connect to MCP server
@@ -123,7 +252,8 @@ export class MCPNodeType extends NodeType {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         serverUrl,
-                        request: initRequest
+                        request: initRequest,
+                        headers: authHeaders
                     })
                 });
 
@@ -140,7 +270,8 @@ export class MCPNodeType extends NodeType {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         serverUrl,
-                        request: listToolsRequest
+                        request: listToolsRequest,
+                        headers: authHeaders
                     })
                 });
 
@@ -154,6 +285,7 @@ export class MCPNodeType extends NodeType {
                 // Create connection object
                 const newConnection: MCPConnection = {
                     serverUrl,
+                    type: connectionType,
                     connected: true,
                     serverInfo: connectResult.result,
                     tools,
@@ -162,6 +294,9 @@ export class MCPNodeType extends NodeType {
                     lastFetched: new Date()
                 };
 
+                // Apply previously saved enabled states or default to all enabled
+                this.applyToolEnabledStates(newConnection);
+                
                 this.saveMCPConnection(node.nodeM, newConnection);
                 setConnection(newConnection);
 
@@ -169,9 +304,13 @@ export class MCPNodeType extends NodeType {
                 console.error('MCP connection error:', err);
                 setError(err.message || 'Failed to connect to MCP server');
                 
+                // Auto-detect connection type from URL
+                const connectionType = serverUrl.startsWith('http://') || serverUrl.startsWith('https://') ? 'http' : 'websocket';
+                
                 // Save disconnected state
                 const failedConnection: MCPConnection = {
                     serverUrl,
+                    type: connectionType,
                     connected: false,
                     tools: [],
                     resources: [],
@@ -212,8 +351,17 @@ export class MCPNodeType extends NodeType {
         };
 
         const handleRefresh = async () => {
-            if (!connection || !connection.connected) return;
-            await handleConnect(connection.serverUrl);
+            if (!connection) return;
+            
+            // First check the current status
+            if (connection.serverUrl) {
+                await checkConnectionStatus(connection.serverUrl);
+            }
+            
+            // Then try to reconnect if we still think we should be connected
+            if (connection.connected) {
+                await handleConnect(connection.serverUrl);
+            }
         };
 
         const handleExecuteTool = async (toolName: string, params: any) => {
@@ -222,25 +370,122 @@ export class MCPNodeType extends NodeType {
             }
 
             const toolCallRequest = createMCPToolCall(toolName, params);
-            const response = await fetch(`${httpUrl}/api/mcp-proxy/call-tool`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    serverUrl: connection.serverUrl,
-                    request: toolCallRequest
-                })
-            });
+            
+            // Get auth headers from saved config
+            const config = this.getServerConfig(node.nodeM);
+            const authHeaders = config?.auth?.headers;
+            
+            try {
+                const response = await fetch(`${httpUrl}/api/mcp-proxy/call-tool`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        serverUrl: connection.serverUrl,
+                        request: toolCallRequest,
+                        headers: authHeaders
+                    })
+                });
 
-            if (!response.ok) {
-                throw new Error(`Tool execution failed: ${response.statusText}`);
+                if (!response.ok) {
+                    // If we get a connection error, check status immediately
+                    if (response.status === 400) {
+                        const errorData = await response.json();
+                        if (errorData.error && errorData.error.includes('not connected')) {
+                            await checkConnectionStatus(connection.serverUrl);
+                        }
+                    }
+                    throw new Error(`Tool execution failed: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                if (result.error) {
+                    // If we get an MCP error that suggests disconnection, check status
+                    if (result.error.message && result.error.message.includes('not connected')) {
+                        await checkConnectionStatus(connection.serverUrl);
+                    }
+                    throw new Error(result.error.message || 'Tool execution failed');
+                }
+
+                return result.result;
+            } catch (error) {
+                // On network errors, also check connection status
+                if (error instanceof TypeError && error.message.includes('fetch')) {
+                    await checkConnectionStatus(connection.serverUrl);
+                }
+                throw error;
             }
+        };
 
-            const result = await response.json();
-            if (result.error) {
-                throw new Error(result.error.message || 'Tool execution failed');
-            }
+        const handleToggleToolEnabled = (toolName: string, enabled: boolean) => {
+            // Get raw connection data (with all tools) for modification
+            const rawConnection = this.getRawMCPConnection(node.nodeM);
+            if (!rawConnection) return;
+            
+            // Apply current tool states to get the latest state
+            this.applyToolEnabledStates(rawConnection);
+            
+            // Update tool enabled state in raw data
+            const updatedTools = rawConnection.tools.map(tool => 
+                tool.name === toolName ? { ...tool, enabled } : tool
+            );
+            
+            // Rebuild enabledTools array from the updated tools
+            const updatedEnabledTools = updatedTools
+                .filter(tool => tool.enabled !== false)
+                .map(tool => tool.name);
+            
+            const updatedConnection = {
+                ...rawConnection,
+                tools: updatedTools,
+                enabledTools: updatedEnabledTools
+            };
+            
+            // Save updated raw connection
+            this.saveMCPConnection(node.nodeM, updatedConnection);
+            
+            // Update UI with filtered connection
+            setConnection(this.getMCPConnection(node.nodeM));
+        };
 
-            return result.result;
+        const handleGetAllTools = (): MCPTool[] => {
+            const rawConnection = this.getRawMCPConnection(node.nodeM);
+            if (!rawConnection) return [];
+            
+            // Apply current tool states and return all tools
+            this.applyToolEnabledStates(rawConnection);
+            return rawConnection.tools;
+        };
+
+        const handleBulkToggleTools = (enabled: boolean) => {
+            // Get raw connection data (with all tools) for modification
+            const rawConnection = this.getRawMCPConnection(node.nodeM);
+            if (!rawConnection) return;
+            
+            // Apply current tool states to get the latest state
+            this.applyToolEnabledStates(rawConnection);
+            
+            // Update all tools to the same enabled state
+            const updatedTools = rawConnection.tools.map(tool => ({
+                ...tool,
+                enabled
+            }));
+            
+            // Rebuild enabledTools array from the updated tools
+            const updatedEnabledTools = enabled 
+                ? updatedTools.map(tool => tool.name)
+                : [];
+            
+            const updatedConnection = {
+                ...rawConnection,
+                tools: updatedTools,
+                enabledTools: updatedEnabledTools
+            };
+            
+            // Save updated raw connection
+            this.saveMCPConnection(node.nodeM, updatedConnection);
+            
+            // Update UI with filtered connection
+            setConnection(this.getMCPConnection(node.nodeM));
         };
 
         return (
@@ -253,6 +498,9 @@ export class MCPNodeType extends NodeType {
                     onDisconnect={handleDisconnect}
                     onRefresh={handleRefresh}
                     onExecuteTool={handleExecuteTool}
+                    onToggleToolEnabled={handleToggleToolEnabled}
+                    onGetAllTools={handleGetAllTools}
+                    onBulkToggleTools={handleBulkToggleTools}
                 />
             </div>
         );
@@ -276,13 +524,91 @@ export class MCPNodeType extends NodeType {
         );
     }
 
+    actions(node: NodeM): Action[] {
+        const connection = this.getMCPConnection(node);
+        if (!connection || !connection.connected || !connection.tools || connection.tools.length === 0) {
+            return [];
+        }
+
+        return connection.tools.map(tool => {
+            const parameters: Record<string, ActionParameter> = {};
+            
+            if (tool.inputSchema && tool.inputSchema.properties) {
+                Object.entries(tool.inputSchema.properties).forEach(([key, prop]: [string, any]) => {
+                    parameters[key] = {
+                        type: prop.type || "string",
+                        description: prop.description || ""
+                    };
+                });
+            }
+
+            return {
+                label: `Call ${tool.name}`,
+                description: tool.description || `Execute MCP tool: ${tool.name}`,
+                parameter: parameters
+            };
+        });
+    }
+
+    async executeAction(node: NodeM, label: string, parameters: Record<string, any>, callerNode: NodeM, agentSessionState: AgentSessionState): Promise<any> {
+        const connection = this.getMCPConnection(node);
+        if (!connection || !connection.connected) {
+            throw new Error("MCP server not connected");
+        }
+
+        // Extract tool name from label (format: "Call {toolName}")
+        const toolName = label.replace("Call ", "");
+        const tool = connection.tools.find(t => t.name === toolName);
+        if (!tool) {
+            throw new Error(`Tool ${toolName} not found`);
+        }
+
+        const toolCallingMessage = new ToolCallingMessage({
+            toolName: toolName,
+            parameters: parameters,
+            author: callerNode.title(),
+        });
+        agentSessionState.addMessage(callerNode, toolCallingMessage);
+
+        try {
+            const result = await this.callMCPTool(node, toolName, parameters);
+            
+            const toolResponseMessage = new ToolResponseMessage({
+                toolName: toolName,
+                response: result,
+                author: node.title(),
+            });
+            agentSessionState.addMessage(callerNode, toolResponseMessage);
+            
+            return toolResponseMessage;
+        } catch (error) {
+            const errorMessage = new ToolResponseMessage({
+                toolName: toolName,
+                response: { error: error.message },
+                author: node.title(),
+            });
+            agentSessionState.addMessage(callerNode, errorMessage);
+            throw error;
+        }
+    }
+
     renderPrompt(node: NodeM): string {
         const connection = this.getMCPConnection(node);
         if (!connection || !connection.connected || !connection.tools || connection.tools.length === 0) {
             return '';
         }
 
-        const toolPrompts = connection.tools.map(tool => generatePromptFromMCPTool(tool)).join('\n-------\n');
+        // Apply tool enabled states before generating prompts
+        this.applyToolEnabledStates(connection);
+        
+        // Only include enabled tools in the prompt
+        const enabledTools = connection.tools.filter(tool => tool.enabled !== false);
+        
+        if (enabledTools.length === 0) {
+            return '';
+        }
+
+        const toolPrompts = enabledTools.map(tool => generatePromptFromMCPTool(tool)).join('\n-------\n');
         
         return toolPrompts;
     }
@@ -293,14 +619,23 @@ export class MCPNodeType extends NodeType {
             throw new Error("MCP server not connected");
         }
 
+        // Note: No need to check if tool is enabled here because getMCPConnection() 
+        // already filters out disabled tools. If the model tries to call a disabled tool,
+        // it means the tool doesn't exist from the model's perspective.
+
         const toolCallRequest = createMCPToolCall(toolName, params);
+        
+        // Get auth headers from saved config
+        const config = this.getServerConfig(node);
+        const authHeaders = config?.auth?.headers;
         
         const response = await fetch(`${httpUrl}/api/mcp-proxy/call-tool`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 serverUrl: connection.serverUrl,
-                request: toolCallRequest
+                request: toolCallRequest,
+                headers: authHeaders
             })
         });
 

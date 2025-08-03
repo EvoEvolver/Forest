@@ -8,6 +8,7 @@ export interface MCPTool {
         properties?: Record<string, any>;
         required?: string[];
     };
+    enabled?: boolean; // Whether this tool is enabled by the user
 }
 
 export interface MCPResource {
@@ -40,6 +41,7 @@ export interface MCPServerInfo {
 
 export interface MCPConnection {
     serverUrl: string;
+    type?: 'websocket' | 'http'; // Connection type
     connected: boolean;
     serverInfo?: MCPServerInfo;
     tools: MCPTool[];
@@ -47,6 +49,7 @@ export interface MCPConnection {
     prompts: MCPPrompt[];
     lastFetched?: Date;
     error?: string;
+    enabledTools?: string[]; // Array of enabled tool names for serialization
 }
 
 export interface MCPCallRequest {

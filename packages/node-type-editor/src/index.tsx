@@ -5,6 +5,7 @@ import {XmlFragment} from "yjs";
 import {BottomUpButton} from "./buttomUp";
 import {TopDownButton} from "./topDown";
 import {ParentToSummaryButton} from "./parentToSummary";
+import {ModifyButton} from "./modifyButton";
 
 interface EditorNodeData {
 }
@@ -51,9 +52,10 @@ export class EditorNodeType extends NodeType {
 
     renderTool2(node: NodeVM): React.ReactNode {
         return <>
-            <BottomUpButton node={node}/>
-            <TopDownButton node={node}/>
+            <ModifyButton node={node}/>
             <ParentToSummaryButton node={node}/>
+            <TopDownButton node={node}/>
+            <BottomUpButton node={node}/>
         </>
     }
 

@@ -3,6 +3,7 @@ import {Box, Card, CardContent, Chip, Tooltip, Typography,} from "@mui/material"
 import {useAtomValue, useSetAtom} from "jotai/index";
 import {jumpToNodeAtom, scrollToNodeAtom, treeAtom} from "@forest/client/src/TreeState/TreeState";
 import {treeId} from "@forest/client/src/appState";
+import * as showdown from 'showdown';
 
 // @ts-ignore
 const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL
@@ -13,7 +14,6 @@ export interface BaseMessageProps {
     content: string;
     author: string;
     role: MessageRole;
-    time: string;
 }
 
 export abstract class BaseMessage {
@@ -22,11 +22,11 @@ export abstract class BaseMessage {
     role: MessageRole;
     time: string;
 
-    constructor({content, author, role, time}: BaseMessageProps) {
+    constructor({content, author, role}: BaseMessageProps) {
         this.content = content;
         this.author = author;
         this.role = role;
-        this.time = time;
+        this.time = new Date().toISOString();
     }
 
     abstract render(): React.ReactNode
@@ -129,15 +129,21 @@ export class MarkdownMessage extends BaseMessage {
     }
 
     render(): React.ReactNode {
+        const converter = new showdown.Converter();
+        const html = converter.makeHtml(this.content);
         return (
             <Box sx={{display: 'flex', marginBottom: 2}}>
                 <Card sx={{}}>
                     <CardContent>
-                        <Typography variant="body1">{this.content}</Typography>
+                        <span dangerouslySetInnerHTML={{__html: html}}/>
                     </CardContent>
                 </Card>
             </Box>
         );
+    }
+
+    toJson(): object {
+        return super.toJson();
     }
 }
 
@@ -161,7 +167,7 @@ export class NormalMessage extends BaseMessage {
 
 export class SystemMessage extends BaseMessage {
     constructor(content: string) {
-        super({content, author: "", role: "system", time: new Date().toISOString()});
+        super({content, author: "", role: "system", });
     }
 
     render(): React.ReactNode {

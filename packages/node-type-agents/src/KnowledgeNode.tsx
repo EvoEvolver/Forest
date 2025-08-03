@@ -3,12 +3,15 @@ import React, {useState} from "react";
 import * as Y from "yjs";
 import {Box, TextField, Typography, Link} from "@mui/material";
 import axios from "axios";
+import {ActionableNodeType, Action} from "./ActionableNodeType";
+import {AgentSessionState} from "./sessionState";
+import {ToolResponseMessage} from "@forest/agent-chat/src/AgentMessageTypes";
 
 // @ts-ignore
 const WORKER_URL = import.meta.env.VITE_WORKER_URL || "https://worker.treer.ai";
 
 // Separate component for URL configuration
-const UrlConfig: React.FC<{ node: NodeVM }> = ({ node }) => {
+const UrlConfig: React.FC<{ node: NodeVM }> = ({node}) => {
     const [url, setUrl] = useState<string>(
         node.ydata.get(KnowledgeNodeUrl)?.toString() || ""
     );
@@ -23,8 +26,8 @@ const UrlConfig: React.FC<{ node: NodeVM }> = ({ node }) => {
     };
 
     return (
-        <Box sx={{ width: "100%", height: "100%" }}>
-            <Box sx={{ mb: 2 }}>
+        <Box sx={{width: "100%", height: "100%"}}>
+            <Box sx={{mb: 2}}>
                 <TextField
                     fullWidth
                     label="URL"
@@ -40,7 +43,34 @@ const UrlConfig: React.FC<{ node: NodeVM }> = ({ node }) => {
 
 const KnowledgeNodeUrl = "KnowledgeNodeUrl"
 
-export class KnowledgeNodeType extends NodeType {
+export class KnowledgeNodeType extends ActionableNodeType {
+    actions(node: NodeM): Action[] {
+        return [{
+            label: "Search " + node.title(),
+            description: "Search the knowledge source for information by asking a question.",
+            parameter: {
+                "question": {
+                    "type": "string",
+                    "description": "The question to ask the knowledge source."
+                }
+            }
+        }];
+    }
+
+    async executeAction(node: NodeM, label: string, parameters: Record<string, any>, callerNode: NodeM, agentSessionState: AgentSessionState): Promise<any> {
+        const question = parameters["question"];
+        const result = await KnowledgeNodeType.search(node, { question });
+        
+        // Create a knowledge response message
+        const knowledgeResponseMessage = new ToolResponseMessage({
+            toolName: node.title(),
+            response: result,
+            author: node.title(),
+        });
+        agentSessionState.addMessage(callerNode, knowledgeResponseMessage);
+        
+        return knowledgeResponseMessage;
+    }
     displayName = "Knowledge"
     allowReshape = true
     allowAddingChildren = false

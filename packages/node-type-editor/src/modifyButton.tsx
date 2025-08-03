@@ -5,6 +5,7 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
+import TextField from "@mui/material/TextField";
 import {NodeM, NodeVM} from "@forest/schema";
 import {EditorNodeType} from ".";
 import {stageThisVersion} from "@forest/schema/src/stageService";
@@ -15,44 +16,58 @@ import {fetchChatResponse} from "@forest/agent-chat/src/llm";
 import {Card} from "@mui/material";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
-import SummarizeIcon from '@mui/icons-material/Summarize';
+import EditIcon from '@mui/icons-material/Edit';
 
-
-export const BottomUpButton: React.FC<{ node: NodeVM}> = ({node}) => {
+export const ModifyButton: React.FC<{ node: NodeVM}> = ({node}) => {
     const [loading, setLoading] = React.useState(false);
     const [dialogOpen, setDialogOpen] = React.useState(false);
+    const [prompt, setPrompt] = React.useState("");
     const [originalContent, setOriginalContent] = React.useState<string | null>(null);
     const [revisedContent, setRevisedContent] = React.useState<string | null>(null);
-    const authToken = useAtomValue(authTokenAtom)
+    const [reviewDialogOpen, setReviewDialogOpen] = React.useState(false);
+    const authToken = useAtomValue(authTokenAtom);
 
-    const handleClick = async () => {
+    const handleClick = () => {
+        setDialogOpen(true);
+    };
+
+    const handleCloseDialog = () => {
+        setDialogOpen(false);
+        setPrompt("");
+    };
+
+    const handleModify = async () => {
+        if (!prompt.trim()) return;
+        
         setLoading(true);
         try {
             const editorNodeType = await node.nodeM.treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
             const original = editorNodeType.getEditorContent(node.nodeM);
-            const revised = await getBottomUpRevisedContent(node.nodeM, authToken);
+            const revised = await getModifiedContent(node.nodeM, prompt, authToken);
 
             setOriginalContent(original);
             setRevisedContent(revised);
-            setDialogOpen(true);
+            setDialogOpen(false);
+            setReviewDialogOpen(true);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleCloseDialog = () => {
-        setDialogOpen(false);
+    const handleCloseReviewDialog = () => {
+        setReviewDialogOpen(false);
         setOriginalContent(null);
         setRevisedContent(null);
+        setPrompt("");
     };
 
     const handleAccept = async () => {
-        await stageThisVersion(node, "Before bottom-up editing");
+        await stageThisVersion(node, "Before LLM modification");
         if (revisedContent) {
             const editorNodeType = await node.nodeM.treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
             editorNodeType.setEditorContent(node.nodeM, revisedContent);
         }
-        handleCloseDialog();
+        handleCloseReviewDialog();
     };
 
     return (
@@ -72,20 +87,47 @@ export const BottomUpButton: React.FC<{ node: NodeVM}> = ({node}) => {
                 onClick={handleClick}
             >
                 <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <SummarizeIcon color="primary" />
+                    <EditIcon color="primary" />
                     <div>
                         <Typography variant="body1" component="div">
-                            Summerize from children
+                            Modify with AI
                         </Typography>
                         <Typography variant="body2" color="textSecondary">
-                            Update key points based on children contents
+                            Use AI to modify the content based on your prompt
                         </Typography>
                     </div>
-                    {loading && <CircularProgress size={20} />}
                 </CardContent>
             </Card>
 
-            <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="lg" fullWidth>
+            <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+                <DialogTitle>Modify Content with AI</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        label="Enter your modification prompt"
+                        fullWidth
+                        multiline
+                        rows={4}
+                        variant="outlined"
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        placeholder="e.g., Make this more concise, Add more details about..., Rewrite in a formal tone..."
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseDialog}>Cancel</Button>
+                    <Button 
+                        onClick={handleModify} 
+                        color="primary" 
+                        disabled={!prompt.trim() || loading}
+                    >
+                        {loading ? <CircularProgress size={20} /> : "Modify"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog open={reviewDialogOpen} onClose={handleCloseReviewDialog} maxWidth="lg" fullWidth>
                 <DialogTitle>Review Changes</DialogTitle>
                 <DialogContent sx={{display: 'flex', gap: '20px'}}>
                     <div style={{
@@ -105,12 +147,12 @@ export const BottomUpButton: React.FC<{ node: NodeVM}> = ({node}) => {
                         padding: '10px',
                         borderRadius: '4px'
                     }}>
-                        <h3>Revised</h3>
+                        <h3>Modified</h3>
                         <div dangerouslySetInnerHTML={{ __html: revisedContent ?? "" }} />
                     </div>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleCloseDialog}>Cancel</Button>
+                    <Button onClick={handleCloseReviewDialog}>Cancel</Button>
                     <Button onClick={handleAccept} color="primary">Accept</Button>
                 </DialogActions>
             </Dialog>
@@ -118,35 +160,38 @@ export const BottomUpButton: React.FC<{ node: NodeVM}> = ({node}) => {
     );
 };
 
-async function getBottomUpRevisedContent(node: NodeM, authToken): Promise<string> {
+async function getModifiedContent(node: NodeM, userPrompt: string, authToken: string): Promise<string> {
     const treeM = node.treeM;
-    const children = treeM.getChildren(node).filter((n) => n.nodeTypeName() === "EditorNodeType");
     const editorNodeType = await treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
-    const childrenContent = children.map(child => "# " + child.title() + "\n" + editorNodeType.getEditorContent(child)).join("\n");
-    const orginalContent = editorNodeType.getEditorContent(node);
-    const prompt = `You are a professional editor. The given original text is a summary of some children contents. 
-Your task is to revise the original context to make it serve as a better summary of the children contents.
+    const originalContent = editorNodeType.getEditorContent(node);
+    
+    const prompt = `You are a professional editor. The user wants to modify the following content based on their specific request.
+
 <original_content>
-${orginalContent}
+${originalContent}
 </original_content>
-<children_contents>
-${childrenContent}
-</children_contents>
-Please provide an updated version of the original text in key points. You should not make unnecessary changes to the original text.
+
+<user_request>
+${userPrompt}
+</user_request>
+
+Please modify the original content according to the user's request. Maintain the overall structure and formatting style unless the user specifically asks to change it.
+
 <output_format>
-You should only return the HTML content of the revised text without any additional text or formatting.
-You are required to make a list of key points by <ul></ul>
-You should make no more than 5 key points. Each key point should be less than 20 words.
-If there are any annotations in the original text, you should keep them as they are.
-</output_format>
-`;
+You should only return the HTML content of the modified text without any additional text or formatting.
+Preserve any existing HTML tags and structure unless modification is specifically requested.
+If there are any annotations in the original text, you should keep them unless the user asks to remove them.
+</output_format>`;
+
     const message = new NormalMessage(
         {
             content: prompt,
             author: "user",
-            role: "user"
+            role: "user",
+
         }
-    )
+    );
+    
     const response = await fetchChatResponse([message.toJson() as any], "gpt-4.1", authToken);
     return response;
 }
