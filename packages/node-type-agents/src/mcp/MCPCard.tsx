@@ -178,18 +178,6 @@ const MCPCard: React.FC<MCPCardProps> = ({tool, onExecute, onToggleEnabled}) => 
             <Accordion expanded={expanded} onChange={() => setExpanded(!expanded)}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
                     <Box sx={{display: 'flex', alignItems: 'center', width: '100%'}}>
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={isEnabled}
-                                    onChange={(e) => handleToggleEnabled(e.target.checked)}
-                                    onClick={(e) => e.stopPropagation()} // Prevent accordion toggle
-                                    size="small"
-                                />
-                            }
-                            label=""
-                            sx={{ mr: 1, mb: 0 }}
-                        />
                         <Chip
                             icon={<BuildIcon />}
                             label="MCP"

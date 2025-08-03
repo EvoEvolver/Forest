@@ -51,7 +51,7 @@ export class MCPNodeType extends NodeType {
         }
     }
 
-    getMCPConnection(node: NodeM): MCPConnection | null {
+    private getRawMCPConnection(node: NodeM): MCPConnection | null {
         // @ts-ignore
         const yText: Y.Text = node.ydata().get(MCPConnectionCacheText) as Y.Text;
         if (!yText) {
@@ -67,6 +67,24 @@ export class MCPNodeType extends NodeType {
         } catch (e) {
             return null;
         }
+    }
+
+    getMCPConnection(node: NodeM): MCPConnection | null {
+        const connection = this.getRawMCPConnection(node);
+        if (!connection) {
+            return null;
+        }
+        
+        // Apply tool enabled states and filter out disabled tools
+        this.applyToolEnabledStates(connection);
+        
+        // Return connection with only enabled tools - disabled tools are invisible to the model
+        const filteredConnection = {
+            ...connection,
+            tools: connection.tools.filter(tool => tool.enabled !== false)
+        };
+        
+        return filteredConnection;
     }
 
     private saveMCPConnection(node: NodeM, connection: MCPConnection) {
@@ -89,19 +107,30 @@ export class MCPNodeType extends NodeType {
 
     private applyToolEnabledStates(connection: MCPConnection) {
         // Get previously saved enabled states
-        const savedEnabledTools = connection.enabledTools || [];
-        const savedEnabledSet = new Set(savedEnabledTools);
+        const savedEnabledTools = connection.enabledTools;
         
-        // Apply enabled states to tools
-        connection.tools = connection.tools.map(tool => ({
-            ...tool,
-            enabled: savedEnabledTools.length === 0 ? true : savedEnabledSet.has(tool.name)
-        }));
-        
-        // Update enabledTools array to match current state
-        connection.enabledTools = connection.tools
-            .filter(tool => tool.enabled !== false)
-            .map(tool => tool.name);
+        // If enabledTools is undefined, this is the first time - default all to enabled
+        // If enabledTools is an empty array, it means all tools were explicitly disabled
+        if (savedEnabledTools === undefined) {
+            // First time initialization - enable all tools
+            connection.tools = connection.tools.map(tool => ({
+                ...tool,
+                enabled: true
+            }));
+            connection.enabledTools = connection.tools.map(tool => tool.name);
+        } else {
+            // Apply saved enabled states
+            const savedEnabledSet = new Set(savedEnabledTools);
+            connection.tools = connection.tools.map(tool => ({
+                ...tool,
+                enabled: savedEnabledSet.has(tool.name)
+            }));
+            
+            // Update enabledTools array to match current state
+            connection.enabledTools = connection.tools
+                .filter(tool => tool.enabled !== false)
+                .map(tool => tool.name);
+        }
     }
 
     render(node: NodeVM): React.ReactNode {
@@ -117,11 +146,8 @@ export class MCPNodeType extends NodeType {
 
         useEffect(() => {
             const observer = () => {
+                // Use filtered connection for UI display
                 const newConnection = this.getMCPConnection(node.nodeM);
-                if (newConnection) {
-                    // Apply tool enabled states when loading connection
-                    this.applyToolEnabledStates(newConnection);
-                }
                 setConnection(newConnection);
             };
 
@@ -388,22 +414,75 @@ export class MCPNodeType extends NodeType {
         };
 
         const handleToggleToolEnabled = (toolName: string, enabled: boolean) => {
-            if (!connection) return;
+            // Get raw connection data (with all tools) for modification
+            const rawConnection = this.getRawMCPConnection(node.nodeM);
+            if (!rawConnection) return;
             
-            // Update tool enabled state
+            // Apply current tool states to get the latest state
+            this.applyToolEnabledStates(rawConnection);
+            
+            // Update tool enabled state in raw data
+            const updatedTools = rawConnection.tools.map(tool => 
+                tool.name === toolName ? { ...tool, enabled } : tool
+            );
+            
+            // Rebuild enabledTools array from the updated tools
+            const updatedEnabledTools = updatedTools
+                .filter(tool => tool.enabled !== false)
+                .map(tool => tool.name);
+            
             const updatedConnection = {
-                ...connection,
-                tools: connection.tools.map(tool => 
-                    tool.name === toolName ? { ...tool, enabled } : tool
-                ),
-                enabledTools: enabled 
-                    ? [...(connection.enabledTools || []), toolName].filter((name, index, arr) => arr.indexOf(name) === index)
-                    : (connection.enabledTools || []).filter(name => name !== toolName)
+                ...rawConnection,
+                tools: updatedTools,
+                enabledTools: updatedEnabledTools
             };
             
-            // Save updated connection
+            // Save updated raw connection
             this.saveMCPConnection(node.nodeM, updatedConnection);
-            setConnection(updatedConnection);
+            
+            // Update UI with filtered connection
+            setConnection(this.getMCPConnection(node.nodeM));
+        };
+
+        const handleGetAllTools = (): MCPTool[] => {
+            const rawConnection = this.getRawMCPConnection(node.nodeM);
+            if (!rawConnection) return [];
+            
+            // Apply current tool states and return all tools
+            this.applyToolEnabledStates(rawConnection);
+            return rawConnection.tools;
+        };
+
+        const handleBulkToggleTools = (enabled: boolean) => {
+            // Get raw connection data (with all tools) for modification
+            const rawConnection = this.getRawMCPConnection(node.nodeM);
+            if (!rawConnection) return;
+            
+            // Apply current tool states to get the latest state
+            this.applyToolEnabledStates(rawConnection);
+            
+            // Update all tools to the same enabled state
+            const updatedTools = rawConnection.tools.map(tool => ({
+                ...tool,
+                enabled
+            }));
+            
+            // Rebuild enabledTools array from the updated tools
+            const updatedEnabledTools = enabled 
+                ? updatedTools.map(tool => tool.name)
+                : [];
+            
+            const updatedConnection = {
+                ...rawConnection,
+                tools: updatedTools,
+                enabledTools: updatedEnabledTools
+            };
+            
+            // Save updated raw connection
+            this.saveMCPConnection(node.nodeM, updatedConnection);
+            
+            // Update UI with filtered connection
+            setConnection(this.getMCPConnection(node.nodeM));
         };
 
         return (
@@ -417,6 +496,8 @@ export class MCPNodeType extends NodeType {
                     onRefresh={handleRefresh}
                     onExecuteTool={handleExecuteTool}
                     onToggleToolEnabled={handleToggleToolEnabled}
+                    onGetAllTools={handleGetAllTools}
+                    onBulkToggleTools={handleBulkToggleTools}
                 />
             </div>
         );
@@ -467,11 +548,9 @@ export class MCPNodeType extends NodeType {
             throw new Error("MCP server not connected");
         }
 
-        // Check if the tool is enabled
-        const tool = connection.tools.find(t => t.name === toolName);
-        if (tool && tool.enabled === false) {
-            throw new Error(`Tool "${toolName}" is disabled. Please enable it first.`);
-        }
+        // Note: No need to check if tool is enabled here because getMCPConnection() 
+        // already filters out disabled tools. If the model tries to call a disabled tool,
+        // it means the tool doesn't exist from the model's perspective.
 
         const toolCallRequest = createMCPToolCall(toolName, params);
         

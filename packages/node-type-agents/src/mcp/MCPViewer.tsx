@@ -1,5 +1,5 @@
 import React from 'react';
-import {Alert, Box, CircularProgress, Typography, Button, TextField, Chip, Collapse, FormControlLabel, Checkbox} from '@mui/material';
+import {Alert, Box, CircularProgress, Typography, Button, TextField, Chip, Collapse, FormControlLabel, Checkbox, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemText, Switch} from '@mui/material';
 import {MCPConnection, MCPTool} from './mcpParser';
 import MCPCard from './MCPCard';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -15,6 +15,8 @@ interface MCPViewerProps {
     onRefresh: () => void;
     onExecuteTool?: (toolName: string, params: any) => Promise<any>;
     onToggleToolEnabled?: (toolName: string, enabled: boolean) => void;
+    onGetAllTools?: () => MCPTool[]; // Get all tools including disabled ones for management
+    onBulkToggleTools?: (enabled: boolean) => void; // Bulk enable/disable all tools
 }
 
 const MCPViewer: React.FC<MCPViewerProps> = ({
@@ -25,29 +27,47 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
     onDisconnect,
     onRefresh,
     onExecuteTool,
-    onToggleToolEnabled
+    onToggleToolEnabled,
+    onGetAllTools,
+    onBulkToggleTools
 }) => {
     const [serverUrl, setServerUrl] = React.useState(connection?.serverUrl || '');
     const [showAuthFields, setShowAuthFields] = React.useState(false);
     const [authToken, setAuthToken] = React.useState('');
+    const [showToolManagement, setShowToolManagement] = React.useState(false);
 
     const handleEnableAll = () => {
-        if (!connection?.tools || !onToggleToolEnabled) return;
-        connection.tools.forEach(tool => {
-            onToggleToolEnabled(tool.name, true);
-        });
+        if (onBulkToggleTools) {
+            onBulkToggleTools(true);
+        } else if (onToggleToolEnabled && onGetAllTools) {
+            // Fallback to individual calls if bulk function not available
+            const allTools = onGetAllTools();
+            allTools.forEach(tool => {
+                onToggleToolEnabled(tool.name, true);
+            });
+        }
     };
 
     const handleDisableAll = () => {
-        if (!connection?.tools || !onToggleToolEnabled) return;
-        connection.tools.forEach(tool => {
-            onToggleToolEnabled(tool.name, false);
-        });
+        if (onBulkToggleTools) {
+            onBulkToggleTools(false);
+        } else if (onToggleToolEnabled && onGetAllTools) {
+            // Fallback to individual calls if bulk function not available
+            const allTools = onGetAllTools();
+            allTools.forEach(tool => {
+                onToggleToolEnabled(tool.name, false);
+            });
+        }
     };
 
     const getEnabledToolsCount = () => {
         if (!connection?.tools) return 0;
-        return connection.tools.filter(tool => tool.enabled !== false).length;
+        return connection.tools.length; // connection.tools now only contains enabled tools
+    };
+
+    const getTotalToolsCount = () => {
+        if (!onGetAllTools) return 0;
+        return onGetAllTools().length;
     };
 
     const handleConnect = () => {
@@ -224,32 +244,30 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
             {/* Tools Display */}
             {connection?.connected && !loading && (
                 <Box>
-                    {connection.tools.length > 0 ? (
+                    {getTotalToolsCount() > 0 ? (
                         <>
                             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
                                 <Typography variant="h5">
-                                    Available Tools ({getEnabledToolsCount()}/{connection.tools.length} enabled)
+                                    Available Tools ({getEnabledToolsCount()}/{getTotalToolsCount()} enabled)
                                 </Typography>
                                 <Box sx={{ display: 'flex', gap: 1 }}>
                                     <Button
                                         size="small"
                                         variant="outlined"
-                                        onClick={handleEnableAll}
-                                        disabled={!onToggleToolEnabled}
+                                        onClick={() => setShowToolManagement(true)}
+                                        disabled={!onToggleToolEnabled || !onGetAllTools}
                                     >
-                                        Enable All
-                                    </Button>
-                                    <Button
-                                        size="small"
-                                        variant="outlined"
-                                        onClick={handleDisableAll}
-                                        disabled={!onToggleToolEnabled}
-                                    >
-                                        Disable All
+                                        Manage Tools
                                     </Button>
                                 </Box>
                             </Box>
-                            {renderToolsByCategory()}
+                            {connection.tools.length > 0 ? (
+                                renderToolsByCategory()
+                            ) : (
+                                <Alert severity="info" sx={{ mb: 2 }}>
+                                    All tools are currently disabled. Use "Manage Tools" to enable some tools.
+                                </Alert>
+                            )}
                         </>
                     ) : (
                         <Alert severity="info">
@@ -301,6 +319,43 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
                     Enter an MCP server URL above to connect and view available tools.
                 </Alert>
             )}
+
+            {/* Tool Management Dialog */}
+            <Dialog
+                open={showToolManagement}
+                onClose={() => setShowToolManagement(false)}
+                maxWidth="md"
+                fullWidth
+            >
+                <DialogTitle>Manage MCP Tools</DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Enable or disable tools to control which ones are available to the AI model. 
+                        Disabled tools are completely hidden from the model.
+                    </Typography>
+                    <List>
+                        {onGetAllTools && onGetAllTools().map((tool) => (
+                            <ListItem key={tool.name} sx={{ px: 0 }}>
+                                <ListItemText
+                                    primary={tool.name}
+                                    secondary={tool.description || 'No description'}
+                                />
+                                <Switch
+                                    checked={tool.enabled !== false}
+                                    onChange={(e) => onToggleToolEnabled && onToggleToolEnabled(tool.name, e.target.checked)}
+                                />
+                            </ListItem>
+                        ))}
+                    </List>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleDisableAll}>Disable All</Button>
+                    <Button onClick={handleEnableAll}>Enable All</Button>
+                    <Button onClick={() => setShowToolManagement(false)} variant="contained">
+                        Done
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };
