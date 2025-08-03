@@ -544,6 +544,27 @@ export class MongoEditorService {
         { $unset: { [fieldName]: "" } }
       );
 
+      // Update JSON Schema if it exists
+      try {
+        const schemaResponse = await this.getCollectionSchema(collectionName);
+        if (schemaResponse.success && schemaResponse.data && schemaResponse.data.jsonSchema) {
+          const currentSchema = this.extractFieldsFromJsonSchema(schemaResponse.data.jsonSchema);
+          
+          if (fieldName in currentSchema) {
+            // Remove field from schema
+            const updatedSchema = { ...currentSchema };
+            delete updatedSchema[fieldName];
+            
+            const jsonSchema = this.convertInferredSchemaToJsonSchema(updatedSchema);
+            await this.applyJsonSchemaToCollection(collectionName, jsonSchema);
+          }
+        }
+      } catch (error) {
+        // Schema update failed, but document update succeeded
+        console.warn(`Field removal succeeded but schema update failed for ${DATABASE_NAME}.${collectionName}:`, error);
+        // Don't return error - the main operation succeeded
+      }
+
       return { 
         success: true, 
         data: { modifiedCount: result.modifiedCount }
