@@ -89,6 +89,7 @@ export class MCPNodeType extends NodeType {
         const [connection, setConnection] = useState<MCPConnection | null>(this.getMCPConnection(node.nodeM));
         const [loading, setLoading] = useState(false);
         const [error, setError] = useState<string | null>(null);
+        const [statusCheckInterval, setStatusCheckInterval] = useState<NodeJS.Timeout | null>(null);
 
         // @ts-ignore
         const configYText: Y.Text = node.ydata.get(MCPServerConfigText) as Y.Text;
@@ -106,6 +107,75 @@ export class MCPNodeType extends NodeType {
                 cacheYText.unobserve(observer);
             };
         }, [cacheYText, node.nodeM]);
+
+        // Function to check connection status
+        const checkConnectionStatus = async (serverUrl: string) => {
+            try {
+                const encodedUrl = encodeURIComponent(serverUrl);
+                const response = await fetch(`${httpUrl}/api/mcp-proxy/status/${encodedUrl}`);
+                
+                if (response.ok) {
+                    const status = await response.json();
+                    
+                    // If server says disconnected but our local state says connected, update it
+                    if (connection && connection.connected && !status.connected) {
+                        console.log(`MCP connection lost for ${serverUrl}, updating status`);
+                        const disconnectedConnection: MCPConnection = {
+                            ...connection,
+                            connected: false,
+                            error: 'Connection lost'
+                        };
+                        this.saveMCPConnection(node.nodeM, disconnectedConnection);
+                        setConnection(disconnectedConnection);
+                        setError('Connection lost');
+                    }
+                }
+            } catch (err) {
+                // If we can't reach the proxy, assume disconnected
+                if (connection && connection.connected) {
+                    console.log(`MCP proxy unreachable for ${serverUrl}, assuming disconnected`);
+                    const disconnectedConnection: MCPConnection = {
+                        ...connection,
+                        connected: false,
+                        error: 'Proxy unreachable'
+                    };
+                    this.saveMCPConnection(node.nodeM, disconnectedConnection);
+                    setConnection(disconnectedConnection);
+                    setError('Proxy unreachable');
+                }
+            }
+        };
+
+        // Start/stop status checking based on connection state
+        useEffect(() => {
+            if (connection && connection.connected && connection.serverUrl) {
+                // Start periodic status checking every 10 seconds
+                const interval = setInterval(() => {
+                    checkConnectionStatus(connection.serverUrl);
+                }, 10000);
+                
+                setStatusCheckInterval(interval);
+                
+                return () => {
+                    clearInterval(interval);
+                };
+            } else {
+                // Stop status checking if disconnected
+                if (statusCheckInterval) {
+                    clearInterval(statusCheckInterval);
+                    setStatusCheckInterval(null);
+                }
+            }
+        }, [connection?.connected, connection?.serverUrl]);
+
+        // Cleanup on unmount
+        useEffect(() => {
+            return () => {
+                if (statusCheckInterval) {
+                    clearInterval(statusCheckInterval);
+                }
+            };
+        }, [statusCheckInterval]);
 
         const handleConnect = async (serverUrl: string) => {
             setLoading(true);
@@ -212,8 +282,17 @@ export class MCPNodeType extends NodeType {
         };
 
         const handleRefresh = async () => {
-            if (!connection || !connection.connected) return;
-            await handleConnect(connection.serverUrl);
+            if (!connection) return;
+            
+            // First check the current status
+            if (connection.serverUrl) {
+                await checkConnectionStatus(connection.serverUrl);
+            }
+            
+            // Then try to reconnect if we still think we should be connected
+            if (connection.connected) {
+                await handleConnect(connection.serverUrl);
+            }
         };
 
         const handleExecuteTool = async (toolName: string, params: any) => {
@@ -222,25 +301,45 @@ export class MCPNodeType extends NodeType {
             }
 
             const toolCallRequest = createMCPToolCall(toolName, params);
-            const response = await fetch(`${httpUrl}/api/mcp-proxy/call-tool`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    serverUrl: connection.serverUrl,
-                    request: toolCallRequest
-                })
-            });
+            
+            try {
+                const response = await fetch(`${httpUrl}/api/mcp-proxy/call-tool`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        serverUrl: connection.serverUrl,
+                        request: toolCallRequest
+                    })
+                });
 
-            if (!response.ok) {
-                throw new Error(`Tool execution failed: ${response.statusText}`);
+                if (!response.ok) {
+                    // If we get a connection error, check status immediately
+                    if (response.status === 400) {
+                        const errorData = await response.json();
+                        if (errorData.error && errorData.error.includes('not connected')) {
+                            await checkConnectionStatus(connection.serverUrl);
+                        }
+                    }
+                    throw new Error(`Tool execution failed: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                if (result.error) {
+                    // If we get an MCP error that suggests disconnection, check status
+                    if (result.error.message && result.error.message.includes('not connected')) {
+                        await checkConnectionStatus(connection.serverUrl);
+                    }
+                    throw new Error(result.error.message || 'Tool execution failed');
+                }
+
+                return result.result;
+            } catch (error) {
+                // On network errors, also check connection status
+                if (error instanceof TypeError && error.message.includes('fetch')) {
+                    await checkConnectionStatus(connection.serverUrl);
+                }
+                throw error;
             }
-
-            const result = await response.json();
-            if (result.error) {
-                throw new Error(result.error.message || 'Tool execution failed');
-            }
-
-            return result.result;
         };
 
         return (
