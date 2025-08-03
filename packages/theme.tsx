@@ -8,8 +8,8 @@ const lightTheme: ThemeOptions = {
   palette: {
     mode: 'light',
     primary: {
-      main: '#0288d1',
-      light: '#4e89c0',
+      main: '#6894bf',
+      light: '#91a9c1',
     },
     secondary: {
       main: '#ff9e80',
@@ -31,7 +31,7 @@ const darkTheme: ThemeOptions = {
   palette: {
     mode: 'dark',
     primary: {
-      main: '#0288d1',
+      main: '#638cb3',
     },
     secondary: {
       main: '#7b1fa2',
@@ -41,7 +41,7 @@ const darkTheme: ThemeOptions = {
       paper: '#232323',
     },
     info: {
-      main: '#0288d1'
+      main: '#5e86ae'
     },
     success: {
       main: '#4caf50'
@@ -49,34 +49,9 @@ const darkTheme: ThemeOptions = {
   },
 };
 
-const devTheme: ThemeOptions = {
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#0288d1',
-      light: '#4e89c0',
-    },
-    secondary: {
-      main: '#ff9e80',
-    },
-    background: {
-      default: '#f6f6f6',
-      paper: '#ffffff',
-    },
-    info: {
-      main: '#0288d1'
-    },
-    success: {
-      main: '#4caf50'
-    }
-  },
-}
 
 // Create theme function that accepts mode
 export const createAppTheme = (mode: 'light' | 'dark', isDev: boolean = false) => {
-  if (isDev && mode === 'light') {
-    return createTheme(devTheme);
-  }
   return createTheme(mode === 'light' ? lightTheme : darkTheme);
 };
 
