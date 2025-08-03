@@ -21,11 +21,15 @@ async function getSystemMessage(nodeM: NodeM) {
     }
 
     if (resolvedActionableChildren.length > 0) {
-        const actionPrompts = resolvedActionableChildren.map(({child, nodeType}) => {
-            return `Title: ${nodeType.actionLabel(child)}
-Description: ${nodeType.actionDescription(child)}
-Parameters: ${JSON.stringify(nodeType.actionParameters(child), null, 2)}`;
-        });
+        const actionPrompts = [];
+        for (const {child, nodeType} of resolvedActionableChildren) {
+            const actions = nodeType.actions(child);
+            for (const action of actions) {
+                actionPrompts.push(`Title: ${action.label}
+Description: ${action.description}
+Parameters: ${JSON.stringify(action.parameter, null, 2)}`);
+            }
+        }
 
         actionsSection = `<actions>
 ${actionPrompts.join('\n-------\n')}
@@ -110,10 +114,11 @@ async function getNextStep(nodeM: NodeM): Promise<string | undefined> {
         for (const child of treeM.getChildren(nodeM)) {
             const nodeType = await treeM.supportedNodesTypes(child.nodeTypeName());
             if (nodeType instanceof ActionableNodeType) {
-                const actionLabel = nodeType.actionLabel(child);
-                if (actionLabel === actionName) {
-                    // Handle agent calling specially to maintain message flow
-                    await nodeType.executeAction(child, parameters, nodeM, agentSessionState);
+                const actions = nodeType.actions(child);
+                const matchingAction = actions.find(action => action.label === actionName);
+                if (matchingAction) {
+                    // Execute the action with the matched label
+                    await nodeType.executeAction(child, actionName, parameters, nodeM, agentSessionState);
                     break;
                 }
             }

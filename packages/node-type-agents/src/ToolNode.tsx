@@ -1,4 +1,4 @@
-import {NodeM, NodeType, NodeVM} from "@forest/schema";
+import {NodeM, NodeVM} from "@forest/schema";
 import React, {useEffect, useState} from "react";
 import * as Y from "yjs";
 import CollaborativeEditor from "./CodeEditor";
@@ -6,31 +6,21 @@ import CardViewer from "./openapi/CardViewer";
 import {json as jsonLang} from '@codemirror/lang-json';
 import {parseApiSpec} from "./openapi/apiParser";
 import {httpUrl} from "@forest/schema/src/config"
-import {ActionableNodeType, ActionParameter} from "./ActionableNodeType";
-import { AgentSessionState } from "./sessionState";
+import {Action, ActionableNodeType, ActionParameter} from "./ActionableNodeType";
+import {AgentSessionState} from "./sessionState";
 import {ToolCallingMessage, ToolResponseMessage} from "@forest/agent-chat/src/AgentMessageTypes";
 
 const AgentToolOpenApiSpecText = "AgentToolOpenApiSpecText"
 
 export class AgentToolNodeType extends ActionableNodeType {
-    actionLabel(node: NodeM): string {
-        return "Call tool "+ node.title();
-    }
-    actionDescription(node: NodeM): string {
+    actions(node: NodeM): Action[] {
         const apiSpec = this.getApiSpec(node);
         if (!apiSpec || !apiSpec.endpoints || apiSpec.endpoints.length === 0) {
-            return "No API endpoints available";
+            return [];
         }
         const endpoint = apiSpec.endpoints[0];
         const description = endpoint.description || "No description provided.";
-        return `${description}`;
-    }
-    actionParameters(node: NodeM): Record<string, ActionParameter> {
-        const apiSpec = this.getApiSpec(node);
-        if (!apiSpec || !apiSpec.endpoints || apiSpec.endpoints.length === 0) {
-            return {};
-        }
-        const endpoint = apiSpec.endpoints[0];
+        
         const parameters: Record<string, ActionParameter> = {};
         if (endpoint.requestBody && endpoint.requestBody.content['application/json']) {
             const schema = endpoint.requestBody.content['application/json'].schema;
@@ -39,9 +29,15 @@ export class AgentToolNodeType extends ActionableNodeType {
                 description: schema.description || "Request body parameters"
             };
         }
-        return parameters;
+
+        return [{
+            label: "Call tool " + node.title(),
+            description: description,
+            parameter: parameters
+        }];
     }
-    async executeAction(node: NodeM, parameters: Record<string, any>, callerNode: NodeM, agentSessionState: AgentSessionState): Promise<any> {
+
+    async executeAction(node: NodeM, label: string, parameters: Record<string, any>, callerNode: NodeM, agentSessionState: AgentSessionState): Promise<any> {
         // Handle other actionable nodes
         const toolCallingMessage = new ToolCallingMessage({
             toolName: node.title(),
@@ -77,7 +73,7 @@ export class AgentToolNodeType extends ActionableNodeType {
     allowAddingChildren = false
     allowEditTitle = true
 
-    getApiSpec(node: NodeM): any{
+    getApiSpec(node: NodeM): any {
         // @ts-ignore
         const yText: Y.Text = node.ydata().get(AgentToolOpenApiSpecText) as Y.Text;
         if (!yText) {
@@ -86,8 +82,7 @@ export class AgentToolNodeType extends ActionableNodeType {
         try {
             const apiSpec = jsonToSpec(yText.toString());
             return apiSpec;
-        }
-        catch (e) {
+        } catch (e) {
             return null
         }
     }
@@ -145,7 +140,7 @@ Parameters:
 ${apiParameterPrompt}`
     }
 
-    callApi(node: NodeM, requestBody: any){
+    callApi(node: NodeM, requestBody: any) {
         const apiSpec = this.getApiSpec(node);
         if (!apiSpec || !apiSpec.endpoints || apiSpec.endpoints.length === 0) {
             throw new Error("No API endpoints available");
@@ -160,7 +155,7 @@ ${apiParameterPrompt}`
             serverAddress: url // Replace with your server address,
         }
 
-        return fetch(httpUrl+"/api/api-proxy/fetch", {
+        return fetch(httpUrl + "/api/api-proxy/fetch", {
             method: method,
             headers: {
                 'Content-Type': 'application/json',

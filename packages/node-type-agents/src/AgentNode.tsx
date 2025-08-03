@@ -6,7 +6,7 @@ import * as Y from "yjs";
 import {ChatComponent} from "./ChatComponent";
 import {Box, Button, Link, List, ListItem, ListItemText, Stack, Typography} from "@mui/material";
 import {AgentSessionState, agentSessionState} from "./sessionState";
-import {ActionableNodeType} from "./ActionableNodeType";
+import {Action, ActionableNodeType} from "./ActionableNodeType";
 import {invokeAgent} from "./agents";
 import {AgentCallingMessage, AgentResponseMessage} from "@forest/agent-chat/src/AgentMessageTypes";
 import {NormalMessage} from "@forest/agent-chat/src/MessageTypes";
@@ -105,24 +105,20 @@ export class AgentNodeType extends ActionableNodeType {
         return node.ydata().get(AgentPromptText) as Y.Text
     }
 
-    actionLabel(node: NodeM): string {
-        return "Ask agent " + node.title();
-    }
-
-    actionDescription(node: NodeM): string {
-        return "Ask the agent a question or give it a command.";
-    }
-
-    actionParameters(node: NodeM): Record<string, any> {
-        return {
-            "query": {
-                "type": "string",
-                "description": "The question or command to ask the agent."
+    actions(node: NodeM): Action[] {
+        return [{
+            label: "Ask agent " + node.title(),
+            description: "Ask the agent a question or give it a command.",
+            parameter: {
+                "query": {
+                    "type": "string",
+                    "description": "The question or command to ask the agent."
+                }
             }
-        }
+        }];
     }
 
-    async executeAction(node: NodeM, parameters: Record<string, any>, callerNode: NodeM, agentSessionState: AgentSessionState): Promise<any> {
+    async executeAction(node: NodeM, label: string, parameters: Record<string, any>, callerNode: NodeM, agentSessionState: AgentSessionState): Promise<any> {
         const agentCallingMessage = new AgentCallingMessage({
             author: callerNode.title(),
             agentName: node.title(),
@@ -131,10 +127,9 @@ export class AgentNodeType extends ActionableNodeType {
         agentSessionState.addMessage(callerNode, agentCallingMessage);
 
         const messageToAgent = new NormalMessage({
-            content: parameters["query"],
+            content: parameters.query,
             author: callerNode.title(),
             role: "user",
-
         })
 
         const agentReply = await invokeAgent(node, [messageToAgent])

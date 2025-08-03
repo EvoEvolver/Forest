@@ -1,4 +1,4 @@
-import {NodeM, NodeType, NodeVM} from "@forest/schema";
+import {NodeM, NodeVM} from "@forest/schema";
 import React, {useEffect, useState} from "react";
 import * as Y from "yjs";
 import CollaborativeEditor from "./CodeEditor";
@@ -14,6 +14,9 @@ import {
     parseMCPTools
 } from "./mcp/mcpParser";
 import {httpUrl} from "@forest/schema/src/config";
+import {ActionableNodeType, Action, ActionParameter} from "./ActionableNodeType";
+import {AgentSessionState} from "./sessionState";
+import {ToolCallingMessage, ToolResponseMessage} from "@forest/agent-chat/src/AgentMessageTypes";
 
 const MCPServerConfigText = "MCPServerConfigText";
 const MCPConnectionCacheText = "MCPConnectionCacheText";
@@ -31,7 +34,7 @@ interface MCPServerConfig {
     timeout?: number;
 }
 
-export class MCPNodeType extends NodeType {
+export class MCPNodeType extends ActionableNodeType {
     displayName = "MCP Tool"
     allowReshape = true
     allowAddingChildren = false
@@ -519,6 +522,74 @@ export class MCPNodeType extends NodeType {
                 <CollaborativeEditor yText={node.ydata.get(MCPConnectionCacheText)} langExtension={jsonLang}/>
             </>
         );
+    }
+
+    actions(node: NodeM): Action[] {
+        const connection = this.getMCPConnection(node);
+        if (!connection || !connection.connected || !connection.tools || connection.tools.length === 0) {
+            return [];
+        }
+
+        return connection.tools.map(tool => {
+            const parameters: Record<string, ActionParameter> = {};
+            
+            if (tool.inputSchema && tool.inputSchema.properties) {
+                Object.entries(tool.inputSchema.properties).forEach(([key, prop]: [string, any]) => {
+                    parameters[key] = {
+                        type: prop.type || "string",
+                        description: prop.description || ""
+                    };
+                });
+            }
+
+            return {
+                label: `Call ${tool.name}`,
+                description: tool.description || `Execute MCP tool: ${tool.name}`,
+                parameter: parameters
+            };
+        });
+    }
+
+    async executeAction(node: NodeM, label: string, parameters: Record<string, any>, callerNode: NodeM, agentSessionState: AgentSessionState): Promise<any> {
+        const connection = this.getMCPConnection(node);
+        if (!connection || !connection.connected) {
+            throw new Error("MCP server not connected");
+        }
+
+        // Extract tool name from label (format: "Call {toolName}")
+        const toolName = label.replace("Call ", "");
+        const tool = connection.tools.find(t => t.name === toolName);
+        if (!tool) {
+            throw new Error(`Tool ${toolName} not found`);
+        }
+
+        const toolCallingMessage = new ToolCallingMessage({
+            toolName: toolName,
+            parameters: parameters,
+            author: callerNode.title(),
+        });
+        agentSessionState.addMessage(callerNode, toolCallingMessage);
+
+        try {
+            const result = await this.callMCPTool(node, toolName, parameters);
+            
+            const toolResponseMessage = new ToolResponseMessage({
+                toolName: toolName,
+                response: result,
+                author: node.title(),
+            });
+            agentSessionState.addMessage(callerNode, toolResponseMessage);
+            
+            return toolResponseMessage;
+        } catch (error) {
+            const errorMessage = new ToolResponseMessage({
+                toolName: toolName,
+                response: { error: error.message },
+                author: node.title(),
+            });
+            agentSessionState.addMessage(callerNode, errorMessage);
+            throw error;
+        }
     }
 
     renderPrompt(node: NodeM): string {

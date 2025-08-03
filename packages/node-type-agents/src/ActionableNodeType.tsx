@@ -7,10 +7,13 @@ export interface ActionParameter {
     "description": string
 }
 
+export interface Action {
+    label: string
+    description: string
+    parameter: Record<string, ActionParameter>;
+}
 
 export abstract class ActionableNodeType extends NodeType {
-    abstract actionLabel(node: NodeM): string;
-    abstract actionDescription(node: NodeM): string;
-    abstract actionParameters(node: NodeM): Record<string, any>;
-    abstract executeAction(node: NodeM, parameters: Record<string, ActionParameter>, callerNode: NodeM, agentSessionState: AgentSessionState): Promise<BaseMessage>;
+    abstract actions(node: NodeM): Action[];
+    abstract executeAction(node: NodeM, label: string, parameters: Record<string, ActionParameter>, callerNode: NodeM, agentSessionState: AgentSessionState): Promise<BaseMessage>;
 }
