@@ -15,8 +15,8 @@ const linearNodeListAtom = atom((get) => {
     // use get(node.children) to get children of root node
     // do a depth-first traversal to get all node in a linear list
     const traverse = (node: NodeVM) => {
-        if (node.nodeM.nodeTypeName() !== "EditorNodeType") {
-            // if node is not EditorNodeType, return empty array
+        if (node.nodeM.nodeTypeName() !== "EditorNodeType" || node.data["archived"] === true) {
+            // if node is not EditorNodeType or archived, return empty array
             return [];
         }
         const children = get(node.children) as string[];
