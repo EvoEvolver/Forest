@@ -1,0 +1,27 @@
+{
+  "name": "@forest/node-type-mongo-datagrid",
+  "version": "1.0.0",
+  "description": "MongoDB DataGrid node type for Forest",
+  "main": "src/index.tsx",
+  "scripts": {
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@forest/schema": "workspace:*",
+    "@mui/icons-material": "^6.1.9",
+    "@mui/material": "^6.1.9",
+    "@mui/x-data-grid": "^7.22.2",
+    "jotai": "^2.10.3",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "typescript": "^5.8.3"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}
