@@ -14,6 +14,7 @@ interface MCPViewerProps {
     onDisconnect: () => void;
     onRefresh: () => void;
     onExecuteTool?: (toolName: string, params: any) => Promise<any>;
+    onToggleToolEnabled?: (toolName: string, enabled: boolean) => void;
 }
 
 const MCPViewer: React.FC<MCPViewerProps> = ({
@@ -23,11 +24,31 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
     onConnect,
     onDisconnect,
     onRefresh,
-    onExecuteTool
+    onExecuteTool,
+    onToggleToolEnabled
 }) => {
     const [serverUrl, setServerUrl] = React.useState(connection?.serverUrl || '');
     const [showAuthFields, setShowAuthFields] = React.useState(false);
     const [authToken, setAuthToken] = React.useState('');
+
+    const handleEnableAll = () => {
+        if (!connection?.tools || !onToggleToolEnabled) return;
+        connection.tools.forEach(tool => {
+            onToggleToolEnabled(tool.name, true);
+        });
+    };
+
+    const handleDisableAll = () => {
+        if (!connection?.tools || !onToggleToolEnabled) return;
+        connection.tools.forEach(tool => {
+            onToggleToolEnabled(tool.name, false);
+        });
+    };
+
+    const getEnabledToolsCount = () => {
+        if (!connection?.tools) return 0;
+        return connection.tools.filter(tool => tool.enabled !== false).length;
+    };
 
     const handleConnect = () => {
         if (serverUrl.trim()) {
@@ -64,6 +85,7 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
                         key={tool.name}
                         tool={tool}
                         onExecute={onExecuteTool}
+                        onToggleEnabled={onToggleToolEnabled}
                     />
                 ))}
             </Box>
@@ -204,9 +226,29 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
                 <Box>
                     {connection.tools.length > 0 ? (
                         <>
-                            <Typography variant="h5" sx={{mb: 3}}>
-                                Available Tools ({connection.tools.length})
-                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+                                <Typography variant="h5">
+                                    Available Tools ({getEnabledToolsCount()}/{connection.tools.length} enabled)
+                                </Typography>
+                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                    <Button
+                                        size="small"
+                                        variant="outlined"
+                                        onClick={handleEnableAll}
+                                        disabled={!onToggleToolEnabled}
+                                    >
+                                        Enable All
+                                    </Button>
+                                    <Button
+                                        size="small"
+                                        variant="outlined"
+                                        onClick={handleDisableAll}
+                                        disabled={!onToggleToolEnabled}
+                                    >
+                                        Disable All
+                                    </Button>
+                                </Box>
+                            </Box>
                             {renderToolsByCategory()}
                         </>
                     ) : (

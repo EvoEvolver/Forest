@@ -11,7 +11,9 @@ import {
     CircularProgress,
     Divider,
     TextField,
-    Typography
+    Typography,
+    Checkbox,
+    FormControlLabel
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -21,17 +23,26 @@ import {MCPTool} from './mcpParser';
 interface MCPCardProps {
     tool: MCPTool;
     onExecute?: (toolName: string, params: any) => Promise<any>;
+    onToggleEnabled?: (toolName: string, enabled: boolean) => void;
 }
 
-const MCPCard: React.FC<MCPCardProps> = ({tool, onExecute}) => {
+const MCPCard: React.FC<MCPCardProps> = ({tool, onExecute, onToggleEnabled}) => {
     const [expanded, setExpanded] = useState(false);
     const [parameters, setParameters] = useState<Record<string, any>>({});
     const [loading, setLoading] = useState(false);
     const [response, setResponse] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
 
+    const isEnabled = tool.enabled !== false; // Default to enabled if not specified
+
+    const handleToggleEnabled = (checked: boolean) => {
+        if (onToggleEnabled) {
+            onToggleEnabled(tool.name, checked);
+        }
+    };
+
     const handleExecute = async () => {
-        if (!onExecute) return;
+        if (!onExecute || !isEnabled) return;
         
         setLoading(true);
         setError(null);
@@ -158,25 +169,45 @@ const MCPCard: React.FC<MCPCardProps> = ({tool, onExecute}) => {
     const hasParameters = tool.inputSchema.properties && Object.keys(tool.inputSchema.properties).length > 0;
 
     return (
-        <Card sx={{mb: 2, border: '2px solid #4caf50'}}>
+        <Card sx={{
+            mb: 2, 
+            border: `2px solid ${isEnabled ? '#4caf50' : '#bdbdbd'}`,
+            opacity: isEnabled ? 1 : 0.7,
+            backgroundColor: isEnabled ? 'inherit' : '#f5f5f5'
+        }}>
             <Accordion expanded={expanded} onChange={() => setExpanded(!expanded)}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
                     <Box sx={{display: 'flex', alignItems: 'center', width: '100%'}}>
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={isEnabled}
+                                    onChange={(e) => handleToggleEnabled(e.target.checked)}
+                                    onClick={(e) => e.stopPropagation()} // Prevent accordion toggle
+                                    size="small"
+                                />
+                            }
+                            label=""
+                            sx={{ mr: 1, mb: 0 }}
+                        />
                         <Chip
                             icon={<BuildIcon />}
                             label="MCP"
                             sx={{
-                                backgroundColor: '#4caf50',
+                                backgroundColor: isEnabled ? '#4caf50' : '#9e9e9e',
                                 color: 'white',
                                 fontWeight: 'bold',
                                 mr: 2,
                                 minWidth: '60px'
                             }}
                         />
-                        <Typography variant="h6" sx={{flexGrow: 1}}>
+                        <Typography variant="h6" sx={{
+                            flexGrow: 1,
+                            color: isEnabled ? 'inherit' : 'text.disabled'
+                        }}>
                             {tool.name}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" color={isEnabled ? 'text.secondary' : 'text.disabled'}>
                             {tool.description || 'No description'}
                         </Typography>
                     </Box>
@@ -208,12 +239,18 @@ const MCPCard: React.FC<MCPCardProps> = ({tool, onExecute}) => {
                         <Box sx={{mb: 2}}>
                             <Button
                                 variant="contained"
-                                color="success"
+                                color={isEnabled ? "success" : "inherit"}
                                 onClick={handleExecute}
-                                disabled={loading || !onExecute}
+                                disabled={loading || !onExecute || !isEnabled}
                                 startIcon={loading ? <CircularProgress size={16}/> : <PlayArrowIcon/>}
+                                sx={{
+                                    backgroundColor: isEnabled ? undefined : '#e0e0e0',
+                                    '&:disabled': {
+                                        backgroundColor: isEnabled ? undefined : '#f5f5f5'
+                                    }
+                                }}
                             >
-                                {loading ? 'Executing...' : 'Execute Tool'}
+                                {!isEnabled ? 'Tool Disabled' : loading ? 'Executing...' : 'Execute Tool'}
                             </Button>
                         </Box>
 
