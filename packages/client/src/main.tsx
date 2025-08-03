@@ -4,7 +4,7 @@ import './index.css';
 import {Provider, useAtom} from "jotai";
 import { BrowserRouter, Routes, Route } from "react-router";
 import {ThemeProvider} from "@mui/material/styles";
-import {createAppTheme, themeModeAtom} from "../../theme";
+import {createAppTheme, themeModeAtom} from "./theme";
 import {CssBaseline} from "@mui/material";
 
 // Lazy load all route components

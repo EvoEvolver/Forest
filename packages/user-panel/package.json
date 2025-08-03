@@ -9,6 +9,7 @@
     "@forest/issue-tracker": "workspace:*",
     "@forest/node-types": "workspace:*",
     "@forest/schema": "workspace:*",
+    "@forest/client": "workspace:*",
     "@forest/user-system": "workspace:*",
     "@mui/icons-material": "^7.2.0",
     "@mui/material": "^7.2.0",

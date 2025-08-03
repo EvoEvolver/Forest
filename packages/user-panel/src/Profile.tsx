@@ -22,7 +22,7 @@ import {
 import { useAtom } from 'jotai';
 import { userAtom } from '@forest/user-system/src/authStates';
 import DashboardCard from './DashboardCard';
-import {themeModeAtom} from "../../theme";
+import {themeModeAtom} from "@forest/client/src/theme";
 
 export const Profile: React.FC = () => {
     const [user] = useAtom(userAtom);
