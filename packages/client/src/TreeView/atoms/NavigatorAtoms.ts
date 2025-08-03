@@ -32,7 +32,7 @@ export const NavigatorItemsAtom = atom((get) => {
             }
             return get(childrenNodeAtom)
         }).filter((child) => {
-            return child != null
+            return child != null && child.data["archived"] !== true
         })
 
         item.children = children.map((child) => {
