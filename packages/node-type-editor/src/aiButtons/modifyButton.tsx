@@ -7,7 +7,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import TextField from "@mui/material/TextField";
 import {NodeM, NodeVM} from "@forest/schema";
-import {EditorNodeType} from ".";
+import {EditorNodeType} from "..";
 import {stageThisVersion} from "@forest/schema/src/stageService";
 import {useAtomValue} from "jotai";
 import { authTokenAtom } from "@forest/user-system/src/authStates";
@@ -17,6 +17,7 @@ import {Card} from "@mui/material";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import EditIcon from '@mui/icons-material/Edit';
+import {ModifyConfirmation} from "./ModifyConfirmation";
 
 export const ModifyButton: React.FC<{ node: NodeVM}> = ({node}) => {
     const [loading, setLoading] = React.useState(false);
@@ -61,12 +62,10 @@ export const ModifyButton: React.FC<{ node: NodeVM}> = ({node}) => {
         setPrompt("");
     };
 
-    const handleAccept = async () => {
+    const handleAccept = async (modifiedContent: string) => {
         await stageThisVersion(node, "Before LLM modification");
-        if (revisedContent) {
-            const editorNodeType = await node.nodeM.treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
-            editorNodeType.setEditorContent(node.nodeM, revisedContent);
-        }
+        const editorNodeType = await node.nodeM.treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
+        editorNodeType.setEditorContent(node.nodeM, modifiedContent);
         handleCloseReviewDialog();
     };
 
@@ -127,35 +126,22 @@ export const ModifyButton: React.FC<{ node: NodeVM}> = ({node}) => {
                 </DialogActions>
             </Dialog>
 
-            <Dialog open={reviewDialogOpen} onClose={handleCloseReviewDialog} maxWidth="lg" fullWidth>
-                <DialogTitle>Review Changes</DialogTitle>
-                <DialogContent sx={{display: 'flex', gap: '20px'}}>
-                    <div style={{
-                        flex: 1,
-                        overflow: 'auto',
-                        border: '1px solid #ccc',
-                        padding: '10px',
-                        borderRadius: '4px'
-                    }}>
-                        <h3>Original</h3>
-                        <div dangerouslySetInnerHTML={{ __html: originalContent ?? "" }} />
-                    </div>
-                    <div style={{
-                        flex: 1,
-                        overflow: 'auto',
-                        border: '1px solid #ccc',
-                        padding: '10px',
-                        borderRadius: '4px'
-                    }}>
-                        <h3>Modified</h3>
-                        <div dangerouslySetInnerHTML={{ __html: revisedContent ?? "" }} />
-                    </div>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleCloseReviewDialog}>Cancel</Button>
-                    <Button onClick={handleAccept} color="primary">Accept</Button>
-                </DialogActions>
-            </Dialog>
+            <ModifyConfirmation
+                open={reviewDialogOpen}
+                onClose={handleCloseReviewDialog}
+                onAccept={handleAccept}
+                dialogTitle="Review Changes"
+                comparisonContent={{
+                    original: {
+                        title: "Original",
+                        content: originalContent ?? ""
+                    },
+                    modified: {
+                        title: "Modified",
+                        content: revisedContent ?? ""
+                    }
+                }}
+            />
         </>
     );
 };

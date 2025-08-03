@@ -46,7 +46,7 @@ const TiptapEditor = (props: TiptapEditorProps) => {
 
 export default TiptapEditor;
 
-function makeExtensions(yXML, provider, onCommentActivated, onLinkActivated, setHoverElements) {
+export function makeExtensions(yXML, provider, onCommentActivated, onLinkActivated, setHoverElements) {
     const onCommentActivatedHandler = onCommentActivated || ((id, editor, options) => {
     });
     const onLinkActivatedHandler = onLinkActivated || ((href, editor, options) => {
@@ -73,13 +73,13 @@ function makeExtensions(yXML, provider, onCommentActivated, onLinkActivated, set
             onLinkActivated: onLinkActivatedHandler,
         }),
         BookmarkNode,
-        UniversalPasteHandler.configure({
+        ...(setHoverElements ? [UniversalPasteHandler.configure({
             onBookmarkCreated: (url, metadata) => {
                 console.log('Bookmark created:', url, metadata);
             },
             setHoverElements: setHoverElements,
             uploadImage: uploadImage
-        }),
+        })] : []),
         ...(yXML ? [Collaboration.extend().configure({fragment: yXML})] : []),
         ...(provider ? [CollaborationCursor.extend().configure({provider})] : []),
     ];

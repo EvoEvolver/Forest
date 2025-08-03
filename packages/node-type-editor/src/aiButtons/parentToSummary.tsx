@@ -10,12 +10,13 @@ import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import DownloadIcon from '@mui/icons-material/Download';
 import {NodeM, NodeVM} from "@forest/schema";
-import {EditorNodeType} from ".";
+import {EditorNodeType} from "..";
 import {stageThisVersion} from "@forest/schema/src/stageService";
 import {useAtomValue} from "jotai";
 import { authTokenAtom } from "@forest/user-system/src/authStates";
 import {NormalMessage} from "@forest/agent-chat/src/MessageTypes";
 import {fetchChatResponse} from "@forest/agent-chat/src/llm";
+import {ModifyConfirmation} from "./ModifyConfirmation";
 
 export const ParentToSummaryButton: React.FC<{ node: NodeVM}> = ({node}) => {
     const [loading, setLoading] = React.useState(false);
@@ -51,12 +52,10 @@ export const ParentToSummaryButton: React.FC<{ node: NodeVM}> = ({node}) => {
         setSummaryContent(null);
     };
 
-    const handleAccept = async () => {
+    const handleAccept = async (modifiedContent: string) => {
         await stageThisVersion(node, "Before parent-to-summary editing");
-        if (summaryContent) {
-            const editorNodeType = await node.nodeM.treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
-            editorNodeType.setEditorContent(node.nodeM, summaryContent);
-        }
+        const editorNodeType = await node.nodeM.treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
+        editorNodeType.setEditorContent(node.nodeM, modifiedContent);
         handleCloseDialog();
     };
 
@@ -89,35 +88,22 @@ export const ParentToSummaryButton: React.FC<{ node: NodeVM}> = ({node}) => {
                     {loading && <CircularProgress size={20} />}
                 </CardContent>
             </Card>
-            <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="lg" fullWidth>
-                <DialogTitle>Review Summary</DialogTitle>
-                <DialogContent sx={{display: 'flex', gap: '20px'}}>
-                    <div style={{
-                        flex: 1,
-                        overflow: 'auto',
-                        border: '1px solid #ccc',
-                        padding: '10px',
-                        borderRadius: '4px'
-                    }}>
-                        <h3>Parent Node Content</h3>
-                        <div dangerouslySetInnerHTML={{ __html: parentContent ?? "" }} />
-                    </div>
-                    <div style={{
-                        flex: 1,
-                        overflow: 'auto',
-                        border: '1px solid #ccc',
-                        padding: '10px',
-                        borderRadius: '4px'
-                    }}>
-                        <h3>Paragraph generated</h3>
-                        <div dangerouslySetInnerHTML={{ __html: summaryContent ?? "" }} />
-                    </div>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleCloseDialog}>Cancel</Button>
-                    <Button onClick={handleAccept} color="primary">Accept</Button>
-                </DialogActions>
-            </Dialog>
+            <ModifyConfirmation
+                open={dialogOpen}
+                onClose={handleCloseDialog}
+                onAccept={handleAccept}
+                dialogTitle="Review Summary"
+                comparisonContent={{
+                    original: {
+                        title: "Parent Node Content",
+                        content: parentContent ?? ""
+                    },
+                    modified: {
+                        title: "Paragraph generated",
+                        content: summaryContent ?? ""
+                    }
+                }}
+            />
         </>
     );
 };

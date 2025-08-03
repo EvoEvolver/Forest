@@ -6,7 +6,7 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import {NodeJson, NodeM, NodeVM} from "@forest/schema";
-import {EditorNodeType} from ".";
+import {EditorNodeType} from "..";
 import {stageThisVersion} from "@forest/schema/src/stageService";
 import {useAtomValue} from "jotai";
 import {authTokenAtom} from "@forest/user-system/src/authStates";
@@ -20,6 +20,7 @@ import {Card} from "@mui/material";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import AutoAwesomeMotionIcon from '@mui/icons-material/AutoAwesomeMotion';
+import {SelectionConfirmation} from "./SelectionConfirmation";
 
 export const TopDownButton: React.FC<{ node: NodeVM }> = ({node}) => {
         const [loading, setLoading] = React.useState(false);
@@ -110,35 +111,19 @@ export const TopDownButton: React.FC<{ node: NodeVM }> = ({node}) => {
                         {loading && <CircularProgress size={20} />}
                     </CardContent>
                 </Card>
-                <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-                    <DialogTitle>Generate New Children</DialogTitle>
-                    <DialogContent>
-                        <p>Select the new children nodes you want to create:</p>
-                        <FormGroup>
-                            {newChildren.map(({title, content}) => (
-                                <div key={title} style={{marginBottom: 16}}>
-                                    <FormControlLabel
-                                        control={
-                                            <Checkbox
-                                                checked={selectedTitles[title] ?? true}
-                                                onChange={() => handleToggleSelection(title)}
-                                            />
-                                        }
-                                        label={title}
-                                    />
-                                    <div
-                                        style={{marginLeft: 32, color: "#555"}}
-                                        dangerouslySetInnerHTML={{__html: content}}
-                                    />
-                                </div>
-                            ))}
-                        </FormGroup>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={handleCloseDialog}>Cancel</Button>
-                        <Button onClick={handleAccept} color="primary">Accept</Button>
-                    </DialogActions>
-                </Dialog>
+                <SelectionConfirmation
+                    open={dialogOpen}
+                    onClose={handleCloseDialog}
+                    onAccept={handleAccept}
+                    dialogTitle="Generate New Children"
+                    selectionItems={newChildren.map(({title, content}) => ({
+                        id: title,
+                        title,
+                        content
+                    }))}
+                    selectedItems={selectedTitles}
+                    onToggleSelection={handleToggleSelection}
+                />
             </>
         );
     }
