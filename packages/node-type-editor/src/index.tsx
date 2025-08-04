@@ -54,13 +54,7 @@ export class EditorNodeType extends NodeType {
     }
 
     renderTool2(node: NodeVM): React.ReactNode {
-        const children = useAtomValue(node.children)
-        return <>
-            <ModifyButton node={node}/>
-            <ParentToSummaryButton node={node}/>
-            {children.length===0 && <TopDownButton node={node}/>}
-            {children.length!==0 && <BottomUpButton node={node}/>}
-        </>
+        return <EditorTools node={node}/>
     }
 
     renderPrompt(node: NodeM): string {
@@ -69,4 +63,14 @@ export class EditorNodeType extends NodeType {
 
     ydataInitialize(node: NodeM) {
     }
+}
+
+function EditorTools({node}: {node: NodeVM}) {
+    const children = useAtomValue(node.children)
+    return <>
+        <ModifyButton node={node}/>
+        <ParentToSummaryButton node={node}/>
+        {children.length===0 && <TopDownButton node={node}/>}
+        {children.length!==0 && <BottomUpButton node={node}/>}
+    </>
 }
