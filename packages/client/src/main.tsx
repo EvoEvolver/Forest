@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router";
 import {ThemeProvider} from "@mui/material/styles";
 import {createAppTheme, themeModeAtom} from "./theme";
 import {CssBaseline} from "@mui/material";
+import {LoadingSuspense} from "./LoadingSuspense";
 
 // Lazy load all route components
 // @ts-ignore
@@ -28,7 +29,7 @@ function Root() {
         <ThemeProvider theme={theme}>
             <CssBaseline />
             <React.StrictMode>
-                <Suspense fallback={<div>Loading...</div>}>
+                <Suspense fallback={<LoadingSuspense/>}>
                     <Routes>
                         <Route path="/" element={<App />} />
                         <Route path="/auth-success" element={<AuthSuccessPage />} />
