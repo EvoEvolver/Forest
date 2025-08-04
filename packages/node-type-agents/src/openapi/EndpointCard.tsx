@@ -224,6 +224,11 @@ const EndpointCard: React.FC<EndpointCardProps> = ({endpoint, baseUrl = ''}) => 
                                             }
                                             value={requestBody}
                                             onChange={(e) => setRequestBody(e.target.value)}
+                                            sx={{
+                                                '& .MuiOutlinedInput-root': {
+                                                    backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[50],
+                                                },
+                                            }}
                                         />
                                     </Box>
                                 )}
@@ -258,8 +263,18 @@ const EndpointCard: React.FC<EndpointCardProps> = ({endpoint, baseUrl = ''}) => 
                                         <Typography variant="subtitle2">
                                             Status: {response.status} {response.statusText}
                                         </Typography>
-                                        <Box sx={{mt: 1, p: 2, backgroundColor: theme.palette.grey[100], borderRadius: 1}}>
-                      <pre style={{margin: 0, fontSize: '0.8rem', overflow: 'auto'}}>
+                                        <Box sx={{
+                                            mt: 1,
+                                            p: 2,
+                                            backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[900] : theme.palette.grey[100],
+                                            borderRadius: 1
+                                        }}>
+                                            <pre style={{
+                                                margin: 0,
+                                                fontSize: '0.8rem',
+                                                overflow: 'auto',
+                                                color: theme.palette.text.primary
+                                            }}>
                         {JSON.stringify(response.data, null, 2)}
                       </pre>
                                         </Box>
@@ -269,12 +284,29 @@ const EndpointCard: React.FC<EndpointCardProps> = ({endpoint, baseUrl = ''}) => 
                         )}
 
                         <Box sx={{mt: 2}}>
-                            <Typography variant="h6" sx={{mb: 1}}>Response</Typography>
+                            <Typography variant="h6" sx={{mb: 1}}>Response Schema</Typography>
                             {endpoint.responses && endpoint.responses['200'] && (
                                 <Box sx={{mb: 1}}>
                                     <Typography variant="subtitle2">
                                         {endpoint.responses['200']?.description ?? 'No description available'}
                                     </Typography>
+                                </Box>
+                            )}
+                            {endpoint.responses && endpoint.responses['200']?.content?.['application/json']?.schema && (
+                                <Box sx={{
+                                    mt: 1,
+                                    p: 2,
+                                    backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[900] : theme.palette.grey[100],
+                                    borderRadius: 1
+                                }}>
+                                    <pre style={{
+                                        margin: 0,
+                                        fontSize: '0.8rem',
+                                        overflow: 'auto',
+                                        color: theme.palette.text.primary
+                                    }}>
+                                        {JSON.stringify(endpoint.responses['200'].content['application/json'].schema, null, 2)}
+                                    </pre>
                                 </Box>
                             )}
                         </Box>

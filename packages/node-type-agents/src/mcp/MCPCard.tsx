@@ -256,8 +256,8 @@ const MCPCard: React.FC<MCPCardProps> = ({tool, onExecute, onToggleEnabled}) => 
                                 )}
 
                                 {response && (
-                                    <Box sx={{p: 2, backgroundColor: theme.palette.grey[100], borderRadius: 1}}>
-                                        <pre style={{margin: 0, fontSize: '0.8rem', overflow: 'auto', whiteSpace: 'pre-wrap'}}>
+                                    <Box sx={{p: 2, backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[900] : theme.palette.grey[100], borderRadius: 1}}>
+                                        <pre style={{margin: 0, fontSize: '0.8rem', overflow: 'auto', whiteSpace: 'pre-wrap', color: theme.palette.text.primary}}>
                                             {typeof response === 'string' ? response : JSON.stringify(response, null, 2)}
                                         </pre>
                                     </Box>
@@ -268,8 +268,8 @@ const MCPCard: React.FC<MCPCardProps> = ({tool, onExecute, onToggleEnabled}) => 
                         {tool.inputSchema && (
                             <Box sx={{mt: 2}}>
                                 <Typography variant="h6" sx={{mb: 1}}>Schema</Typography>
-                                <Box sx={{p: 2, backgroundColor: theme.palette.grey[50], borderRadius: 1}}>
-                                    <pre style={{margin: 0, fontSize: '0.7rem', overflow: 'auto'}}>
+                                <Box sx={{p: 2, backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[900] : theme.palette.grey[50], borderRadius: 1}}>
+                                    <pre style={{margin: 0, fontSize: '0.7rem', overflow: 'auto', color: theme.palette.text.primary}}>
                                         {JSON.stringify(tool.inputSchema, null, 2)}
                                     </pre>
                                 </Box>
