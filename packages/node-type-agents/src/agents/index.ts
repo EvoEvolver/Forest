@@ -78,14 +78,15 @@ async function getNextStep(nodeM: NodeM): Promise<string | undefined> {
     const systemMessage = await getSystemMessage(nodeM);
     const messagesWithSystem = [...messages, systemMessage];
     const messagesToSubmit = messagesWithSystem.map(m => m.toJson());
-    console.log(messagesToSubmit)
+    console.log("messagesToSubmit",messagesToSubmit);
     let response = await fetchChatResponse(messagesToSubmit as any, "gpt-4.1", agentSessionState.authToken);
-    console.log(response)
+    console.log("response",response);
     try {
         response = response.substring(response.indexOf('{'), response.lastIndexOf('}') + 1);
     } catch (e) {
         // ignore if no json
     }
+    console.log("filtered response",response);
 
     // Try to parse the response as JSON
     let parsedResponse: any;
@@ -94,6 +95,7 @@ async function getNextStep(nodeM: NodeM): Promise<string | undefined> {
     } catch {
         parsedResponse = {type: "answer_user", message: response, wait_user: true};
     }
+    console.log("parsedResponse",parsedResponse);
 
     if (parsedResponse.type === "answer_user") {
         const messageContent = parsedResponse.message;
@@ -115,7 +117,7 @@ async function getNextStep(nodeM: NodeM): Promise<string | undefined> {
             const nodeType = await treeM.supportedNodesTypes(child.nodeTypeName());
             if (nodeType instanceof ActionableNodeType) {
                 const actions = nodeType.actions(child);
-                const matchingAction = actions.find(action => action.label === `Call ${actionName}`);
+                const matchingAction = actions.find(action => action.label === actionName);
                 if (matchingAction) {
                     // Execute the action with the matched label
                     await nodeType.executeAction(child, actionName, parameters, nodeM, agentSessionState);

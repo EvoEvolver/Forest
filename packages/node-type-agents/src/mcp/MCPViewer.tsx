@@ -323,7 +323,7 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
                         <strong>Toolset URL:</strong> {connection.toolsetUrl}
                     </Typography>
                     <Typography variant="body2">
-                        <strong>Config ID:</strong> {connection.configId || 'Not set'}
+                        <strong>Config Hash:</strong> {connection.configHash || 'Not set'}
                     </Typography>
                     {connection.serverInfo && (
                         <>

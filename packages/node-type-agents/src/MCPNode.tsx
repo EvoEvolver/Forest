@@ -174,13 +174,13 @@ export class MCPNodeType extends ActionableNodeType {
         }, [cacheYText, node.nodeM]);
 
         const checkConnectionStatus = async () => {
-            if (!connection || !connection.toolsetUrl || !connection.configId) return;
+            if (!connection || !connection.toolsetUrl || !connection.configHash) return;
 
             try {
                 const response = await fetch(`${httpUrl}/api/mcp-proxy/health`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ toolsetUrl: connection.toolsetUrl, config_hash: connection.configId })
+                    body: JSON.stringify({ toolsetUrl: connection.toolsetUrl, config_hash: connection.configHash })
                 });
 
                 if (response.ok) {
@@ -281,6 +281,7 @@ export class MCPNodeType extends ActionableNodeType {
                 }
 
                 const connectResult = await connectResponse.json();
+                const configHash = connectResult._metadata.configHash;
                 
                 // Fetch tools list
                 const toolsResponse = await fetch(`${httpUrl}/api/mcp-proxy/list-tools`, {
@@ -298,11 +299,10 @@ export class MCPNodeType extends ActionableNodeType {
                 const tools = parseMCPTools(toolsResult);
 
                 // Create connection object with new Toolset format
-                const configId = generateConfigId(mcpConfig);
                 const newConnection: MCPConnection = {
                     toolsetUrl,
                     mcpConfig,
-                    configId,
+                    configHash,
                     type: 'toolset-managed',
                     connected: true,
                     serverInfo: connectResult.result,
@@ -323,11 +323,10 @@ export class MCPNodeType extends ActionableNodeType {
                 setError(err.message || 'Failed to connect to MCP server via Toolset');
                 
                 // Save disconnected state
-                const configId = generateConfigId(mcpConfig);
                 const failedConnection: MCPConnection = {
                     toolsetUrl,
                     mcpConfig,
-                    configId,
+                    configHash: "",
                     type: 'toolset-managed',
                     connected: false,
                     tools: [],
@@ -396,7 +395,8 @@ export class MCPNodeType extends ActionableNodeType {
                 connection.toolsetUrl, 
                 connection.mcpConfig, 
                 toolName, 
-                params
+                params,
+                connection.configHash
             );
             
             try {
@@ -563,7 +563,7 @@ export class MCPNodeType extends ActionableNodeType {
             }
 
             return {
-                label: `Call ${tool.name}`,
+                label: `${tool.name}`,
                 description: tool.description || `Execute MCP tool: ${tool.name}`,
                 parameter: parameters
             };
@@ -576,8 +576,7 @@ export class MCPNodeType extends ActionableNodeType {
             throw new Error("MCP server not connected");
         }
 
-        // Extract tool name from label (format: "Call {toolName}")
-        const toolName = label.replace("Call ", "");
+        const toolName = label;
         const tool = connection.tools.find(t => t.name === toolName);
         if (!tool) {
             throw new Error(`Tool ${toolName} not found`);
@@ -651,7 +650,8 @@ export class MCPNodeType extends ActionableNodeType {
             connection.toolsetUrl, 
             connection.mcpConfig, 
             toolName, 
-            params
+            params,
+            connection.configHash
         );
         
         const response = await fetch(`${httpUrl}/api/mcp-proxy/call-tool`, {

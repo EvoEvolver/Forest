@@ -42,7 +42,7 @@ export interface MCPServerInfo {
 export interface MCPConnection {
     toolsetUrl: string;  // Changed from serverUrl to toolsetUrl
     mcpConfig: any;      // New: MCP configuration object
-    configId?: string;   // New: Generated config ID
+    configHash: string; // New: Server-side config hash
     connected: boolean;
     serverInfo?: MCPServerInfo;
     tools: MCPTool[];
@@ -167,12 +167,13 @@ export function createMCPToolCall(toolName: string, params: any): MCPCallRequest
 /**
  * Create Toolset API request payload for tool execution
  */
-export function createToolsetToolCall(toolsetUrl: string, mcpConfig: any, toolName: string, params: any) {
+export function createToolsetToolCall(toolsetUrl: string, mcpConfig: any, toolName: string, params: any, configHash: string) {
     return {
         toolsetUrl,
         mcpConfig,
         toolName,
-        arguments: params
+        arguments: params,
+        configHash
     };
 }
 
@@ -215,21 +216,6 @@ export function createMCPInitializeRequest(): MCPCallRequest {
             }
         }
     };
-}
-
-/**
- * Generate a simple config ID from MCP config (client-side version)
- */
-export function generateConfigId(mcpConfig: any): string {
-    const configStr = JSON.stringify(mcpConfig, Object.keys(mcpConfig).sort());
-    // Simple hash for client-side use (browser compatible)
-    let hash = 0;
-    for (let i = 0; i < configStr.length; i++) {
-        const char = configStr.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32-bit integer
-    }
-    return Math.abs(hash).toString(16).substring(0, 8);
 }
 
 /**

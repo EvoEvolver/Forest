@@ -3,10 +3,9 @@ import axios from 'axios';
 
 const mcpProxyRouter = Router();
 
-// Store mappings between (toolsetUrl + configId) and server metadata
+// Store mappings between (toolsetUrl + configHash) and server metadata
 const serverConnections = new Map<string, {
     toolsetUrl: string;
-    configId: string;
     configHash: string;
     mcpConfig: any;
     connectedAt: Date;
@@ -19,8 +18,8 @@ const DEFAULT_TIMEOUT = 30000;
 const DEBUG = process.env.NODE_ENV === 'development';
 
 // Helper function to generate unique connection key
-function getConnectionKey(toolsetUrl: string, configId: string): string {
-    return `${toolsetUrl}:${configId}`;
+function getConnectionKey(toolsetUrl: string, configHash: string): string {
+    return `${toolsetUrl}:${configHash}`;
 }
 
 // Helper function to validate toolset URL
@@ -75,8 +74,8 @@ function validateMcpConfig(config: any): { valid: boolean; error?: string } {
     return { valid: true };
 }
 
-// Helper function to generate config ID from MCP config
-function generateConfigId(mcpConfig: any): string {
+// Helper function to generate config hash from MCP config
+function generateConfigHash(mcpConfig: any): string {
     const configStr = JSON.stringify(mcpConfig, Object.keys(mcpConfig).sort());
     return Buffer.from(configStr).toString('base64').substring(0, 16);
 }
@@ -168,10 +167,10 @@ mcpProxyRouter.post('/connect', async (req: Request, res: Response): Promise<voi
             return;
         }
 
-        const configId = generateConfigId(mcpConfig);
-        const connectionKey = getConnectionKey(toolsetUrl, configId);
+        const configHash = generateConfigHash(mcpConfig);
+        const connectionKey = getConnectionKey(toolsetUrl, configHash);
         
-        console.log(`🔌 Connecting MCP via Toolset: ${toolsetUrl}, config ID: ${configId}`);
+        console.log(`🔌 Connecting MCP via Toolset: ${toolsetUrl}, config hash: ${configHash}`);
 
         // Call Toolset to add MCP server
         const result = await callToolsetBackend(toolsetUrl, '/addMCP', mcpConfig);
@@ -187,8 +186,7 @@ mcpProxyRouter.post('/connect', async (req: Request, res: Response): Promise<voi
         // Store connection metadata
         serverConnections.set(connectionKey, {
             toolsetUrl,
-            configId,
-            configHash: result.config_hash || configId,
+            configHash: result.config_hash || configHash,
             mcpConfig,
             connectedAt: new Date(),
             lastUsed: new Date(),
@@ -214,8 +212,7 @@ mcpProxyRouter.post('/connect', async (req: Request, res: Response): Promise<voi
             // Additional metadata for debugging
             _metadata: {
                 toolsetUrl,
-                configId,
-                configHash: result.config_hash,
+                configHash: result.config_hash || configHash,
                 toolsCount: Object.keys(result.tools || {}).length,
                 backendStatus: result.status,
                 connectionKey
@@ -248,10 +245,10 @@ mcpProxyRouter.post('/list-tools', async (req: Request, res: Response): Promise<
     }
 
     try {
-        const configId = generateConfigId(mcpConfig);
-        const connectionKey = getConnectionKey(toolsetUrl, configId);
+        const configHash = generateConfigHash(mcpConfig);
+        const connectionKey = getConnectionKey(toolsetUrl, configHash);
         
-        console.log(`📋 Listing tools for MCP via Toolset: ${toolsetUrl}, config ID: ${configId}`);
+        console.log(`📋 Listing tools for MCP via Toolset: ${toolsetUrl}, config hash: ${configHash}`);
 
         // Get or refresh connection to get current tools
         const result = await callToolsetBackend(toolsetUrl, '/addMCP', mcpConfig);
@@ -288,7 +285,7 @@ mcpProxyRouter.post('/list-tools', async (req: Request, res: Response): Promise<
             },
             _metadata: {
                 toolsetUrl,
-                configId,
+                configHash,
                 toolsCount: tools.length,
                 backendStatus: result.status
             }
@@ -304,8 +301,8 @@ mcpProxyRouter.post('/list-tools', async (req: Request, res: Response): Promise<
 
 // Call MCP tool via Toolset
 mcpProxyRouter.post('/call-tool', async (req: Request, res: Response): Promise<void> => {
-    const { toolsetUrl, mcpConfig, toolName, arguments: toolArgs } = req.body;
-    
+    const { toolsetUrl, mcpConfig, toolName, arguments: toolArgs, configHash: configHash } = req.body;
+    console.log(req.body);
     // Validate inputs
     const toolsetValidation = validateToolsetUrl(toolsetUrl);
     if (!toolsetValidation.valid) {
@@ -325,25 +322,12 @@ mcpProxyRouter.post('/call-tool', async (req: Request, res: Response): Promise<v
     }
 
     try {
-        const configId = generateConfigId(mcpConfig);
-        const connectionKey = getConnectionKey(toolsetUrl, configId);
+        const connectionKey = getConnectionKey(toolsetUrl, configHash);
         
-        console.log(`🛠️ Calling tool "${toolName}" via Toolset: ${toolsetUrl}, config ID: ${configId}`);
+        console.log(`🛠️ Calling tool "${toolName}" via Toolset: ${toolsetUrl}, config hash: ${configHash}`);
         if (DEBUG && toolArgs) {
             console.log(`🔍 Tool arguments:`, JSON.stringify(toolArgs, null, 2));
         }
-
-        // Ensure MCP connection exists by calling addMCP first
-        const addResult = await callToolsetBackend(toolsetUrl, '/addMCP', mcpConfig);
-        if (addResult.status === 'error') {
-            console.error('❌ Toolset returned error for call-tool setup:', addResult.message);
-            res.status(400).json({ 
-                error: addResult.message || 'Toolset backend error: Failed to ensure MCP connection'
-            });
-            return;
-        }
-
-        const configHash = addResult.config_hash || configId;
         
         // Call the tool using the generated endpoint: /{config_hash}_{tool_name}
         const toolEndpoint = `/${configHash}_${toolName}`;
@@ -364,8 +348,7 @@ mcpProxyRouter.post('/call-tool', async (req: Request, res: Response): Promise<v
             result,
             _metadata: {
                 toolsetUrl,
-                configId,
-                configHash,
+                configHash: configHash,
                 toolName,
                 executedAt: new Date().toISOString()
             }
@@ -416,15 +399,15 @@ mcpProxyRouter.post('/disconnect', async (req: Request, res: Response): Promise<
 
         if (toolsetUrl && mcpConfig) {
             // Disconnect specific configuration
-            const configId = generateConfigId(mcpConfig);
-            const connectionKey = getConnectionKey(toolsetUrl, configId);
+            const configHash = generateConfigHash(mcpConfig);
+            const connectionKey = getConnectionKey(toolsetUrl, configHash);
             const connection = serverConnections.get(connectionKey);
 
             if (connection) {
                 await callToolsetBackend(toolsetUrl, '/close', { config_hash: connection.configHash });
                 serverConnections.delete(connectionKey);
                 disconnectedConnections = 1;
-                console.log(`🔌 Disconnected specific MCP connection: ${toolsetUrl}, config ID: ${configId}`);
+                console.log(`🔌 Disconnected specific MCP connection: ${toolsetUrl}, config hash: ${configHash}`);
             }
         } else if (toolsetUrl) {
             // Disconnect all connections for this toolset URL
@@ -483,7 +466,7 @@ mcpProxyRouter.post('/status', async (req: Request, res: Response): Promise<void
             const connections = Array.from(serverConnections.entries()).map(([key, conn]) => ({
                 connectionKey: key,
                 toolsetUrl: conn.toolsetUrl,
-                configId: conn.configId,
+                configHash: conn.configHash,
                 connectedAt: conn.connectedAt,
                 lastUsed: conn.lastUsed,
                 toolsCount: conn.toolsCount,
@@ -504,8 +487,8 @@ mcpProxyRouter.post('/status', async (req: Request, res: Response): Promise<void
             return;
         }
 
-        const configId = generateConfigId(mcpConfig);
-        const connectionKey = getConnectionKey(toolsetUrl, configId);
+        const configHash = generateConfigHash(mcpConfig);
+        const connectionKey = getConnectionKey(toolsetUrl, configHash);
         const connection = serverConnections.get(connectionKey);
 
         if (!connection) {
@@ -530,7 +513,6 @@ mcpProxyRouter.post('/status', async (req: Request, res: Response): Promise<void
                 connected: isConnected,
                 type: 'toolset-managed',
                 toolsetUrl,
-                configId,
                 configHash: connection.configHash,
                 connectedAt: connection.connectedAt,
                 lastUsed: connection.lastUsed,
@@ -543,7 +525,7 @@ mcpProxyRouter.post('/status', async (req: Request, res: Response): Promise<void
                 connected: false,
                 type: 'toolset-managed',
                 toolsetUrl,
-                configId,
+                configHash: connection.configHash,
                 error: error instanceof Error ? error.message : 'Failed to check backend status',
                 lastKnownConnection: {
                     connectedAt: connection.connectedAt,
@@ -570,7 +552,6 @@ mcpProxyRouter.get('/connections', async (req: Request, res: Response): Promise<
             return {
                 connectionKey: key,
                 toolsetUrl: conn.toolsetUrl,
-                configId: conn.configId,
                 configHash: conn.configHash,
                 serverNames,
                 serverCount: serverNames.length,
