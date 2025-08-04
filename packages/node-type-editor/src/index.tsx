@@ -69,7 +69,7 @@ function EditorTools({node}: {node: NodeVM}) {
     const children = useAtomValue(node.children)
     return <>
         <ModifyButton node={node}/>
-        <ParentToSummaryButton node={node}/>
+        {children.length===0 && <ParentToSummaryButton node={node}/>}
         {children.length===0 && <TopDownButton node={node}/>}
         {children.length!==0 && <BottomUpButton node={node}/>}
     </>
