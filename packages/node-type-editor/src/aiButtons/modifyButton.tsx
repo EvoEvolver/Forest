@@ -6,11 +6,15 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import TextField from "@mui/material/TextField";
+import Accordion from "@mui/material/Accordion";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {NodeM, NodeVM} from "@forest/schema";
 import {EditorNodeType} from "..";
 import {stageThisVersion} from "@forest/schema/src/stageService";
 import {useAtomValue} from "jotai";
-import { authTokenAtom } from "@forest/user-system/src/authStates";
+import {authTokenAtom} from "@forest/user-system/src/authStates";
 import {NormalMessage} from "@forest/agent-chat/src/MessageTypes";
 import {fetchChatResponse} from "@forest/agent-chat/src/llm";
 import {Card} from "@mui/material";
@@ -26,6 +30,37 @@ export const ModifyButton: React.FC<{ node: NodeVM}> = ({node}) => {
     const [originalContent, setOriginalContent] = React.useState<string | null>(null);
     const [revisedContent, setRevisedContent] = React.useState<string | null>(null);
     const [reviewDialogOpen, setReviewDialogOpen] = React.useState(false);
+
+    const defaultTemplate = `You are a professional editor. 
+The user wants to modify the following content based on their specific request. 
+
+The content to edit is children section of the parent section below.
+<parent_content>
+\${parentContent}
+</parent_content>
+
+The content to edit is
+<original_content>
+\${originalContent}
+</original_content>
+
+The request is
+<user_request>
+\${userPrompt}
+</user_request>
+
+Please modify the <original_content> according to <user_request>. Use the <parent_content> for additional context when making modifications. Maintain the overall structure and formatting style unless the user specifically asks to change it.
+
+<output_format>
+You should only return the HTML content of the modified text without any additional text or formatting.
+Preserve any existing HTML tags and structure unless a modification is specifically requested.
+If there are any annotations in the original text, you should keep them unless the user asks to remove them.
+</output_format>`;
+    
+    const [customTemplate, setCustomTemplate] = React.useState<string>(
+        localStorage.getItem('modifyButtonTemplate') || defaultTemplate
+    );
+    const [accordionExpanded, setAccordionExpanded] = React.useState(false);
     const authToken = useAtomValue(authTokenAtom);
 
     const handleClick = () => {
@@ -37,6 +72,18 @@ export const ModifyButton: React.FC<{ node: NodeVM}> = ({node}) => {
         setPrompt("");
     };
 
+    const handleTemplateChange = (newTemplate: string) => {
+        setCustomTemplate(newTemplate);
+        localStorage.setItem('modifyButtonTemplate', newTemplate);
+    };
+
+    const handleResetTemplate = () => {
+        setCustomTemplate(defaultTemplate);
+        localStorage.setItem('modifyButtonTemplate', defaultTemplate);
+    };
+
+    const isTemplateModified = customTemplate !== defaultTemplate;
+
     const handleModify = async () => {
         if (!prompt.trim()) return;
         
@@ -44,7 +91,7 @@ export const ModifyButton: React.FC<{ node: NodeVM}> = ({node}) => {
         try {
             const editorNodeType = await node.nodeM.treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
             const original = editorNodeType.getEditorContent(node.nodeM);
-            const revised = await getModifiedContent(node.nodeM, prompt, authToken);
+            const revised = await getModifiedContent(node.nodeM, prompt, authToken, customTemplate);
 
             setOriginalContent(original);
             setRevisedContent(revised);
@@ -112,7 +159,42 @@ export const ModifyButton: React.FC<{ node: NodeVM}> = ({node}) => {
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         placeholder="e.g., Make this more concise, Add more details about..., Rewrite in a formal tone..."
+                        sx={{ mb: 2 }}
                     />
+                    
+                    <Accordion 
+                        expanded={accordionExpanded} 
+                        onChange={() => setAccordionExpanded(!accordionExpanded)}
+                    >
+                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                            <Typography variant="h6">Custom Prompt Template</Typography>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                <Typography variant="body2" color="textSecondary">
+                                    Edit the AI prompt template. Use ${'${parentContent}'}, ${'${originalContent}'} and ${'${userPrompt}'} as placeholders.
+                                </Typography>
+                                {isTemplateModified && (
+                                    <Button 
+                                        size="small" 
+                                        onClick={handleResetTemplate}
+                                        color="secondary"
+                                    >
+                                        Reset to Original
+                                    </Button>
+                                )}
+                            </div>
+                            <TextField
+                                fullWidth
+                                multiline
+                                rows={12}
+                                variant="outlined"
+                                value={customTemplate}
+                                onChange={(e) => handleTemplateChange(e.target.value)}
+                                placeholder="Enter your custom template with ${'${parentContent}'}, ${'${originalContent}'} and ${'${userPrompt}'} placeholders"
+                            />
+                        </AccordionDetails>
+                    </Accordion>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseDialog}>Cancel</Button>
@@ -146,38 +228,28 @@ export const ModifyButton: React.FC<{ node: NodeVM}> = ({node}) => {
     );
 };
 
-async function getModifiedContent(node: NodeM, userPrompt: string, authToken: string): Promise<string> {
+async function getModifiedContent(node: NodeM, userPrompt: string, authToken: string, customTemplate?: string): Promise<string> {
     const treeM = node.treeM;
     const editorNodeType = await treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
     const originalContent = editorNodeType.getEditorContent(node);
     
-    const prompt = `You are a professional editor. The user wants to modify the following content based on their specific request.
+    const parent = treeM.getParent(node);
+    const parentContent = parent && parent.nodeTypeName() === "EditorNodeType"
+        ? editorNodeType.getEditorContent(parent)
+        : "No parent node available.";
 
-<original_content>
-${originalContent}
-</original_content>
-
-<user_request>
-${userPrompt}
-</user_request>
-
-Please modify the original content according to the user's request. Maintain the overall structure and formatting style unless the user specifically asks to change it.
-
-<output_format>
-You should only return the HTML content of the modified text without any additional text or formatting.
-Preserve any existing HTML tags and structure unless modification is specifically requested.
-If there are any annotations in the original text, you should keep them unless the user asks to remove them.
-</output_format>`;
+    const prompt = customTemplate
+        .replace(/\${originalContent}/g, originalContent)
+        .replace(/\${userPrompt}/g, userPrompt)
+        .replace(/\${parentContent}/g, parentContent);
 
     const message = new NormalMessage(
         {
             content: prompt,
             author: "user",
             role: "user",
-
         }
     );
     
-    const response = await fetchChatResponse([message.toJson() as any], "gpt-4.1", authToken);
-    return response;
+    return await fetchChatResponse([message.toJson() as any], "gpt-4.1", authToken);
 }

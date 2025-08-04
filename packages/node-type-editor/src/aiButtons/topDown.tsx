@@ -1,18 +1,10 @@
 import * as React from "react";
-import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
 import {NodeJson, NodeM, NodeVM} from "@forest/schema";
 import {EditorNodeType} from "..";
 import {stageThisVersion} from "@forest/schema/src/stageService";
 import {useAtomValue} from "jotai";
 import {authTokenAtom} from "@forest/user-system/src/authStates";
-import FormGroup from '@mui/material/FormGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
 import {v4 as uuidv4} from "uuid";
 import {fetchChatResponse} from "@forest/agent-chat/src/llm";
 import {NormalMessage} from "@forest/agent-chat/src/MessageTypes";
@@ -98,8 +90,8 @@ export const TopDownButton: React.FC<{ node: NodeVM }> = ({node}) => {
                     }}
                     onClick={handleClick}
                 >
-                    <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <AutoAwesomeMotionIcon color="primary" />
+                    <CardContent sx={{display: 'flex', alignItems: 'center', gap: 2}}>
+                        <AutoAwesomeMotionIcon color="primary"/>
                         <div>
                             <Typography variant="body1" component="div">
                                 Split into Children
@@ -108,7 +100,7 @@ export const TopDownButton: React.FC<{ node: NodeVM }> = ({node}) => {
                                 Break large node into smaller nodes
                             </Typography>
                         </div>
-                        {loading && <CircularProgress size={20} />}
+                        {loading && <CircularProgress size={20}/>}
                     </CardContent>
                 </Card>
                 <SelectionConfirmation

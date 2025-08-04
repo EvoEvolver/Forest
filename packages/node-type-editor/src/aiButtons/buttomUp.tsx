@@ -1,15 +1,10 @@
 import * as React from "react";
-import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
 import {NodeM, NodeVM} from "@forest/schema";
 import {EditorNodeType} from "..";
 import {stageThisVersion} from "@forest/schema/src/stageService";
 import {useAtomValue} from "jotai";
-import { authTokenAtom } from "@forest/user-system/src/authStates";
+import {authTokenAtom} from "@forest/user-system/src/authStates";
 import {NormalMessage} from "@forest/agent-chat/src/MessageTypes";
 import {fetchChatResponse} from "@forest/agent-chat/src/llm";
 import {Card} from "@mui/material";
@@ -19,7 +14,7 @@ import SummarizeIcon from '@mui/icons-material/Summarize';
 import {ModifyConfirmation} from "./ModifyConfirmation";
 
 
-export const BottomUpButton: React.FC<{ node: NodeVM}> = ({node}) => {
+export const BottomUpButton: React.FC<{ node: NodeVM }> = ({node}) => {
     const [loading, setLoading] = React.useState(false);
     const [dialogOpen, setDialogOpen] = React.useState(false);
     const [originalContent, setOriginalContent] = React.useState<string | null>(null);
@@ -70,8 +65,8 @@ export const BottomUpButton: React.FC<{ node: NodeVM}> = ({node}) => {
                 }}
                 onClick={handleClick}
             >
-                <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <SummarizeIcon color="primary" />
+                <CardContent sx={{display: 'flex', alignItems: 'center', gap: 2}}>
+                    <SummarizeIcon color="primary"/>
                     <div>
                         <Typography variant="body1" component="div">
                             Summerize from children
@@ -80,7 +75,7 @@ export const BottomUpButton: React.FC<{ node: NodeVM}> = ({node}) => {
                             Update key points based on children contents
                         </Typography>
                     </div>
-                    {loading && <CircularProgress size={20} />}
+                    {loading && <CircularProgress size={20}/>}
                 </CardContent>
             </Card>
 
@@ -106,7 +101,7 @@ export const BottomUpButton: React.FC<{ node: NodeVM}> = ({node}) => {
 
 async function getBottomUpRevisedContent(node: NodeM, authToken): Promise<string> {
     const treeM = node.treeM;
-    const children = treeM.getChildren(node).filter((n) => n.nodeTypeName() === "EditorNodeType" || n.data()["archived"]===true);
+    const children = treeM.getChildren(node).filter((n) => n.nodeTypeName() === "EditorNodeType" || n.data()["archived"] === true);
     const editorNodeType = await treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
     const childrenContent = children.map(child => "# " + child.title() + "\n" + editorNodeType.getEditorContent(child)).join("\n");
     const orginalContent = editorNodeType.getEditorContent(node);
