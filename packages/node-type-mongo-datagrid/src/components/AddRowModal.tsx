@@ -39,15 +39,19 @@ export const AddRowModal: React.FC<AddRowModalProps> = ({
   const allFields = React.useMemo(() => {
     const fieldSet = new Set<string>();
     
-    // Add fields from schema
+    // Add fields from schema (but skip _id)
     if (schema) {
-      Object.keys(schema).forEach(field => fieldSet.add(field));
+      Object.keys(schema).forEach(field => {
+        if (field !== '_id') {
+          fieldSet.add(field);
+        }
+      });
     }
     
     // Add fields from existing documents
     existingDocuments.forEach(doc => {
       Object.keys(doc).forEach(field => {
-        if (field !== '_id') { // Skip _id as it's auto-generated
+        if (field !== '_id') {
           fieldSet.add(field);
         }
       });
