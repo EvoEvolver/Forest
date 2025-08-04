@@ -379,6 +379,25 @@ mcpProxyRouter.post('/call-tool', async (req: Request, res: Response): Promise<v
     }
 });
 
+mcpProxyRouter.post('/health', async (req: Request, res: Response): Promise<void> => {
+    const { toolsetUrl, config_hash } = req.body;
+
+    const toolsetValidation = validateToolsetUrl(toolsetUrl);
+    if (!toolsetValidation.valid) {
+        res.status(400).json({ error: toolsetValidation.error });
+        return;
+    }
+
+    try {
+        const result = await callToolsetBackend(toolsetUrl, '/health', { config_hash });
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ 
+            error: error instanceof Error ? error.message : 'Failed to check toolset health' 
+        });
+    }
+});
+
 // Disconnect from MCP server via Toolset
 mcpProxyRouter.post('/disconnect', async (req: Request, res: Response): Promise<void> => {
     const { toolsetUrl, mcpConfig } = req.body;
@@ -399,8 +418,10 @@ mcpProxyRouter.post('/disconnect', async (req: Request, res: Response): Promise<
             // Disconnect specific configuration
             const configId = generateConfigId(mcpConfig);
             const connectionKey = getConnectionKey(toolsetUrl, configId);
-            
-            if (serverConnections.has(connectionKey)) {
+            const connection = serverConnections.get(connectionKey);
+
+            if (connection) {
+                await callToolsetBackend(toolsetUrl, '/close', { config_hash: connection.configHash });
                 serverConnections.delete(connectionKey);
                 disconnectedConnections = 1;
                 console.log(`🔌 Disconnected specific MCP connection: ${toolsetUrl}, config ID: ${configId}`);
@@ -408,24 +429,35 @@ mcpProxyRouter.post('/disconnect', async (req: Request, res: Response): Promise<
         } else if (toolsetUrl) {
             // Disconnect all connections for this toolset URL
             const keysToDelete: string[] = [];
-            serverConnections.forEach((connection, key) => {
+            for (const [key, connection] of serverConnections.entries()) {
                 if (connection.toolsetUrl === toolsetUrl) {
-                    keysToDelete.push(key);
+                    try {
+                        await callToolsetBackend(toolsetUrl, '/close', { config_hash: connection.configHash });
+                        keysToDelete.push(key);
+                    } catch (e) {
+                        console.error(`Failed to close connection for ${key}, continuing...`, e);
+                    }
                 }
-            });
+            }
             
             keysToDelete.forEach(key => serverConnections.delete(key));
             disconnectedConnections = keysToDelete.length;
             console.log(`🔌 Disconnected ${disconnectedConnections} MCP connections for toolset: ${toolsetUrl}`);
         } else {
             // Disconnect all connections
+            const keysToDelete: string[] = [];
+            for (const [key, connection] of serverConnections.entries()) {
+                try {
+                    await callToolsetBackend(connection.toolsetUrl, '/close', { config_hash: connection.configHash });
+                    keysToDelete.push(key);
+                } catch (e) {
+                    console.error(`Failed to close connection for ${key}, continuing...`, e);
+                }
+            }
             disconnectedConnections = serverConnections.size;
             serverConnections.clear();
             console.log(`🔌 Disconnected all ${disconnectedConnections} MCP connections`);
         }
-
-        // Note: The Python Toolset handles connection cleanup automatically
-        // through its idle timeout mechanism, so we don't need to call it
 
         res.json({ 
             success: true,

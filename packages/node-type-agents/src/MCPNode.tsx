@@ -173,40 +173,44 @@ export class MCPNodeType extends ActionableNodeType {
             };
         }, [cacheYText, node.nodeM]);
 
-        // Function to check connection status (updated for Toolset)
-        const checkConnectionStatus = async (toolsetUrl?: string, mcpConfig?: any) => {
-            if (!connection) return;
-            
+        const checkConnectionStatus = async () => {
+            if (!connection || !connection.toolsetUrl || !connection.configId) return;
+
             try {
-                const requestBody = toolsetUrl && mcpConfig ? 
-                    { toolsetUrl, mcpConfig } : 
-                    { toolsetUrl: connection.toolsetUrl, mcpConfig: connection.mcpConfig };
-                    
-                const response = await fetch(`${httpUrl}/api/mcp-proxy/status`, {
+                const response = await fetch(`${httpUrl}/api/mcp-proxy/health`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(requestBody)
+                    body: JSON.stringify({ toolsetUrl: connection.toolsetUrl, config_hash: connection.configId })
                 });
-                
+
                 if (response.ok) {
                     const status = await response.json();
-                    
-                    // If server says disconnected but our local state says connected, update it
-                    if (connection && connection.connected && !status.connected) {
-                        console.log(`MCP connection lost, updating status`);
+                    if (connection.connected && !status.healthy) {
+                        console.log(`MCP connection health check failed, updating status`);
                         const disconnectedConnection: MCPConnection = {
                             ...connection,
                             connected: false,
-                            error: status.error || 'Connection lost'
+                            error: status.message || 'Connection lost'
                         };
                         this.saveMCPConnection(node.nodeM, disconnectedConnection);
                         setConnection(disconnectedConnection);
-                        setError(status.error || 'Connection lost');
+                        setError(status.message || 'Connection lost');
+                    }
+                } else {
+                    // Handle non-ok responses, e.g. server is down
+                    if (connection.connected) {
+                        const disconnectedConnection: MCPConnection = {
+                            ...connection,
+                            connected: false,
+                            error: 'Health check failed: Server unreachable'
+                        };
+                        this.saveMCPConnection(node.nodeM, disconnectedConnection);
+                        setConnection(disconnectedConnection);
+                        setError('Health check failed: Server unreachable');
                     }
                 }
             } catch (err) {
-                // If we can't reach the proxy, assume disconnected
-                if (connection && connection.connected) {
+                if (connection.connected) {
                     console.log(`MCP Toolset proxy unreachable, assuming disconnected`);
                     const disconnectedConnection: MCPConnection = {
                         ...connection,
@@ -223,10 +227,10 @@ export class MCPNodeType extends ActionableNodeType {
         // Start/stop status checking based on connection state
         useEffect(() => {
             if (connection && connection.connected && connection.toolsetUrl) {
-                // Start periodic status checking every 15 seconds (less frequent for Toolset)
+                // Start periodic status checking every 10 seconds
                 const interval = setInterval(() => {
                     checkConnectionStatus();
-                }, 15000);
+                }, 10000);
                 
                 setStatusCheckInterval(interval);
                 
@@ -371,9 +375,7 @@ export class MCPNodeType extends ActionableNodeType {
             if (!connection) return;
             
             // First check the current status
-            if (connection.toolsetUrl && connection.mcpConfig) {
-                await checkConnectionStatus(connection.toolsetUrl, connection.mcpConfig);
-            }
+            await checkConnectionStatus();
             
             // Then try to reconnect if we still think we should be connected
             if (connection.connected && connection.toolsetUrl && connection.mcpConfig) {

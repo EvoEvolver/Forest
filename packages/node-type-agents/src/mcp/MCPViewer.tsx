@@ -234,11 +234,6 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
                             color={connection.connected ? 'success' : 'default'}
                             size="small"
                         />
-                        <Chip
-                            label={connection.type === 'http' ? 'HTTP' : 'WebSocket'}
-                            variant="outlined"
-                            size="small"
-                        />
                         {connection.serverInfo && (
                             <Typography variant="caption" color="text.secondary">
                                 {connection.serverInfo.name} v{connection.serverInfo.version}
