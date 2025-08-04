@@ -134,6 +134,10 @@ export class AgentNodeType extends ActionableNodeType {
 
         const agentReply = await invokeAgent(node, [messageToAgent])
 
+        if (agentReply.type === 'tool_response') {
+            return;
+        }
+
         const agentResponseMessage = new AgentResponseMessage({
             author: node.title(),
             result: agentReply,

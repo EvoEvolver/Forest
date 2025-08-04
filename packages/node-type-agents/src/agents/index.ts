@@ -115,7 +115,7 @@ async function getNextStep(nodeM: NodeM): Promise<string | undefined> {
             const nodeType = await treeM.supportedNodesTypes(child.nodeTypeName());
             if (nodeType instanceof ActionableNodeType) {
                 const actions = nodeType.actions(child);
-                const matchingAction = actions.find(action => action.label === actionName);
+                const matchingAction = actions.find(action => action.label === `Call ${actionName}`);
                 if (matchingAction) {
                     // Execute the action with the matched label
                     await nodeType.executeAction(child, actionName, parameters, nodeM, agentSessionState);
