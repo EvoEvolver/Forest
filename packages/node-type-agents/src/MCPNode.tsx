@@ -9,9 +9,10 @@ import {
     MCPTool,
     generatePromptFromMCPTool,
     createMCPToolCall,
-    createMCPListToolsRequest,
-    createMCPInitializeRequest,
-    parseMCPTools
+    createToolsetConnection,
+    createToolsetToolCall,
+    parseMCPTools,
+    generateConfigId
 } from "./mcp/mcpParser";
 import {httpUrl} from "@forest/schema/src/config";
 import {ActionableNodeType, Action, ActionParameter} from "./ActionableNodeType";
@@ -21,6 +22,13 @@ import {ToolCallingMessage, ToolResponseMessage} from "@forest/agent-chat/src/Ag
 const MCPServerConfigText = "MCPServerConfigText";
 const MCPConnectionCacheText = "MCPConnectionCacheText";
 
+// New configuration interface for Toolset integration
+interface MCPToolsetConfig {
+    toolsetUrl: string;
+    mcpConfig: any;  // The MCP servers configuration
+}
+
+// Legacy interface (kept for backward compatibility)
 interface MCPServerConfig {
     serverUrl: string;
     type?: 'websocket' | 'http'; // Auto-detected from URL if not specified
@@ -40,7 +48,7 @@ export class MCPNodeType extends ActionableNodeType {
     allowAddingChildren = false
     allowEditTitle = true
 
-    getServerConfig(node: NodeM): MCPServerConfig | null {
+    getServerConfig(node: NodeM): MCPServerConfig | MCPToolsetConfig | null {
         // @ts-ignore
         const yText: Y.Text = node.ydata().get(MCPServerConfigText) as Y.Text;
         if (!yText) {
@@ -52,6 +60,11 @@ export class MCPNodeType extends ActionableNodeType {
         } catch (e) {
             return null;
         }
+    }
+    
+    // Helper to check if config is new Toolset format
+    private isToolsetConfig(config: any): config is MCPToolsetConfig {
+        return config && config.toolsetUrl && config.mcpConfig;
     }
 
     private getRawMCPConnection(node: NodeM): MCPConnection | null {
@@ -99,7 +112,7 @@ export class MCPNodeType extends ActionableNodeType {
         }
     }
 
-    private saveServerConfig(node: NodeM, config: MCPServerConfig) {
+    private saveServerConfig(node: NodeM, config: MCPServerConfig | MCPToolsetConfig) {
         // @ts-ignore
         const yText: Y.Text = node.ydata().get(MCPServerConfigText) as Y.Text;
         if (yText) {
@@ -160,51 +173,60 @@ export class MCPNodeType extends ActionableNodeType {
             };
         }, [cacheYText, node.nodeM]);
 
-        // Function to check connection status
-        const checkConnectionStatus = async (serverUrl: string) => {
+        // Function to check connection status (updated for Toolset)
+        const checkConnectionStatus = async (toolsetUrl?: string, mcpConfig?: any) => {
+            if (!connection) return;
+            
             try {
-                const encodedUrl = encodeURIComponent(serverUrl);
-                const response = await fetch(`${httpUrl}/api/mcp-proxy/status/${encodedUrl}`);
+                const requestBody = toolsetUrl && mcpConfig ? 
+                    { toolsetUrl, mcpConfig } : 
+                    { toolsetUrl: connection.toolsetUrl, mcpConfig: connection.mcpConfig };
+                    
+                const response = await fetch(`${httpUrl}/api/mcp-proxy/status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
                 
                 if (response.ok) {
                     const status = await response.json();
                     
                     // If server says disconnected but our local state says connected, update it
                     if (connection && connection.connected && !status.connected) {
-                        console.log(`MCP connection lost for ${serverUrl}, updating status`);
+                        console.log(`MCP connection lost, updating status`);
                         const disconnectedConnection: MCPConnection = {
                             ...connection,
                             connected: false,
-                            error: 'Connection lost'
+                            error: status.error || 'Connection lost'
                         };
                         this.saveMCPConnection(node.nodeM, disconnectedConnection);
                         setConnection(disconnectedConnection);
-                        setError('Connection lost');
+                        setError(status.error || 'Connection lost');
                     }
                 }
             } catch (err) {
                 // If we can't reach the proxy, assume disconnected
                 if (connection && connection.connected) {
-                    console.log(`MCP proxy unreachable for ${serverUrl}, assuming disconnected`);
+                    console.log(`MCP Toolset proxy unreachable, assuming disconnected`);
                     const disconnectedConnection: MCPConnection = {
                         ...connection,
                         connected: false,
-                        error: 'Proxy unreachable'
+                        error: 'Toolset proxy unreachable'
                     };
                     this.saveMCPConnection(node.nodeM, disconnectedConnection);
                     setConnection(disconnectedConnection);
-                    setError('Proxy unreachable');
+                    setError('Toolset proxy unreachable');
                 }
             }
         };
 
         // Start/stop status checking based on connection state
         useEffect(() => {
-            if (connection && connection.connected && connection.serverUrl) {
-                // Start periodic status checking every 10 seconds
+            if (connection && connection.connected && connection.toolsetUrl) {
+                // Start periodic status checking every 15 seconds (less frequent for Toolset)
                 const interval = setInterval(() => {
-                    checkConnectionStatus(connection.serverUrl);
-                }, 10000);
+                    checkConnectionStatus();
+                }, 15000);
                 
                 setStatusCheckInterval(interval);
                 
@@ -218,7 +240,7 @@ export class MCPNodeType extends ActionableNodeType {
                     setStatusCheckInterval(null);
                 }
             }
-        }, [connection?.connected, connection?.serverUrl]);
+        }, [connection?.connected, connection?.toolsetUrl]);
 
         // Cleanup on unmount
         useEffect(() => {
@@ -229,63 +251,55 @@ export class MCPNodeType extends ActionableNodeType {
             };
         }, [statusCheckInterval]);
 
-        const handleConnect = async (serverUrl: string, authHeaders?: Record<string, string>) => {
+        const handleConnect = async (toolsetUrl: string, mcpConfig: any) => {
             setLoading(true);
             setError(null);
 
             try {
-                // Auto-detect connection type from URL
-                const connectionType = serverUrl.startsWith('http://') || serverUrl.startsWith('https://') ? 'http' : 'websocket';
-                
-                // Save server config
-                const config: MCPServerConfig = { 
-                    serverUrl,
-                    type: connectionType,
-                    auth: authHeaders ? { type: 'bearer', headers: authHeaders } : undefined
+                // Save Toolset config
+                const config: MCPToolsetConfig = { 
+                    toolsetUrl,
+                    mcpConfig
                 };
                 this.saveServerConfig(node.nodeM, config);
 
-                // Connect to MCP server
-                const initRequest = createMCPInitializeRequest();
+                // Connect to MCP server via Toolset
+                const connectPayload = createToolsetConnection(toolsetUrl, mcpConfig);
                 const connectResponse = await fetch(`${httpUrl}/api/mcp-proxy/connect`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        serverUrl,
-                        request: initRequest,
-                        headers: authHeaders
-                    })
+                    body: JSON.stringify(connectPayload)
                 });
 
                 if (!connectResponse.ok) {
-                    throw new Error(`Failed to connect: ${connectResponse.statusText}`);
+                    const errorData = await connectResponse.json();
+                    throw new Error(errorData.error || `Failed to connect: ${connectResponse.statusText}`);
                 }
 
                 const connectResult = await connectResponse.json();
                 
                 // Fetch tools list
-                const listToolsRequest = createMCPListToolsRequest();
                 const toolsResponse = await fetch(`${httpUrl}/api/mcp-proxy/list-tools`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        serverUrl,
-                        request: listToolsRequest,
-                        headers: authHeaders
-                    })
+                    body: JSON.stringify(connectPayload)
                 });
 
                 if (!toolsResponse.ok) {
-                    throw new Error(`Failed to fetch tools: ${toolsResponse.statusText}`);
+                    const errorData = await toolsResponse.json();
+                    throw new Error(errorData.error || `Failed to fetch tools: ${toolsResponse.statusText}`);
                 }
 
                 const toolsResult = await toolsResponse.json();
                 const tools = parseMCPTools(toolsResult);
 
-                // Create connection object
+                // Create connection object with new Toolset format
+                const configId = generateConfigId(mcpConfig);
                 const newConnection: MCPConnection = {
-                    serverUrl,
-                    type: connectionType,
+                    toolsetUrl,
+                    mcpConfig,
+                    configId,
+                    type: 'toolset-managed',
                     connected: true,
                     serverInfo: connectResult.result,
                     tools,
@@ -301,16 +315,16 @@ export class MCPNodeType extends ActionableNodeType {
                 setConnection(newConnection);
 
             } catch (err: any) {
-                console.error('MCP connection error:', err);
-                setError(err.message || 'Failed to connect to MCP server');
-                
-                // Auto-detect connection type from URL
-                const connectionType = serverUrl.startsWith('http://') || serverUrl.startsWith('https://') ? 'http' : 'websocket';
+                console.error('MCP Toolset connection error:', err);
+                setError(err.message || 'Failed to connect to MCP server via Toolset');
                 
                 // Save disconnected state
+                const configId = generateConfigId(mcpConfig);
                 const failedConnection: MCPConnection = {
-                    serverUrl,
-                    type: connectionType,
+                    toolsetUrl,
+                    mcpConfig,
+                    configId,
+                    type: 'toolset-managed',
                     connected: false,
                     tools: [],
                     resources: [],
@@ -332,10 +346,13 @@ export class MCPNodeType extends ActionableNodeType {
                 await fetch(`${httpUrl}/api/mcp-proxy/disconnect`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ serverUrl: connection.serverUrl })
+                    body: JSON.stringify({ 
+                        toolsetUrl: connection.toolsetUrl, 
+                        mcpConfig: connection.mcpConfig 
+                    })
                 });
             } catch (err) {
-                console.warn('Error disconnecting:', err);
+                console.warn('Error disconnecting from Toolset:', err);
             } finally {
                 const disconnectedConnection: MCPConnection = {
                     ...connection,
@@ -354,63 +371,64 @@ export class MCPNodeType extends ActionableNodeType {
             if (!connection) return;
             
             // First check the current status
-            if (connection.serverUrl) {
-                await checkConnectionStatus(connection.serverUrl);
+            if (connection.toolsetUrl && connection.mcpConfig) {
+                await checkConnectionStatus(connection.toolsetUrl, connection.mcpConfig);
             }
             
             // Then try to reconnect if we still think we should be connected
-            if (connection.connected) {
-                await handleConnect(connection.serverUrl);
+            if (connection.connected && connection.toolsetUrl && connection.mcpConfig) {
+                await handleConnect(connection.toolsetUrl, connection.mcpConfig);
             }
         };
 
         const handleExecuteTool = async (toolName: string, params: any) => {
             if (!connection || !connection.connected) {
-                throw new Error('Not connected to MCP server');
+                throw new Error('Not connected to MCP server via Toolset');
             }
 
-            const toolCallRequest = createMCPToolCall(toolName, params);
+            if (!connection.toolsetUrl || !connection.mcpConfig) {
+                throw new Error('Invalid Toolset connection configuration');
+            }
             
-            // Get auth headers from saved config
-            const config = this.getServerConfig(node.nodeM);
-            const authHeaders = config?.auth?.headers;
+            const toolCallPayload = createToolsetToolCall(
+                connection.toolsetUrl, 
+                connection.mcpConfig, 
+                toolName, 
+                params
+            );
             
             try {
                 const response = await fetch(`${httpUrl}/api/mcp-proxy/call-tool`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        serverUrl: connection.serverUrl,
-                        request: toolCallRequest,
-                        headers: authHeaders
-                    })
+                    body: JSON.stringify(toolCallPayload)
                 });
 
                 if (!response.ok) {
+                    const errorData = await response.json();
                     // If we get a connection error, check status immediately
-                    if (response.status === 400) {
-                        const errorData = await response.json();
-                        if (errorData.error && errorData.error.includes('not connected')) {
-                            await checkConnectionStatus(connection.serverUrl);
+                    if (response.status === 400 || response.status === 503) {
+                        if (errorData.error && (errorData.error.includes('not connected') || errorData.error.includes('not available'))) {
+                            await checkConnectionStatus();
                         }
                     }
-                    throw new Error(`Tool execution failed: ${response.statusText}`);
+                    throw new Error(errorData.error || `Tool execution failed: ${response.statusText}`);
                 }
 
                 const result = await response.json();
                 if (result.error) {
-                    // If we get an MCP error that suggests disconnection, check status
-                    if (result.error.message && result.error.message.includes('not connected')) {
-                        await checkConnectionStatus(connection.serverUrl);
+                    // If we get a Toolset error that suggests disconnection, check status
+                    if (result.error.includes && (result.error.includes('not connected') || result.error.includes('not available'))) {
+                        await checkConnectionStatus();
                     }
-                    throw new Error(result.error.message || 'Tool execution failed');
+                    throw new Error(result.error || 'Tool execution failed');
                 }
 
                 return result.result;
             } catch (error) {
                 // On network errors, also check connection status
                 if (error instanceof TypeError && error.message.includes('fetch')) {
-                    await checkConnectionStatus(connection.serverUrl);
+                    await checkConnectionStatus();
                 }
                 throw error;
             }
@@ -616,36 +634,38 @@ export class MCPNodeType extends ActionableNodeType {
     async callMCPTool(node: NodeM, toolName: string, params: any) {
         const connection = this.getMCPConnection(node);
         if (!connection || !connection.connected) {
-            throw new Error("MCP server not connected");
+            throw new Error("MCP server not connected via Toolset");
+        }
+
+        if (!connection.toolsetUrl || !connection.mcpConfig) {
+            throw new Error("Invalid Toolset connection configuration");
         }
 
         // Note: No need to check if tool is enabled here because getMCPConnection() 
         // already filters out disabled tools. If the model tries to call a disabled tool,
         // it means the tool doesn't exist from the model's perspective.
 
-        const toolCallRequest = createMCPToolCall(toolName, params);
-        
-        // Get auth headers from saved config
-        const config = this.getServerConfig(node);
-        const authHeaders = config?.auth?.headers;
+        const toolCallPayload = createToolsetToolCall(
+            connection.toolsetUrl, 
+            connection.mcpConfig, 
+            toolName, 
+            params
+        );
         
         const response = await fetch(`${httpUrl}/api/mcp-proxy/call-tool`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                serverUrl: connection.serverUrl,
-                request: toolCallRequest,
-                headers: authHeaders
-            })
+            body: JSON.stringify(toolCallPayload)
         });
 
         if (!response.ok) {
-            throw new Error(`MCP tool call failed: ${response.statusText}`);
+            const errorData = await response.json();
+            throw new Error(errorData.error || `MCP tool call via Toolset failed: ${response.statusText}`);
         }
 
         const result = await response.json();
         if (result.error) {
-            throw new Error(result.error.message || 'MCP tool execution failed');
+            throw new Error(result.error || 'MCP tool execution via Toolset failed');
         }
 
         return result.result;

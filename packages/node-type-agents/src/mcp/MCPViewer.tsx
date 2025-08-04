@@ -1,5 +1,5 @@
 import React from 'react';
-import {Alert, Box, CircularProgress, Typography, Button, TextField, Chip, Collapse, FormControlLabel, Checkbox, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemText, Switch} from '@mui/material';
+import {Alert, Box, CircularProgress, Typography, Button, TextField, Chip, FormControlLabel, Checkbox, Collapse, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemText, Switch} from '@mui/material';
 import {MCPConnection, MCPTool} from './mcpParser';
 import MCPCard from './MCPCard';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -10,7 +10,7 @@ interface MCPViewerProps {
     connection: MCPConnection | null;
     loading: boolean;
     error: string | null;
-    onConnect: (serverUrl: string, authHeaders?: Record<string, string>) => void;
+    onConnect: (toolsetUrl: string, mcpConfig: any) => void;  // Updated signature
     onDisconnect: () => void;
     onRefresh: () => void;
     onExecuteTool?: (toolName: string, params: any) => Promise<any>;
@@ -31,10 +31,25 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
     onGetAllTools,
     onBulkToggleTools
 }) => {
-    const [serverUrl, setServerUrl] = React.useState(connection?.serverUrl || '');
-    const [showAuthFields, setShowAuthFields] = React.useState(false);
-    const [authToken, setAuthToken] = React.useState('');
+    const [toolsetUrl, setToolsetUrl] = React.useState(connection?.toolsetUrl || 'http://127.0.0.1:8001');
+    const [mcpConfigJson, setMcpConfigJson] = React.useState(() => {
+        if (connection?.mcpConfig) {
+            return JSON.stringify(connection.mcpConfig, null, 2);
+        }
+        return JSON.stringify({
+            servers: {
+                example: {
+                    type: 'http',
+                    url: 'https://api.github.com/mcp',
+                    headers: {
+                        Authorization: 'Bearer YOUR_TOKEN_HERE'
+                    }
+                }
+            }
+        }, null, 2);
+    });
     const [showToolManagement, setShowToolManagement] = React.useState(false);
+    const [configError, setConfigError] = React.useState<string | null>(null);
 
     const handleEnableAll = () => {
         if (onBulkToggleTools) {
@@ -71,11 +86,34 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
     };
 
     const handleConnect = () => {
-        if (serverUrl.trim()) {
-            const isHttpConnection = serverUrl.startsWith('http://') || serverUrl.startsWith('https://');
-            const authHeaders = isHttpConnection && authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined;
-            onConnect(serverUrl.trim(), authHeaders);
+        setConfigError(null);
+        
+        if (!toolsetUrl.trim()) {
+            setConfigError('Toolset URL is required');
+            return;
         }
+        
+        let mcpConfig;
+        try {
+            mcpConfig = JSON.parse(mcpConfigJson);
+        } catch (e) {
+            setConfigError('Invalid JSON in MCP Configuration');
+            return;
+        }
+        
+        // Basic validation
+        if (!mcpConfig.servers || typeof mcpConfig.servers !== 'object') {
+            setConfigError('MCP Configuration must have a "servers" object');
+            return;
+        }
+        
+        const serverNames = Object.keys(mcpConfig.servers);
+        if (serverNames.length === 0) {
+            setConfigError('MCP Configuration must have at least one server');
+            return;
+        }
+        
+        onConnect(toolsetUrl.trim(), mcpConfig);
     };
 
     const handleKeyPress = (event: React.KeyboardEvent) => {
@@ -117,20 +155,54 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
             {/* Connection Section */}
             <Box sx={{mb: 3, p: 2, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider'}}>
                 <Typography variant="h6" sx={{mb: 2}}>
-                    MCP Server Connection
+                    MCP Toolset Connection
                 </Typography>
                 
-                <Box sx={{display: 'flex', gap: 1, mb: 2}}>
+                {/* Toolset URL Field */}
+                <Box sx={{mb: 2}}>
                     <TextField
                         fullWidth
                         size="small"
-                        label="MCP Server URL"
-                        placeholder="ws://localhost:3001 or https://api.githubcopilot.com/mcp/"
-                        value={serverUrl}
-                        onChange={(e) => setServerUrl(e.target.value)}
-                        onKeyPress={handleKeyPress}
+                        label="Toolset Backend URL"
+                        placeholder="http://127.0.0.1:8001"
+                        value={toolsetUrl}
+                        onChange={(e) => setToolsetUrl(e.target.value)}
                         disabled={loading}
+                        helperText="URL of the Python Toolset backend service"
                     />
+                </Box>
+                
+                {/* MCP Configuration JSON */}
+                <Box sx={{mb: 2}}>
+                    <Typography variant="subtitle2" sx={{mb: 1}}>
+                        MCP Configuration (JSON)
+                    </Typography>
+                    <TextField
+                        fullWidth
+                        multiline
+                        rows={8}
+                        value={mcpConfigJson}
+                        onChange={(e) => {
+                            setMcpConfigJson(e.target.value);
+                            setConfigError(null);
+                        }}
+                        disabled={loading}
+                        error={!!configError}
+                        helperText={configError || "Configure MCP servers, authentication, and settings in JSON format"}
+                        sx={{
+                            '& .MuiInputBase-input': {
+                                fontFamily: 'monospace',
+                                fontSize: '0.875rem'
+                            }
+                        }}
+                    />
+                    <Typography variant="caption" color="text.secondary" sx={{mt: 1, display: 'block'}}>
+                        Example: Supports both HTTP servers (with headers) and stdio servers (NPM packages)
+                    </Typography>
+                </Box>
+                
+                {/* Connect/Disconnect Button */}
+                <Box sx={{display: 'flex', gap: 1}}>
                     {connection?.connected ? (
                         <Button
                             variant="outlined"
@@ -145,7 +217,7 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
                         <Button
                             variant="contained"
                             onClick={handleConnect}
-                            disabled={loading || !serverUrl.trim()}
+                            disabled={loading || !toolsetUrl.trim()}
                             startIcon={<LinkIcon />}
                         >
                             Connect
@@ -153,37 +225,6 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
                     )}
                 </Box>
 
-                {/* Authentication Section */}
-                <FormControlLabel
-                    control={
-                        <Checkbox
-                            checked={showAuthFields}
-                            onChange={(e) => setShowAuthFields(e.target.checked)}
-                            size="small"
-                        />
-                    }
-                    label="Use Authentication (for HTTP connections)"
-                    sx={{ mb: 1 }}
-                />
-
-                <Collapse in={showAuthFields}>
-                    <Box sx={{ mb: 2 }}>
-                        <TextField
-                            fullWidth
-                            size="small"
-                            label="Bearer Token"
-                            type="password"
-                            placeholder="Enter your authentication token"
-                            value={authToken}
-                            onChange={(e) => setAuthToken(e.target.value)}
-                            disabled={loading}
-                            sx={{ mb: 1 }}
-                        />
-                        <Typography variant="caption" color="text.secondary">
-                            For GitHub MCP server, use your Personal Access Token
-                        </Typography>
-                    </Box>
-                </Collapse>
 
                 {/* Connection Status */}
                 {connection && (
@@ -277,34 +318,61 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
                 </Box>
             )}
 
-            {/* Server Info */}
-            {connection?.serverInfo && (
+            {/* Connection Info */}
+            {connection && (
                 <Box sx={{mt: 4, p: 2, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider'}}>
                     <Typography variant="h6" sx={{mb: 2}}>
-                        Server Information
+                        Connection Information
                     </Typography>
                     <Typography variant="body2">
-                        <strong>Name:</strong> {connection.serverInfo.name}
+                        <strong>Toolset URL:</strong> {connection.toolsetUrl}
                     </Typography>
                     <Typography variant="body2">
-                        <strong>Version:</strong> {connection.serverInfo.version}
+                        <strong>Config ID:</strong> {connection.configId || 'Not set'}
                     </Typography>
-                    {connection.serverInfo.capabilities && (
+                    {connection.serverInfo && (
+                        <>
+                            <Typography variant="body2">
+                                <strong>Server Name:</strong> {connection.serverInfo.name}
+                            </Typography>
+                            <Typography variant="body2">
+                                <strong>Server Version:</strong> {connection.serverInfo.version}
+                            </Typography>
+                        </>
+                    )}
+                    {connection.mcpConfig && (
+                        <Box sx={{mt: 1}}>
+                            <Typography variant="body2">
+                                <strong>Configured Servers:</strong>
+                            </Typography>
+                            <Box sx={{ml: 2}}>
+                                {Object.entries(connection.mcpConfig.servers || {}).map(([name, config]: [string, any]) => (
+                                    <Chip 
+                                        key={name} 
+                                        label={`${name} (${config?.type || 'unknown'})`} 
+                                        size="small" 
+                                        sx={{mr: 1, mb: 1}} 
+                                    />
+                                ))}
+                            </Box>
+                        </Box>
+                    )}
+                    {connection.serverInfo?.capabilities && (
                         <Box sx={{mt: 1}}>
                             <Typography variant="body2">
                                 <strong>Capabilities:</strong>
                             </Typography>
                             <Box sx={{ml: 2}}>
-                                {connection.serverInfo.capabilities.tools && (
+                                {connection.serverInfo?.capabilities?.tools && (
                                     <Chip label="Tools" size="small" sx={{mr: 1, mb: 1}} />
                                 )}
-                                {connection.serverInfo.capabilities.resources && (
+                                {connection.serverInfo?.capabilities?.resources && (
                                     <Chip label="Resources" size="small" sx={{mr: 1, mb: 1}} />
                                 )}
-                                {connection.serverInfo.capabilities.prompts && (
+                                {connection.serverInfo?.capabilities?.prompts && (
                                     <Chip label="Prompts" size="small" sx={{mr: 1, mb: 1}} />
                                 )}
-                                {connection.serverInfo.capabilities.logging && (
+                                {connection.serverInfo?.capabilities?.logging && (
                                     <Chip label="Logging" size="small" sx={{mr: 1, mb: 1}} />
                                 )}
                             </Box>

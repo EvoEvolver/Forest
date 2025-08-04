@@ -40,8 +40,9 @@ export interface MCPServerInfo {
 }
 
 export interface MCPConnection {
-    serverUrl: string;
-    type?: 'websocket' | 'http'; // Connection type
+    toolsetUrl: string;  // Changed from serverUrl to toolsetUrl
+    mcpConfig: any;      // New: MCP configuration object
+    configId?: string;   // New: Generated config ID
     connected: boolean;
     serverInfo?: MCPServerInfo;
     tools: MCPTool[];
@@ -50,6 +51,10 @@ export interface MCPConnection {
     lastFetched?: Date;
     error?: string;
     enabledTools?: string[]; // Array of enabled tool names for serialization
+    
+    // Legacy support (deprecated but kept for backward compatibility)
+    serverUrl?: string;  // Deprecated: kept for backward compatibility
+    type?: 'toolset-managed'; // New connection type
 }
 
 export interface MCPCallRequest {
@@ -67,18 +72,28 @@ export interface MCPCallResponse {
 }
 
 /**
- * Parse MCP server response and extract tools
+ * Parse MCP server response and extract tools (legacy format - still supported)
  */
 export function parseMCPTools(response: any): MCPTool[] {
-    if (!response || !response.result || !response.result.tools) {
-        return [];
+    // Try new Toolset format first
+    if (response && response.result && response.result.tools) {
+        return response.result.tools.map((tool: any) => ({
+            name: tool.name,
+            description: tool.description,
+            inputSchema: tool.inputSchema || { type: 'object', properties: {} }
+        }));
+    }
+    
+    // Fallback to legacy format
+    if (response && response.tools) {
+        return response.tools.map((tool: any) => ({
+            name: tool.name,
+            description: tool.description,
+            inputSchema: tool.inputSchema || { type: 'object', properties: {} }
+        }));
     }
 
-    return response.result.tools.map((tool: any) => ({
-        name: tool.name,
-        description: tool.description,
-        inputSchema: tool.inputSchema || { type: 'object', properties: {} }
-    }));
+    return [];
 }
 
 /**
@@ -137,7 +152,7 @@ ${parametersPrompt}`;
 }
 
 /**
- * Create MCP tool call request
+ * Create MCP tool call request (legacy format - still used internally)
  */
 export function createMCPToolCall(toolName: string, params: any): MCPCallRequest {
     return {
@@ -150,7 +165,29 @@ export function createMCPToolCall(toolName: string, params: any): MCPCallRequest
 }
 
 /**
- * Create MCP list tools request
+ * Create Toolset API request payload for tool execution
+ */
+export function createToolsetToolCall(toolsetUrl: string, mcpConfig: any, toolName: string, params: any) {
+    return {
+        toolsetUrl,
+        mcpConfig,
+        toolName,
+        arguments: params
+    };
+}
+
+/**
+ * Create Toolset API request payload for connection
+ */
+export function createToolsetConnection(toolsetUrl: string, mcpConfig: any) {
+    return {
+        toolsetUrl,
+        mcpConfig
+    };
+}
+
+/**
+ * Create MCP list tools request (legacy format - deprecated)
  */
 export function createMCPListToolsRequest(): MCPCallRequest {
     return {
@@ -160,7 +197,7 @@ export function createMCPListToolsRequest(): MCPCallRequest {
 }
 
 /**
- * Create MCP server initialize request
+ * Create MCP server initialize request (legacy format - deprecated)
  */
 export function createMCPInitializeRequest(): MCPCallRequest {
     return {
@@ -178,4 +215,34 @@ export function createMCPInitializeRequest(): MCPCallRequest {
             }
         }
     };
+}
+
+/**
+ * Generate a simple config ID from MCP config (client-side version)
+ */
+export function generateConfigId(mcpConfig: any): string {
+    const configStr = JSON.stringify(mcpConfig, Object.keys(mcpConfig).sort());
+    // Simple hash for client-side use (browser compatible)
+    let hash = 0;
+    for (let i = 0; i < configStr.length; i++) {
+        const char = configStr.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash).toString(16).substring(0, 8);
+}
+
+/**
+ * Parse Toolset response and extract tools (new format)
+ */
+export function parseToolsetTools(response: any): MCPTool[] {
+    if (!response || !response.result || !response.result.tools) {
+        return [];
+    }
+
+    return response.result.tools.map((tool: any) => ({
+        name: tool.name,
+        description: tool.description,
+        inputSchema: tool.inputSchema || { type: 'object', properties: {} }
+    }));
 }

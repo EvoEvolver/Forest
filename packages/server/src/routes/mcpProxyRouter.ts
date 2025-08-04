@@ -1,427 +1,583 @@
 import { Router, Request, Response } from 'express';
-import { WebSocket } from 'ws';
 import axios from 'axios';
 
 const mcpProxyRouter = Router();
 
-// Store active MCP connections
-const mcpConnections = new Map<string, WebSocket>();
-
-// Store HTTP MCP sessions (for session-based servers like GitHub)
-const mcpSessions = new Map<string, {
-    sessionId?: string;
-    serverInfo?: any;
-    capabilities?: any;
+// Store mappings between (toolsetUrl + configId) and server metadata
+const serverConnections = new Map<string, {
+    toolsetUrl: string;
+    configId: string;
+    configHash: string;
+    mcpConfig: any;
+    connectedAt: Date;
     lastUsed: Date;
+    toolsCount: number;
 }>();
 
-// Clean up old sessions every 30 minutes
-setInterval(() => {
-    const now = new Date();
-    const expiredSessions: string[] = [];
-    
-    mcpSessions.forEach((session, serverUrl) => {
-        const sessionAge = now.getTime() - session.lastUsed.getTime();
-        if (sessionAge > 2 * 60 * 60 * 1000) { // 2 hours
-            expiredSessions.push(serverUrl);
-        }
-    });
-    
-    expiredSessions.forEach(serverUrl => {
-        console.log('Cleaning up expired session for:', serverUrl);
-        mcpSessions.delete(serverUrl);
-    });
-}, 30 * 60 * 1000); // Every 30 minutes
+// Default configuration
+const DEFAULT_TIMEOUT = 30000;
+const DEBUG = process.env.NODE_ENV === 'development';
 
-// Helper function to determine connection type from URL
-function getConnectionType(serverUrl: string): 'websocket' | 'http' {
-    if (serverUrl.startsWith('ws://') || serverUrl.startsWith('wss://')) {
-        return 'websocket';
-    } else if (serverUrl.startsWith('http://') || serverUrl.startsWith('https://')) {
-        return 'http';
-    }
-    // Default to websocket for backward compatibility
-    return 'websocket';
+// Helper function to generate unique connection key
+function getConnectionKey(toolsetUrl: string, configId: string): string {
+    return `${toolsetUrl}:${configId}`;
 }
 
-// Helper function to create WebSocket connection
-function createMCPConnection(serverUrl: string): Promise<WebSocket> {
-    return new Promise((resolve, reject) => {
-        try {
-            const ws = new WebSocket(serverUrl);
-            
-            ws.on('open', () => {
-                console.log(`MCP WebSocket connected to ${serverUrl}`);
-                resolve(ws);
-            });
-
-            ws.on('error', (error) => {
-                console.error(`MCP WebSocket error for ${serverUrl}:`, error);
-                reject(error);
-            });
-
-            ws.on('close', () => {
-                console.log(`MCP WebSocket closed for ${serverUrl}`);
-                mcpConnections.delete(serverUrl);
-            });
-
-            // Set connection timeout
-            setTimeout(() => {
-                if (ws.readyState === WebSocket.CONNECTING) {
-                    ws.close();
-                    reject(new Error('Connection timeout'));
-                }
-            }, 10000); // 10 second timeout
-
-        } catch (error) {
-            reject(error);
-        }
-    });
-}
-
-// Helper function to send HTTP JSON-RPC request with session support
-async function sendHTTPMCPRequest(serverUrl: string, request: any, headers?: Record<string, string>): Promise<any> {
-    const requestId = Date.now().toString();
-    const jsonRpcRequest = {
-        jsonrpc: '2.0',
-        id: requestId,
-        method: request.method,
-        params: request.params || {}
-    };
-
-    const requestHeaders: Record<string, string> = {
-        'Content-Type': 'application/json',
-        ...headers
-    };
-
-    // For non-initialize requests, add session ID if available
-    if (request.method !== 'initialize') {
-        const session = mcpSessions.get(serverUrl);
-        if (session?.sessionId) {
-            requestHeaders['Mcp-Session-Id'] = session.sessionId;
-            // Update last used time
-            session.lastUsed = new Date();
-        }
+// Helper function to validate toolset URL
+function validateToolsetUrl(toolsetUrl: string): { valid: boolean; error?: string } {
+    if (!toolsetUrl || typeof toolsetUrl !== 'string') {
+        return { valid: false, error: 'toolsetUrl must be a non-empty string' };
     }
 
-    console.log('MCP HTTP Request:', {
-        url: serverUrl,
-        method: request.method,
-        headers: requestHeaders,
-        data: jsonRpcRequest
-    });
+    if (!toolsetUrl.startsWith('http://') && !toolsetUrl.startsWith('https://')) {
+        return { valid: false, error: 'toolsetUrl must be a valid HTTP or HTTPS URL' };
+    }
 
     try {
+        new URL(toolsetUrl);
+        return { valid: true };
+    } catch {
+        return { valid: false, error: 'toolsetUrl must be a valid URL' };
+    }
+}
+
+// Helper function to validate MCP config
+function validateMcpConfig(config: any): { valid: boolean; error?: string } {
+    if (!config || typeof config !== 'object') {
+        return { valid: false, error: 'mcpConfig must be an object' };
+    }
+
+    if (!config.servers || typeof config.servers !== 'object') {
+        return { valid: false, error: 'mcpConfig must have a "servers" object' };
+    }
+
+    const serverNames = Object.keys(config.servers);
+    if (serverNames.length === 0) {
+        return { valid: false, error: 'mcpConfig.servers must have at least one server' };
+    }
+
+    // Validate each server configuration
+    for (const [serverName, serverConfig] of Object.entries(config.servers)) {
+        if (!serverConfig || typeof serverConfig !== 'object') {
+            return { valid: false, error: `Server "${serverName}" must be an object` };
+        }
+
+        const sc = serverConfig as any;
+        if (!sc.type || !sc.url) {
+            return { valid: false, error: `Server "${serverName}" must have "type" and "url" properties` };
+        }
+
+        if (!['http', 'stdio'].includes(sc.type)) {
+            return { valid: false, error: `Server "${serverName}" type must be "http" or "stdio"` };
+        }
+    }
+
+    return { valid: true };
+}
+
+// Helper function to generate config ID from MCP config
+function generateConfigId(mcpConfig: any): string {
+    const configStr = JSON.stringify(mcpConfig, Object.keys(mcpConfig).sort());
+    return Buffer.from(configStr).toString('base64').substring(0, 16);
+}
+
+// Helper function to call Toolset backend
+async function callToolsetBackend(toolsetUrl: string, endpoint: string, data?: any, method: 'GET' | 'POST' = 'POST'): Promise<any> {
+    try {
+        if (DEBUG) {
+            console.log(`🔍 Toolset Call: ${method} ${toolsetUrl}${endpoint}`, data ? JSON.stringify(data, null, 2) : 'no data');
+        }
+
         const response = await axios({
-            url: serverUrl,
-            method: 'POST',
-            headers: requestHeaders,
-            data: jsonRpcRequest,
-            timeout: 30000 // 30 second timeout
+            method,
+            url: `${toolsetUrl}${endpoint}`,
+            data,
+            headers: {
+                'Content-Type': 'application/json',
+                'User-Agent': 'Forest-MCP-Proxy/1.0.0'
+            },
+            timeout: DEFAULT_TIMEOUT
         });
 
-        console.log('MCP HTTP Response:', response.status, response.data);
-
-        // For initialize requests, store session information
-        if (request.method === 'initialize' && response.status === 200) {
-            const sessionId = response.headers['mcp-session-id'] || 
-                            response.headers['Mcp-Session-Id'] ||
-                            response.data?.id || // Some servers might put session ID in response
-                            requestId; // Fallback to request ID
-            
-            mcpSessions.set(serverUrl, {
-                sessionId,
-                serverInfo: response.data?.result?.serverInfo,
-                capabilities: response.data?.result?.capabilities,
-                lastUsed: new Date()
-            });
-
-            console.log('Stored session for', serverUrl, 'with ID:', sessionId);
+        if (DEBUG) {
+            console.log(`✅ Toolset Response:`, response.status, response.data);
         }
 
         return response.data;
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            console.error('MCP HTTP Error:', {
+            const errorMessage = error.response?.data?.detail ||
+                                error.response?.data?.message ||
+                                error.response?.statusText ||
+                                'Toolset request failed';
+            
+            console.error('❌ Toolset Error:', {
+                toolsetUrl,
+                endpoint,
                 status: error.response?.status,
-                statusText: error.response?.statusText,
-                data: error.response?.data,
-                headers: error.response?.headers
+                message: errorMessage
             });
             
-            // Special handling for session-related errors
-            if (error.response?.status === 400 && 
-                (error.response?.data?.includes?.('session') || error.response?.data?.includes?.('Session'))) {
-                // Clear invalid session and suggest reconnection
-                mcpSessions.delete(serverUrl);
-                throw new Error(`HTTP 400: ${error.response.data}. Session expired or invalid. Please reconnect.`);
-            }
-            
-            const errorMessage = error.response?.data?.error?.message || error.response?.data || error.response?.statusText || 'Request failed';
-            throw new Error(`HTTP ${error.response?.status || 500}: ${errorMessage}`);
+            throw new Error(`Toolset Error (${error.response?.status || 'Network'}): ${errorMessage}`);
         }
-        console.error('Non-Axios error:', error);
+        console.error('❌ Non-Axios Toolset Error:', error);
         throw error;
     }
 }
 
-// Helper function to send JSON-RPC request
-function sendMCPRequest(ws: WebSocket, request: any): Promise<any> {
-    return new Promise((resolve, reject) => {
-        const requestId = Date.now().toString();
-        const jsonRpcRequest = {
-            jsonrpc: '2.0',
-            id: requestId,
-            method: request.method,
-            params: request.params || {}
-        };
-
-        // Set up response handler
-        const responseHandler = (data: Buffer) => {
-            try {
-                const response = JSON.parse(data.toString());
-                if (response.id === requestId) {
-                    ws.off('message', responseHandler);
-                    if (response.error) {
-                        reject(new Error(response.error.message || 'MCP request failed'));
-                    } else {
-                        resolve(response);
-                    }
-                }
-            } catch (error) {
-                ws.off('message', responseHandler);
-                reject(error);
-            }
-        };
-
-        // Set up timeout
-        const timeout = setTimeout(() => {
-            ws.off('message', responseHandler);
-            reject(new Error('Request timeout'));
-        }, 30000); // 30 second timeout
-
-        ws.on('message', responseHandler);
-
-        // Clear timeout when response is received
-        ws.on('message', () => clearTimeout(timeout));
-
-        // Send request
-        ws.send(JSON.stringify(jsonRpcRequest));
-    });
+// Helper function to check if Toolset backend is available
+async function checkToolsetHealth(toolsetUrl: string): Promise<boolean> {
+    try {
+        await axios.get(`${toolsetUrl}/health`, { timeout: 5000 });
+        return true;
+    } catch {
+        try {
+            // Fallback: try root endpoint or docs
+            await axios.get(toolsetUrl, { timeout: 5000 });
+            return true;
+        } catch {
+            return false;
+        }
+    }
 }
 
-// Connect to MCP server
+// Connect to MCP server via Toolset
 mcpProxyRouter.post('/connect', async (req: Request, res: Response): Promise<void> => {
-    const { serverUrl, request, headers } = req.body;
+    const { toolsetUrl, mcpConfig } = req.body;
     
-    if (!serverUrl) {
-        res.status(400).json({ error: 'serverUrl is required' });
+    // Validate inputs
+    const toolsetValidation = validateToolsetUrl(toolsetUrl);
+    if (!toolsetValidation.valid) {
+        res.status(400).json({ error: toolsetValidation.error });
         return;
     }
 
-    if (!request || !request.method) {
-        res.status(400).json({ error: 'request with method is required' });
+    const configValidation = validateMcpConfig(mcpConfig);
+    if (!configValidation.valid) {
+        res.status(400).json({ error: configValidation.error });
         return;
     }
 
     try {
-        const connectionType = getConnectionType(serverUrl);
-        
-        if (connectionType === 'http') {
-            // For HTTP connections, send the request directly
-            const response = await sendHTTPMCPRequest(serverUrl, request, headers);
-            res.json(response);
-        } else {
-            // For WebSocket connections, use existing logic
-            let ws = mcpConnections.get(serverUrl);
-            
-            if (!ws || ws.readyState !== WebSocket.OPEN) {
-                // Create new connection
-                ws = await createMCPConnection(serverUrl);
-                mcpConnections.set(serverUrl, ws);
-            }
-
-            // Send initialize request
-            const response = await sendMCPRequest(ws, request);
-            res.json(response);
+        // Check if Toolset backend is available
+        const isHealthy = await checkToolsetHealth(toolsetUrl);
+        if (!isHealthy) {
+            res.status(503).json({ 
+                error: `Toolset backend not available at ${toolsetUrl}. Please check if the service is running.` 
+            });
+            return;
         }
 
+        const configId = generateConfigId(mcpConfig);
+        const connectionKey = getConnectionKey(toolsetUrl, configId);
+        
+        console.log(`🔌 Connecting MCP via Toolset: ${toolsetUrl}, config ID: ${configId}`);
+
+        // Call Toolset to add MCP server
+        const result = await callToolsetBackend(toolsetUrl, '/addMCP', mcpConfig);
+
+        if (result.status === 'error') {
+            console.error('❌ Toolset returned error:', result.message);
+            res.status(400).json({ 
+                error: result.message || 'Toolset backend error: Failed to add MCP server'
+            });
+            return;
+        }
+
+        // Store connection metadata
+        serverConnections.set(connectionKey, {
+            toolsetUrl,
+            configId,
+            configHash: result.config_hash || configId,
+            mcpConfig,
+            connectedAt: new Date(),
+            lastUsed: new Date(),
+            toolsCount: result.tools ? Object.keys(result.tools).length : 0
+        });
+
+        console.log(`✅ Connected MCP via Toolset: config_hash=${result.config_hash}, tools=${Object.keys(result.tools || {}).length}`);
+
+        // Return legacy-compatible response for frontend
+        res.json({
+            jsonrpc: '2.0',
+            id: 1,
+            result: {
+                protocolVersion: '2024-11-05',
+                capabilities: {
+                    tools: {}
+                },
+                serverInfo: {
+                    name: 'forest-toolset-mcp-proxy',
+                    version: '1.0.0'
+                }
+            },
+            // Additional metadata for debugging
+            _metadata: {
+                toolsetUrl,
+                configId,
+                configHash: result.config_hash,
+                toolsCount: Object.keys(result.tools || {}).length,
+                backendStatus: result.status,
+                connectionKey
+            }
+        });
+
     } catch (error) {
-        console.error('MCP connect error:', error);
+        console.error('❌ MCP connect error:', error);
         res.status(500).json({ 
-            error: error instanceof Error ? error.message : 'Failed to connect to MCP server' 
+            error: error instanceof Error ? error.message : 'Failed to connect to MCP server via Toolset' 
         });
     }
 });
 
-// List tools from MCP server
+// List tools from MCP server via Toolset
 mcpProxyRouter.post('/list-tools', async (req: Request, res: Response): Promise<void> => {
-    const { serverUrl, request, headers } = req.body;
+    const { toolsetUrl, mcpConfig } = req.body;
     
-    if (!serverUrl) {
-        res.status(400).json({ error: 'serverUrl is required' });
+    // Validate inputs
+    const toolsetValidation = validateToolsetUrl(toolsetUrl);
+    if (!toolsetValidation.valid) {
+        res.status(400).json({ error: toolsetValidation.error });
         return;
     }
 
-    if (!request || !request.method) {
-        res.status(400).json({ error: 'request with method is required' });
+    const configValidation = validateMcpConfig(mcpConfig);
+    if (!configValidation.valid) {
+        res.status(400).json({ error: configValidation.error });
         return;
     }
 
     try {
-        const connectionType = getConnectionType(serverUrl);
+        const configId = generateConfigId(mcpConfig);
+        const connectionKey = getConnectionKey(toolsetUrl, configId);
         
-        if (connectionType === 'http') {
-            // For HTTP connections, send the request directly
-            const response = await sendHTTPMCPRequest(serverUrl, request, headers);
-            res.json(response);
-        } else {
-            // For WebSocket connections, use existing logic
-            const ws = mcpConnections.get(serverUrl);
-            
-            if (!ws || ws.readyState !== WebSocket.OPEN) {
-                res.status(400).json({ error: 'MCP server not connected' });
-                return;
-            }
+        console.log(`📋 Listing tools for MCP via Toolset: ${toolsetUrl}, config ID: ${configId}`);
 
-            const response = await sendMCPRequest(ws, request);
-            res.json(response);
+        // Get or refresh connection to get current tools
+        const result = await callToolsetBackend(toolsetUrl, '/addMCP', mcpConfig);
+
+        if (result.status === 'error') {
+            console.error('❌ Toolset returned error for list-tools:', result.message);
+            res.status(400).json({ 
+                error: result.message || 'Toolset backend error: Failed to get tools'
+            });
+            return;
         }
 
+        // Update connection metadata
+        const connection = serverConnections.get(connectionKey);
+        if (connection) {
+            connection.lastUsed = new Date();
+            connection.toolsCount = result.tools ? Object.keys(result.tools).length : 0;
+        }
+
+        // Convert tools to legacy format expected by frontend
+        const tools = Object.entries(result.tools || {}).map(([name, tool]: [string, any]) => ({
+            name,
+            description: tool.description || '',
+            inputSchema: tool.inputSchema || {}
+        }));
+
+        console.log(`✅ Listed ${tools.length} tools for MCP via Toolset`);
+
+        res.json({
+            jsonrpc: '2.0',
+            id: 2,
+            result: {
+                tools
+            },
+            _metadata: {
+                toolsetUrl,
+                configId,
+                toolsCount: tools.length,
+                backendStatus: result.status
+            }
+        });
+
     } catch (error) {
-        console.error('MCP list-tools error:', error);
+        console.error('❌ MCP list-tools error:', error);
         res.status(500).json({ 
-            error: error instanceof Error ? error.message : 'Failed to list tools' 
+            error: error instanceof Error ? error.message : 'Failed to list tools from MCP server via Toolset' 
         });
     }
 });
 
-// Call MCP tool
+// Call MCP tool via Toolset
 mcpProxyRouter.post('/call-tool', async (req: Request, res: Response): Promise<void> => {
-    const { serverUrl, request, headers } = req.body;
+    const { toolsetUrl, mcpConfig, toolName, arguments: toolArgs } = req.body;
     
-    if (!serverUrl) {
-        res.status(400).json({ error: 'serverUrl is required' });
+    // Validate inputs
+    const toolsetValidation = validateToolsetUrl(toolsetUrl);
+    if (!toolsetValidation.valid) {
+        res.status(400).json({ error: toolsetValidation.error });
         return;
     }
 
-    if (!request || !request.method) {
-        res.status(400).json({ error: 'request with method is required' });
+    const configValidation = validateMcpConfig(mcpConfig);
+    if (!configValidation.valid) {
+        res.status(400).json({ error: configValidation.error });
+        return;
+    }
+
+    if (!toolName || typeof toolName !== 'string') {
+        res.status(400).json({ error: 'toolName is required and must be a string' });
         return;
     }
 
     try {
-        const connectionType = getConnectionType(serverUrl);
+        const configId = generateConfigId(mcpConfig);
+        const connectionKey = getConnectionKey(toolsetUrl, configId);
         
-        if (connectionType === 'http') {
-            // For HTTP connections, send the request directly
-            const response = await sendHTTPMCPRequest(serverUrl, request, headers);
-            res.json(response);
-        } else {
-            // For WebSocket connections, use existing logic
-            const ws = mcpConnections.get(serverUrl);
-            
-            if (!ws || ws.readyState !== WebSocket.OPEN) {
-                res.status(400).json({ error: 'MCP server not connected' });
-                return;
-            }
-
-            const response = await sendMCPRequest(ws, request);
-            res.json(response);
+        console.log(`🛠️ Calling tool "${toolName}" via Toolset: ${toolsetUrl}, config ID: ${configId}`);
+        if (DEBUG && toolArgs) {
+            console.log(`🔍 Tool arguments:`, JSON.stringify(toolArgs, null, 2));
         }
 
+        // Ensure MCP connection exists by calling addMCP first
+        const addResult = await callToolsetBackend(toolsetUrl, '/addMCP', mcpConfig);
+        if (addResult.status === 'error') {
+            console.error('❌ Toolset returned error for call-tool setup:', addResult.message);
+            res.status(400).json({ 
+                error: addResult.message || 'Toolset backend error: Failed to ensure MCP connection'
+            });
+            return;
+        }
+
+        const configHash = addResult.config_hash || configId;
+        
+        // Call the tool using the generated endpoint: /{config_hash}_{tool_name}
+        const toolEndpoint = `/${configHash}_${toolName}`;
+        const result = await callToolsetBackend(toolsetUrl, toolEndpoint, toolArgs || {});
+
+        // Update connection metadata
+        const connection = serverConnections.get(connectionKey);
+        if (connection) {
+            connection.lastUsed = new Date();
+            connection.configHash = configHash;
+        }
+
+        console.log(`✅ Tool "${toolName}" executed successfully via Toolset`);
+
+        res.json({
+            jsonrpc: '2.0',
+            id: 3,
+            result,
+            _metadata: {
+                toolsetUrl,
+                configId,
+                configHash,
+                toolName,
+                executedAt: new Date().toISOString()
+            }
+        });
+
     } catch (error) {
-        console.error('MCP call-tool error:', error);
+        console.error(`❌ MCP call-tool error for "${toolName}":`, error);
         res.status(500).json({ 
-            error: error instanceof Error ? error.message : 'Failed to call tool' 
+            error: error instanceof Error ? error.message : `Failed to call tool "${toolName}" via Toolset` 
         });
     }
 });
 
-// Disconnect from MCP server
+// Disconnect from MCP server via Toolset
 mcpProxyRouter.post('/disconnect', async (req: Request, res: Response): Promise<void> => {
-    const { serverUrl } = req.body;
+    const { toolsetUrl, mcpConfig } = req.body;
     
-    if (!serverUrl) {
-        res.status(400).json({ error: 'serverUrl is required' });
-        return;
+    // Validate inputs (optional for disconnect)
+    if (toolsetUrl) {
+        const toolsetValidation = validateToolsetUrl(toolsetUrl);
+        if (!toolsetValidation.valid) {
+            res.status(400).json({ error: toolsetValidation.error });
+            return;
+        }
     }
 
     try {
-        const connectionType = getConnectionType(serverUrl);
-        
-        if (connectionType === 'http') {
-            // For HTTP connections, clear session
-            mcpSessions.delete(serverUrl);
-        } else {
-            // For WebSocket connections, close connection
-            const ws = mcpConnections.get(serverUrl);
-            if (ws) {
-                ws.close();
-                mcpConnections.delete(serverUrl);
+        let disconnectedConnections = 0;
+
+        if (toolsetUrl && mcpConfig) {
+            // Disconnect specific configuration
+            const configId = generateConfigId(mcpConfig);
+            const connectionKey = getConnectionKey(toolsetUrl, configId);
+            
+            if (serverConnections.has(connectionKey)) {
+                serverConnections.delete(connectionKey);
+                disconnectedConnections = 1;
+                console.log(`🔌 Disconnected specific MCP connection: ${toolsetUrl}, config ID: ${configId}`);
             }
+        } else if (toolsetUrl) {
+            // Disconnect all connections for this toolset URL
+            const keysToDelete: string[] = [];
+            serverConnections.forEach((connection, key) => {
+                if (connection.toolsetUrl === toolsetUrl) {
+                    keysToDelete.push(key);
+                }
+            });
+            
+            keysToDelete.forEach(key => serverConnections.delete(key));
+            disconnectedConnections = keysToDelete.length;
+            console.log(`🔌 Disconnected ${disconnectedConnections} MCP connections for toolset: ${toolsetUrl}`);
+        } else {
+            // Disconnect all connections
+            disconnectedConnections = serverConnections.size;
+            serverConnections.clear();
+            console.log(`🔌 Disconnected all ${disconnectedConnections} MCP connections`);
         }
 
-        res.json({ success: true });
+        // Note: The Python Toolset handles connection cleanup automatically
+        // through its idle timeout mechanism, so we don't need to call it
+
+        res.json({ 
+            success: true,
+            disconnectedConnections,
+            message: `Disconnected ${disconnectedConnections} connection(s)`
+        });
 
     } catch (error) {
-        console.error('MCP disconnect error:', error);
+        console.error('❌ MCP disconnect error:', error);
         res.status(500).json({ 
-            error: error instanceof Error ? error.message : 'Failed to disconnect' 
+            error: error instanceof Error ? error.message : 'Failed to disconnect from MCP server' 
         });
     }
 });
 
-// Get connection status
-mcpProxyRouter.get('/status/:serverUrl', async (req: Request, res: Response): Promise<void> => {
-    const serverUrl = decodeURIComponent(req.params.serverUrl);
-    const connectionType = getConnectionType(serverUrl);
+// Get connection status for specific MCP configuration
+mcpProxyRouter.post('/status', async (req: Request, res: Response): Promise<void> => {
+    const { toolsetUrl, mcpConfig } = req.body;
     
-    if (connectionType === 'http') {
-        // For HTTP endpoints, check session status
-        const session = mcpSessions.get(serverUrl);
-        
-        if (session) {
-            // Check if session is still valid (less than 1 hour old)
-            const now = new Date();
-            const sessionAge = now.getTime() - session.lastUsed.getTime();
-            const isSessionValid = sessionAge < 60 * 60 * 1000; // 1 hour
+    try {
+        if (!toolsetUrl || !mcpConfig) {
+            // Return summary of all connections
+            const connections = Array.from(serverConnections.entries()).map(([key, conn]) => ({
+                connectionKey: key,
+                toolsetUrl: conn.toolsetUrl,
+                configId: conn.configId,
+                connectedAt: conn.connectedAt,
+                lastUsed: conn.lastUsed,
+                toolsCount: conn.toolsCount,
+                connected: true // If it's in our map, we consider it connected
+            }));
             
             res.json({
-                connected: isSessionValid,
-                type: 'http',
-                sessionId: session.sessionId,
-                serverInfo: session.serverInfo,
-                sessionAge: Math.floor(sessionAge / 1000) + ' seconds'
+                totalConnections: connections.length,
+                connections
             });
-        } else {
+            return;
+        }
+
+        // Validate inputs
+        const toolsetValidation = validateToolsetUrl(toolsetUrl);
+        if (!toolsetValidation.valid) {
+            res.status(400).json({ error: toolsetValidation.error });
+            return;
+        }
+
+        const configId = generateConfigId(mcpConfig);
+        const connectionKey = getConnectionKey(toolsetUrl, configId);
+        const connection = serverConnections.get(connectionKey);
+
+        if (!connection) {
             res.json({
                 connected: false,
-                type: 'http',
-                error: 'No active session'
+                type: 'toolset-managed',
+                error: 'No active connection found for this configuration'
+            });
+            return;
+        }
+
+        // Try to refresh connection status by calling Toolset
+        try {
+            const result = await callToolsetBackend(toolsetUrl, '/addMCP', mcpConfig);
+            const isConnected = result.status === 'success' || result.status === 'cached';
+            
+            // Update metadata
+            connection.lastUsed = new Date();
+            connection.toolsCount = result.tools ? Object.keys(result.tools).length : 0;
+            
+            res.json({
+                connected: isConnected,
+                type: 'toolset-managed',
+                toolsetUrl,
+                configId,
+                configHash: connection.configHash,
+                connectedAt: connection.connectedAt,
+                lastUsed: connection.lastUsed,
+                toolsCount: connection.toolsCount,
+                backendStatus: result.status,
+                message: result.message
+            });
+        } catch (error) {
+            res.json({
+                connected: false,
+                type: 'toolset-managed',
+                toolsetUrl,
+                configId,
+                error: error instanceof Error ? error.message : 'Failed to check backend status',
+                lastKnownConnection: {
+                    connectedAt: connection.connectedAt,
+                    lastUsed: connection.lastUsed,
+                    toolsCount: connection.toolsCount
+                }
             });
         }
-    } else {
-        // For WebSocket connections, use existing logic
-        const ws = mcpConnections.get(serverUrl);
-        
-        res.json({
-            connected: ws && ws.readyState === WebSocket.OPEN,
-            type: 'websocket',
-            readyState: ws ? ws.readyState : null
+
+    } catch (error) {
+        console.error('❌ MCP status error:', error);
+        res.status(500).json({
+            connected: false,
+            error: error instanceof Error ? error.message : 'Failed to check connection status'
         });
     }
 });
 
-// List all connections
-mcpProxyRouter.get('/connections', (req: Request, res: Response): void => {
-    const connections = Array.from(mcpConnections.entries()).map(([url, ws]) => ({
-        url,
-        connected: ws.readyState === WebSocket.OPEN,
-        readyState: ws.readyState
-    }));
-    
-    res.json({ connections });
+// List all active MCP connections
+mcpProxyRouter.get('/connections', async (req: Request, res: Response): Promise<void> => {
+    try {
+        const connections = Array.from(serverConnections.entries()).map(([key, conn]) => {
+            const serverNames = Object.keys(conn.mcpConfig.servers || {});
+            return {
+                connectionKey: key,
+                toolsetUrl: conn.toolsetUrl,
+                configId: conn.configId,
+                configHash: conn.configHash,
+                serverNames,
+                serverCount: serverNames.length,
+                connectedAt: conn.connectedAt,
+                lastUsed: conn.lastUsed,
+                toolsCount: conn.toolsCount,
+                connected: true, // Assume connected if in our map
+                type: 'toolset-managed'
+            };
+        });
+
+        // Sort by last used (most recent first)
+        connections.sort((a, b) => new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime());
+
+        console.log(`📊 Listed ${connections.length} active MCP connections`);
+        
+        res.json({ 
+            totalConnections: connections.length,
+            connections 
+        });
+
+    } catch (error) {
+        console.error('❌ MCP connections error:', error);
+        res.status(500).json({
+            error: error instanceof Error ? error.message : 'Failed to list connections'
+        });
+    }
+});
+
+// Health check endpoint
+mcpProxyRouter.get('/health', (req: Request, res: Response): void => {
+    res.json({
+        status: 'healthy',
+        service: 'forest-mcp-proxy',
+        version: '1.0.0',
+        activeConnections: serverConnections.size,
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString()
+    });
 });
 
 export default mcpProxyRouter;
