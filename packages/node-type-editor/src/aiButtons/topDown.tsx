@@ -44,17 +44,15 @@ export const TopDownButton: React.FC<{ node: NodeVM }> = ({node}) => {
             setSelectedTitles({});
         };
 
-        const handleAccept = async () => {
+        const handleAccept = async (modifiedItems: {id: string; title: string; content: string}[]) => {
             await stageThisVersion(node, "Before top-down child generation");
-            const titlesToCreate = Object.entries(selectedTitles)
-                .filter(([, checked]) => checked)
-                .map(([title]) => title);
-            if (titlesToCreate.length > 0) {
+            const itemsToCreate = modifiedItems.filter(item => selectedTitles[item.id]);
+            if (itemsToCreate.length > 0) {
                 const treeM = node.nodeM.treeM;
-                for (const title of titlesToCreate) {
+                for (const item of itemsToCreate) {
                     const newNodeJson: NodeJson = {
                         id: uuidv4(),
-                        title: title,
+                        title: item.title,
                         parent: node.id,
                         children: [],
                         data: {},
@@ -64,7 +62,7 @@ export const TopDownButton: React.FC<{ node: NodeVM }> = ({node}) => {
                     treeM.insertNode(newNodeM, node.id, null);
                     const editorNodeType = await treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
                     editorNodeType.ydataInitialize(newNodeM)
-                    editorNodeType.setEditorContent(newNodeM, newChildren.find(child => child.title === title)?.content || "");
+                    editorNodeType.setEditorContent(newNodeM, item.content);
                 }
             }
             handleCloseDialog();
