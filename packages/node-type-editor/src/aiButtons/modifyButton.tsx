@@ -110,10 +110,14 @@ If there are any annotations in the original text, you should keep them unless t
     };
 
     const handleAccept = async (modifiedContent: string) => {
-        await stageThisVersion(node, "Before LLM modification");
-        const editorNodeType = await node.nodeM.treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
-        editorNodeType.setEditorContent(node.nodeM, modifiedContent);
-        handleCloseReviewDialog();
+        try {
+            await stageThisVersion(node, "Before LLM modification");
+            const editorNodeType = await node.nodeM.treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
+            editorNodeType.setEditorContent(node.nodeM, modifiedContent);
+            handleCloseReviewDialog();
+        } catch (error) {
+            alert("Error applying changes: " + (error instanceof Error ? error.message : String(error)));
+        }
     };
 
     return (
