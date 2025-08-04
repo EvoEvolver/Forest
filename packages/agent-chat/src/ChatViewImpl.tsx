@@ -78,7 +78,6 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewI
                                 {msg.author && (
                                     <Typography
                                         variant="caption"
-                                        color="black"
                                         sx={{display: "block", marginBottom: 0.5}}
                                     >
                                         {msg.author}

@@ -13,7 +13,8 @@ import {
     TextField,
     Typography,
     Checkbox,
-    FormControlLabel
+    FormControlLabel,
+    useTheme
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -27,6 +28,7 @@ interface MCPCardProps {
 }
 
 const MCPCard: React.FC<MCPCardProps> = ({tool, onExecute, onToggleEnabled}) => {
+    const theme = useTheme();
     const [expanded, setExpanded] = useState(false);
     const [parameters, setParameters] = useState<Record<string, any>>({});
     const [loading, setLoading] = useState(false);
@@ -104,7 +106,7 @@ const MCPCard: React.FC<MCPCardProps> = ({tool, onExecute, onToggleEnabled}) => 
             <Box key={paramName} sx={{mb: 2}}>
                 <Typography variant="subtitle2" sx={{mb: 1}}>
                     {paramName}
-                    {isRequired && <span style={{color: 'red'}}> *</span>}
+                    {isRequired && <span style={{color: theme.palette.error.main}}> *</span>}
                     <Chip
                         label={paramType}
                         size="small"
@@ -171,9 +173,9 @@ const MCPCard: React.FC<MCPCardProps> = ({tool, onExecute, onToggleEnabled}) => 
     return (
         <Card sx={{
             mb: 2, 
-            border: `2px solid ${isEnabled ? '#4caf50' : '#bdbdbd'}`,
+            border: `2px solid ${isEnabled ? theme.palette.success.main : theme.palette.grey[400]}`,
             opacity: isEnabled ? 1 : 0.7,
-            backgroundColor: isEnabled ? 'inherit' : '#f5f5f5'
+            backgroundColor: isEnabled ? 'inherit' : theme.palette.grey[100]
         }}>
             <Accordion expanded={expanded} onChange={() => setExpanded(!expanded)}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
@@ -182,7 +184,7 @@ const MCPCard: React.FC<MCPCardProps> = ({tool, onExecute, onToggleEnabled}) => 
                             icon={<BuildIcon />}
                             label="MCP"
                             sx={{
-                                backgroundColor: isEnabled ? '#4caf50' : '#9e9e9e',
+                                backgroundColor: isEnabled ? theme.palette.success.main : theme.palette.grey[500],
                                 color: 'white',
                                 fontWeight: 'bold',
                                 mr: 2,
@@ -232,9 +234,9 @@ const MCPCard: React.FC<MCPCardProps> = ({tool, onExecute, onToggleEnabled}) => 
                                 disabled={loading || !onExecute || !isEnabled}
                                 startIcon={loading ? <CircularProgress size={16}/> : <PlayArrowIcon/>}
                                 sx={{
-                                    backgroundColor: isEnabled ? undefined : '#e0e0e0',
+                                    backgroundColor: isEnabled ? undefined : theme.palette.grey[300],
                                     '&:disabled': {
-                                        backgroundColor: isEnabled ? undefined : '#f5f5f5'
+                                        backgroundColor: isEnabled ? undefined : theme.palette.grey[100]
                                     }
                                 }}
                             >
@@ -254,7 +256,7 @@ const MCPCard: React.FC<MCPCardProps> = ({tool, onExecute, onToggleEnabled}) => 
                                 )}
 
                                 {response && (
-                                    <Box sx={{p: 2, backgroundColor: '#f5f5f5', borderRadius: 1}}>
+                                    <Box sx={{p: 2, backgroundColor: theme.palette.grey[100], borderRadius: 1}}>
                                         <pre style={{margin: 0, fontSize: '0.8rem', overflow: 'auto', whiteSpace: 'pre-wrap'}}>
                                             {typeof response === 'string' ? response : JSON.stringify(response, null, 2)}
                                         </pre>
@@ -266,7 +268,7 @@ const MCPCard: React.FC<MCPCardProps> = ({tool, onExecute, onToggleEnabled}) => 
                         {tool.inputSchema && (
                             <Box sx={{mt: 2}}>
                                 <Typography variant="h6" sx={{mb: 1}}>Schema</Typography>
-                                <Box sx={{p: 2, backgroundColor: '#f8f9fa', borderRadius: 1}}>
+                                <Box sx={{p: 2, backgroundColor: theme.palette.grey[50], borderRadius: 1}}>
                                     <pre style={{margin: 0, fontSize: '0.7rem', overflow: 'auto'}}>
                                         {JSON.stringify(tool.inputSchema, null, 2)}
                                     </pre>

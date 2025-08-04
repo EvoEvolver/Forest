@@ -22,7 +22,7 @@ export class AgentCallingMessage extends BaseMessage {
     render(): React.ReactNode {
         return (
             <Box sx={{display: 'flex', justifyContent: 'flex-start', marginBottom: 2}}>
-                <Card sx={{bgcolor: 'white'}}>
+                <Card>
                     <CardContent>
                         <Typography variant="subtitle2" gutterBottom>
                             Asking <b>{this.agentName}</b>
@@ -77,7 +77,7 @@ export class AgentResponseMessage extends BaseMessage {
 
         return (
             <Box sx={{display: 'flex', justifyContent: 'flex-start', marginBottom: 2}}>
-                <Card sx={{bgcolor: 'white'}}>
+                <Card>
                     <CardContent>
                         <Box component="pre" sx={{
                             whiteSpace: 'pre-wrap',
@@ -115,7 +115,7 @@ export class ToolCallingMessage extends BaseMessage {
     render(): React.ReactNode {
         return (
             <Box sx={{display: 'flex', justifyContent: 'flex-start', marginBottom: 2}}>
-                <Card sx={{bgcolor: 'white'}}>
+                <Card>
                     <CardContent>
                         <Typography variant="subtitle2" gutterBottom>
                             Tool Call: <b>{this.toolName}</b>
@@ -168,7 +168,7 @@ export class ToolResponseMessage extends BaseMessage {
     render(): React.ReactNode {
         return (
             <Box sx={{display: 'flex', justifyContent: 'flex-start', marginBottom: 2}}>
-                <Card sx={{bgcolor: 'white'}}>
+                <Card>
                     <CardContent>
                         <Typography variant="subtitle2" gutterBottom>
                             Tool Response: <b>{this.toolName}</b>

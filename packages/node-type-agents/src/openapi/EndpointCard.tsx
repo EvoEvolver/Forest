@@ -11,7 +11,8 @@ import {
     CircularProgress,
     Divider,
     TextField,
-    Typography
+    Typography,
+    useTheme
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -23,20 +24,21 @@ interface EndpointCardProps {
     baseUrl?: string;
 }
 
-const getMethodColor = (method: string) => {
+const getMethodColor = (method: string, theme: any) => {
     const colors = {
-        GET: '#61affe',
-        POST: '#49cc90',
-        PUT: '#fca130',
-        DELETE: '#f93e3e',
-        PATCH: '#50e3c2',
-        OPTIONS: '#0d5aa7',
-        HEAD: '#9012fe'
+        GET: theme.palette.info.main,
+        POST: theme.palette.success.main,
+        PUT: theme.palette.warning?.main || '#fca130',
+        DELETE: theme.palette.error?.main || '#f93e3e',
+        PATCH: theme.palette.secondary.main,
+        OPTIONS: theme.palette.primary.main,
+        HEAD: theme.palette.primary.light
     };
-    return colors[method as keyof typeof colors] || '#888';
+    return colors[method as keyof typeof colors] || theme.palette.grey[500];
 };
 
 const EndpointCard: React.FC<EndpointCardProps> = ({endpoint, baseUrl = ''}) => {
+    const theme = useTheme();
     const [expanded, setExpanded] = useState(true);
     const [tryItMode, setTryItMode] = useState(true);
     const [parameters, setParameters] = useState<Record<string, any>>({});
@@ -134,7 +136,7 @@ const EndpointCard: React.FC<EndpointCardProps> = ({endpoint, baseUrl = ''}) => 
             <Box key={param.name} sx={{mb: 2}}>
                 <Typography variant="subtitle2" sx={{mb: 1}}>
                     {param.name}
-                    {param.required && <span style={{color: 'red'}}> *</span>}
+                    {param.required && <span style={{color: theme.palette.error.main}}> *</span>}
                     <Chip
                         label={param.in}
                         size="small"
@@ -161,14 +163,14 @@ const EndpointCard: React.FC<EndpointCardProps> = ({endpoint, baseUrl = ''}) => 
     };
 
     return (
-        <Card sx={{mb: 2, border: `2px solid ${getMethodColor(endpoint.method)}`}}>
+        <Card sx={{mb: 2, border: `2px solid ${getMethodColor(endpoint.method, theme)}`}}>
             <Accordion expanded={expanded} onChange={() => setExpanded(!expanded)}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
                     <Box sx={{display: 'flex', alignItems: 'center', width: '100%'}}>
                         <Chip
                             label={endpoint.method}
                             sx={{
-                                backgroundColor: getMethodColor(endpoint.method),
+                                backgroundColor: getMethodColor(endpoint.method, theme),
                                 color: 'white',
                                 fontWeight: 'bold',
                                 mr: 2,
@@ -256,7 +258,7 @@ const EndpointCard: React.FC<EndpointCardProps> = ({endpoint, baseUrl = ''}) => 
                                         <Typography variant="subtitle2">
                                             Status: {response.status} {response.statusText}
                                         </Typography>
-                                        <Box sx={{mt: 1, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1}}>
+                                        <Box sx={{mt: 1, p: 2, backgroundColor: theme.palette.grey[100], borderRadius: 1}}>
                       <pre style={{margin: 0, fontSize: '0.8rem', overflow: 'auto'}}>
                         {JSON.stringify(response.data, null, 2)}
                       </pre>
