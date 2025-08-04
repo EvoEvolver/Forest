@@ -101,7 +101,7 @@ export const BottomUpButton: React.FC<{ node: NodeVM }> = ({node}) => {
 
 async function getBottomUpRevisedContent(node: NodeM, authToken): Promise<string> {
     const treeM = node.treeM;
-    const children = treeM.getChildren(node).filter((n) => n.nodeTypeName() === "EditorNodeType" || n.data()["archived"] === true);
+    const children = treeM.getChildren(node).filter((n) => n.nodeTypeName() === "EditorNodeType" && n.data()["archived"] !== true);
     const editorNodeType = await treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
     const childrenContent = children.map(child => "# " + child.title() + "\n" + editorNodeType.getEditorContent(child)).join("\n");
     const orginalContent = editorNodeType.getEditorContent(node);
