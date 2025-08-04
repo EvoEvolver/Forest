@@ -11,6 +11,7 @@ import {
     IconButton,
     Typography,
 } from '@mui/material';
+import {useTheme} from '@mui/material/styles';
 import {
     Cancel as CancelIcon,
     Check as CheckIcon,
@@ -45,6 +46,7 @@ const IssueDetailHeader: React.FC<IssueDetailHeaderProps> = ({
                                                                  isCreatingNew = false,
                                                                  canDelete = false,
                                                              }) => {
+    const theme = useTheme();
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
     const handleDeleteClick = () => {
@@ -64,8 +66,8 @@ const IssueDetailHeader: React.FC<IssueDetailHeaderProps> = ({
         <>
             <DialogTitle
                 sx={{
-                    bgcolor: '#f6f8fa',
-                    borderBottom: '1px solid #d1d9e0',
+                    bgcolor: theme.palette.background.paper,
+                    borderBottom: `1px solid ${theme.palette.divider}`,
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
@@ -73,7 +75,7 @@ const IssueDetailHeader: React.FC<IssueDetailHeaderProps> = ({
                 }}
             >
                 <Box sx={{display: 'flex', alignItems: 'center', gap: 2}}>
-                    <Typography variant="h6" sx={{fontWeight: 600, color: '#24292f'}}>
+                    <Typography variant="h6" sx={{fontWeight: 600, color: theme.palette.text.primary}}>
                         {isCreatingNew ? 'Create Issue' : (isEditing ? 'Edit Issue' : 'Issue Details')}
                     </Typography>
                     {!isCreatingNew && (
@@ -81,8 +83,8 @@ const IssueDetailHeader: React.FC<IssueDetailHeaderProps> = ({
                             label={issueId}
                             size="small"
                             sx={{
-                                bgcolor: '#e3f2fd',
-                                color: '#1976d2',
+                                bgcolor: theme.palette.primary.light + '20',
+                                color: theme.palette.primary.main,
                                 fontFamily: 'monospace',
                             }}
                         />
@@ -110,9 +112,9 @@ const IssueDetailHeader: React.FC<IssueDetailHeaderProps> = ({
                                     onClick={handleDeleteClick}
                                     size="small"
                                     sx={{
-                                        color: '#d32f2f',
+                                        color: theme.palette.error.main,
                                         '&:hover': {
-                                            bgcolor: '#ffebee',
+                                            bgcolor: theme.palette.error.light + '20',
                                         }
                                     }}
                                 >

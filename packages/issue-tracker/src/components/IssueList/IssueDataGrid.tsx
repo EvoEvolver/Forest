@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import type {GridColDef, GridRenderCellParams} from '@mui/x-data-grid';
 import {DataGrid, GridFooterContainer, GridPagination} from '@mui/x-data-grid';
+import {useTheme} from '@mui/material/styles';
 import {
     Avatar,
     Box,
@@ -82,6 +83,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                                                          showSubtreeIssues = false,
                                                          onShowSubtreeIssuesChange,
                                                      }) => {
+    const theme = useTheme();
     const currentUser = useAtomValue(userAtom);
     const [treeMembers, setTreeMembers] = useState<Array<{
         userId: string,
@@ -148,7 +150,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
         if (simple) {
             // Simple mode filters
             return (
-                <Box sx={{p: 2, bgcolor: '#f8f9fa', borderBottom: '1px solid #e1e4e8'}}>
+                <Box sx={{p: 2, bgcolor: theme.palette.background.default, borderBottom: `1px solid ${theme.palette.divider}`}}>
                     <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
                         <FormControlLabel
                             control={
@@ -177,7 +179,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
 
         // Full mode filters
         return (
-            <Box sx={{p: 2, bgcolor: '#f8f9fa', borderBottom: '1px solid #e1e4e8'}}>
+            <Box sx={{p: 2, bgcolor: theme.palette.background.default, borderBottom: `1px solid ${theme.palette.divider}`}}>
                 <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
                     {/* Back to Tree Button */}
                     <Button
@@ -188,7 +190,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                         sx={{
                             minWidth: 'auto',
                             '&:hover': {
-                                bgcolor: '#e3f2fd'
+                                bgcolor: theme.palette.primary.light + '20'
                             }
                         }}
                     >
@@ -267,8 +269,8 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                         onClick={() => onSortOrderChange?.(sortOrder === 'asc' ? 'desc' : 'asc')}
                         size="small"
                         sx={{
-                            bgcolor: sortOrder === 'desc' ? '#e3f2fd' : 'transparent',
-                            '&:hover': {bgcolor: '#e3f2fd'}
+                            bgcolor: sortOrder === 'desc' ? theme.palette.primary.light + '20' : 'transparent',
+                            '&:hover': {bgcolor: theme.palette.primary.light + '20'}
                         }}
                     >
                         <SwapVertIcon fontSize="small"/>
@@ -283,7 +285,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                                     label={`Assignee: ${assigneeFilter === 'me' ? 'Me' : treeMembers.find(m => m.userId === assigneeFilter)?.username || assigneeFilter}`}
                                     size="small"
                                     onDelete={() => onAssigneeFilterChange?.('all')}
-                                    sx={{bgcolor: '#e3f2fd', color: '#1976d2'}}
+                                    sx={{bgcolor: theme.palette.primary.light + '20', color: theme.palette.primary.main}}
                                 />
                             )}
                             {creatorFilter !== 'all' && (
@@ -291,7 +293,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                                     label={`Creator: ${creatorFilter === 'me' ? 'Me' : treeMembers.find(m => m.userId === creatorFilter)?.username || creatorFilter}`}
                                     size="small"
                                     onDelete={() => onCreatorFilterChange?.('all')}
-                                    sx={{bgcolor: '#e3f2fd', color: '#1976d2'}}
+                                    sx={{bgcolor: theme.palette.primary.light + '20', color: theme.palette.primary.main}}
                                 />
                             )}
                         </Box>
@@ -539,7 +541,7 @@ const IssueDataGrid: React.FC<IssueDataGridProps> = ({
                         overflow: 'hidden'
                     },
                     '& .MuiDataGrid-columnHeaders': {
-                        backgroundColor: '#f5f5f5',
+                        backgroundColor: theme.palette.background.default,
                         minHeight: '35px !important',
                         maxHeight: '35px !important',
                     },

@@ -1,5 +1,6 @@
 import React, {useEffect} from 'react';
 import {Container, Typography} from '@mui/material';
+import {useTheme} from '@mui/material/styles';
 import IssueList from './components/IssueList/IssueList';
 import AuthButton from "@forest/user-system/src/AuthButton";
 import {subscriptionAtom, supabaseClientAtom} from "@forest/user-system/src/authStates";
@@ -7,6 +8,7 @@ import {useAtom, useAtomValue} from "jotai";
 import AuthModal from "@forest/user-system/src/AuthModal";
 
 function IssuePanel() {
+    const theme = useTheme();
     const [subscription, setSubscription] = useAtom(subscriptionAtom);
     const supabaseClient = useAtomValue(supabaseClientAtom);
 
@@ -29,7 +31,7 @@ function IssuePanel() {
                 top: '20px',
                 right: '20px',
                 zIndex: 1000,
-                backgroundColor: 'white',
+                backgroundColor: theme.palette.background.paper,
                 borderRadius: '12px',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                 padding: '8px 12px'
@@ -47,14 +49,14 @@ function IssuePanel() {
             flexDirection: 'column',
             overflow: 'hidden',
             boxSizing: 'border-box',
-            backgroundColor: '#f0f0f0' // Grey background like TreeView
+            backgroundColor: theme.palette.background.paper // Grey background like TreeView
         }}>
             <div
                 style={{
                     width: '100%',
                     height: '100%',
                     borderRadius: '10px',
-                    backgroundColor: 'white',
+                    backgroundColor: theme.palette.background.paper,
                     boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
                     transition: 'opacity 0.2s ease',
                 }}>
