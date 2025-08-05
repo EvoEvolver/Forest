@@ -1,5 +1,6 @@
 import { Db, Collection, ObjectId } from 'mongodb';
 import { getMongoClient } from '../mongoConnection';
+import { CollectionCommitManager } from './collectionCommitManager';
 
 export interface MongoDocument {
   _id: ObjectId | string;
@@ -309,6 +310,9 @@ export class MongoEditorService {
         return { success: false, error: 'Failed to retrieve updated document' };
       }
 
+      // Notify all DataGrid editors of this collection about the change
+      CollectionCommitManager.getInstance().incrementCommit(collectionName);
+
       return { success: true, data: updatedDoc };
     } catch (error) {
       return { 
@@ -350,6 +354,9 @@ export class MongoEditorService {
         return this.handleDocumentOperationResult('createDocument', null, 'Failed to retrieve created document');
       }
 
+      // Notify all DataGrid editors of this collection about the change
+      CollectionCommitManager.getInstance().incrementCommit(collectionName);
+
       return this.handleDocumentOperationResult('createDocument', createdDoc);
     } catch (error) {
       return this.handleDocumentOperationResult(
@@ -377,6 +384,9 @@ export class MongoEditorService {
       if (result.deletedCount === 0) {
         return { success: false, error: 'Document not found' };
       }
+
+      // Notify all DataGrid editors of this collection about the change
+      CollectionCommitManager.getInstance().incrementCommit(collectionName);
 
       return { success: true, data: undefined };
     } catch (error) {
@@ -461,7 +471,7 @@ export class MongoEditorService {
         documentResult,
         schemaResult,
         operation: 'addField'
-      });
+      }, collectionName);
       
     } catch (error) {
       return {
@@ -538,7 +548,7 @@ export class MongoEditorService {
         documentResult,
         schemaResult,
         operation: 'renameField'
-      });
+      }, collectionName);
       
     } catch (error) {
       return {
@@ -609,7 +619,7 @@ export class MongoEditorService {
         documentResult,
         schemaResult,
         operation: 'removeField'
-      });
+      }, collectionName);
       
     } catch (error) {
       return {
@@ -933,11 +943,16 @@ export class MongoEditorService {
     }
   }
 
-  private handleOperationResult(results: OperationResults): ApiResponse<{ modifiedCount: number }> {
+  private handleOperationResult(results: OperationResults, collectionName?: string): ApiResponse<{ modifiedCount: number }> {
     // Always return success if document operation succeeded
     // Log schema warnings but don't fail the operation
     if (results.schemaResult && !results.schemaResult.success) {
       console.warn(`${results.operation} succeeded but schema update failed:`, results.schemaResult.error);
+    }
+    
+    // Notify all DataGrid editors of this collection about the change
+    if (collectionName) {
+      CollectionCommitManager.getInstance().incrementCommit(collectionName);
     }
     
     return {

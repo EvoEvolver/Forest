@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { DataGrid, GridColDef, GridRowsProp, GridRowModel, GridRowModesModel, GridEventListener, GridRowEditStopReasons, useGridApiRef } from '@mui/x-data-grid';
 import { Box, Typography, Alert, Snackbar, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
 import { NodeVM } from "@forest/schema";
@@ -9,6 +9,10 @@ import { AddColumnModal } from './AddColumnModal';
 import { EditableColumnHeader } from './EditableColumnHeader';
 import { CustomColumnMenu } from './CustomColumnMenu';
 import { getFieldTypeFromSchema, isFieldEditable } from '../utils/fieldTypeDetection';
+import { YjsProviderAtom } from "@forest/client/src/TreeState/YjsConnection";
+import { useAtomValue } from 'jotai';
+import { WebsocketProvider } from '@forest/schema/src/y-websocket';
+import * as Y from 'yjs';
 
 export interface MongoDocument {
     _id: string;
@@ -66,7 +70,12 @@ export const MongoDataGridEditor: React.FC<MongoDataGridEditorProps> = ({
     const [toastMessage, setToastMessage] = useState('');
     const [toastSeverity, setToastSeverity] = useState<'success' | 'error' | 'info'>('success');
 
+    // Collection commit tracking state
+    const [lastKnownCommit, setLastKnownCommit] = useState<number>(0);
+    const lastKnownCommitRef = useRef<number>(0);
+    
     const apiRef = useGridApiRef();
+    const yjsProvider = useAtomValue(YjsProviderAtom);
 
     useEffect(() => {
         if (collectionName) {
@@ -74,6 +83,77 @@ export const MongoDataGridEditor: React.FC<MongoDataGridEditorProps> = ({
             loadSchema();
         }
     }, [collectionName, page, pageSize]);
+
+    // Collection commit observer - watches for changes from other editors
+    useEffect(() => {
+        if (!collectionName || !yjsProvider) {
+            return;
+        }
+
+        try {
+            // Create a separate Y.js document connection for collection commits
+            // This connects to the same document name that the server-side CollectionCommitManager uses
+            const commitsDoc = new Y.Doc();
+            
+            // Extract the base WebSocket URL (remove any existing document path)
+            const baseWsUrl = yjsProvider.url.replace(/\/[^\/]*$/, '');
+            
+            const commitsProvider = new WebsocketProvider(
+                baseWsUrl, 
+                'collection_commits', // This matches CollectionCommitManager.COMMITS_DOC_NAME
+                commitsDoc
+            );
+
+            // Set up cleanup function immediately to handle React StrictMode double execution
+            const cleanup = () => {
+                commitsProvider.destroy();
+                commitsDoc.destroy();
+            };
+
+            commitsProvider.on('sync', (isSynced) => {
+                if (!isSynced) return;
+
+                const commitsMap = commitsDoc.getMap('commits');
+                
+                // Initialize current commit number
+                const currentCommit = commitsMap.get(collectionName) || 0;
+                setLastKnownCommit(currentCommit);
+                lastKnownCommitRef.current = currentCommit;
+
+                // Set up observer for commit changes
+                const observer = (event, transaction) => {
+                    // Only observe changes from remote (not local changes)
+                    if (transaction.local) return;
+                    
+                    if (event.target === commitsMap) {
+                        // Check if our collection was modified
+                        if (event.keys.has(collectionName)) {
+                            const newCommit = commitsMap.get(collectionName) || 0;
+                            
+                            if (newCommit > lastKnownCommitRef.current) {
+                                setLastKnownCommit(newCommit);
+                                lastKnownCommitRef.current = newCommit;
+                                
+                                // Refresh the DataGrid to show changes from other editors
+                                console.log("reloading document on commit number update");
+                                loadDocuments();
+                                loadSchema();
+                            }
+                        }
+                    }
+                };
+
+                commitsMap.observe(observer);
+            });
+
+            // Return cleanup function (available immediately)
+            return cleanup;
+
+        } catch (error) {
+            console.warn('Failed to set up collection commit observer:', error);
+            return () => {}; // Return empty cleanup on error
+        }
+    }, [collectionName, yjsProvider]);
 
     const loadDocuments = async () => {
         setLoading(true);
@@ -171,13 +251,27 @@ export const MongoDataGridEditor: React.FC<MongoDataGridEditorProps> = ({
             return oldRow;
         }
 
+        // Check if the row has actually changed (excluding the DataGrid's 'id' field)
+        const { id: newId, ...newRowData } = newRow;
+        const { id: oldId, ...oldRowData } = oldRow;
+        
+        const hasChanged = JSON.stringify(newRowData) !== JSON.stringify(oldRowData);
+        
+        if (!hasChanged) {
+            // No changes detected, return the old row without making API call
+            return oldRow;
+        }
+
         try {
+            // Remove the DataGrid's 'id' field before sending to backend
+            const { id, ...documentToUpdate } = newRow;
+            
             const response = await fetch(`${httpUrl}/api/collections/${collectionName}/${newRow._id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(newRow),
+                body: JSON.stringify(documentToUpdate),
             });
 
             const result: ApiResponse<MongoDocument> = await response.json();
@@ -192,7 +286,8 @@ export const MongoDataGridEditor: React.FC<MongoDataGridEditorProps> = ({
                     )
                 );
 
-                return result.data;
+                // Return the updated document with the 'id' field for DataGrid
+                return { ...result.data, id: result.data._id };
             } else {
                 showToast(result.error || 'Failed to update document', 'error');
                 return oldRow;
