@@ -7,6 +7,7 @@ const typeModules = {
     "AgentNodeType": () => import("@forest/node-type-agents").then(m => new m.AgentNodeType()),
     "AgentToolNodeType": () => import("@forest/node-type-agents").then(m => new m.AgentToolNodeType()),
     "MCPNodeType": () => import("@forest/node-type-agents").then(m => new m.MCPNodeType()),
+    "A2ANodeType": () => import("@forest/node-type-agents").then(m => new m.A2ANodeType()),
     "CodeInterpreterNodeType": () => import("@forest/node-type-agents").then(m => new m.CodeInterpreterNodeType()),
     "KnowledgeNodeType": () => import("@forest/node-type-agents").then(m => new m.KnowledgeNodeType()),
     "EditorNodeType": async () => new EditorNodeType(),

@@ -66,7 +66,7 @@ export class AgentNodeType extends ActionableNodeType {
     allowReshape = true
     allowAddingChildren = true
     allowEditTitle = true
-    allowedChildrenTypes = ["AgentNodeType", "AgentToolNodeType", "CodeInterpreterNodeType", "KnowledgeNodeType"]
+    allowedChildrenTypes = ["AgentNodeType", "AgentToolNodeType", "CodeInterpreterNodeType", "KnowledgeNodeType", "A2ANodeType", "MCPNodeType"]
 
 
     render(node: NodeVM): React.ReactNode {
