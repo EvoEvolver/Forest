@@ -6,6 +6,8 @@ import {NodeVM} from '@forest/schema';
 import {EditorNodeType} from '@forest/node-type-editor/src';
 import {currentPageAtom} from "../appState";
 import {useTheme} from '@mui/system';
+import ReferenceGenButton from './ReferenceGenButton';
+import ReferenceIndexButton from './ReferenceIndexButton';
 
 
 const linearNodeListAtom = atom((get) => {
@@ -127,6 +129,7 @@ const NodeRenderer = React.memo(({ node, level, editorNodeType }: { node: NodeVM
 
     return (
         <div ref={nodeRef}>
+            {renderTitle()}
             {isVisible ? (
                 htmlContent ? (
                     <Box
@@ -167,6 +170,21 @@ export default function LinearView() {
     const nodes = useAtomValue(linearNodeListAtom);
     const editorNodeType = useMemo(() => new EditorNodeType(), []);
     const theme = useTheme();
+    const [forceRerender, setForceRerender] = useState(0);
+
+    const getHtml = () => {
+        if (!nodes) return '';
+        
+        return nodes.map(({node, level}) => {
+            try {
+                const content = editorNodeType.getEditorContent(node.nodeM);
+                return content;
+            } catch (error) {
+                console.warn('Error generating HTML for node:', error);
+                return '';
+            }
+        }).filter(html => html.length > 0).join('\n\n');
+    };
 
     if (!nodes) return null;
 
@@ -180,6 +198,7 @@ export default function LinearView() {
         }}>
         <Paper
             elevation={1}
+            data-testid="linear-view-paper"
             sx={{
                 maxWidth: '800px',
                 width: '100%',
@@ -190,8 +209,12 @@ export default function LinearView() {
                 color: theme.palette.text.primary
             }}
         >
+            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                <ReferenceGenButton getHtml={getHtml} rootNode={nodes[0].node}/>
+                <ReferenceIndexButton nodes={nodes}/>
+            </Box>
             {nodes.map(({node, level}) => (
-                <NodeRenderer key={node.id} node={node} level={level} editorNodeType={editorNodeType} />
+                <NodeRenderer key={`${node.id}-${forceRerender}`} node={node} level={level} editorNodeType={editorNodeType} />
             ))}
         </Paper>
         </div>

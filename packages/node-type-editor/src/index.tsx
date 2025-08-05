@@ -45,8 +45,14 @@ export class EditorNodeType extends NodeType {
 
     setEditorContent(node: NodeM, htmlContent: string) {
         const editor = makeEditor(this.getYxml(node), null, true, null, null, null);
-        editor.commands.setContent(htmlContent);
-        editor.destroy()
+        try {
+            editor.commands.setContent(htmlContent);
+        } catch (e) {
+            console.warn("Error setting content", htmlContent);
+            throw e;
+        } finally {
+            editor.destroy()
+        }
     }
 
     renderTool1(node: NodeVM): React.ReactNode {
@@ -65,12 +71,12 @@ export class EditorNodeType extends NodeType {
     }
 }
 
-function EditorTools({node}: {node: NodeVM}) {
+function EditorTools({node}: { node: NodeVM }) {
     const children = useAtomValue(node.children)
     return <>
         <ModifyButton node={node}/>
-        {children.length===0 && <ParentToSummaryButton node={node}/>}
-        {children.length===0 && <TopDownButton node={node}/>}
-        {children.length!==0 && <BottomUpButton node={node}/>}
+        {children.length === 0 && <ParentToSummaryButton node={node}/>}
+        {children.length === 0 && <TopDownButton node={node}/>}
+        {children.length !== 0 && <BottomUpButton node={node}/>}
     </>
 }
