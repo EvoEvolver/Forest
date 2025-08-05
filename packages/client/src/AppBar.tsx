@@ -24,7 +24,16 @@ export const AppBarLeft = ({setCurrentPage, currentPage}) => {
     };
 
     return (
-        <Paper elevation={1} sx={{p: 1, borderRadius: 2, margin: '8px 10px', width: "20vw", display: 'flex', justifyContent: 'center'}}>
+        <Stack sx={{
+            p: 1,
+            borderRadius: 2,
+            margin: '8px 10px',
+            width: "20vw",
+            display: 'flex',
+            justifyContent: 'center',
+            backgroundColor: theme.palette.background.paper,
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+        }}>
             <ToggleButtonGroup
                 value={currentPage}
                 exclusive
@@ -68,7 +77,7 @@ export const AppBarLeft = ({setCurrentPage, currentPage}) => {
                     {!isNarrow && "Flow"}
                 </ToggleButton>
             </ToggleButtonGroup>
-        </Paper>
+        </Stack>
     );
 };
 
@@ -89,7 +98,7 @@ export const AppBarRight = () => {
             spacing={0}
             alignItems="center"
             sx={{
-                backgroundColor: '#ffffff',
+                backgroundColor: theme.palette.background.paper,
                 boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
                 borderRadius: '10px',
                 padding: '8px 8px',

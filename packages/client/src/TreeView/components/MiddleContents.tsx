@@ -15,6 +15,7 @@ import { useDragContext } from '../DragContext';
 import { setupDragImage, setupDragData, calculateDropPosition } from '../utils/DragUtils';
 import { DragButton } from './DragButton';
 import { SelectedDot } from './SelectedDot';
+import {useTheme} from "@mui/system";
 
 interface MiddleContentsProps {
     node: NodeVM;
@@ -27,6 +28,7 @@ export const MiddleContents = ({ node }: MiddleContentsProps) => {
     const [dragOver, setDragOver] = useState<'top' | 'bottom' | null>(null);
     const setNodePosition = useSetAtom(setNodePositionAtom);
     const tree = useAtomValue(treeAtom);
+    const theme = useTheme();
 
     const nodeTitle = useAtomValue(node.title);
     const { setDraggedNodeId } = useDragContext();
@@ -109,8 +111,7 @@ export const MiddleContents = ({ node }: MiddleContentsProps) => {
             maxWidth: '800px',
             margin: '10px auto',
             position: "relative",
-            color: 'black',
-            backgroundColor: 'white',
+            backgroundColor: theme.palette.background.paper,
             boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
             opacity: isDragging ? 0.5 : 1,
             borderTop: dragOver === 'top' ? '3px solid #1976d2' : '0px solid #c6c6c6',

@@ -164,6 +164,7 @@ export const getIssuesByTree = async (req: Request, res: Response) => {
 
         res.json(issues);
     } catch (error) {
+        console.error('Error in getIssuesByTree:', error);
         res.status(500).json({error: 'Failed to fetch issues'});
     }
 };

@@ -11,13 +11,13 @@ const storage = multer.memoryStorage();
 const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   const allowedMimes = [
     'image/jpeg',
-    'image/jpg', 
+    'image/jpg',
     'image/png',
     'image/gif',
     'image/webp',
     'image/svg+xml'
   ];
-  
+
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
@@ -43,7 +43,7 @@ router.post('/upload', upload.single('image'), async (req: Request, res: Respons
   console.log('Request headers:', req.headers);
   console.log('Request method:', req.method);
   console.log('Request URL:', req.originalUrl);
-  
+
   try {
     if (!req.file) {
       console.log('❌ No image file provided in request');
@@ -61,7 +61,7 @@ router.post('/upload', upload.single('image'), async (req: Request, res: Respons
     console.log('  - Size:', buffer.length, 'bytes');
 
     console.log('🚀 Starting MinIO upload...');
-    
+
     // Upload to MinIO
     const result = await uploadBufferToMinio(
       buffer,
@@ -69,14 +69,14 @@ router.post('/upload', upload.single('image'), async (req: Request, res: Respons
       originalname,
       mimetype
     );
-    
+
     console.log('📤 MinIO upload result:', result);
 
     if (result.success) {
       console.log('✅ Upload successful!');
       console.log('  - Public URL:', result.publicUrl);
       console.log('  - Object name:', result.objectName);
-      
+
       const responseData = {
         success: true,
         url: result.publicUrl,
@@ -85,7 +85,7 @@ router.post('/upload', upload.single('image'), async (req: Request, res: Respons
         size: buffer.length,
         mimeType: mimetype
       };
-      
+
       console.log('📤 Sending success response:', responseData);
       res.json(responseData);
     } else {
@@ -98,7 +98,7 @@ router.post('/upload', upload.single('image'), async (req: Request, res: Respons
   } catch (error: any) {
     console.error('❌ Image upload error:', error);
     console.error('Error stack:', error.stack);
-    
+
     // Handle multer errors
     if (error instanceof multer.MulterError) {
       console.log('🚨 Multer error detected:', error.code);
@@ -110,7 +110,7 @@ router.post('/upload', upload.single('image'), async (req: Request, res: Respons
         return;
       }
     }
-    
+
     console.log('📤 Sending error response');
     res.status(500).json({
       success: false,
@@ -126,7 +126,7 @@ router.post('/upload', upload.single('image'), async (req: Request, res: Respons
 router.post('/upload-multiple', upload.array('images', 10), async (req: Request, res: Response): Promise<void> => {
   try {
     const files = req.files as Express.Multer.File[];
-    
+
     if (!files || files.length === 0) {
       res.status(400).json({
         success: false,
@@ -135,13 +135,13 @@ router.post('/upload-multiple', upload.array('images', 10), async (req: Request,
       return;
     }
 
-    const uploadPromises = files.map(file => 
+    const uploadPromises = files.map(file =>
       uploadBufferToMinio(file.buffer, IMAGE_BUCKET, file.originalname, file.mimetype)
     );
 
     const results = await Promise.all(uploadPromises);
     const successfulUploads = results.filter(result => result.success);
-    
+
     if (successfulUploads.length === 0) {
       res.status(500).json({
         success: false,
@@ -196,7 +196,7 @@ router.post('/test-upload', (req: Request, res: Response): void => {
   console.log('Request body:', req.body);
   console.log('Request headers:', req.headers);
   console.log('Content-Type:', req.headers['content-type']);
-  
+
   res.json({
     success: true,
     message: 'Test endpoint working',

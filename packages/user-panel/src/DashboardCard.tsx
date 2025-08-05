@@ -27,7 +27,7 @@ const DashboardCard = ({
   sx,
 }: Props) => {
   return (
-    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', ...sx }}>
+    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', boxShadow: 'none', borderRadius: 2, ...sx }}>
       {title && (
         <CardContent sx={{ pb: title ? 1 : 2 }}>
           <Box

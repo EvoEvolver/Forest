@@ -2,9 +2,11 @@ import {NodeM, NodeType, NodeVM} from "@forest/schema"
 import React from "react";
 import TiptapEditor, {makeEditor} from "./editor";
 import {XmlFragment} from "yjs";
-import {BottomUpButton} from "./buttomUp";
-import {TopDownButton} from "./topDown";
-import {ParentToSummaryButton} from "./parentToSummary";
+import {BottomUpButton} from "./aiButtons/buttomUp";
+import {TopDownButton} from "./aiButtons/topDown";
+import {ParentToSummaryButton} from "./aiButtons/parentToSummary";
+import {ModifyButton} from "./aiButtons/modifyButton";
+import {useAtomValue} from "jotai";
 
 interface EditorNodeData {
 }
@@ -35,14 +37,16 @@ export class EditorNodeType extends NodeType {
     }
 
     getEditorContent(node: NodeM): string {
-        const editor = makeEditor(this.getYxml(node), null, true, null, null);
+        const editor = makeEditor(this.getYxml(node), null, true, null, null, null);
         const htmlContent = editor.getHTML();
+        editor.destroy()
         return htmlContent;
     }
 
     setEditorContent(node: NodeM, htmlContent: string) {
-        const editor = makeEditor(this.getYxml(node), null, true, null, null);
+        const editor = makeEditor(this.getYxml(node), null, true, null, null, null);
         editor.commands.setContent(htmlContent);
+        editor.destroy()
     }
 
     renderTool1(node: NodeVM): React.ReactNode {
@@ -50,11 +54,7 @@ export class EditorNodeType extends NodeType {
     }
 
     renderTool2(node: NodeVM): React.ReactNode {
-        return <>
-            <BottomUpButton node={node}/>
-            <TopDownButton node={node}/>
-            <ParentToSummaryButton node={node}/>
-        </>
+        return <EditorTools node={node}/>
     }
 
     renderPrompt(node: NodeM): string {
@@ -63,4 +63,14 @@ export class EditorNodeType extends NodeType {
 
     ydataInitialize(node: NodeM) {
     }
+}
+
+function EditorTools({node}: {node: NodeVM}) {
+    const children = useAtomValue(node.children)
+    return <>
+        <ModifyButton node={node}/>
+        {children.length===0 && <ParentToSummaryButton node={node}/>}
+        {children.length===0 && <TopDownButton node={node}/>}
+        {children.length!==0 && <BottomUpButton node={node}/>}
+    </>
 }

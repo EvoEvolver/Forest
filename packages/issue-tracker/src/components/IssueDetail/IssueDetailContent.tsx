@@ -1,6 +1,7 @@
 import React from 'react';
 import {Box, Paper, TextField, Typography,} from '@mui/material';
 import {Comment as CommentIcon,} from '@mui/icons-material';
+import {useTheme} from '@mui/material/styles';
 import type {Issue, UpdateIssueRequest} from '../../types/Issue';
 import CommentSection from './CommentSection';
 
@@ -29,8 +30,9 @@ const IssueDetailContent: React.FC<IssueDetailContentProps> = ({
                                                                    canAddComment = false,
                                                                    isCreatingNew = false,
                                                                }) => {
+    const theme = useTheme();
     return (
-        <Box sx={{p: 0, overflow: 'auto', flex: 1}}>
+        <Paper sx={{p: 0, overflow: 'auto', flex: 1}}>
             {/* Title */}
             <Box sx={{mb: 3, px: 3, pt: 3}}>
                 {isEditing ? (
@@ -42,7 +44,7 @@ const IssueDetailContent: React.FC<IssueDetailContentProps> = ({
                         variant="outlined"
                     />
                 ) : (
-                    <Typography variant="h5" sx={{fontWeight: 600, color: '#24292f', mb: 1}}>
+                    <Typography variant="h5" sx={{fontWeight: 600, color: theme.palette.text.primary, mb: 1}}>
                         {issue.title}
                     </Typography>
                 )}
@@ -69,7 +71,7 @@ const IssueDetailContent: React.FC<IssueDetailContentProps> = ({
                         variant="outlined"
                         sx={{
                             p: 2,
-                            bgcolor: '#f8f9fa',
+                            bgcolor: theme.palette.background.default,
                             minHeight: 100,
                         }}
                     >
@@ -93,7 +95,7 @@ const IssueDetailContent: React.FC<IssueDetailContentProps> = ({
                     />
                 </Box>
             )}
-        </Box>
+        </Paper>
     );
 };
 

@@ -60,6 +60,34 @@ export class TreeService {
     getTreeMetadata(treeId: string) {
         return this.treeMetadataManager.getTreeMetadata(treeId);
     }
+
+    async getMultipleTreeMetadata(treeIds: string[]) {
+        const metadataPromises = treeIds.map(treeId => 
+            this.treeMetadataManager.getTreeMetadata(treeId)
+        );
+        const metadataResults = await Promise.all(metadataPromises);
+        
+        // Create a map of treeId to metadata
+        const metadataMap: { [key: string]: any } = {};
+        treeIds.forEach((treeId, index) => {
+            const metadata = metadataResults[index];
+            metadataMap[treeId] = metadata ? {
+                treeId: metadata.treeId,
+                title: metadata.title || 'Untitled Tree',
+                owner: metadata.owner,
+                createdAt: metadata.createdAt,
+                lastAccessed: metadata.lastAccessed
+            } : {
+                treeId: treeId,
+                title: 'Unknown Tree',
+                owner: null,
+                createdAt: null,
+                lastAccessed: null
+            };
+        });
+        
+        return metadataMap;
+    }
 }
 
 function createNewTree(treeJson: TreeJson): TreeM {

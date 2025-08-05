@@ -105,7 +105,8 @@ export const NodeButtons = (props: { node: NodeVM }) => {
                 position: 'absolute',
                 left: '0',
                 width: "40%",
-                backgroundColor: theme.palette.primary.light
+                color: 'white',
+                backgroundColor: theme.palette.primary.main
             }}
         ><ArrowBackIcon></ArrowBackIcon>
         </Button>}
@@ -119,7 +120,8 @@ export const NodeButtons = (props: { node: NodeVM }) => {
                     position: 'absolute',
                     right: '0',
                     width: "40%",
-                    backgroundColor: theme.palette.primary.light
+                    color: 'white',
+                    backgroundColor: theme.palette.primary.main
                 }}
             >
                 <ArrowForwardIcon></ArrowForwardIcon> <span>({node.data['children_count']} more)</span>
@@ -138,10 +140,10 @@ export const NodeButtons = (props: { node: NodeVM }) => {
                             borderRadius: '50%',
                             width: '32px',
                             height: '32px',
-                            color: theme.palette.success.main,
+                            color: theme.palette.primary.main,
                             boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                             '&:hover': {
-                                backgroundColor: theme.palette.success.light + '20',
+                                backgroundColor: theme.palette.primary.light + '20',
                                 boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                             }
                         }}

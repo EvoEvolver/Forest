@@ -58,7 +58,7 @@ const TreeViewContent = () => {
                 minHeight: "100vh",
                 width: "100%",
                 margin: "auto",
-                backgroundColor: "#f0f0f0",
+                backgroundColor: "transparent",
                 paddingTop: "70px",
                 paddingBottom: "10px",
                 paddingLeft: !mobileMode ? "25vw" : "10px", // 300 + 16 gap + 10 padding

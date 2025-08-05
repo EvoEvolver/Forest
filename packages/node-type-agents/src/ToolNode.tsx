@@ -1,4 +1,4 @@
-import {NodeM, NodeType, NodeVM} from "@forest/schema";
+import {NodeM, NodeVM} from "@forest/schema";
 import React, {useEffect, useState} from "react";
 import * as Y from "yjs";
 import CollaborativeEditor from "./CodeEditor";
@@ -6,16 +6,74 @@ import CardViewer from "./openapi/CardViewer";
 import {json as jsonLang} from '@codemirror/lang-json';
 import {parseApiSpec} from "./openapi/apiParser";
 import {httpUrl} from "@forest/schema/src/config"
+import {Action, ActionableNodeType, ActionParameter} from "./ActionableNodeType";
+import {AgentSessionState} from "./sessionState";
+import {ToolCallingMessage, ToolResponseMessage} from "@forest/agent-chat/src/AgentMessageTypes";
 
 const AgentToolOpenApiSpecText = "AgentToolOpenApiSpecText"
 
-export class AgentToolNodeType extends NodeType {
+export class AgentToolNodeType extends ActionableNodeType {
+    actions(node: NodeM): Action[] {
+        const apiSpec = this.getApiSpec(node);
+        if (!apiSpec || !apiSpec.endpoints || apiSpec.endpoints.length === 0) {
+            return [];
+        }
+        const endpoint = apiSpec.endpoints[0];
+        const description = endpoint.description || "No description provided.";
+        
+        const parameters: Record<string, ActionParameter> = {};
+        if (endpoint.requestBody && endpoint.requestBody.content['application/json']) {
+            const schema = endpoint.requestBody.content['application/json'].schema;
+            parameters.requestBody = {
+                type: schema.type || "object",
+                description: schema.description || "Request body parameters"
+            };
+        }
+
+        return [{
+            label: "Call tool " + node.title(),
+            description: description,
+            parameter: parameters
+        }];
+    }
+
+    async executeAction(node: NodeM, label: string, parameters: Record<string, any>, callerNode: NodeM, agentSessionState: AgentSessionState): Promise<any> {
+        // Handle other actionable nodes
+        const toolCallingMessage = new ToolCallingMessage({
+            toolName: node.title(),
+            parameters: parameters,
+            author: callerNode.title(),
+        });
+        agentSessionState.addMessage(callerNode, toolCallingMessage);
+
+        const res = this.callApi(node, parameters)
+
+        // Check for URLs starting with https://storage.treer.ai in the response
+        const resString = typeof res === 'string' ? res : JSON.stringify(res);
+        const urlRegex = /https:\/\/storage\.treer\.ai\/[^\s"]+/g;
+        const matches = resString.match(urlRegex);
+        if (matches) {
+            for (const url of matches) {
+                agentSessionState.files.push({
+                    fileUrl: url,
+                    fileDescription: `File from ${node.title()} tool`
+                });
+            }
+        }
+        const toolResponseMessage = new ToolResponseMessage({
+            toolName: node.title(),
+            response: res,
+            author: node.title(),
+        })
+        agentSessionState.addMessage(callerNode, toolResponseMessage);
+    }
+
     displayName = "Tool"
     allowReshape = true
     allowAddingChildren = false
     allowEditTitle = true
 
-    getApiSpec(node: NodeM): any{
+    getApiSpec(node: NodeM): any {
         // @ts-ignore
         const yText: Y.Text = node.ydata().get(AgentToolOpenApiSpecText) as Y.Text;
         if (!yText) {
@@ -24,8 +82,7 @@ export class AgentToolNodeType extends NodeType {
         try {
             const apiSpec = jsonToSpec(yText.toString());
             return apiSpec;
-        }
-        catch (e) {
+        } catch (e) {
             return null
         }
     }
@@ -83,7 +140,7 @@ Parameters:
 ${apiParameterPrompt}`
     }
 
-    callApi(node: NodeM, requestBody: any){
+    callApi(node: NodeM, requestBody: any) {
         const apiSpec = this.getApiSpec(node);
         if (!apiSpec || !apiSpec.endpoints || apiSpec.endpoints.length === 0) {
             throw new Error("No API endpoints available");
@@ -98,7 +155,7 @@ ${apiParameterPrompt}`
             serverAddress: url // Replace with your server address,
         }
 
-        return fetch(httpUrl+"/api/api-proxy/fetch", {
+        return fetch(httpUrl + "/api/api-proxy/fetch", {
             method: method,
             headers: {
                 'Content-Type': 'application/json',

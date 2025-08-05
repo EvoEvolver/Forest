@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {Autocomplete, Avatar, Box, Chip, CircularProgress, TextField, Typography,} from '@mui/material';
 import {Person as PersonIcon} from '@mui/icons-material';
+import {useTheme} from '@mui/material/styles';
 
 
 interface User {
@@ -29,6 +30,7 @@ const UserSelector: React.FC<UserSelectorProps> = ({
                                                        maxUsers,
                                                        options: externalOptions,
                                                    }) => {
+    const theme = useTheme();
     const [open, setOpen] = useState(false);
     const [inputValue, setInputValue] = useState('');
     const [loading, setLoading] = useState(false);
@@ -211,10 +213,10 @@ const UserSelector: React.FC<UserSelectorProps> = ({
                         label={getUserDisplayName(option)}
                         size="small"
                         sx={{
-                            bgcolor: '#e3f2fd',
-                            color: '#1976d2',
+                            bgcolor: theme.palette.primary.light + '20',
+                            color: theme.palette.primary.main,
                             '& .MuiChip-deleteIcon': {
-                                color: '#1976d2',
+                                color: theme.palette.primary.main,
                             },
                         }}
                     />

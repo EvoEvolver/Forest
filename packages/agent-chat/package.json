@@ -13,6 +13,7 @@
     "@forest/schema": "workspace:*",
     "@forest/user-system": "workspace:*",
     "@forest/client": "workspace:*",
-    "@mui/lab": "7.0.0-beta.14"
+    "@mui/lab": "7.0.0-beta.14",
+    "showdown": "^2.1.0"
   }
 }

@@ -52,32 +52,32 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'open':
-                return '#1976d2';
+                return theme.palette.primary.main;
             case 'in_progress':
-                return '#ed6c02';
+                return theme.palette.warning.main;
             case 'in_review':
-                return '#673ab7';
+                return theme.palette.secondary.main;
             case 'resolved':
-                return '#2e7d32';
+                return theme.palette.success.main;
             case 'closed':
-                return '#757575';
+                return theme.palette.text.secondary;
             default:
-                return '#757575';
+                return theme.palette.text.secondary;
         }
     };
 
     const getPriorityColor = (priority: string) => {
         switch (priority) {
             case 'low':
-                return '#2e7d32';
+                return theme.palette.success.main;
             case 'medium':
-                return '#ed6c02';
+                return theme.palette.warning.main;
             case 'high':
-                return '#d32f2f';
+                return theme.palette.error.main;
             case 'urgent':
-                return '#d32f2f';
+                return theme.palette.error.main;
             default:
-                return '#ed6c02';
+                return theme.palette.warning.main;
         }
     };
 
@@ -188,8 +188,8 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
     return (
         <Box
             sx={{
-                bgcolor: '#f8f9fa',
-                borderLeft: '1px solid #e1e4e8',
+                bgcolor: theme.palette.background.default,
+                borderLeft: `1px solid ${theme.palette.divider}`,
                 p: 3,
                 overflow: 'auto',
                 width: '300px',
@@ -309,7 +309,10 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
                                 size="small"
                                 onClick={handleAddTag}
                                 disabled={!newTag.trim()}
-                                sx={{bgcolor: '#e3f2fd', '&:hover': {bgcolor: '#bbdefb'}}}
+                                sx={{
+                                    bgcolor: theme.palette.primary.light + '20',
+                                    '&:hover': {bgcolor: theme.palette.primary.light + '40'}
+                                }}
                             >
                                 <AddIcon fontSize="small"/>
                             </IconButton>
@@ -357,12 +360,12 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
                                         onDelete={() => handleRemoveTag(index)}
                                         onClick={() => handleStartEditTag(index, tag)}
                                         sx={{
-                                            bgcolor: '#e3f2fd',
-                                            color: '#1976d2',
+                                            bgcolor: theme.palette.primary.light + '20',
+                                            color: theme.palette.primary.main,
                                             mb: 0.5,
                                             cursor: 'pointer',
                                             '&:hover': {
-                                                bgcolor: '#bbdefb',
+                                                bgcolor: theme.palette.primary.light + '40',
                                             }
                                         }}
                                     />
@@ -384,8 +387,8 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
                                     label={tag}
                                     size="small"
                                     sx={{
-                                        bgcolor: '#e3f2fd',
-                                        color: '#1976d2',
+                                        bgcolor: theme.palette.primary.light + '20',
+                                        color: theme.palette.primary.main,
                                         mb: 0.5,
                                     }}
                                 />
@@ -483,11 +486,11 @@ const IssueDetailSidebar: React.FC<IssueDetailSidebarProps> = ({
                                     sx={{
                                         justifyContent: 'flex-start',
                                         textTransform: 'none',
-                                        color: '#1976d2',
-                                        borderColor: '#1976d2',
+                                        color: theme.palette.primary.main,
+                                        borderColor: theme.palette.primary.main,
                                         '&:hover': {
-                                            bgcolor: '#e3f2fd',
-                                            borderColor: '#1976d2',
+                                            bgcolor: theme.palette.primary.light + '20',
+                                            borderColor: theme.palette.primary.main,
                                         }
                                     }}
                                 >

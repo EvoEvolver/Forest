@@ -1,23 +1,19 @@
 import * as React from "react";
-import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import DownloadIcon from '@mui/icons-material/Download';
 import {NodeM, NodeVM} from "@forest/schema";
-import {EditorNodeType} from ".";
+import {EditorNodeType} from "..";
 import {stageThisVersion} from "@forest/schema/src/stageService";
 import {useAtomValue} from "jotai";
-import { authTokenAtom } from "@forest/user-system/src/authStates";
-import {NormalMessage} from "@forest/agent-chat/src/MessageTypes";
+import {authTokenAtom} from "@forest/user-system/src/authStates";
+import {NormalMessage} from "\@forest/agent-chat/src/MessageTypes";
 import {fetchChatResponse} from "@forest/agent-chat/src/llm";
+import {ModifyConfirmation} from "./ModifyConfirmation";
 
-export const ParentToSummaryButton: React.FC<{ node: NodeVM}> = ({node}) => {
+export const ParentToSummaryButton: React.FC<{ node: NodeVM }> = ({node}) => {
     const [loading, setLoading] = React.useState(false);
     const [dialogOpen, setDialogOpen] = React.useState(false);
     const [parentContent, setParentContent] = React.useState<string | null>(null);
@@ -30,11 +26,11 @@ export const ParentToSummaryButton: React.FC<{ node: NodeVM}> = ({node}) => {
             const treeM = node.nodeM.treeM;
             const parent = treeM.getParent(node.nodeM);
             const editorNodeType = await node.nodeM.treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
-            
-            const parentContentText = parent && parent.nodeTypeName() === "EditorNodeType" 
+
+            const parentContentText = parent && parent.nodeTypeName() === "EditorNodeType"
                 ? editorNodeType.getEditorContent(parent)
                 : "No suitable parent node found.";
-            
+
             const summary = await getParentBasedSummary(node.nodeM, authToken);
 
             setParentContent(parentContentText);
@@ -51,18 +47,16 @@ export const ParentToSummaryButton: React.FC<{ node: NodeVM}> = ({node}) => {
         setSummaryContent(null);
     };
 
-    const handleAccept = async () => {
+    const handleAccept = async (modifiedContent: string) => {
         await stageThisVersion(node, "Before parent-to-summary editing");
-        if (summaryContent) {
-            const editorNodeType = await node.nodeM.treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
-            editorNodeType.setEditorContent(node.nodeM, summaryContent);
-        }
+        const editorNodeType = await node.nodeM.treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
+        editorNodeType.setEditorContent(node.nodeM, modifiedContent);
         handleCloseDialog();
     };
 
     return (
         <>
-            <Card 
+            <Card
                 sx={{
                     cursor: 'pointer',
                     boxShadow: 3,
@@ -76,8 +70,8 @@ export const ParentToSummaryButton: React.FC<{ node: NodeVM}> = ({node}) => {
                 }}
                 onClick={handleClick}
             >
-                <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <DownloadIcon color="primary" />
+                <CardContent sx={{display: 'flex', alignItems: 'center', gap: 2}}>
+                    <DownloadIcon color="primary"/>
                     <div>
                         <Typography variant="body1" component="div">
                             Write paragraph from Parent
@@ -86,38 +80,25 @@ export const ParentToSummaryButton: React.FC<{ node: NodeVM}> = ({node}) => {
                             Transform key points into paragraph
                         </Typography>
                     </div>
-                    {loading && <CircularProgress size={20} />}
+                    {loading && <CircularProgress size={20}/>}
                 </CardContent>
             </Card>
-            <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="lg" fullWidth>
-                <DialogTitle>Review Summary</DialogTitle>
-                <DialogContent sx={{display: 'flex', gap: '20px'}}>
-                    <div style={{
-                        flex: 1,
-                        overflow: 'auto',
-                        border: '1px solid #ccc',
-                        padding: '10px',
-                        borderRadius: '4px'
-                    }}>
-                        <h3>Parent Node Content</h3>
-                        <div dangerouslySetInnerHTML={{ __html: parentContent ?? "" }} />
-                    </div>
-                    <div style={{
-                        flex: 1,
-                        overflow: 'auto',
-                        border: '1px solid #ccc',
-                        padding: '10px',
-                        borderRadius: '4px'
-                    }}>
-                        <h3>Paragraph generated</h3>
-                        <div dangerouslySetInnerHTML={{ __html: summaryContent ?? "" }} />
-                    </div>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleCloseDialog}>Cancel</Button>
-                    <Button onClick={handleAccept} color="primary">Accept</Button>
-                </DialogActions>
-            </Dialog>
+            <ModifyConfirmation
+                open={dialogOpen}
+                onClose={handleCloseDialog}
+                onAccept={handleAccept}
+                dialogTitle="Review Summary"
+                comparisonContent={{
+                    original: {
+                        title: "Parent Node Content",
+                        content: parentContent ?? ""
+                    },
+                    modified: {
+                        title: "Paragraph generated",
+                        content: summaryContent ?? ""
+                    }
+                }}
+            />
         </>
     );
 };
@@ -125,7 +106,7 @@ export const ParentToSummaryButton: React.FC<{ node: NodeVM}> = ({node}) => {
 async function getParentBasedSummary(node: NodeM, authToken: string): Promise<string> {
     const treeM = node.treeM;
     const parent = treeM.getParent(node);
-    
+
     if (!parent || parent.nodeTypeName() !== "EditorNodeType") {
         return "No suitable parent node found to generate summary from.";
     }
@@ -133,7 +114,7 @@ async function getParentBasedSummary(node: NodeM, authToken: string): Promise<st
     const editorNodeType = await treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
     const parentContent = editorNodeType.getEditorContent(parent);
     const currentContent = editorNodeType.getEditorContent(node);
-    
+
     const prompt = `You are a professional writer. Your task is to write a paragraph based on the parent node's content.
 
 <parent_content>
@@ -159,7 +140,7 @@ You should keep the links in the original content and put them in a proper place
             content: prompt,
             author: "user",
             role: "user",
-            time: new Date().toISOString()
+
         }
     )
     return await fetchChatResponse([message.toJson() as any], "gpt-4.1", authToken);

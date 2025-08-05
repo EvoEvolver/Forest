@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {Avatar, Box, Chip, Stack, Tooltip, Typography,} from '@mui/material';
 import {Person as PersonIcon,} from '@mui/icons-material';
+import {useTheme} from '@mui/material/styles';
 import UserSelector from './UserSelector';
 import {getUserMetadata} from "@forest/user-system/src/userMetadata";
 
@@ -43,6 +44,7 @@ const AssigneeManager: React.FC<AssigneeManagerProps> = ({
                                                              editingAssignees,
                                                              onEditingAssigneesChange,
                                                          }) => {
+    const theme = useTheme();
     const [treeMembers, setTreeMembers] = useState<User[]>([]);
     const [loadingMembers, setLoadingMembers] = useState(false);
     const [usernames, setUsernames] = useState<{ [userId: string]: string }>({});
@@ -139,8 +141,8 @@ const AssigneeManager: React.FC<AssigneeManagerProps> = ({
                                     label={getUserDisplayName(assignee)}
                                     size="small"
                                     sx={{
-                                        bgcolor: '#f3e5f5',
-                                        color: '#7b1fa2',
+                                        bgcolor: theme.palette.secondary.light + '20',
+                                        color: theme.palette.text.primary,
                                         maxWidth: 80,
                                         '& .MuiChip-label': {
                                             overflow: 'hidden',
@@ -155,8 +157,8 @@ const AssigneeManager: React.FC<AssigneeManagerProps> = ({
                                 label={`+${enrichedAssignees.length - maxDisplay}`}
                                 size="small"
                                 sx={{
-                                    bgcolor: '#f5f5f5',
-                                    color: '#666'
+                                    bgcolor: theme.palette.background.default,
+                                    color: theme.palette.text.secondary
                                 }}
                             />
                         )}
@@ -166,7 +168,7 @@ const AssigneeManager: React.FC<AssigneeManagerProps> = ({
                         label="Unassigned"
                         size="small"
                         sx={{
-                            color: '#000000',
+                            color: theme.palette.text.primary,
                         }}
                     />
                 )}

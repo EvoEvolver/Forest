@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import {Button, Dialog, DialogActions, DialogContent, DialogContentText, IconButton, Tooltip} from '@mui/material';
 import {Delete as DeleteIcon, Edit as EditIcon} from '@mui/icons-material';
+import {useTheme} from '@mui/material/styles';
 import {useAtomValue} from 'jotai';
 import {userAtom} from '@forest/user-system/src/authStates';
 import type {Issue} from '../../../types/Issue';
@@ -12,6 +13,7 @@ interface ActionsCellProps {
 }
 
 const ActionsCell: React.FC<ActionsCellProps> = ({row, onEdit, onDelete}) => {
+    const theme = useTheme();
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const currentUser = useAtomValue(userAtom);
 
@@ -45,9 +47,9 @@ const ActionsCell: React.FC<ActionsCellProps> = ({row, onEdit, onDelete}) => {
                         onClick={handleDeleteClick}
                         sx={{
                             p: 0.5,
-                            color: '#d32f2f',
+                            color: theme.palette.error.main,
                             '&:hover': {
-                                bgcolor: '#ffebee',
+                                bgcolor: theme.palette.error.light + '20',
                             }
                         }}
                     >

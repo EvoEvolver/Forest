@@ -34,7 +34,14 @@ export function ColumnRight() {
         zIndex: 1,
         gap: 2,
     }}>
-        <Paper elevation={1} sx={{p: 1, borderRadius: 2, display: 'flex', justifyContent: 'center'}}>
+        <Paper elevation={1} sx={{
+            p: 1,
+            borderRadius: 2,
+            display: 'flex',
+            justifyContent: 'center',
+            backgroundImage: "none", // removes the overlay gradient,
+            backgroundColor: theme.palette.background.paper
+        }}>
             <ToggleButtonGroup
                 value={activeTab}
                 exclusive

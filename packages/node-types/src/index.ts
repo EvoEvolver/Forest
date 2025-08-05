@@ -6,6 +6,7 @@ const typeModules = {
     "CustomNodeType": () => import("@forest/node-components").then(m => new m.CustomNodeType()),
     "AgentNodeType": () => import("@forest/node-type-agents").then(m => new m.AgentNodeType()),
     "AgentToolNodeType": () => import("@forest/node-type-agents").then(m => new m.AgentToolNodeType()),
+    "MCPNodeType": () => import("@forest/node-type-agents").then(m => new m.MCPNodeType()),
     "CodeInterpreterNodeType": () => import("@forest/node-type-agents").then(m => new m.CodeInterpreterNodeType()),
     "KnowledgeNodeType": () => import("@forest/node-type-agents").then(m => new m.KnowledgeNodeType()),
     "MongoDataGridNodeType": () => import("@forest/node-type-mongo-datagrid").then(m => new m.MongoDataGridNodeType()),

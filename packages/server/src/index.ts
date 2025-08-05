@@ -34,6 +34,7 @@ import {TreeMetadataManager} from './services/treeMetadata';
 import {TreeVisitManager} from './services/treeVisitTracker';
 import {createTreePermissionRouter} from "./routes";
 import apiProxyRouter from "./routes/apiProxyRouter.ts";
+import mcpProxyRouter from "./routes/mcpProxyRouter";
 import { imageRoutes } from './routes/imageRoutes';
 import { initializeMinioService } from './services/minioService';
 
@@ -74,6 +75,7 @@ function main(): void {
     app.use('/api/user', createUserRouter());
     app.use('/api', createNodeSnapshotRouter());
     app.use('/api/api-proxy', apiProxyRouter)
+    app.use('/api/mcp-proxy', mcpProxyRouter);
     app.use('/api/images', imageRoutes);
     app.use('/api/metadata', metadataRoutes);
     app.use('/api/collections', createMongoCollectionRouter());

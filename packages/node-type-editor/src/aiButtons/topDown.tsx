@@ -1,18 +1,10 @@
 import * as React from "react";
-import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
 import {NodeJson, NodeM, NodeVM} from "@forest/schema";
-import {EditorNodeType} from ".";
+import {EditorNodeType} from "..";
 import {stageThisVersion} from "@forest/schema/src/stageService";
 import {useAtomValue} from "jotai";
 import {authTokenAtom} from "@forest/user-system/src/authStates";
-import FormGroup from '@mui/material/FormGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
 import {v4 as uuidv4} from "uuid";
 import {fetchChatResponse} from "@forest/agent-chat/src/llm";
 import {NormalMessage} from "@forest/agent-chat/src/MessageTypes";
@@ -20,6 +12,7 @@ import {Card} from "@mui/material";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import AutoAwesomeMotionIcon from '@mui/icons-material/AutoAwesomeMotion';
+import {SelectionConfirmation} from "./SelectionConfirmation";
 
 export const TopDownButton: React.FC<{ node: NodeVM }> = ({node}) => {
         const [loading, setLoading] = React.useState(false);
@@ -51,17 +44,15 @@ export const TopDownButton: React.FC<{ node: NodeVM }> = ({node}) => {
             setSelectedTitles({});
         };
 
-        const handleAccept = async () => {
+        const handleAccept = async (modifiedItems: {id: string; title: string; content: string}[]) => {
             await stageThisVersion(node, "Before top-down child generation");
-            const titlesToCreate = Object.entries(selectedTitles)
-                .filter(([, checked]) => checked)
-                .map(([title]) => title);
-            if (titlesToCreate.length > 0) {
+            const itemsToCreate = modifiedItems.filter(item => selectedTitles[item.id]);
+            if (itemsToCreate.length > 0) {
                 const treeM = node.nodeM.treeM;
-                for (const title of titlesToCreate) {
+                for (const item of itemsToCreate) {
                     const newNodeJson: NodeJson = {
                         id: uuidv4(),
-                        title: title,
+                        title: item.title,
                         parent: node.id,
                         children: [],
                         data: {},
@@ -71,7 +62,7 @@ export const TopDownButton: React.FC<{ node: NodeVM }> = ({node}) => {
                     treeM.insertNode(newNodeM, node.id, null);
                     const editorNodeType = await treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
                     editorNodeType.ydataInitialize(newNodeM)
-                    editorNodeType.setEditorContent(newNodeM, newChildren.find(child => child.title === title)?.content || "");
+                    editorNodeType.setEditorContent(newNodeM, item.content);
                 }
             }
             handleCloseDialog();
@@ -97,8 +88,8 @@ export const TopDownButton: React.FC<{ node: NodeVM }> = ({node}) => {
                     }}
                     onClick={handleClick}
                 >
-                    <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <AutoAwesomeMotionIcon color="primary" />
+                    <CardContent sx={{display: 'flex', alignItems: 'center', gap: 2}}>
+                        <AutoAwesomeMotionIcon color="primary"/>
                         <div>
                             <Typography variant="body1" component="div">
                                 Split into Children
@@ -107,38 +98,22 @@ export const TopDownButton: React.FC<{ node: NodeVM }> = ({node}) => {
                                 Break large node into smaller nodes
                             </Typography>
                         </div>
-                        {loading && <CircularProgress size={20} />}
+                        {loading && <CircularProgress size={20}/>}
                     </CardContent>
                 </Card>
-                <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-                    <DialogTitle>Generate New Children</DialogTitle>
-                    <DialogContent>
-                        <p>Select the new children nodes you want to create:</p>
-                        <FormGroup>
-                            {newChildren.map(({title, content}) => (
-                                <div key={title} style={{marginBottom: 16}}>
-                                    <FormControlLabel
-                                        control={
-                                            <Checkbox
-                                                checked={selectedTitles[title] ?? true}
-                                                onChange={() => handleToggleSelection(title)}
-                                            />
-                                        }
-                                        label={title}
-                                    />
-                                    <div
-                                        style={{marginLeft: 32, color: "#555"}}
-                                        dangerouslySetInnerHTML={{__html: content}}
-                                    />
-                                </div>
-                            ))}
-                        </FormGroup>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={handleCloseDialog}>Cancel</Button>
-                        <Button onClick={handleAccept} color="primary">Accept</Button>
-                    </DialogActions>
-                </Dialog>
+                <SelectionConfirmation
+                    open={dialogOpen}
+                    onClose={handleCloseDialog}
+                    onAccept={handleAccept}
+                    dialogTitle="Generate New Children"
+                    selectionItems={newChildren.map(({title, content}) => ({
+                        id: title,
+                        title,
+                        content
+                    }))}
+                    selectedItems={selectedTitles}
+                    onToggleSelection={handleToggleSelection}
+                />
             </>
         );
     }
@@ -177,8 +152,7 @@ You should not put any HTML elements not appearing in the original content.
     const message = new NormalMessage({
         content: prompt,
         author: "user",
-        role: "user",
-        time: new Date().toISOString()
+        role: "user"
     });
 
     const response = await fetchChatResponse([message.toJson() as any], "gpt-4.1", authToken);

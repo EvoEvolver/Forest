@@ -49,6 +49,19 @@ export function createTreePermissionRouter() {
         }
     });
 
+    // List all trees a user has access to
+    router.get('/user/:userId', async (req: AuthenticatedRequest, res: Response) => {
+        const {userId} = req.params;
+        console.log('list permissions for user', userId);
+        try {
+            const perms = await manager.listPermissionsForUser(userId);
+            console.log("perms",perms);
+            res.json({permissions: perms});
+        } catch (err) {
+            res.status(500).json({error: 'Failed to list permissions', details: err});
+        }
+    });
+
 // Get a user's permission for a tree
     router.get('/:treeId/:userId', async (req: AuthenticatedRequest, res: Response) => {
         console.log('list permissions for tree user');
@@ -58,18 +71,6 @@ export function createTreePermissionRouter() {
             res.json({permission: perm});
         } catch (err) {
             res.status(500).json({error: 'Failed to get permission', details: err});
-        }
-    });
-
-    // List all trees a user has access to
-    router.get('/user/:userId', async (req: AuthenticatedRequest, res: Response) => {
-        console.log('list permissions for user');
-        const {userId} = req.params;
-        try {
-            const perms = await manager.listPermissionsForUser(userId);
-            res.json({permissions: perms});
-        } catch (err) {
-            res.status(500).json({error: 'Failed to list permissions', details: err});
         }
     });
 

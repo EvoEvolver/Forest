@@ -1,7 +1,7 @@
 import React from "react";
 import {Box, Card, CardContent, Typography} from '@mui/material';
 import {BaseMessage} from "./MessageTypes"
-
+import * as showdown from 'showdown';
 
 export interface AgentCallingMessageProps {
     agentName: string;
@@ -14,7 +14,7 @@ export class AgentCallingMessage extends BaseMessage {
     message: string;
 
     constructor({agentName, message, author}: AgentCallingMessageProps) {
-        super({content: `Message to ${agentName}: ${message} `, author: author, role: 'assistant', time: ''});
+        super({content: `Message to ${agentName}: ${message} `, author: author, role: 'assistant'});
         this.agentName = agentName;
         this.message = message;
     }
@@ -22,7 +22,7 @@ export class AgentCallingMessage extends BaseMessage {
     render(): React.ReactNode {
         return (
             <Box sx={{display: 'flex', justifyContent: 'flex-start', marginBottom: 2}}>
-                <Card sx={{bgcolor: 'white'}}>
+                <Card>
                     <CardContent>
                         <Typography variant="subtitle2" gutterBottom>
                             Asking <b>{this.agentName}</b>
@@ -62,7 +62,7 @@ export class AgentResponseMessage extends BaseMessage {
     result: string;
 
     constructor({agentName, result, author}: AgentResponseMessageProps) {
-        super({content: `You got response from ${agentName}: ${result} `, author: author, role: 'user', time: ''});
+        super({content: `You got response from ${agentName}: ${result} `, author: author, role: 'user'});
         this.agentName = agentName;
         this.result = result;
     }
@@ -72,13 +72,13 @@ export class AgentResponseMessage extends BaseMessage {
     }
 
     render(): React.ReactNode {
+        const converter = new showdown.Converter();
+        const resultHtml = converter.makeHtml(this.result);
+
         return (
             <Box sx={{display: 'flex', justifyContent: 'flex-start', marginBottom: 2}}>
-                <Card sx={{bgcolor: 'white'}}>
+                <Card>
                     <CardContent>
-                        <Typography variant="subtitle2" gutterBottom>
-                            <b>{this.agentName}:</b>
-                        </Typography>
                         <Box component="pre" sx={{
                             whiteSpace: 'pre-wrap',
                             wordBreak: 'break-all',
@@ -86,7 +86,7 @@ export class AgentResponseMessage extends BaseMessage {
                             borderRadius: 1
                         }}>
                             <Typography variant="body2">
-                                <b>Response:</b> {this.result}
+                                <span dangerouslySetInnerHTML={{__html: resultHtml}}/>
                             </Typography>
                         </Box>
                     </CardContent>
@@ -107,7 +107,7 @@ export class ToolCallingMessage extends BaseMessage {
     parameters: Record<string, any>;
 
     constructor({toolName, parameters, author}: ToolCallingMessageProps) {
-        super({content: `Calling Tool ${toolName} with parameters ${parameters}`, author, role: 'assistant', time: ''});
+        super({content: `Calling Tool ${toolName} with parameters ${parameters}`, author, role: 'assistant'});
         this.toolName = toolName;
         this.parameters = parameters;
     }
@@ -115,7 +115,7 @@ export class ToolCallingMessage extends BaseMessage {
     render(): React.ReactNode {
         return (
             <Box sx={{display: 'flex', justifyContent: 'flex-start', marginBottom: 2}}>
-                <Card sx={{bgcolor: 'white'}}>
+                <Card>
                     <CardContent>
                         <Typography variant="subtitle2" gutterBottom>
                             Tool Call: <b>{this.toolName}</b>
@@ -159,8 +159,7 @@ export class ToolResponseMessage extends BaseMessage {
         super({
             content: `You got response from tool ${toolName}. The response is ${JSON.stringify(response)}`,
             author,
-            role: 'assistant',
-            time: ''
+            role: 'assistant'
         });
         this.toolName = toolName;
         this.response = response;
@@ -169,7 +168,7 @@ export class ToolResponseMessage extends BaseMessage {
     render(): React.ReactNode {
         return (
             <Box sx={{display: 'flex', justifyContent: 'flex-start', marginBottom: 2}}>
-                <Card sx={{bgcolor: 'white'}}>
+                <Card>
                     <CardContent>
                         <Typography variant="subtitle2" gutterBottom>
                             Tool Response: <b>{this.toolName}</b>

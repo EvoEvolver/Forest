@@ -1,6 +1,6 @@
-import React, {lazy, Suspense, useEffect, useState} from 'react';
+import React, {lazy, Suspense, useEffect} from 'react';
 import {Box, CssBaseline} from "@mui/material";
-import {atom, useAtom, useAtomValue, useSetAtom} from "jotai";
+import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import TreeView from "./TreeView/TreeView";
 import {setupYDocAtom, YjsProviderAtom} from "./TreeState/YjsConnection";
 import LinearView from "./LinearView";
@@ -12,7 +12,14 @@ import {UserPanelModal} from "../../user-panel/src/UserPanelModal";
 import {getPastelHexFromUsername, getRandomAnimal} from "@forest/user-system/src/helper";
 import {recordTreeVisit} from "./TreeState/treeVisitService";
 import {treeAtom} from "./TreeState/TreeState";
-import {parseOAuthTokensFromHash, clearOAuthTokensFromUrl, hasOAuthTokensInUrl, clearSavedUrlBeforeLogin} from "../../user-system/src/authUtils";
+import {LoadingSuspense} from "./LoadingSuspense";
+import {
+    clearOAuthTokensFromUrl,
+    clearSavedUrlBeforeLogin,
+    hasOAuthTokensInUrl,
+    parseOAuthTokensFromHash
+} from "../../user-system/src/authUtils";
+import {useTheme} from "@mui/system";
 
 // @ts-ignore
 const FlowVisualizer = lazy(() => import('./FlowView'));
@@ -23,20 +30,21 @@ export default function App() {
     const [userPanelModalOpen, setUserPanelModalOpen] = useAtom(userPanelModalOpenAtom);
     const supabaseClient = useAtomValue(supabaseClientAtom)
     const setupYDoc = useSetAtom(setupYDocAtom);
+    const theme = useTheme();
 
     useEffect(() => {
         if (treeId) {
             setupYDoc()
         }
         setSubscription()
-        
+
         // Check if user accessed /user path directly and open modal
         if (window.location.pathname === '/user') {
             setUserPanelModalOpen(true)
             // Replace the URL without page reload to remove /user from the path
             window.history.replaceState({}, '', window.location.origin + window.location.search)
         }
-        
+
         return () => {
             if (subscription)
                 subscription.unsubscribe()
@@ -55,7 +63,7 @@ export default function App() {
                 expiresIn: tokens?.expires_in,
                 tokenType: tokens?.token_type
             })
-            
+
             if (tokens?.access_token && tokens?.refresh_token) {
                 // Check if token is expired
                 if (tokens.expires_at) {
@@ -71,12 +79,12 @@ export default function App() {
                     }
                     console.log('Token is valid, expires at:', new Date(expiresAt))
                 }
-                
+
                 console.log('Setting session with tokens...')
                 supabaseClient.auth.setSession({
                     access_token: tokens.access_token,
                     refresh_token: tokens.refresh_token
-                }).then(({ data, error }) => {
+                }).then(({data, error}) => {
                     if (error) {
                         console.error('Error setting session from OAuth tokens:', error)
                         console.error('Error details:', {
@@ -122,7 +130,12 @@ export default function App() {
     return (
         <>
 
-            <Box sx={{display: 'flex', flexDirection: 'column', height: '100dvh'}}>
+            <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100dvh',
+                backgroundColor: theme.palette.background.default
+            }}>
                 <CssBaseline/>
                 <Box sx={{
                     position: 'absolute',
@@ -133,14 +146,13 @@ export default function App() {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'stretch',
-                    backgroundColor: 'transparent',
                     zIndex: 1000,
                     pointerEvents: 'none' // Allow clicks to pass through empty areas
                 }}>
-                    <Box sx={{ pointerEvents: 'auto' }}>
+                    <Box sx={{pointerEvents: 'auto'}}>
                         <AppBarLeft setCurrentPage={setCurrentPage} currentPage={currentPage}/>
                     </Box>
-                    <Box sx={{ pointerEvents: 'auto' }}>
+                    <Box sx={{pointerEvents: 'auto'}}>
                         <AppBarRight/>
                     </Box>
                 </Box>
@@ -150,17 +162,16 @@ export default function App() {
                     overflow="auto"
                     p={0}
                     pt={0}
-                    bgcolor="background.default"
                     sx={{overflowX: 'hidden'}}
                 >
 
                     <TheSelectedPage currentPage={currentPage}/>
                 </Box>
             </Box>
-            
+
             {/* Auth Modal */}
             {supabaseClient && <AuthModal/>}
-            
+
             {/* User Panel Modal */}
             <UserPanelModal
                 open={userPanelModalOpen}
@@ -173,7 +184,7 @@ export default function App() {
 
 const TreeViewPage = () => {
     const tree = useAtomValue(treeAtom);
-    if(!tree)
+    if (!tree)
         return null;
     return <Box style={{width: "100vw", height: "100%", flexGrow: 1, overflow: 'auto', boxSizing: "border-box"}}>
         <TreeView/>
@@ -192,11 +203,11 @@ const TheSelectedPage = ({currentPage}) => {
         case 'tree':
             return <TreeViewPage/>;
         case 'linear':
-            return <Suspense fallback={<div>Loading...</div>}>
+            return <Suspense fallback={<LoadingSuspense/>}>
                 <LinearViewPage/>
             </Suspense>
         case 'flow':
-            return <Suspense fallback={<div>Loading...</div>}>
+            return <Suspense fallback={<LoadingSuspense/>}>
                 <FlowVisualizer/>
             </Suspense>
         default:
