@@ -1,5 +1,7 @@
 import {NodeM} from "@forest/schema";
 import {AgentNodeType} from "../AgentNode";
+import {MCPNodeType} from "../MCPNode";
+import {A2ANodeType} from "../A2ANode";
 import {agentSessionState} from "../sessionState";
 import {BaseMessage, NormalMessage, SystemMessage} from "@forest/agent-chat/src/MessageTypes";
 import {fetchChatResponse} from "@forest/agent-chat/src/llm";
@@ -25,12 +27,59 @@ async function getSystemMessage(nodeM: NodeM) {
         for (const {child, nodeType} of resolvedActionableChildren) {
             const actions = nodeType.actions(child);
             
-            // Get description if it's an AgentNodeType
+            // Get context information based on node type
             let childDescription = "";
             if (nodeType instanceof AgentNodeType) {
                 const descriptionText = nodeType.agentDescriptionYText(child).toString().trim();
                 if (descriptionText) {
                     childDescription = `\nAgent Description: ${descriptionText}`;
+                }
+            } else if (nodeType instanceof MCPNodeType) {
+                const connection = nodeType.getMCPConnection(child);
+                if (connection) {
+                    let mcpInfo = `\nMCP Node: ${child.title()}`;
+                    if (connection.connected) {
+                        const serverInfo = connection.serverInfo;
+                        const toolCount = connection.tools?.length || 0;
+                        mcpInfo += `\nStatus: Connected`;
+                        if (serverInfo?.name) {
+                            mcpInfo += `\nServer: ${serverInfo.name}`;
+                            if (serverInfo.version) {
+                                mcpInfo += ` v${serverInfo.version}`;
+                            }
+                        }
+                        mcpInfo += `\nAvailable Tools: ${toolCount}`;
+                    } else {
+                        mcpInfo += `\nStatus: Disconnected`;
+                        if (connection.error) {
+                            mcpInfo += `\nError: ${connection.error}`;
+                        }
+                    }
+                    childDescription = mcpInfo;
+                }
+            } else if (nodeType instanceof A2ANodeType) {
+                const connection = nodeType.getA2AConnection(child);
+                if (connection) {
+                    let a2aInfo = `\nA2A Node: ${child.title()}`;
+                    if (connection.connected && connection.agentCard) {
+                        const agentCard = connection.agentCard;
+                        const skillCount = agentCard.skills?.length || 0;
+                        a2aInfo += `\nStatus: Connected`;
+                        a2aInfo += `\nAgent: ${agentCard.name}`;
+                        if (agentCard.version) {
+                            a2aInfo += ` v${agentCard.version}`;
+                        }
+                        if (agentCard.description) {
+                            a2aInfo += `\nAgent Description: ${agentCard.description}`;
+                        }
+                        a2aInfo += `\nAvailable Skills: ${skillCount}`;
+                    } else {
+                        a2aInfo += `\nStatus: Disconnected`;
+                        if (connection.error) {
+                            a2aInfo += `\nError: ${connection.error}`;
+                        }
+                    }
+                    childDescription = a2aInfo;
                 }
             }
             
@@ -146,7 +195,7 @@ export async function invokeAgent(nodeM: NodeM, messages: BaseMessage[]) {
         agentSessionState.addMessage(nodeM, message)
     }
     while (true) {
-        let messageContent;
+        let messageContent: string | undefined;
         for (let attempt = 0; attempt < 3; attempt++) {
             try {
                 messageContent = await getNextStep(nodeM);
