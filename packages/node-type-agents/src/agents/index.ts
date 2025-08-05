@@ -24,9 +24,19 @@ async function getSystemMessage(nodeM: NodeM) {
         const actionPrompts = [];
         for (const {child, nodeType} of resolvedActionableChildren) {
             const actions = nodeType.actions(child);
+            
+            // Get description if it's an AgentNodeType
+            let childDescription = "";
+            if (nodeType instanceof AgentNodeType) {
+                const descriptionText = nodeType.agentDescriptionYText(child).toString().trim();
+                if (descriptionText) {
+                    childDescription = `\nAgent Description: ${descriptionText}`;
+                }
+            }
+            
             for (const action of actions) {
                 actionPrompts.push(`Title: ${action.label}
-Description: ${action.description}
+Description: ${action.description}${childDescription}
 Parameters: ${JSON.stringify(action.parameter, null, 2)}`);
             }
         }
