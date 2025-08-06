@@ -9,6 +9,7 @@ import {updateChildrenCountAtom} from "../TreeState/childrenCount";
 import {MarkedNodesBar} from './MarkedNodesBar';
 import {DragProvider} from './DragContext';
 import {MiddleContents} from './components/MiddleContents';
+import {Breadcrumb} from './components/Breadcrumb';
 
 
 const TreeViewContent = () => {
@@ -25,6 +26,27 @@ const TreeViewContent = () => {
         return null
     return (
         <>
+            {/* Fixed breadcrumb at top center */}
+            <Box
+                sx={{
+                    position: 'fixed',
+                    top: 10,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    zIndex: 110,
+                    backgroundColor: 'background.paper',
+                    backdropFilter: 'blur(8px)',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    boxShadow: theme => theme.shadows[3],
+                    border: theme => `1px solid ${theme.palette.divider}`,
+                    maxWidth: !mobileMode ? '60vw' : '90vw',
+                    width: 'auto',
+                }}
+            >
+                <Breadcrumb />
+            </Box>
+
             {/* Fixed left column */}
             {!mobileMode && (
                 <div style={{
@@ -59,13 +81,14 @@ const TreeViewContent = () => {
                 width: "100%",
                 margin: "auto",
                 backgroundColor: "transparent",
-                paddingTop: "70px",
+                paddingTop: "100px", // Increased to account for breadcrumb
                 paddingBottom: "10px",
                 paddingLeft: !mobileMode ? "25vw" : "10px", // 300 + 16 gap + 10 padding
                 paddingRight: !mobileMode ? "25vw" : "10px", // 400 + 16 gap + 10 padding
                 boxSizing: "border-box"
             }}>
                 <div>
+        
                     <div>
                         {leaves.filter((n) => n.data["archived"] !== true).map((n) => <MiddleContents node={n}
                                                                                                       key={n.id}/>)}
