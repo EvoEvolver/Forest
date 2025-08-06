@@ -33,7 +33,9 @@ export function ChatComponent({node}: { node: NodeVM }) {
             author: "user",
             role: "user"
         });
+        agentSessionState.stopFlag = false
         await invokeAgent(node.nodeM, [userMsg])
+        agentSessionState.stopFlag = true
     }
 
     return (

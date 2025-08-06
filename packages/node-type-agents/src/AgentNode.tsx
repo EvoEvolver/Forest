@@ -4,7 +4,7 @@ import CollaborativeEditor from "./CodeEditor";
 import {markdown} from "@codemirror/lang-markdown";
 import * as Y from "yjs";
 import {ChatComponent} from "./ChatComponent";
-import {Box, Button, Link, List, ListItem, ListItemText, Stack, Typography} from "@mui/material";
+import {Box, Button, FormControlLabel, Link, List, ListItem, ListItemText, Stack, Switch, Typography} from "@mui/material";
 import {AgentSessionState, agentSessionState} from "./sessionState";
 import {Action, ActionableNodeType} from "./ActionableNodeType";
 import {invokeAgent} from "./agents";
@@ -13,6 +13,7 @@ import {NormalMessage} from "@forest/agent-chat/src/MessageTypes";
 
 const AgentPromptText = "AgentPromptText"
 const AgentDescriptionText = "AgentDescriptionText"
+const TodoMode = "TodoMode"
 
 function AgentFilesComponent() {
     const [files, setFiles] = React.useState(agentSessionState.files);
@@ -60,6 +61,91 @@ function AgentFilesComponent() {
     );
 }
 
+function AgentTool1Component({ node }: { node: NodeVM }) {
+    const [todoMode, setTodoMode] = React.useState(false);
+    
+    React.useEffect(() => {
+        const yMap = node.ydata.get(TodoMode) as Y.Map<boolean>;
+        if (yMap) {
+            setTodoMode(yMap.get('enabled') || false);
+            
+            const observer = () => {
+                setTodoMode(yMap.get('enabled') || false);
+            };
+            
+            yMap.observe(observer);
+            return () => yMap.unobserve(observer);
+        }
+    }, [node.ydata]);
+    
+    const handleTodoModeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const yMap = node.ydata.get(TodoMode) as Y.Map<boolean>;
+        yMap.set('enabled', event.target.checked);
+    };
+
+    return (
+        <Box sx={{width: "100%", height: "100%", display: "flex", flexDirection: "column"}}>
+            <Box sx={{mb: 2}}>
+                <FormControlLabel 
+                    control={
+                        <Switch 
+                            checked={todoMode}
+                            onChange={handleTodoModeChange}
+                        />
+                    }
+                    label="Todo Mode"
+                />
+            </Box>
+            <Box sx={{flex: 1, minHeight: 0, mb: 2}}>
+                <Typography variant="h6" sx={{mb: 1}}>Agent Context</Typography>
+                <Box sx={{height: "calc(100% - 32px)", border: "1px solid #ddd", borderRadius: 1}}>
+                    <CollaborativeEditor yText={node.ydata.get(AgentPromptText)} langExtension={markdown}/>
+                </Box>
+            </Box>
+            <Box sx={{flex: 1, minHeight: 0}}>
+                <Typography variant="h6" sx={{mb: 1}}>Description</Typography>
+                <Box sx={{height: "calc(100% - 32px)", border: "1px solid #ddd", borderRadius: 1}}>
+                    <CollaborativeEditor yText={node.ydata.get(AgentDescriptionText)} langExtension={markdown}/>
+                </Box>
+            </Box>
+        </Box>
+    );
+}
+
+function AgentTool2Component() {
+    const handleStop = () => {
+        agentSessionState.stopFlag = true;
+    };
+
+    const handleReset = () => {
+        agentSessionState.clearState();
+    };
+
+    return (
+        <>
+            <Box sx={{ mb: 2 }}>
+                <Stack direction="row" spacing={1}>
+                    <Button 
+                        variant="contained" 
+                        color="error" 
+                        onClick={handleStop}
+                    >
+                        Stop
+                    </Button>
+                    <Button 
+                        variant="outlined" 
+                        color="warning" 
+                        onClick={handleReset}
+                    >
+                        Reset
+                    </Button>
+                </Stack>
+            </Box>
+            <AgentFilesComponent/>
+        </>
+    );
+}
+
 export class AgentNodeType extends ActionableNodeType {
 
     displayName = "Agent"
@@ -84,24 +170,11 @@ export class AgentNodeType extends ActionableNodeType {
     }
 
     renderTool1(node: NodeVM): React.ReactNode {
-        return <Box sx={{width: "100%", height: "100%", display: "flex", flexDirection: "column"}}>
-            <Box sx={{flex: 1, minHeight: 0, mb: 2}}>
-                <Typography variant="h6" sx={{mb: 1}}>Agent Context</Typography>
-                <Box sx={{height: "calc(100% - 32px)", border: "1px solid #ddd", borderRadius: 1}}>
-                    <CollaborativeEditor yText={node.ydata.get(AgentPromptText)} langExtension={markdown}/>
-                </Box>
-            </Box>
-            <Box sx={{flex: 1, minHeight: 0}}>
-                <Typography variant="h6" sx={{mb: 1}}>Description</Typography>
-                <Box sx={{height: "calc(100% - 32px)", border: "1px solid #ddd", borderRadius: 1}}>
-                    <CollaborativeEditor yText={node.ydata.get(AgentDescriptionText)} langExtension={markdown}/>
-                </Box>
-            </Box>
-        </Box>
+        return <AgentTool1Component node={node} />;
     }
 
     renderTool2(node: NodeVM): React.ReactNode {
-        return <AgentFilesComponent/>;
+        return <AgentTool2Component />;
     }
 
     renderPrompt(node: NodeM): string {
@@ -117,6 +190,10 @@ export class AgentNodeType extends ActionableNodeType {
         if (!ydata.has(AgentDescriptionText)) {
             // @ts-ignore
             ydata.set(AgentDescriptionText, new Y.Text())
+        }
+        if (!ydata.has(TodoMode)) {
+            // @ts-ignore
+            ydata.set(TodoMode, new Y.Map())
         }
     }
 
