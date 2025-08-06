@@ -10,6 +10,7 @@ const typeModules = {
     "A2ANodeType": () => import("@forest/node-type-agents").then(m => new m.A2ANodeType()),
     "CodeInterpreterNodeType": () => import("@forest/node-type-agents").then(m => new m.CodeInterpreterNodeType()),
     "KnowledgeNodeType": () => import("@forest/node-type-agents").then(m => new m.KnowledgeNodeType()),
+    "MongoDataGridNodeType": () => import("@forest/node-type-mongo-datagrid").then(m => new m.MongoDataGridNodeType()),
     "EditorNodeType": async () => new EditorNodeType(),
     "ReaderNodeType": async () => new ReaderNodeType(),
 };

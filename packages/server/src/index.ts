@@ -22,6 +22,7 @@ import {issueRoutes, ReminderService} from '@forest/issue-tracker-server'
 import { createUserRouter } from './routes/userRoutes';
 import { createNodeSnapshotRouter } from './routes/nodeSnapshotRoutes';
 import { metadataRoutes } from './routes/metadataRoutes';
+import { createMongoCollectionRouter } from './routes/mongoCollectionRoutes';
 
 // Import WebSocket handler
 import {WebSocketHandler} from './websocket/websocketHandler';
@@ -79,6 +80,7 @@ function main(): void {
     app.use('/api/a2a-proxy', a2aProxyRouter);
     app.use('/api/images', imageRoutes);
     app.use('/api/metadata', metadataRoutes);
+    app.use('/api/collections', createMongoCollectionRouter());
 
     // Start server
     server.listen(config.port, config.host, async () => {
