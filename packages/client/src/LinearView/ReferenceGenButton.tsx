@@ -10,21 +10,19 @@ import {
     Typography
 } from '@mui/material';
 import {generateCitationsFromHTML} from './generateReferences';
-import {NodeJson, NodeM, NodeVM} from "@forest/schema";
+import {NodeJson, NodeM} from "@forest/schema";
 import {EditorNodeType} from '@forest/node-type-editor/src';
-import {useAtomValue} from "jotai";
 import {v4 as uuidv4} from "uuid";
 
 interface ReferenceGenButtonProps {
     getHtml: () => string;
-    rootNode: NodeVM
+    rootNode: NodeM
 }
 
 export default function ReferenceGenButton({getHtml, rootNode}: ReferenceGenButtonProps) {
     const [open, setOpen] = useState(false);
     const [citations, setCitations] = useState<Array<{ title: string, citation: string }>>([]);
     const [loading, setLoading] = useState(false);
-    const rootChildren = useAtomValue(rootNode.children) as string[];
 
     const handleGenerateCitations = async () => {
         setOpen(true);
@@ -35,8 +33,24 @@ export default function ReferenceGenButton({getHtml, rootNode}: ReferenceGenButt
             const content = getHtml();
             const result = await generateCitationsFromHTML(content);
 
-            console.log('result', result);
-            setCitations(result);
+            // Deduplicate citations based on title and citation content
+            const uniqueCitations = new Map<string, { title: string, citation: string }>();
+
+            for (const item of result) {
+                // Create a key based on normalized title and citation content
+                const normalizedTitle = item.title.trim().toLowerCase();
+                const normalizedCitation = item.citation.replace(/<[^>]*>/g, '').trim().toLowerCase(); // Remove HTML tags
+                const key = `${normalizedTitle}::${normalizedCitation}`;
+
+                // Only add if we haven't seen this exact citation before
+                if (!uniqueCitations.has(key)) {
+                    uniqueCitations.set(key, item);
+                }
+            }
+
+            const deduplicatedResult = Array.from(uniqueCitations.values());
+            console.log('result', deduplicatedResult);
+            setCitations(deduplicatedResult);
         } catch (error) {
             console.error('Error generating citations:', error);
             setCitations([]);
@@ -45,7 +59,7 @@ export default function ReferenceGenButton({getHtml, rootNode}: ReferenceGenButt
         }
     };
 
-    const rootM = rootNode.nodeM;
+    const rootM = rootNode
 
     const addToReferences = async () => {
         try {
@@ -54,7 +68,7 @@ export default function ReferenceGenButton({getHtml, rootNode}: ReferenceGenButt
             // Check if "References" node already exists
             let referenceNodeM = null;
             const lastChildren = treeM.getChildren(rootM).slice(-1)[0];
-            if(lastChildren && lastChildren.title() === "References") {
+            if (lastChildren && lastChildren.title() === "References") {
                 referenceNodeM = lastChildren
             }
 
@@ -76,15 +90,18 @@ export default function ReferenceGenButton({getHtml, rootNode}: ReferenceGenButt
                 editorNodeType.ydataInitialize(referenceNodeM);
             }
 
-            // Generate HTML content for references
-            const citationsHtml = citations.map((item, index) =>
-                `<p><strong>[${index + 1}]</strong> ${item.citation}</p>`
+            // Generate HTML content for references using titles
+            const citationsHtml = citations.map((item) =>
+                `<p><strong>${item.title}</strong>: ${item.citation}</p>`
             ).join('\n');
 
             // Set the content
             const editorNodeType = await treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
-            editorNodeType.setEditorContent(referenceNodeM, citationsHtml);
-
+            try {
+                editorNodeType.setEditorContent(referenceNodeM, citationsHtml);
+            } catch (e) {
+                alert(e)
+            }
             // Close dialog
             setOpen(false);
             setCitations([]);
