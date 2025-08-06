@@ -1,11 +1,11 @@
-import express, { Router } from 'express';
+import express, { Router, Request, Response } from 'express';
 import { MongoEditorService } from '../services/mongoEditorService';
 
 export const createMongoCollectionRouter = (): Router => {
   const router: Router = express.Router();
 
   // Test connection to the configured database
-  router.post('/test-connection', async (req, res) => {
+  router.post('/test-connection', async (req: Request, res: Response) => {
     try {
       const service = MongoEditorService.getInstance();
       const result = await service.testConnection();
@@ -24,7 +24,7 @@ export const createMongoCollectionRouter = (): Router => {
   });
 
   // List collections in the configured database
-  router.get('/', async (req, res) => {
+  router.get('/', async (req: Request, res: Response) => {
     try {
       const service = MongoEditorService.getInstance();
       const result = await service.listCollections();
@@ -43,7 +43,7 @@ export const createMongoCollectionRouter = (): Router => {
   });
 
   // Get collection statistics
-  router.get('/:collection/stats', async (req, res) => {
+  router.get('/:collection/stats', async (req: Request, res: Response) => {
     try {
       const { collection } = req.params;
       
@@ -64,7 +64,7 @@ export const createMongoCollectionRouter = (): Router => {
   });
 
   // Get collection schema
-  router.get('/:collection/schema', async (req, res) => {
+  router.get('/:collection/schema', async (req: Request, res: Response) => {
     try {
       const { collection } = req.params;
       
@@ -85,7 +85,7 @@ export const createMongoCollectionRouter = (): Router => {
   });
 
   // Get documents from a collection
-  router.get('/:collection', async (req, res) => {
+  router.get('/:collection', async (req: Request, res: Response) => {
     try {
       const { collection } = req.params;
       const { page = '1', limit = '25' } = req.query;
@@ -111,7 +111,7 @@ export const createMongoCollectionRouter = (): Router => {
   });
 
   // Update a document
-  router.put('/:collection/:id', async (req, res) => {
+  router.put('/:collection/:id', async (req: Request, res: Response) => {
     try {
       const { collection, id } = req.params;
       const updateData = req.body;
@@ -133,7 +133,7 @@ export const createMongoCollectionRouter = (): Router => {
   });
 
   // Create a new document
-  router.post('/:collection', async (req, res) => {
+  router.post('/:collection', async (req: Request, res: Response) => {
     try {
       const { collection } = req.params;
       const documentData = req.body;
@@ -155,7 +155,7 @@ export const createMongoCollectionRouter = (): Router => {
   });
 
   // Delete a document
-  router.delete('/:collection/:id', async (req, res) => {
+  router.delete('/:collection/:id', async (req: Request, res: Response) => {
     try {
       const { collection, id } = req.params;
       
@@ -176,33 +176,36 @@ export const createMongoCollectionRouter = (): Router => {
   });
 
   // Add a field to all documents in a collection
-  router.post('/:collection/add-field', async (req, res) => {
+  router.post('/:collection/add-field', async (req: Request, res: Response): Promise<void> => {
     try {
       const { collection } = req.params;
       const { fieldName, fieldType, defaultValue } = req.body;
       
       // Validate required parameters
       if (!fieldName) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: 'Field name is required'
         });
+        return;
       }
       
       if (!fieldType) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: 'Field type is required'
         });
+        return;
       }
       
       // Validate field type
       const validTypes = ['string', 'number', 'boolean', 'date', 'object', 'array'];
       if (!validTypes.includes(fieldType)) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: `Invalid field type. Must be one of: ${validTypes.join(', ')}`
         });
+        return;
       }
       
       const service = MongoEditorService.getInstance();
@@ -222,34 +225,37 @@ export const createMongoCollectionRouter = (): Router => {
   });
 
   // Rename a field in all documents in a collection
-  router.put('/:collection/fields/:fieldName', async (req, res) => {
+  router.put('/:collection/fields/:fieldName', async (req: Request, res: Response): Promise<void> => {
     try {
       const { collection, fieldName } = req.params;
       const { newFieldName } = req.body;
       
       // Validate required parameters
       if (!newFieldName) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: 'New field name is required'
         });
+        return;
       }
       
       // Validate field name format (basic MongoDB field name rules)
       const fieldNameRegex = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
       if (!fieldNameRegex.test(newFieldName)) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: 'Field name must start with a letter or underscore and contain only letters, numbers, and underscores'
         });
+        return;
       }
       
       // Don't allow renaming _id field
       if (fieldName === '_id') {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: 'Cannot rename _id field'
         });
+        return;
       }
       
       const service = MongoEditorService.getInstance();
@@ -269,16 +275,17 @@ export const createMongoCollectionRouter = (): Router => {
   });
 
   // Remove a field from all documents in a collection
-  router.delete('/:collection/fields/:fieldName', async (req, res) => {
+  router.delete('/:collection/fields/:fieldName', async (req: Request, res: Response): Promise<void> => {
     try {
       const { collection, fieldName } = req.params;
       
       // Don't allow removing _id field
       if (fieldName === '_id') {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: 'Cannot remove _id field'
         });
+        return;
       }
       
       const service = MongoEditorService.getInstance();
