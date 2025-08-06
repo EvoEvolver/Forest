@@ -8,10 +8,15 @@ export class TreeService {
     constructor(private treeMetadataManager: TreeMetadataManager) {
     }
 
-    createTree(treeJson: TreeJson, userId: string): { treeId: string; rootTitle: string } {
+    createTree(treeJson: TreeJson, userId: string): string {
         const tree: TreeM = createNewTree(treeJson);
         const rootId = treeJson.metadata.rootId;
-        const rootTitle = tree.nodeDict.get(rootId).get("title");
+        let rootTitle
+        if (rootId) {
+            rootTitle = tree.nodeDict.get(rootId).get("title");
+        } else {
+            rootTitle = "Untitled Tree";
+        }
 
         // Update metadata
         tree.ydoc.transact(() => {
@@ -23,7 +28,7 @@ export class TreeService {
         this.treeMetadataManager.createTree(treeId, userId, rootTitle).catch(() => {
         });
 
-        return {treeId, rootTitle};
+        return treeId
     }
 
     duplicateTree(originTreeId: string): string {

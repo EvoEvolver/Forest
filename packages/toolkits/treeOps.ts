@@ -74,11 +74,23 @@ export async function createNewTree(rootNodeTypeName: string, host: string = 'ht
     return await pushTreeData(newTreeJson, host, token)
 }
 
+export async function createEmptyNewTree(host: string = 'http://0.0.0.0:29999',
+                                    token?: string) {
+    const newTreeMetadata: TreeMetadata = {
+        rootId: ""
+    }
+    const newTreeJson: TreeJson = {
+        nodeDict: {
+        },
+        metadata: newTreeMetadata
+    }
+    return await pushTreeData(newTreeJson, host, token)
+}
 
 export async function duplicateTree(treeId: string, sourceHost: string = 'http://0.0.0.0:29999',
                                     targetHost: string = 'http://0.0.0.0:29999', token?: string) {
     const [sourceTree, wsProvider1] = TreeM.treeFromWs(sourceHost.replace("http", "ws"), treeId)
-    const newTreeId = await createNewTree("EditorNodeType", targetHost, token)
+    const newTreeId = await createEmptyNewTree(targetHost, token)
     const [targetTree, wsProvider2] = TreeM.treeFromWs(targetHost.replace("http", "ws"), newTreeId)
 
 

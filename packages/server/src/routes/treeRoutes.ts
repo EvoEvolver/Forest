@@ -11,9 +11,9 @@ export function createTreeRouter(treeService: TreeService): Router {
         console.log(`🌳 Tree creation request from authenticated user: ${req.user?.email}`);
         try {
             const treeJson = req.body.tree as TreeJson;
-            const {treeId, rootTitle} = treeService.createTree(treeJson, req.user!.id);
+            const treeId = treeService.createTree(treeJson, req.user!.id);
 
-            console.log(`✅ Tree '${rootTitle}' created successfully: ${treeId} for user: ${req.user?.email}`);
+            console.log(`✅ Tree created successfully: ${treeId} for user: ${req.user?.email}`);
             res.json({tree_id: treeId});
         } catch (error) {
             console.error(`❌ Error creating tree for user ${req.user?.email}:`, error);
