@@ -67,10 +67,15 @@ export class AgentNodeType extends ActionableNodeType {
     allowAddingChildren = true
     allowEditTitle = true
 
-    allowedChildrenTypes = ["AgentNodeType", "AgentToolNodeType", "CodeInterpreterNodeType", "KnowledgeNodeType", "MongoDataGridNodeType", "A2ANodeType", "MCPNodeType"]
-
-
-
+    allowedChildrenTypes = [
+        "AgentNodeType",
+        "AgentToolNodeType",
+        "CodeInterpreterNodeType",
+        "KnowledgeNodeType",
+        "MongoDataGridNodeType",
+        "A2ANodeType",
+        "MCPNodeType"
+    ]
 
     render(node: NodeVM): React.ReactNode {
         return <>
@@ -100,7 +105,7 @@ export class AgentNodeType extends ActionableNodeType {
     }
 
     renderPrompt(node: NodeM): string {
-        return ""
+        return this.agentDescriptionYText(node).toJSON()
     }
 
     ydataInitialize(node: NodeM) {
@@ -131,7 +136,7 @@ export class AgentNodeType extends ActionableNodeType {
     actions(node: NodeM): Action[] {
         return [{
             label: "Ask agent " + node.title(),
-            description: "Ask the agent a question or give it a command.",
+            description: this.agentDescriptionYText(node).toJSON(),
             parameter: {
                 "query": {
                     "type": "string",
@@ -156,10 +161,6 @@ export class AgentNodeType extends ActionableNodeType {
         })
 
         const agentReply = await invokeAgent(node, [messageToAgent])
-
-        if (agentReply.type === 'tool_response') {
-            return;
-        }
 
         const agentResponseMessage = new AgentResponseMessage({
             author: node.title(),

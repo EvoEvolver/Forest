@@ -20,7 +20,7 @@ export class AgentToolNodeType extends ActionableNodeType {
         }
         const endpoint = apiSpec.endpoints[0];
         const description = endpoint.description || "No description provided.";
-        
+
         const parameters: Record<string, ActionParameter> = {};
         if (endpoint.requestBody && endpoint.requestBody.content['application/json']) {
             const schema = endpoint.requestBody.content['application/json'].schema;
@@ -46,7 +46,7 @@ export class AgentToolNodeType extends ActionableNodeType {
         });
         agentSessionState.addMessage(callerNode, toolCallingMessage);
 
-        const res = this.callApi(node, parameters)
+        const res = await this.callApi(node, parameters)
 
         // Check for URLs starting with https://storage.treer.ai in the response
         const resString = typeof res === 'string' ? res : JSON.stringify(res);
@@ -95,10 +95,8 @@ export class AgentToolNodeType extends ActionableNodeType {
             const observer = () => {
                 const apiSpec = jsonToSpec(yText.toString())
                 setApiSpec(apiSpec)
-                console.log(this.renderPrompt(node.nodeM))
             }
             yText.observe(observer)
-            console.log(this.renderPrompt(node.nodeM))
             return () => {
                 yText.unobserve(observer)
             }
@@ -124,23 +122,7 @@ export class AgentToolNodeType extends ActionableNodeType {
         </>
     }
 
-    renderPrompt(node: NodeM): string {
-        const apiSpec = this.getApiSpec(node);
-        if (!apiSpec || !apiSpec.endpoints || apiSpec.endpoints.length === 0) {
-            return null;
-        }
-        const endpoint = apiSpec.endpoints[0];
-        const title = node.title()
-        const description = endpoint.description || "No description provided.";
-        const apiParameterPrompt = generatePromptFromSchema(endpoint.requestBody.content['application/json'].schema)
-        return `
-Title: ${title}
-Description: ${description}
-Parameters:
-${apiParameterPrompt}`
-    }
-
-    callApi(node: NodeM, requestBody: any) {
+    callApi(node: NodeM, parameters: any) {
         const apiSpec = this.getApiSpec(node);
         if (!apiSpec || !apiSpec.endpoints || apiSpec.endpoints.length === 0) {
             throw new Error("No API endpoints available");
@@ -150,7 +132,7 @@ ${apiParameterPrompt}`
         const method = endpoint.method.toUpperCase();
 
         const proxyRequestBody = {
-            requestBody: requestBody,
+            requestBody: parameters.requestBody,
             method: method,
             serverAddress: url // Replace with your server address,
         }
@@ -170,6 +152,10 @@ ${apiParameterPrompt}`
             // @ts-ignore
             ydata.set(AgentToolOpenApiSpecText, new Y.Text())
         }
+    }
+
+    renderPrompt(node: NodeM): string {
+        return "";
     }
 }
 

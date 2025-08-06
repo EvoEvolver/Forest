@@ -84,14 +84,17 @@ async function getSystemMessage(nodeM: NodeM) {
             }
             
             for (const action of actions) {
-                actionPrompts.push(`Title: ${action.label}
+                actionPrompts.push(`<action>
+Title: ${action.label}
 Description: ${action.description}${childDescription}
-Parameters: ${JSON.stringify(action.parameter, null, 2)}`);
+Parameters: ${JSON.stringify(action.parameter, null, 2)}
+</action>
+`);
             }
         }
 
         actionsSection = `<actions>
-${actionPrompts.join('\n-------\n')}
+${actionPrompts.join('')}
 </actions>
 `;
     }
@@ -101,7 +104,7 @@ ${actionPrompts.join('\n-------\n')}
         formatsSection += `<action_calling>
 {
  "type": "action_calling",
- "action_name": action name in string,
+ "action_title": the exact action title in string,
  "parameters": the parameters to the action,
 }
 </action_calling>
@@ -168,7 +171,7 @@ async function getNextStep(nodeM: NodeM): Promise<string | undefined> {
         }
         return messageContent;
     } else if (parsedResponse.type === "action_calling") {
-        const actionName = parsedResponse.action_name;
+        const actionName = parsedResponse.action_title;
         const parameters = parsedResponse.parameters;
 
         // Find the child node that matches this action
