@@ -98,21 +98,21 @@ export default function ReferenceIndexButton({ nodes }: ReferenceIndexButtonProp
         if (creators.length === 0) {
             const year = date ? new Date(date).getFullYear() : 'n.d.';
             const shortTitle = title.length > 20 ? title.substring(0, 20) + '...' : title;
-            return `(${shortTitle}, ${year})`;
+            return `${shortTitle}, ${year}`;
         }
         
         const year = date ? new Date(date).getFullYear() : 'n.d.';
         
         if (creators.length === 1) {
             const author = creators[0];
-            return `(${author.lastName}, ${year})`;
+            return `${author.lastName}, ${year}`;
         } else if (creators.length === 2) {
             const author1 = creators[0];
             const author2 = creators[1];
-            return `(${author1.lastName} & ${author2.lastName}, ${year})`;
+            return `${author1.lastName} & ${author2.lastName}, ${year}`;
         } else {
             const firstAuthor = creators[0];
-            return `(${firstAuthor.lastName} et al., ${year})`;
+            return `${firstAuthor.lastName} et al., ${year}`;
         }
     };
 
@@ -168,19 +168,19 @@ export default function ReferenceIndexButton({ nodes }: ReferenceIndexButtonProp
                                 if (citationMap.has(identity)) {
                                     // Reuse existing index
                                     const existingIndex = citationMap.get(identity)!.index;
-                                    link.textContent = `[${existingIndex}]`;
+                                    link.textContent = `${existingIndex}`;
                                 } else {
                                     // New citation, assign new index
                                     citationMap.set(identity, { 
                                         index: linkIndex, 
                                         citation: formatAPAInText(citationData) 
                                     });
-                                    link.textContent = `[${linkIndex}]`;
+                                    link.textContent = `${linkIndex}`;
                                     linkIndex++;
                                 }
                             } else {
                                 // Fallback for failed citations
-                                link.textContent = `[${linkIndex}]`;
+                                link.textContent = `${linkIndex}`;
                                 linkIndex++;
                             }
                         } else if (style === 'apa') {
@@ -202,7 +202,7 @@ export default function ReferenceIndexButton({ nodes }: ReferenceIndexButtonProp
                                     linkIndex++; // Still increment for potential mixed usage
                                 }
                             } else {
-                                link.textContent = `(Source, n.d.)`;
+                                link.textContent = `Source, n.d.`;
                             }
                         }
                         hasChanges = true;
