@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Paper } from '@mui/material';
-import { CollectionSelector } from './components/CollectionSelector';
+import { Box, Paper, TextField, Button } from '@mui/material';
 import { MongoDataGridEditor } from './components/MongoDataGridEditor';
 import { NodeType, NodeVM, NodeM } from '@forest/schema';
+import {httpUrl} from "@forest/schema/src/config";
 
 export class MongoDataGridNodeType extends NodeType {
   displayName = "Mongo DataGrid";
@@ -54,18 +54,19 @@ export class MongoDataGridNodeType extends NodeType {
 // Collection selector for tool1
 const CollectionSelectorTool: React.FC<{ node: NodeVM }> = ({ node }) => {
   const [collectionName, setCollectionName] = useState<string>('');
+  const [isCreating, setIsCreating] = useState<boolean>(false);
 
   useEffect(() => {
-    // Get initial collection name from ydata
+    // Get initial collection ID from ydata
     const ydata = node.nodeM.ydata();
     if (ydata) {
-      const initialCollection = ydata.get('collectionName') || '';
-      setCollectionName(initialCollection);
+      const initialCollectionName = ydata.get('collectionName') || '';
+      setCollectionName(initialCollectionName);
 
-      // Listen for changes to collection name
+      // Listen for changes to collection ID
       const observer = () => {
-        const newCollection = ydata.get('collectionName') || '';
-        setCollectionName(newCollection);
+        const newCollectionName = ydata.get('collectionName') || '';
+        setCollectionName(newCollectionName);
       };
 
       ydata.observe(observer);
@@ -76,19 +77,64 @@ const CollectionSelectorTool: React.FC<{ node: NodeVM }> = ({ node }) => {
     }
   }, [node]);
 
-  const handleCollectionChange = (newCollectionName: string) => {
+  const handleCollectionNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newCollectionName = event.target.value;
+    setCollectionName(newCollectionName);
+    
     const ydata = node.nodeM.ydata();
     if (ydata) {
       ydata.set('collectionName', newCollectionName);
     }
   };
 
+  const handleCreateCollection = async () => {
+    setIsCreating(true);
+    try {
+      const response = await fetch(httpUrl+'/api/datanode/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data?.collectionName) {
+          const ydata = node.nodeM.ydata();
+          if (ydata) {
+            ydata.set('collectionName', result.data.collectionName);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to create collection:', error);
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   return (
-    <CollectionSelector
-      node={node}
-      selectedCollection={collectionName}
-      onCollectionChange={handleCollectionChange}
-    />
+    <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <TextField
+        label="Collection Name"
+        value={collectionName}
+        onChange={handleCollectionNameChange}
+        placeholder="Enter collection Name"
+        size="small"
+        fullWidth
+      />
+      
+      {!collectionName && (
+        <Button
+          variant="contained"
+          onClick={handleCreateCollection}
+          disabled={isCreating}
+          size="small"
+        >
+          {isCreating ? 'Creating...' : 'Create New Collection'}
+        </Button>
+      )}
+    </Box>
   );
 };
 

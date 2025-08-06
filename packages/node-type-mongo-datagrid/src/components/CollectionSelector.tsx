@@ -43,7 +43,7 @@ export const CollectionSelector: React.FC<CollectionSelectorProps> = ({
 
   const testConnection = async () => {
     try {
-      const response = await fetch(`${httpUrl}/api/collections/test-connection`, {
+      const response = await fetch(`${httpUrl}/api/datanode/test-connection`, {
         method: 'POST',
       });
       const result: ApiResponse = await response.json();

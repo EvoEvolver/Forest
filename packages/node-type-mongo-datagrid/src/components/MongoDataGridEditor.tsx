@@ -165,7 +165,7 @@ export const MongoDataGridEditor: React.FC<MongoDataGridEditorProps> = ({
                 limit: pageSize.toString()
             });
 
-            const response = await fetch(`${httpUrl}/api/collections/${collectionName}?${params}`);
+            const response = await fetch(`${httpUrl}/api/datanode/${collectionName}?${params}`);
             const result: ApiResponse<PaginatedResult<MongoDocument>> = await response.json();
 
             if (result.success && result.data) {
@@ -183,7 +183,7 @@ export const MongoDataGridEditor: React.FC<MongoDataGridEditorProps> = ({
 
     const loadSchema = async () => {
         try {
-            const response = await fetch(`${httpUrl}/api/collections/${collectionName}/schema`);
+            const response = await fetch(`${httpUrl}/api/datanode/${collectionName}/schema`);
             const result = await response.json();
 
             if (result.success && result.data) {
@@ -266,7 +266,7 @@ export const MongoDataGridEditor: React.FC<MongoDataGridEditorProps> = ({
             // Remove the DataGrid's 'id' field before sending to backend
             const { id, ...documentToUpdate } = newRow;
             
-            const response = await fetch(`${httpUrl}/api/collections/${collectionName}/${newRow._id}`, {
+            const response = await fetch(`${httpUrl}/api/datanode/${collectionName}/${newRow._id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -319,7 +319,7 @@ export const MongoDataGridEditor: React.FC<MongoDataGridEditorProps> = ({
         }
 
         try {
-            const response = await fetch(`${httpUrl}/api/collections/${collectionName}`, {
+            const response = await fetch(`${httpUrl}/api/datanode/${collectionName}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -348,7 +348,7 @@ export const MongoDataGridEditor: React.FC<MongoDataGridEditorProps> = ({
         }
 
         try {
-            const response = await fetch(`${httpUrl}/api/collections/${collectionName}/add-field`, {
+            const response = await fetch(`${httpUrl}/api/datanode/${collectionName}/add-field`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -387,7 +387,7 @@ export const MongoDataGridEditor: React.FC<MongoDataGridEditorProps> = ({
 
         try {
             const deletePromises = rowSelectionModel.map(id =>
-                fetch(`${httpUrl}/api/collections/${collectionName}/${id}`, {
+                fetch(`${httpUrl}/api/datanode/${collectionName}/${id}`, {
                     method: 'DELETE',
                 })
             );
@@ -442,7 +442,7 @@ export const MongoDataGridEditor: React.FC<MongoDataGridEditorProps> = ({
         }
 
         try {
-            const response = await fetch(`${httpUrl}/api/collections/${collectionName}/fields/${oldFieldName}`, {
+            const response = await fetch(`${httpUrl}/api/datanode/${collectionName}/fields/${oldFieldName}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -496,7 +496,7 @@ export const MongoDataGridEditor: React.FC<MongoDataGridEditorProps> = ({
         setRemovingColumn(true);
 
         try {
-            const response = await fetch(`${httpUrl}/api/collections/${collectionName}/fields/${removeColumnField}`, {
+            const response = await fetch(`${httpUrl}/api/datanode/${collectionName}/fields/${removeColumnField}`, {
                 method: 'DELETE',
             });
 
@@ -610,12 +610,7 @@ export const MongoDataGridEditor: React.FC<MongoDataGridEditorProps> = ({
         );
     }
 
-    return (
-        <Box sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="h6" sx={{ mb: 2, flexShrink: 0 }}>
-                Collection: {collectionName}
-            </Typography>
-
+    return <>
             <Box sx={{ height: 500, width: '100%' }}>
                 <DataGrid
                     apiRef={apiRef}
@@ -738,6 +733,5 @@ export const MongoDataGridEditor: React.FC<MongoDataGridEditorProps> = ({
                     </Button>
                 </DialogActions>
             </Dialog>
-        </Box>
-    );
+    </>
 };
