@@ -1,2 +1,2 @@
-export { TreeService } from './treeService';
-export { AIService, aiService } from './aiService'; 
+export {TreeService} from './treeService';
+export {AIService, aiService} from './aiService';

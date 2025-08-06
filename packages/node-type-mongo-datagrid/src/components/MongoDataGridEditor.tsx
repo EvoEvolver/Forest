@@ -1,21 +1,32 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { DataGrid, GridColDef, GridRowsProp, GridRowModel, GridRowModesModel, GridEventListener, GridRowEditStopReasons, useGridApiRef } from '@mui/x-data-grid';
-import { Box, Typography, Alert, Snackbar, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
-import { NodeVM } from "@forest/schema";
-import { httpUrl } from "@forest/schema/src/config";
-import { CustomGridToolbar } from './CustomGridToolbar';
-import { AddRowModal } from './AddRowModal';
-import { AddColumnModal } from './AddColumnModal';
-import { EditableColumnHeader } from './EditableColumnHeader';
-import { CustomColumnMenu } from './CustomColumnMenu';
-import { getFieldTypeFromSchema, isFieldEditable } from '../utils/fieldTypeDetection';
-import { YjsProviderAtom } from "@forest/client/src/TreeState/YjsConnection";
-import { useAtomValue } from 'jotai';
-import { WebsocketProvider } from '@forest/schema/src/y-websocket';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
+import {DataGrid, GridColDef, GridRowModel, GridRowModesModel, GridRowsProp, useGridApiRef} from '@mui/x-data-grid';
+import {
+    Alert,
+    Box,
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Snackbar,
+    Typography
+} from '@mui/material';
+import {NodeVM} from "@forest/schema";
+import {httpUrl} from "@forest/schema/src/config";
+import {CustomGridToolbar} from './CustomGridToolbar';
+import {AddRowModal} from './AddRowModal';
+import {AddColumnModal} from './AddColumnModal';
+import {EditableColumnHeader} from './EditableColumnHeader';
+import {CustomColumnMenu} from './CustomColumnMenu';
+import {getFieldTypeFromSchema, isFieldEditable} from '../utils/fieldTypeDetection';
+import {YjsProviderAtom} from "@forest/client/src/TreeState/YjsConnection";
+import {useAtomValue} from 'jotai';
+import {WebsocketProvider} from '@forest/schema/src/y-websocket';
 import * as Y from 'yjs';
 
 export interface MongoDocument {
     _id: string;
+
     [key: string]: any;
 }
 
@@ -73,7 +84,7 @@ export const MongoDataGridEditor: React.FC<MongoDataGridEditorProps> = ({
     // Collection commit tracking state
     const [lastKnownCommit, setLastKnownCommit] = useState<number>(0);
     const lastKnownCommitRef = useRef<number>(0);
-    
+
     const apiRef = useGridApiRef();
     const yjsProvider = useAtomValue(YjsProviderAtom);
 
@@ -94,12 +105,12 @@ export const MongoDataGridEditor: React.FC<MongoDataGridEditorProps> = ({
             // Create a separate Y.js document connection for collection commits
             // This connects to the same document name that the server-side CollectionCommitManager uses
             const commitsDoc = new Y.Doc();
-            
+
             // Extract the base WebSocket URL (remove any existing document path)
             const baseWsUrl = yjsProvider.url.replace(/\/[^\/]*$/, '');
-            
+
             const commitsProvider = new WebsocketProvider(
-                baseWsUrl, 
+                baseWsUrl,
                 'collection_commits', // This matches CollectionCommitManager.COMMITS_DOC_NAME
                 commitsDoc
             );
@@ -114,7 +125,7 @@ export const MongoDataGridEditor: React.FC<MongoDataGridEditorProps> = ({
                 if (!isSynced) return;
 
                 const commitsMap = commitsDoc.getMap('commits');
-                
+
                 // Initialize current commit number
                 const currentCommit = commitsMap.get(collectionName) || 0;
                 setLastKnownCommit(currentCommit);
@@ -124,16 +135,16 @@ export const MongoDataGridEditor: React.FC<MongoDataGridEditorProps> = ({
                 const observer = (event, transaction) => {
                     // Only observe changes from remote (not local changes)
                     if (transaction.local) return;
-                    
+
                     if (event.target === commitsMap) {
                         // Check if our collection was modified
                         if (event.keys.has(collectionName)) {
                             const newCommit = commitsMap.get(collectionName) || 0;
-                            
+
                             if (newCommit > lastKnownCommitRef.current) {
                                 setLastKnownCommit(newCommit);
                                 lastKnownCommitRef.current = newCommit;
-                                
+
                                 // Refresh the DataGrid to show changes from other editors
                                 console.log("reloading document on commit number update");
                                 loadDocuments();
@@ -151,7 +162,8 @@ export const MongoDataGridEditor: React.FC<MongoDataGridEditorProps> = ({
 
         } catch (error) {
             console.warn('Failed to set up collection commit observer:', error);
-            return () => {}; // Return empty cleanup on error
+            return () => {
+            }; // Return empty cleanup on error
         }
     }, [collectionName, yjsProvider]);
 
@@ -252,11 +264,11 @@ export const MongoDataGridEditor: React.FC<MongoDataGridEditorProps> = ({
         }
 
         // Check if the row has actually changed (excluding the DataGrid's 'id' field)
-        const { id: newId, ...newRowData } = newRow;
-        const { id: oldId, ...oldRowData } = oldRow;
-        
+        const {id: newId, ...newRowData} = newRow;
+        const {id: oldId, ...oldRowData} = oldRow;
+
         const hasChanged = JSON.stringify(newRowData) !== JSON.stringify(oldRowData);
-        
+
         if (!hasChanged) {
             // No changes detected, return the old row without making API call
             return oldRow;
@@ -264,8 +276,8 @@ export const MongoDataGridEditor: React.FC<MongoDataGridEditorProps> = ({
 
         try {
             // Remove the DataGrid's 'id' field before sending to backend
-            const { id, ...documentToUpdate } = newRow;
-            
+            const {id, ...documentToUpdate} = newRow;
+
             const response = await fetch(`${httpUrl}/api/datanode/${collectionName}/${newRow._id}`, {
                 method: 'PUT',
                 headers: {
@@ -287,7 +299,7 @@ export const MongoDataGridEditor: React.FC<MongoDataGridEditorProps> = ({
                 );
 
                 // Return the updated document with the 'id' field for DataGrid
-                return { ...result.data, id: result.data._id };
+                return {...result.data, id: result.data._id};
             } else {
                 showToast(result.error || 'Failed to update document', 'error');
                 return oldRow;
@@ -462,8 +474,8 @@ export const MongoDataGridEditor: React.FC<MongoDataGridEditorProps> = ({
                 setDocuments(prevDocs =>
                     prevDocs.map(doc => {
                         if (doc.hasOwnProperty(oldFieldName)) {
-                            const { [oldFieldName]: value, ...rest } = doc;
-                            return { ...rest, [newFieldName]: value };
+                            const {[oldFieldName]: value, ...rest} = doc;
+                            return {...rest, [newFieldName]: value};
                         }
                         return doc;
                     })
@@ -471,7 +483,7 @@ export const MongoDataGridEditor: React.FC<MongoDataGridEditorProps> = ({
 
                 // Update schema state immediately
                 if (schema && schema[oldFieldName] !== undefined) {
-                    const updatedSchema = { ...schema };
+                    const updatedSchema = {...schema};
                     updatedSchema[newFieldName] = updatedSchema[oldFieldName];
                     delete updatedSchema[oldFieldName];
                     setSchema(updatedSchema);
@@ -604,134 +616,135 @@ export const MongoDataGridEditor: React.FC<MongoDataGridEditorProps> = ({
 
     if (error) {
         return (
-            <Alert severity="error" sx={{ m: 2 }}>
+            <Alert severity="error" sx={{m: 2}}>
                 {error}
             </Alert>
         );
     }
 
     return <>
-            <Box sx={{ height: 500, width: '100%' }}>
-                <DataGrid
-                    apiRef={apiRef}
-                    rows={rows}
-                    columns={columns}
-                    loading={loading}
-                    pageSizeOptions={[10, 25, 50, 100]}
-                    paginationModel={{ page, pageSize }}
-                    onPaginationModelChange={(model) => {
-                        setPage(model.page);
-                        setPageSize(model.pageSize);
-                    }}
-                    paginationMode="server"
-                    rowCount={totalCount}
-                    processRowUpdate={processRowUpdate}
-                    onProcessRowUpdateError={handleProcessRowUpdateError}
-                    rowModesModel={rowModesModel}
-                    onRowModesModelChange={setRowModesModel}
-                    checkboxSelection
-                    rowSelectionModel={rowSelectionModel}
-                    onRowSelectionModelChange={(newSelection) => setRowSelectionModel(newSelection as string[])}
-                    initialState={{
-                        columns: {
-                            columnVisibilityModel: {
-                                _id: false,
-                            },
+        <Box sx={{height: 500, width: '100%'}}>
+            <DataGrid
+                apiRef={apiRef}
+                rows={rows}
+                columns={columns}
+                loading={loading}
+                pageSizeOptions={[10, 25, 50, 100]}
+                paginationModel={{page, pageSize}}
+                onPaginationModelChange={(model) => {
+                    setPage(model.page);
+                    setPageSize(model.pageSize);
+                }}
+                paginationMode="server"
+                rowCount={totalCount}
+                processRowUpdate={processRowUpdate}
+                onProcessRowUpdateError={handleProcessRowUpdateError}
+                rowModesModel={rowModesModel}
+                onRowModesModelChange={setRowModesModel}
+                checkboxSelection
+                rowSelectionModel={rowSelectionModel}
+                onRowSelectionModelChange={(newSelection) => setRowSelectionModel(newSelection as string[])}
+                initialState={{
+                    columns: {
+                        columnVisibilityModel: {
+                            _id: false,
                         },
-                    }}
-                    slots={{
-                        toolbar: CustomGridToolbar,
-                        columnMenu: CustomColumnMenu,
-                    }}
-                    slotProps={{
-                        toolbar: {
-                            onAddRow: () => setAddRowModalOpen(true),
-                            onAddColumn: () => setAddColumnModalOpen(true),
-                            onDeleteRows: handleDeleteRows,
-                            selectedRowCount: rowSelectionModel.length,
-                            readonly: readonly,
-                        } as any,
-                        columnMenu: {
-                            onRenameColumn: handleStartRenameColumn,
-                            onRemoveColumn: handleRemoveColumn,
-                            readonly: readonly,
-                        } as any,
-                    }}
-                    sx={{
-                        height: '100%',
-                        '& .MuiDataGrid-cell': {
-                            fontSize: '0.875rem',
-                            backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                        },
-                        '& .MuiDataGrid-columnHeader': {
-                            fontSize: '0.875rem',
-                            fontWeight: 600
-                        },
-                        '& .MuiDataGrid-cell--editable': {
-                            backgroundColor: 'transparent'
-                        },
-                        '& .MuiDataGrid-footerContainer': {
-                            minHeight: 76, // Increased footer height
-                            padding: '12px 16px',
-                            borderTop: '1px solid rgba(224, 224, 224, 1)',
-                        }
-                    }}
-                />
-            </Box>
-
-            <AddRowModal
-                open={addRowModalOpen}
-                onClose={() => setAddRowModalOpen(false)}
-                onSubmit={handleAddRow}
-                existingDocuments={documents}
-                schema={schema || undefined}
+                    },
+                }}
+                slots={{
+                    toolbar: CustomGridToolbar,
+                    columnMenu: CustomColumnMenu,
+                }}
+                slotProps={{
+                    toolbar: {
+                        onAddRow: () => setAddRowModalOpen(true),
+                        onAddColumn: () => setAddColumnModalOpen(true),
+                        onDeleteRows: handleDeleteRows,
+                        selectedRowCount: rowSelectionModel.length,
+                        readonly: readonly,
+                    } as any,
+                    columnMenu: {
+                        onRenameColumn: handleStartRenameColumn,
+                        onRemoveColumn: handleRemoveColumn,
+                        readonly: readonly,
+                    } as any,
+                }}
+                sx={{
+                    height: '100%',
+                    '& .MuiDataGrid-cell': {
+                        fontSize: '0.875rem',
+                        backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                    },
+                    '& .MuiDataGrid-columnHeader': {
+                        fontSize: '0.875rem',
+                        fontWeight: 600
+                    },
+                    '& .MuiDataGrid-cell--editable': {
+                        backgroundColor: 'transparent'
+                    },
+                    '& .MuiDataGrid-footerContainer': {
+                        minHeight: 76, // Increased footer height
+                        padding: '12px 16px',
+                        borderTop: '1px solid rgba(224, 224, 224, 1)',
+                    }
+                }}
             />
+        </Box>
 
-            <AddColumnModal
-                open={addColumnModalOpen}
-                onClose={() => setAddColumnModalOpen(false)}
-                onSubmit={handleAddColumn}
-                existingFields={existingFields}
-            />
+        <AddRowModal
+            open={addRowModalOpen}
+            onClose={() => setAddRowModalOpen(false)}
+            onSubmit={handleAddRow}
+            existingDocuments={documents}
+            schema={schema || undefined}
+        />
 
-            <Snackbar
-                open={toastOpen}
-                autoHideDuration={4000}
+        <AddColumnModal
+            open={addColumnModalOpen}
+            onClose={() => setAddColumnModalOpen(false)}
+            onSubmit={handleAddColumn}
+            existingFields={existingFields}
+        />
+
+        <Snackbar
+            open={toastOpen}
+            autoHideDuration={4000}
+            onClose={handleToastClose}
+            anchorOrigin={{vertical: 'bottom', horizontal: 'right'}}
+        >
+            <Alert
                 onClose={handleToastClose}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                severity={toastSeverity}
+                variant="filled"
+                sx={{width: '100%'}}
             >
-                <Alert
-                    onClose={handleToastClose}
-                    severity={toastSeverity}
-                    variant="filled"
-                    sx={{ width: '100%' }}
-                >
-                    {toastMessage}
-                </Alert>
-            </Snackbar>
+                {toastMessage}
+            </Alert>
+        </Snackbar>
 
-            {/* Delete Column Confirmation Dialog */}
-            <Dialog open={!!removeColumnField} onClose={cancelRemoveColumn}>
-                <DialogTitle>Remove Column</DialogTitle>
-                <DialogContent>
-                    <Typography>
-                        Are you sure you want to remove the column "{removeColumnField}" from all documents? This action cannot be undone.
-                    </Typography>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={cancelRemoveColumn}>Cancel</Button>
-                    <Button
-                        onClick={confirmRemoveColumn}
-                        color="error"
-                        variant="contained"
-                        disabled={removingColumn}
-                    >
-                        {removingColumn ? 'Removing...' : 'Remove Column'}
-                    </Button>
-                </DialogActions>
-            </Dialog>
+        {/* Delete Column Confirmation Dialog */}
+        <Dialog open={!!removeColumnField} onClose={cancelRemoveColumn}>
+            <DialogTitle>Remove Column</DialogTitle>
+            <DialogContent>
+                <Typography>
+                    Are you sure you want to remove the column "{removeColumnField}" from all documents? This action
+                    cannot be undone.
+                </Typography>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={cancelRemoveColumn}>Cancel</Button>
+                <Button
+                    onClick={confirmRemoveColumn}
+                    color="error"
+                    variant="contained"
+                    disabled={removingColumn}
+                >
+                    {removingColumn ? 'Removing...' : 'Remove Column'}
+                </Button>
+            </DialogActions>
+        </Dialog>
     </>
 };

@@ -9,7 +9,7 @@ export function createNodeSnapshotRouter(): Router {
     router.post('/nodeSnapshot', async (req, res) => {
         try {
             const {treeId, nodeId, authorId, tag, data} = req.body;
-            if (!treeId || !nodeId || authorId===undefined  || tag===undefined || data === undefined) {
+            if (!treeId || !nodeId || authorId === undefined || tag === undefined || data === undefined) {
                 res.status(400).json({error: 'Missing required fields'});
                 return;
             }

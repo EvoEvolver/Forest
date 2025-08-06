@@ -1,1 +1,1 @@
-export { MongoDataGridNodeType } from './MongoDataGridNodeType';
+export {MongoDataGridNodeType} from './MongoDataGridNodeType';

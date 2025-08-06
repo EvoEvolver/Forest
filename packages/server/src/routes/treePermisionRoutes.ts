@@ -55,7 +55,7 @@ export function createTreePermissionRouter() {
         console.log('list permissions for user', userId);
         try {
             const perms = await manager.listPermissionsForUser(userId);
-            console.log("perms",perms);
+            console.log("perms", perms);
             res.json({permissions: perms});
         } catch (err) {
             res.status(500).json({error: 'Failed to list permissions', details: err});

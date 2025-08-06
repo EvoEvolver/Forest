@@ -1,14 +1,13 @@
 import React from 'react';
 import {
+    GridToolbarColumnsButton,
     GridToolbarContainer,
-    GridToolbarExport,
     GridToolbarDensitySelector,
     GridToolbarFilterButton,
-    GridToolbarColumnsButton,
     GridToolbarProps,
 } from '@mui/x-data-grid';
-import { Button, Box } from '@mui/material';
-import { Add as AddIcon, ViewColumn as ViewColumnIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import {Box, Button} from '@mui/material';
+import {Add as AddIcon, Delete as DeleteIcon, ViewColumn as ViewColumnIcon} from '@mui/icons-material';
 
 interface CustomGridToolbarProps extends GridToolbarProps {
     onAddRow?: () => void;
@@ -29,11 +28,11 @@ export const CustomGridToolbar: React.FC<CustomGridToolbarProps> = ({
                                                                     }) => {
     return (
         <GridToolbarContainer>
-            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            <Box sx={{display: 'flex', gap: 1, alignItems: 'center'}}>
                 {!readonly && onAddRow && (
                     <Button
                         size="small"
-                        startIcon={<AddIcon />}
+                        startIcon={<AddIcon/>}
                         onClick={onAddRow}
                         variant="outlined"
                     >
@@ -43,7 +42,7 @@ export const CustomGridToolbar: React.FC<CustomGridToolbarProps> = ({
                 {!readonly && onAddColumn && (
                     <Button
                         size="small"
-                        startIcon={<ViewColumnIcon />}
+                        startIcon={<ViewColumnIcon/>}
                         onClick={onAddColumn}
                         variant="outlined"
                     >
@@ -53,7 +52,7 @@ export const CustomGridToolbar: React.FC<CustomGridToolbarProps> = ({
                 {!readonly && onDeleteRows && selectedRowCount > 0 && (
                     <Button
                         size="small"
-                        startIcon={<DeleteIcon />}
+                        startIcon={<DeleteIcon/>}
                         onClick={onDeleteRows}
                         variant="outlined"
                         color="error"
@@ -62,9 +61,9 @@ export const CustomGridToolbar: React.FC<CustomGridToolbarProps> = ({
                         Delete {selectedRowCount} Row{selectedRowCount > 1 ? 's' : ''}
                     </Button>
                 )}
-                <GridToolbarColumnsButton />
-                <GridToolbarFilterButton />
-                <GridToolbarDensitySelector />
+                <GridToolbarColumnsButton/>
+                <GridToolbarFilterButton/>
+                <GridToolbarDensitySelector/>
                 {/* <GridToolbarExport />  TODO */}
             </Box>
         </GridToolbarContainer>

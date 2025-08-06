@@ -21,12 +21,12 @@ export class TreeVisitManager {
         this.collection = this.db.collection('treeVisits');
     }
 
-    async getVisitedTrees(userId: string): Promise<Array<{treeId: string, lastVisited: Date}>> {
+    async getVisitedTrees(userId: string): Promise<Array<{ treeId: string, lastVisited: Date }>> {
         const visitedTrees = await this.collection
             .find({userId: userId})
             .sort({lastVisited: -1})
             .toArray();
-        
+
         return visitedTrees.map(tree => ({
             treeId: tree.treeId,
             lastVisited: tree.lastVisited
@@ -35,7 +35,7 @@ export class TreeVisitManager {
 
     async recordTreeVisit(userId: string, treeId: string): Promise<void> {
         const now = new Date();
-        
+
         // Try to update if exists
         const result = await this.collection.updateOne(
             {userId: userId, treeId: treeId},

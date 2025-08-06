@@ -1,5 +1,5 @@
-import { getMongoClient } from "../mongoConnection.ts";
-import { Collection, Db } from "mongodb";
+import {getMongoClient} from "../mongoConnection.ts";
+import {Collection, Db} from "mongodb";
 
 export type PermissionType = "owner" | "editor" | "viewer";
 
@@ -27,9 +27,9 @@ export class TreeUserPermissionManager {
      */
     async grantPermission(treeId: string, userId: string, permissionType: PermissionType): Promise<void> {
         await this.collection.updateOne(
-            { treeId, userId },
-            { $set: { permissionType } },
-            { upsert: true }
+            {treeId, userId},
+            {$set: {permissionType}},
+            {upsert: true}
         );
     }
 
@@ -37,14 +37,14 @@ export class TreeUserPermissionManager {
      * Revoke a user's permission for a tree
      */
     async revokePermission(treeId: string, userId: string): Promise<void> {
-        await this.collection.deleteOne({ treeId, userId });
+        await this.collection.deleteOne({treeId, userId});
     }
 
     /**
      * Get a user's permission for a tree
      */
     async getPermission(treeId: string, userId: string): Promise<TreeUserPermission | null> {
-        const perm = await this.collection.findOne({ treeId, userId });
+        const perm = await this.collection.findOne({treeId, userId});
         return perm ? {
             treeId: perm.treeId,
             userId: perm.userId,
@@ -56,7 +56,7 @@ export class TreeUserPermissionManager {
      * List all users and their permissions for a tree
      */
     async listPermissionsForTree(treeId: string): Promise<TreeUserPermission[]> {
-        const perms = await this.collection.find({ treeId }).toArray();
+        const perms = await this.collection.find({treeId}).toArray();
         return perms.map(perm => ({
             treeId: perm.treeId,
             userId: perm.userId,
@@ -68,8 +68,8 @@ export class TreeUserPermissionManager {
      * List all trees a user has access to
      */
     async listPermissionsForUser(userId: string): Promise<TreeUserPermission[]> {
-        const perms = await this.collection.find({ userId }).toArray();
-        console.log("perms",perms);
+        const perms = await this.collection.find({userId}).toArray();
+        console.log("perms", perms);
         return perms.map(perm => ({
             treeId: perm.treeId,
             userId: perm.userId,
@@ -81,7 +81,7 @@ export class TreeUserPermissionManager {
      * Check if a user has a specific permission type for a tree
      */
     async hasPermission(treeId: string, userId: string, permissionType: PermissionType): Promise<boolean> {
-        const perm = await this.collection.findOne({ treeId, userId, permissionType });
+        const perm = await this.collection.findOne({treeId, userId, permissionType});
         return !!perm;
     }
 }

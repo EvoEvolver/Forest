@@ -1,7 +1,7 @@
-import { WebSocketServer } from 'ws';
-import { Doc, Map as YMap } from 'yjs';
-import { getYDoc, setupWSConnection } from '../y-websocket/utils';
-import { TreeMetadataManager } from '../services/treeMetadata';
+import {WebSocketServer} from 'ws';
+import {Doc, Map as YMap} from 'yjs';
+import {getYDoc, setupWSConnection} from '../y-websocket/utils';
+import {TreeMetadataManager} from '../services/treeMetadata';
 
 export class WebSocketHandler {
     private wss: WebSocketServer;
@@ -9,7 +9,7 @@ export class WebSocketHandler {
 
     constructor(treeMetadataManager: TreeMetadataManager) {
         this.treeMetadataManager = treeMetadataManager;
-        this.wss = new WebSocketServer({ noServer: true });
+        this.wss = new WebSocketServer({noServer: true});
         this.setupWebSocketHandlers();
     }
 
@@ -21,18 +21,17 @@ export class WebSocketHandler {
                 conn.close?.();
                 return;
             }
-            
+
             console.log("ws connected:", treeId);
             const garbageCollect = true;
             const doc = getYDoc(treeId, garbageCollect);
-
 
 
             setupWSConnection(conn, req, {
                 doc: doc,
                 gc: garbageCollect
             });
-            
+
             // Check if upgrade needed
             setTimeout(() => {
                 this.checkAndUpgrade(doc, treeId);
@@ -45,7 +44,7 @@ export class WebSocketHandler {
         if (!doc.getMap("metadata").has("version")) {
             doc.getMap("metadata").set("version", "0.0.1");
         }
-        
+
         if (!metadata.has("rootId")) {
             //metadata.set("rootId", treeId);
         } else {
@@ -55,9 +54,11 @@ export class WebSocketHandler {
             if (rootNode) {
                 const title = rootNode.get("title");
                 const nodeCount = nodeDict.size;
-                this.treeMetadataManager.updateLastAccessed(treeId).catch(() => {});
+                this.treeMetadataManager.updateLastAccessed(treeId).catch(() => {
+                });
                 this.treeMetadataManager.updateTreeTitle(treeId, title);
-                this.treeMetadataManager.updateNodeCount(treeId, nodeCount).catch(() => {});
+                this.treeMetadataManager.updateNodeCount(treeId, nodeCount).catch(() => {
+                });
             }
         }
     }

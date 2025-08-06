@@ -11,7 +11,7 @@ export interface WebsiteMetadata {
 export class MetadataService {
     private static readonly REQUEST_TIMEOUT = 10000; // 10 seconds
     private static readonly MAX_CONTENT_LENGTH = 2 * 1024 * 1024; // 2MB
-    
+
     async fetchMetadata(url: string): Promise<WebsiteMetadata> {
         // Validate URL format
         if (!this.isValidUrl(url)) {
@@ -59,7 +59,7 @@ export class MetadataService {
                     throw new Error('Website server error');
                 }
             }
-            
+
             throw new Error(`Failed to fetch website metadata: ${error.message}`);
         }
     }
@@ -139,8 +139,8 @@ export class MetadataService {
         if (iconWithSizes.length > 0) {
             // Look for 32x32 first, then 16x16
             let preferredIcon = iconWithSizes.filter('[sizes*="32x32"]').first().attr('href') ||
-                               iconWithSizes.filter('[sizes*="16x16"]').first().attr('href') ||
-                               iconWithSizes.first().attr('href');
+                iconWithSizes.filter('[sizes*="16x16"]').first().attr('href') ||
+                iconWithSizes.first().attr('href');
             if (preferredIcon) return this.resolveUrl(preferredIcon, baseOrigin);
         }
 

@@ -1,190 +1,190 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Paper, TextField, Button } from '@mui/material';
-import { MongoDataGridEditor } from './components/MongoDataGridEditor';
-import { NodeType, NodeVM, NodeM } from '@forest/schema';
+import React, {useEffect, useState} from 'react';
+import {Box, Button, Paper, TextField} from '@mui/material';
+import {MongoDataGridEditor} from './components/MongoDataGridEditor';
+import {NodeM, NodeType, NodeVM} from '@forest/schema';
 import {httpUrl} from "@forest/schema/src/config";
 
 export class MongoDataGridNodeType extends NodeType {
-  displayName = "Mongo DataGrid";
-  allowReshape = true;
-  allowAddingChildren = false;
-  allowEditTitle = true;
-  allowedChildrenTypes: string[] = [];
+    displayName = "Mongo DataGrid";
+    allowReshape = true;
+    allowAddingChildren = false;
+    allowEditTitle = true;
+    allowedChildrenTypes: string[] = [];
 
-  render(node: NodeVM): React.ReactNode {
-    return <MongoDataGridRenderer node={node} />;
-  }
-
-  renderTool1(node: NodeVM): React.ReactNode {
-    return <CollectionSelectorTool node={node} />;
-  }
-
-  renderTool2(node: NodeVM): React.ReactNode {
-    return null;
-  }
-
-  renderPrompt(node: NodeM): string {
-    const collectionName = this.getCollectionName(node);
-    return `MongoDB DataGrid for collection: ${collectionName || 'No collection selected'}`;
-  }
-
-  ydataInitialize(node: NodeM): void {
-    const ydata = node.ydata();
-    if (ydata && !ydata.has('collectionName')) {
-      ydata.set('collectionName', '');
+    render(node: NodeVM): React.ReactNode {
+        return <MongoDataGridRenderer node={node}/>;
     }
-    if (ydata && !ydata.has('gridConfig')) {
-      ydata.set('gridConfig', {});
-    }
-  }
 
-  private getCollectionName(node: any): string {
-    const ydata = node.nodeM ? node.nodeM.ydata() : node.ydata();
-    return ydata?.get('collectionName') || '';
-  }
-
-  private setCollectionName(node: NodeVM, collectionName: string): void {
-    const ydata = node.nodeM.ydata();
-    if (ydata) {
-      ydata.set('collectionName', collectionName);
+    renderTool1(node: NodeVM): React.ReactNode {
+        return <CollectionSelectorTool node={node}/>;
     }
-  }
+
+    renderTool2(node: NodeVM): React.ReactNode {
+        return null;
+    }
+
+    renderPrompt(node: NodeM): string {
+        const collectionName = this.getCollectionName(node);
+        return `MongoDB DataGrid for collection: ${collectionName || 'No collection selected'}`;
+    }
+
+    ydataInitialize(node: NodeM): void {
+        const ydata = node.ydata();
+        if (ydata && !ydata.has('collectionName')) {
+            ydata.set('collectionName', '');
+        }
+        if (ydata && !ydata.has('gridConfig')) {
+            ydata.set('gridConfig', {});
+        }
+    }
+
+    private getCollectionName(node: any): string {
+        const ydata = node.nodeM ? node.nodeM.ydata() : node.ydata();
+        return ydata?.get('collectionName') || '';
+    }
+
+    private setCollectionName(node: NodeVM, collectionName: string): void {
+        const ydata = node.nodeM.ydata();
+        if (ydata) {
+            ydata.set('collectionName', collectionName);
+        }
+    }
 }
 
 // Collection selector for tool1
-const CollectionSelectorTool: React.FC<{ node: NodeVM }> = ({ node }) => {
-  const [collectionName, setCollectionName] = useState<string>('');
-  const [isCreating, setIsCreating] = useState<boolean>(false);
+const CollectionSelectorTool: React.FC<{ node: NodeVM }> = ({node}) => {
+    const [collectionName, setCollectionName] = useState<string>('');
+    const [isCreating, setIsCreating] = useState<boolean>(false);
 
-  useEffect(() => {
-    // Get initial collection ID from ydata
-    const ydata = node.nodeM.ydata();
-    if (ydata) {
-      const initialCollectionName = ydata.get('collectionName') || '';
-      setCollectionName(initialCollectionName);
+    useEffect(() => {
+        // Get initial collection ID from ydata
+        const ydata = node.nodeM.ydata();
+        if (ydata) {
+            const initialCollectionName = ydata.get('collectionName') || '';
+            setCollectionName(initialCollectionName);
 
-      // Listen for changes to collection ID
-      const observer = () => {
-        const newCollectionName = ydata.get('collectionName') || '';
-        setCollectionName(newCollectionName);
-      };
+            // Listen for changes to collection ID
+            const observer = () => {
+                const newCollectionName = ydata.get('collectionName') || '';
+                setCollectionName(newCollectionName);
+            };
 
-      ydata.observe(observer);
+            ydata.observe(observer);
 
-      return () => {
-        ydata.unobserve(observer);
-      };
-    }
-  }, [node]);
-
-  const handleCollectionNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newCollectionName = event.target.value;
-    setCollectionName(newCollectionName);
-    
-    const ydata = node.nodeM.ydata();
-    if (ydata) {
-      ydata.set('collectionName', newCollectionName);
-    }
-  };
-
-  const handleCreateCollection = async () => {
-    setIsCreating(true);
-    try {
-      const response = await fetch(httpUrl+'/api/datanode/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data?.collectionName) {
-          const ydata = node.nodeM.ydata();
-          if (ydata) {
-            ydata.set('collectionName', result.data.collectionName);
-          }
+            return () => {
+                ydata.unobserve(observer);
+            };
         }
-      }
-    } catch (error) {
-      console.error('Failed to create collection:', error);
-    } finally {
-      setIsCreating(false);
-    }
-  };
+    }, [node]);
 
-  return (
-    <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <TextField
-        label="Collection Name"
-        value={collectionName}
-        onChange={handleCollectionNameChange}
-        placeholder="Enter collection Name"
-        size="small"
-        fullWidth
-      />
-      
-      {!collectionName && (
-        <Button
-          variant="contained"
-          onClick={handleCreateCollection}
-          disabled={isCreating}
-          size="small"
-        >
-          {isCreating ? 'Creating...' : 'Create New Collection'}
-        </Button>
-      )}
-    </Box>
-  );
+    const handleCollectionNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const newCollectionName = event.target.value;
+        setCollectionName(newCollectionName);
+
+        const ydata = node.nodeM.ydata();
+        if (ydata) {
+            ydata.set('collectionName', newCollectionName);
+        }
+    };
+
+    const handleCreateCollection = async () => {
+        setIsCreating(true);
+        try {
+            const response = await fetch(httpUrl + '/api/datanode/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success && result.data?.collectionName) {
+                    const ydata = node.nodeM.ydata();
+                    if (ydata) {
+                        ydata.set('collectionName', result.data.collectionName);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Failed to create collection:', error);
+        } finally {
+            setIsCreating(false);
+        }
+    };
+
+    return (
+        <Box sx={{p: 2, display: 'flex', flexDirection: 'column', gap: 2}}>
+            <TextField
+                label="Collection Name"
+                value={collectionName}
+                onChange={handleCollectionNameChange}
+                placeholder="Enter collection Name"
+                size="small"
+                fullWidth
+            />
+
+            {!collectionName && (
+                <Button
+                    variant="contained"
+                    onClick={handleCreateCollection}
+                    disabled={isCreating}
+                    size="small"
+                >
+                    {isCreating ? 'Creating...' : 'Create New Collection'}
+                </Button>
+            )}
+        </Box>
+    );
 };
 
 // Separate renderer component to handle state and effects
-const MongoDataGridRenderer: React.FC<{ node: NodeVM }> = ({ node }) => {
-  const [collectionName, setCollectionName] = useState<string>('');
+const MongoDataGridRenderer: React.FC<{ node: NodeVM }> = ({node}) => {
+    const [collectionName, setCollectionName] = useState<string>('');
 
-  useEffect(() => {
-    // Get initial collection name from ydata
-    const ydata = node.nodeM.ydata();
-    if (ydata) {
-      const initialCollection = ydata.get('collectionName') || '';
-      setCollectionName(initialCollection);
+    useEffect(() => {
+        // Get initial collection name from ydata
+        const ydata = node.nodeM.ydata();
+        if (ydata) {
+            const initialCollection = ydata.get('collectionName') || '';
+            setCollectionName(initialCollection);
 
-      // Listen for changes to collection name
-      const observer = () => {
-        const newCollection = ydata.get('collectionName') || '';
-        setCollectionName(newCollection);
-      };
+            // Listen for changes to collection name
+            const observer = () => {
+                const newCollection = ydata.get('collectionName') || '';
+                setCollectionName(newCollection);
+            };
 
-      ydata.observe(observer);
+            ydata.observe(observer);
 
-      return () => {
-        ydata.unobserve(observer);
-      };
-    }
-  }, [node]);
+            return () => {
+                ydata.unobserve(observer);
+            };
+        }
+    }, [node]);
 
-  return (
-    <Paper sx={{ p: 2, minHeight: 600, display: 'flex', flexDirection: 'column' }}>
-      {/* Data Grid takes full space */}
-      <Box sx={{ flexGrow: 1, minHeight: 0 }}>
-        {collectionName ? (
-          <MongoDataGridEditor
-            node={node}
-            collectionName={collectionName}
-            readonly={false}
-          />
-        ) : (
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            minHeight: 300,
-            color: 'text.secondary'
-          }}>
-            Please select a collection from the toolbar above
-          </Box>
-        )}
-      </Box>
-    </Paper>
-  );
+    return (
+        <Paper sx={{p: 2, minHeight: 600, display: 'flex', flexDirection: 'column'}}>
+            {/* Data Grid takes full space */}
+            <Box sx={{flexGrow: 1, minHeight: 0}}>
+                {collectionName ? (
+                    <MongoDataGridEditor
+                        node={node}
+                        collectionName={collectionName}
+                        readonly={false}
+                    />
+                ) : (
+                    <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minHeight: 300,
+                        color: 'text.secondary'
+                    }}>
+                        Please select a collection from the toolbar above
+                    </Box>
+                )}
+            </Box>
+        </Paper>
+    );
 };

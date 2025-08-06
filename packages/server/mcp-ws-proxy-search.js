@@ -1,5 +1,5 @@
 const WebSocket = require('ws');
-const { spawn } = require('child_process');
+const {spawn} = require('child_process');
 
 // --- Configuration ---
 // IMPORTANT: You must get an API key from https://serpapi.com/ and place it here.
@@ -13,7 +13,7 @@ if (SERPAPI_API_KEY === '38e879a790ff4cf8d230e3856a5ffcdd76e3c30fca45967e9e8f49e
 
 // The WebSocket server will listen on this port.
 const PORT = 3001;
-const wss = new WebSocket.Server({ port: PORT });
+const wss = new WebSocket.Server({port: PORT});
 
 wss.on('connection', (ws) => {
     console.log('WebSocket client connected. Starting MCP web search server process...');

@@ -1,6 +1,7 @@
-import { MongoClient } from 'mongodb';
+import {MongoClient} from 'mongodb';
 import * as dotenv from "dotenv";
 import path from "path";
+
 dotenv.config({
     path: path.resolve(__dirname, '.env'),
 })

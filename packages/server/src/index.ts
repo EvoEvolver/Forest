@@ -19,10 +19,10 @@ import {createTreeRouter} from './routes/treeRoutes';
 import {createAIRouter} from './routes/aiRoutes';
 import {createVisitRouter} from './routes/visitRoutes';
 import {issueRoutes, ReminderService} from '@forest/issue-tracker-server'
-import { createUserRouter } from './routes/userRoutes';
-import { createNodeSnapshotRouter } from './routes/nodeSnapshotRoutes';
-import { metadataRoutes } from './routes/metadataRoutes';
-import { createMongoCollectionRouter } from './routes/mongoCollectionRoutes';
+import {createUserRouter} from './routes/userRoutes';
+import {createNodeSnapshotRouter} from './routes/nodeSnapshotRoutes';
+import {metadataRoutes} from './routes/metadataRoutes';
+import {createMongoCollectionRouter} from './routes/mongoCollectionRoutes';
 
 // Import WebSocket handler
 import {WebSocketHandler} from './websocket/websocketHandler';
@@ -36,8 +36,8 @@ import {createTreePermissionRouter} from "./routes";
 import apiProxyRouter from "./routes/apiProxyRouter.ts";
 import mcpProxyRouter from "./routes/mcpProxyRouter";
 import a2aProxyRouter from "./routes/a2aProxyRouter";
-import { imageRoutes } from './routes/imageRoutes';
-import { initializeMinioService } from './services/minioService';
+import {imageRoutes} from './routes/imageRoutes';
+import {initializeMinioService} from './services/minioService';
 
 // Initialize services and connections
 setMongoConnection();
@@ -85,13 +85,13 @@ function main(): void {
     // Start server
     server.listen(config.port, config.host, async () => {
         console.log(`Server running at http://${config.host}:${config.port}/`);
-        
+
         // Initialize MinIO service
         await initializeMinioService();
-        
+
         // Start daily reminders cron job
         reminderService.startDailyReminders();
-        
+
         // // Trigger initial reminder check on startup
         // console.log('Triggering initial reminder check...');
         // try {
@@ -106,7 +106,7 @@ function main(): void {
     server.on('upgrade', (request, socket, head) => {
         websocketHandler.handleUpgrade(request, socket, head);
     });
-    
+
     // Graceful shutdown
     process.on('SIGTERM', async () => {
         console.log('SIGTERM received, shutting down gracefully');

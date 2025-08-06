@@ -1,7 +1,7 @@
-import { Router } from 'express';
-import { AuthenticatedRequest, authenticateToken, requireCreateTreePermission } from '../middleware/auth';
-import { TreeService } from '../services/treeService';
-import { TreeJson } from '@forest/schema';
+import {Router} from 'express';
+import {AuthenticatedRequest, authenticateToken, requireCreateTreePermission} from '../middleware/auth';
+import {TreeService} from '../services/treeService';
+import {TreeJson} from '@forest/schema';
 
 export function createTreeRouter(treeService: TreeService): Router {
     const router = Router();
@@ -11,13 +11,13 @@ export function createTreeRouter(treeService: TreeService): Router {
         console.log(`🌳 Tree creation request from authenticated user: ${req.user?.email}`);
         try {
             const treeJson = req.body.tree as TreeJson;
-            const { treeId, rootTitle } = treeService.createTree(treeJson, req.user!.id);
-            
+            const {treeId, rootTitle} = treeService.createTree(treeJson, req.user!.id);
+
             console.log(`✅ Tree '${rootTitle}' created successfully: ${treeId} for user: ${req.user?.email}`);
-            res.json({ tree_id: treeId });
+            res.json({tree_id: treeId});
         } catch (error) {
             console.error(`❌ Error creating tree for user ${req.user?.email}:`, error);
-            res.status(500).json({ error: 'An error occurred while creating the tree.' });
+            res.status(500).json({error: 'An error occurred while creating the tree.'});
         }
     });
 
@@ -26,10 +26,10 @@ export function createTreeRouter(treeService: TreeService): Router {
         try {
             const originTreeId = req.body.origin_tree_id;
             const newTreeId = treeService.duplicateTree(originTreeId);
-            res.json({ new_tree_id: newTreeId });
+            res.json({new_tree_id: newTreeId});
         } catch (error) {
             console.error('Error duplicating tree:', error);
-            res.status(500).json({ error: 'Failed to duplicate tree' });
+            res.status(500).json({error: 'Failed to duplicate tree'});
         }
     });
 
@@ -38,10 +38,10 @@ export function createTreeRouter(treeService: TreeService): Router {
         console.log(`Fetching trees for user: ${req.user?.email}:${req.user?.id}`);
         try {
             const userTrees = await treeService.getUserTrees(req.user!.id);
-            res.json({ trees: userTrees });
+            res.json({trees: userTrees});
         } catch (error) {
             console.error(`Error fetching trees for user ${req.user?.email}:`, error);
-            res.status(500).json({ error: 'Failed to fetch trees' });
+            res.status(500).json({error: 'Failed to fetch trees'});
         }
     });
 
@@ -49,10 +49,10 @@ export function createTreeRouter(treeService: TreeService): Router {
     router.post('/trees/metadata', authenticateToken, async (req: AuthenticatedRequest, res) => {
         console.log(`Fetching metadata for multiple trees for user: ${req.user?.email}`);
         try {
-            const { treeIds } = req.body;
+            const {treeIds} = req.body;
 
             if (!treeIds || !Array.isArray(treeIds)) {
-                res.status(400).json({ error: 'treeIds array is required' });
+                res.status(400).json({error: 'treeIds array is required'});
                 return;
             }
 
@@ -60,7 +60,7 @@ export function createTreeRouter(treeService: TreeService): Router {
             res.json(metadataMap);
         } catch (error) {
             console.error(`Error fetching metadata for multiple trees:`, error);
-            res.status(500).json({ error: 'Failed to fetch tree metadata' });
+            res.status(500).json({error: 'Failed to fetch tree metadata'});
         }
     });
 
@@ -73,7 +73,7 @@ export function createTreeRouter(treeService: TreeService): Router {
             // Check if user has access to this tree
             const metadata = await treeService.getTreeMetadata(treeId);
             if (!metadata) {
-                res.status(404).json({ error: 'Tree not found' });
+                res.status(404).json({error: 'Tree not found'});
                 return;
             }
 
@@ -81,13 +81,13 @@ export function createTreeRouter(treeService: TreeService): Router {
             // You might want to add more sophisticated permission checking
             if (metadata.owner !== req.user!.id) {
                 // Could check if user has visited this tree
-                res.status(403).json({ error: 'Access denied' });
+                res.status(403).json({error: 'Access denied'});
                 return;
             }
 
             // Get the Y.js document and convert to TreeJson
-            const { getYDoc } = require('../y-websocket/utils');
-            const { TreeM } = require('@forest/schema');
+            const {getYDoc} = require('../y-websocket/utils');
+            const {TreeM} = require('@forest/schema');
 
             const ydoc = getYDoc(treeId);
             const treeM = new TreeM(ydoc);
@@ -116,10 +116,10 @@ export function createTreeRouter(treeService: TreeService): Router {
                 };
             });
 
-            res.json({ tree: treeJson });
+            res.json({tree: treeJson});
         } catch (error) {
             console.error(`Error fetching tree ${treeId} for user ${req.user?.email}:`, error);
-            res.status(500).json({ error: 'Failed to fetch tree' });
+            res.status(500).json({error: 'Failed to fetch tree'});
         }
     });
 
@@ -131,19 +131,18 @@ export function createTreeRouter(treeService: TreeService): Router {
         try {
             treeService.deleteTree(treeId, req.user!.id);
             console.log(`Tree ${treeId} deleted successfully for user: ${req.user?.email}`);
-            res.json({ success: true });
+            res.json({success: true});
         } catch (error) {
             console.error(`Error deleting tree ${treeId} for user ${req.user?.email}:`, error);
             if (error instanceof Error && error.message.includes('permission')) {
-                res.status(403).json({ error: error.message });
+                res.status(403).json({error: error.message});
             } else if (error instanceof Error && error.message.includes('not found')) {
-                res.status(404).json({ error: error.message });
+                res.status(404).json({error: error.message});
             } else {
-                res.status(500).json({ error: 'Failed to delete tree' });
+                res.status(500).json({error: 'Failed to delete tree'});
             }
         }
     });
-
 
 
     return router;

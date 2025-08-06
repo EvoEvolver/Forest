@@ -1,11 +1,12 @@
 import crypto from 'crypto';
-import { applyUpdate, Doc, encodeStateAsUpdate } from 'yjs';
-import { getYDoc } from '../y-websocket/utils';
-import { TreeJson, TreeM } from '@forest/schema';
-import { TreeMetadataManager } from './treeMetadata';
+import {applyUpdate, encodeStateAsUpdate} from 'yjs';
+import {getYDoc} from '../y-websocket/utils';
+import {TreeJson, TreeM} from '@forest/schema';
+import {TreeMetadataManager} from './treeMetadata';
 
 export class TreeService {
-    constructor(private treeMetadataManager: TreeMetadataManager) {}
+    constructor(private treeMetadataManager: TreeMetadataManager) {
+    }
 
     createTree(treeJson: TreeJson, userId: string): { treeId: string; rootTitle: string } {
         const tree: TreeM = createNewTree(treeJson);
@@ -19,9 +20,10 @@ export class TreeService {
         });
 
         const treeId = tree.id();
-        this.treeMetadataManager.createTree(treeId, userId, rootTitle).catch(() => {});
+        this.treeMetadataManager.createTree(treeId, userId, rootTitle).catch(() => {
+        });
 
-        return { treeId, rootTitle };
+        return {treeId, rootTitle};
     }
 
     duplicateTree(originTreeId: string): string {
@@ -62,11 +64,11 @@ export class TreeService {
     }
 
     async getMultipleTreeMetadata(treeIds: string[]) {
-        const metadataPromises = treeIds.map(treeId => 
+        const metadataPromises = treeIds.map(treeId =>
             this.treeMetadataManager.getTreeMetadata(treeId)
         );
         const metadataResults = await Promise.all(metadataPromises);
-        
+
         // Create a map of treeId to metadata
         const metadataMap: { [key: string]: any } = {};
         treeIds.forEach((treeId, index) => {
@@ -85,7 +87,7 @@ export class TreeService {
                 lastAccessed: null
             };
         });
-        
+
         return metadataMap;
     }
 }

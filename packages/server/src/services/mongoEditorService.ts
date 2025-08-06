@@ -1,1038 +1,1042 @@
-import { Db, Collection, ObjectId } from 'mongodb';
-import { v4 as uuidv4 } from 'uuid';
-import { getMongoClient } from '../mongoConnection';
-import { CollectionCommitManager } from './collectionCommitManager';
+import {Db, ObjectId} from 'mongodb';
+import {v4 as uuidv4} from 'uuid';
+import {getMongoClient} from '../mongoConnection';
+import {CollectionCommitManager} from './collectionCommitManager';
 
 export interface MongoDocument {
-  _id: ObjectId | string;
-  [key: string]: any;
+    _id: ObjectId | string;
+
+    [key: string]: any;
 }
 
 export interface PaginatedResult<T> {
-  data: T[];
-  total: number;
-  page: number;
-  limit: number;
-  hasNext: boolean;
-  hasPrev: boolean;
+    data: T[];
+    total: number;
+    page: number;
+    limit: number;
+    hasNext: boolean;
+    hasPrev: boolean;
 }
 
 export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
+    success: boolean;
+    data?: T;
+    error?: string;
+    message?: string;
 }
 
 // New interfaces for refactored schema operations
 interface SchemaState {
-  hasJsonSchema: boolean;
-  hasInferredSchema: boolean;
-  currentSchema: Record<string, string>;
-  isEmpty: boolean;
+    hasJsonSchema: boolean;
+    hasInferredSchema: boolean;
+    currentSchema: Record<string, string>;
+    isEmpty: boolean;
 }
 
 interface ValidationResult {
-  success: boolean;
-  error?: string;
+    success: boolean;
+    error?: string;
 }
 
 interface FieldOperationParams {
-  operation: 'add' | 'remove' | 'rename';
-  fieldName?: string;
-  oldFieldName?: string;
-  newFieldName?: string;
-  fieldType?: string;
+    operation: 'add' | 'remove' | 'rename';
+    fieldName?: string;
+    oldFieldName?: string;
+    newFieldName?: string;
+    fieldType?: string;
 }
 
 interface OperationResults {
-  documentResult?: { modifiedCount: number };
-  schemaResult?: { success: boolean; error?: string };
-  operation: string;
+    documentResult?: { modifiedCount: number };
+    schemaResult?: { success: boolean; error?: string };
+    operation: string;
 }
 
 // Use Forest's database name from environment
 const DATABASE_NAME = "datanode"
 
 export class MongoEditorService {
-  private static instance: MongoEditorService;
+    private static instance: MongoEditorService;
 
-  private constructor() {}
-
-  public static getInstance(): MongoEditorService {
-    if (!MongoEditorService.instance) {
-      MongoEditorService.instance = new MongoEditorService();
+    private constructor() {
     }
-    return MongoEditorService.instance;
-  }
 
-  private getDB(): Db {
-    const client = getMongoClient();
-    if (!client) {
-      throw new Error('MongoDB client not initialized. Call setMongoConnection() first.');
+    public static getInstance(): MongoEditorService {
+        if (!MongoEditorService.instance) {
+            MongoEditorService.instance = new MongoEditorService();
+        }
+        return MongoEditorService.instance;
     }
-    return client.db(DATABASE_NAME);
-  }
 
-  async createCollection(): Promise<ApiResponse<{ collectionName: string }>> {
-    try {
-      const db = this.getDB();
-      
-      // Generate a random collection ID
-      let collectionId: string;
-      let attempts = 0;
-      const maxAttempts = 10;
-      
-      do {
-        collectionId = this.generateCollectionId();
-        const existingCollections = await db.listCollections({ name: collectionId }).toArray();
-        
-        if (existingCollections.length === 0) {
-          break;
+    private getDB(): Db {
+        const client = getMongoClient();
+        if (!client) {
+            throw new Error('MongoDB client not initialized. Call setMongoConnection() first.');
         }
-        
-        attempts++;
-        if (attempts >= maxAttempts) {
-          return {
-            success: false,
-            error: 'Failed to generate unique collection ID after multiple attempts'
-          };
-        }
-      } while (attempts < maxAttempts);
-      
-      // Create the collection
-      const collection = await db.createCollection(collectionId);
-      
-      return {
-        success: true,
-        data: { collectionName: collection.collectionName }
-      };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to create collection' 
-      };
+        return client.db(DATABASE_NAME);
     }
-  }
 
-  private generateCollectionId(): string {
-    // Generate a UUID v4
-    return uuidv4();
-  }
+    async createCollection(): Promise<ApiResponse<{ collectionName: string }>> {
+        try {
+            const db = this.getDB();
 
-  async getDocuments(
-    collectionName: string, 
-    page = 1, 
-    limit = 25
-  ): Promise<ApiResponse<PaginatedResult<MongoDocument>>> {
-    try {
-      const collection = this.getDB().collection(collectionName);
-      const skip = (page - 1) * limit;
-      
-      const [documents, total] = await Promise.all([
-        collection.find({}).skip(skip).limit(limit).toArray(),
-        collection.countDocuments({})
-      ]);
+            // Generate a random collection ID
+            let collectionId: string;
+            let attempts = 0;
+            const maxAttempts = 10;
 
-      return {
-        success: true,
-        data: {
-          data: documents,
-          total,
-          page,
-          limit,
-          hasNext: page * limit < total,
-          hasPrev: page > 1
+            do {
+                collectionId = this.generateCollectionId();
+                const existingCollections = await db.listCollections({name: collectionId}).toArray();
+
+                if (existingCollections.length === 0) {
+                    break;
+                }
+
+                attempts++;
+                if (attempts >= maxAttempts) {
+                    return {
+                        success: false,
+                        error: 'Failed to generate unique collection ID after multiple attempts'
+                    };
+                }
+            } while (attempts < maxAttempts);
+
+            // Create the collection
+            const collection = await db.createCollection(collectionId);
+
+            return {
+                success: true,
+                data: {collectionName: collection.collectionName}
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to create collection'
+            };
         }
-      };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to get documents' 
-      };
     }
-  }
 
-  async getCollectionStats(collectionName: string): Promise<ApiResponse<{
-    estimatedCount: number;
-    exactCount?: number;
-    avgDocumentSize?: number;
-    totalSize?: number;
-    indexSizes?: Record<string, number>;
-  }>> {
-    try {
-      const collection = this.getDB().collection(collectionName);
-      
-      // Get collection statistics using MongoDB's stats command
-      const stats = await this.getDB().command({ collStats: collectionName });
-      
-      // Get estimated document count (fast operation)
-      const estimatedCount = await collection.estimatedDocumentCount();
-      
-      return {
-        success: true,
-        data: {
-          estimatedCount,
-          exactCount: stats.count, // From collStats
-          avgDocumentSize: stats.avgObjSize,
-          totalSize: stats.size,
-          indexSizes: stats.indexSizes
+    private generateCollectionId(): string {
+        // Generate a UUID v4
+        return uuidv4();
+    }
+
+    async getDocuments(
+        collectionName: string,
+        page = 1,
+        limit = 25
+    ): Promise<ApiResponse<PaginatedResult<MongoDocument>>> {
+        try {
+            const collection = this.getDB().collection(collectionName);
+            const skip = (page - 1) * limit;
+
+            const [documents, total] = await Promise.all([
+                collection.find({}).skip(skip).limit(limit).toArray(),
+                collection.countDocuments({})
+            ]);
+
+            return {
+                success: true,
+                data: {
+                    data: documents,
+                    total,
+                    page,
+                    limit,
+                    hasNext: page * limit < total,
+                    hasPrev: page > 1
+                }
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to get documents'
+            };
         }
-      };
-    } catch (error) {
-      // If collStats fails, fall back to basic estimation
-      try {
+    }
+
+    async getCollectionStats(collectionName: string): Promise<ApiResponse<{
+        estimatedCount: number;
+        exactCount?: number;
+        avgDocumentSize?: number;
+        totalSize?: number;
+        indexSizes?: Record<string, number>;
+    }>> {
+        try {
+            const collection = this.getDB().collection(collectionName);
+
+            // Get collection statistics using MongoDB's stats command
+            const stats = await this.getDB().command({collStats: collectionName});
+
+            // Get estimated document count (fast operation)
+            const estimatedCount = await collection.estimatedDocumentCount();
+
+            return {
+                success: true,
+                data: {
+                    estimatedCount,
+                    exactCount: stats.count, // From collStats
+                    avgDocumentSize: stats.avgObjSize,
+                    totalSize: stats.size,
+                    indexSizes: stats.indexSizes
+                }
+            };
+        } catch (error) {
+            // If collStats fails, fall back to basic estimation
+            try {
+                const collection = this.getDB().collection(collectionName);
+                const estimatedCount = await collection.estimatedDocumentCount();
+
+                return {
+                    success: true,
+                    data: {
+                        estimatedCount
+                    }
+                };
+            } catch (fallbackError) {
+                return {
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Failed to get collection stats'
+                };
+            }
+        }
+    }
+
+    async getCollectionSchema(collectionName: string): Promise<ApiResponse<{
+        jsonSchema?: any;
+        inferredSchema?: Record<string, string>;
+    }>> {
+        try {
+            const db = this.getDB();
+
+            // First try to get the actual MongoDB schema/validator
+            const collections = await db.listCollections({name: collectionName}).toArray();
+            const collection = collections[0];
+
+            let jsonSchema = null;
+
+            if (collection && 'options' in collection && collection.options) {
+                const validator = collection.options.validator;
+                if (validator && validator.$jsonSchema) {
+                    jsonSchema = validator.$jsonSchema;
+                }
+            }
+
+            // If no schema exists, infer schema from sample documents
+            let inferredSchema: Record<string, string> = {};
+            if (!jsonSchema) {
+                const sampleDocs = await db.collection(collectionName)
+                    .find({})
+                    .limit(100) // Sample first 100 documents
+                    .toArray();
+
+                if (sampleDocs.length > 0) {
+                    const fieldTypes: Record<string, Set<string>> = {};
+
+                    // Analyze field types across sample documents
+                    sampleDocs.forEach(doc => {
+                        Object.entries(doc).forEach(([field, value]) => {
+                            if (!fieldTypes[field]) {
+                                fieldTypes[field] = new Set();
+                            }
+                            fieldTypes[field].add(this.inferFieldType(value));
+                        });
+                    });
+
+                    // Determine most common type for each field
+                    Object.entries(fieldTypes).forEach(([field, types]) => {
+                        const typeArray = Array.from(types).filter(t => t !== 'null');
+                        if (typeArray.length === 1) {
+                            inferredSchema[field] = typeArray[0];
+                        } else if (typeArray.length > 1) {
+                            // If multiple types, prefer in order: string, number, boolean, date, objectId
+                            const priority = ['string', 'number', 'boolean', 'date', 'objectId'];
+                            const priorityType = priority.find(p => typeArray.includes(p));
+                            inferredSchema[field] = priorityType || typeArray[0];
+                        } else {
+                            // All values are null, default to string
+                            inferredSchema[field] = 'string';
+                        }
+                    });
+                }
+            }
+
+            return {
+                success: true,
+                data: {
+                    jsonSchema,
+                    inferredSchema
+                }
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to get collection schema'
+            };
+        }
+    }
+
+    private inferFieldType(value: any): string {
+        if (value === null || value === undefined) {
+            return 'null';
+        }
+
+        // Check for Boolean first (most specific)
+        if (typeof value === 'boolean') {
+            return 'boolean';
+        }
+
+        // Check for Number
+        if (typeof value === 'number' && !isNaN(value)) {
+            return 'number';
+        }
+
+        // Check for Date (instanceof only - no string parsing)
+        if (value instanceof Date) {
+            return 'date';
+        }
+
+        // Check for ObjectId (simplified - only MongoDB ObjectId objects)
+        if (typeof value === 'object' && value.constructor && value.constructor.name === 'ObjectId') {
+            return 'objectId';
+        }
+
+        // Arrays and objects
+        if (Array.isArray(value)) {
+            return 'array';
+        }
+
+        if (typeof value === 'object') {
+            return 'object';
+        }
+
+        // Default to string for all other cases (including string values)
+        return 'string';
+    }
+
+    async updateDocument(
+        collectionName: string,
+        documentId: string,
+        updateData: any
+    ): Promise<ApiResponse<MongoDocument>> {
+        try {
+            const collection = this.getDB().collection(collectionName);
+
+            // Remove _id from updates to avoid conflict
+            const {_id, ...updates} = updateData;
+
+            // Validate document ID
+            if (!ObjectId.isValid(documentId)) {
+                return {success: false, error: 'Invalid document ID'};
+            }
+
+            const result = await collection.updateOne(
+                {_id: new ObjectId(documentId)},
+                {$set: updates}
+            );
+
+            if (result.matchedCount === 0) {
+                return {success: false, error: 'Document not found'};
+            }
+
+            // Get the updated document
+            const updatedDoc = await collection.findOne({_id: new ObjectId(documentId)});
+
+            if (!updatedDoc) {
+                return {success: false, error: 'Failed to retrieve updated document'};
+            }
+
+            // Notify all DataGrid editors of this collection about the change
+            CollectionCommitManager.getInstance().incrementCommit(collectionName);
+
+            return {success: true, data: updatedDoc};
+        } catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to update document'
+            };
+        }
+    }
+
+    async createDocument(
+        collectionName: string,
+        documentData: any
+    ): Promise<ApiResponse<MongoDocument>> {
+        try {
+            // 1. Validation
+            const validation = await this.validateDocumentOperation(collectionName, 'create', {documentData});
+            if (!validation.success) {
+                return {success: false, error: validation.error};
+            }
+
+            // 2. Type conversion based on schema
+            const conversionResult = await this.validateAndConvertDocumentData(collectionName, documentData);
+            if (!conversionResult.success) {
+                return {success: false, error: conversionResult.error};
+            }
+
+            // 3. Execute document creation
+            const collection = this.getDB().collection(collectionName);
+            const result = await collection.insertOne(conversionResult.data);
+
+            if (!result.insertedId) {
+                return this.handleDocumentOperationResult('createDocument', null, 'Failed to create document');
+            }
+
+            // 4. Get the created document
+            const createdDoc = await collection.findOne({_id: result.insertedId});
+
+            if (!createdDoc) {
+                return this.handleDocumentOperationResult('createDocument', null, 'Failed to retrieve created document');
+            }
+
+            // Notify all DataGrid editors of this collection about the change
+            CollectionCommitManager.getInstance().incrementCommit(collectionName);
+
+            return this.handleDocumentOperationResult('createDocument', createdDoc);
+        } catch (error) {
+            return this.handleDocumentOperationResult(
+                'createDocument',
+                null,
+                error instanceof Error ? error.message : 'Failed to create document'
+            );
+        }
+    }
+
+    async deleteDocument(
+        collectionName: string,
+        documentId: string
+    ): Promise<ApiResponse<void>> {
+        try {
+            const collection = this.getDB().collection(collectionName);
+
+            // Validate document ID
+            if (!ObjectId.isValid(documentId)) {
+                return {success: false, error: 'Invalid document ID'};
+            }
+
+            const result = await collection.deleteOne({_id: new ObjectId(documentId)});
+
+            if (result.deletedCount === 0) {
+                return {success: false, error: 'Document not found'};
+            }
+
+            // Notify all DataGrid editors of this collection about the change
+            CollectionCommitManager.getInstance().incrementCommit(collectionName);
+
+            return {success: true, data: undefined};
+        } catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to delete document'
+            };
+        }
+    }
+
+    private async executeAddFieldToDocuments(
+        collectionName: string,
+        fieldName: string,
+        fieldType: string,
+        defaultValue: any
+    ): Promise<{ modifiedCount: number }> {
         const collection = this.getDB().collection(collectionName);
-        const estimatedCount = await collection.estimatedDocumentCount();
-        
-        return {
-          success: true,
-          data: {
-            estimatedCount
-          }
-        };
-      } catch (fallbackError) {
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : 'Failed to get collection stats'
-        };
-      }
-    }
-  }
+        const convertedValue = this.convertFieldValue(defaultValue, fieldType);
 
-  async getCollectionSchema(collectionName: string): Promise<ApiResponse<{
-    jsonSchema?: any;
-    inferredSchema?: Record<string, string>;
-  }>> {
-    try {
-      const db = this.getDB();
-      
-      // First try to get the actual MongoDB schema/validator
-      const collections = await db.listCollections({ name: collectionName }).toArray();
-      const collection = collections[0];
-      
-      let jsonSchema = null;
-      
-      if (collection && 'options' in collection && collection.options) {
-        const validator = collection.options.validator;
-        if (validator && validator.$jsonSchema) {
-          jsonSchema = validator.$jsonSchema;
-        }
-      }
-      
-      // If no schema exists, infer schema from sample documents
-      let inferredSchema: Record<string, string> = {};
-      if (!jsonSchema) {
-        const sampleDocs = await db.collection(collectionName)
-          .find({})
-          .limit(100) // Sample first 100 documents
-          .toArray();
-        
-        if (sampleDocs.length > 0) {
-          const fieldTypes: Record<string, Set<string>> = {};
-          
-          // Analyze field types across sample documents
-          sampleDocs.forEach(doc => {
-            Object.entries(doc).forEach(([field, value]) => {
-              if (!fieldTypes[field]) {
-                fieldTypes[field] = new Set();
-              }
-              fieldTypes[field].add(this.inferFieldType(value));
-            });
-          });
-          
-          // Determine most common type for each field
-          Object.entries(fieldTypes).forEach(([field, types]) => {
-            const typeArray = Array.from(types).filter(t => t !== 'null');
-            if (typeArray.length === 1) {
-              inferredSchema[field] = typeArray[0];
-            } else if (typeArray.length > 1) {
-              // If multiple types, prefer in order: string, number, boolean, date, objectId
-              const priority = ['string', 'number', 'boolean', 'date', 'objectId'];
-              const priorityType = priority.find(p => typeArray.includes(p));
-              inferredSchema[field] = priorityType || typeArray[0];
+        const result = await collection.updateMany(
+            {[fieldName]: {$exists: false}},
+            {$set: {[fieldName]: convertedValue}}
+        );
+
+        return {modifiedCount: result.modifiedCount};
+    }
+
+    private async updateSchemaForAddField(
+        collectionName: string,
+        fieldName: string,
+        fieldType: string
+    ): Promise<{ success: boolean; error?: string }> {
+        try {
+            const schemaState = await this.getSchemaState(collectionName);
+
+            let newSchema: Record<string, string>;
+            if (schemaState.isEmpty) {
+                // Empty collection - create minimal schema
+                newSchema = {_id: 'objectId', [fieldName]: fieldType};
             } else {
-              // All values are null, default to string
-              inferredSchema[field] = 'string';
+                // Add to existing schema
+                newSchema = {...schemaState.currentSchema, [fieldName]: fieldType};
             }
-          });
+
+            const jsonSchema = this.convertInferredSchemaToJsonSchema(newSchema);
+            await this.applyJsonSchemaToCollection(collectionName, jsonSchema);
+
+            return {success: true};
+        } catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Schema update failed'
+            };
         }
-      }
-      
-      return {
-        success: true,
-        data: {
-          jsonSchema,
-          inferredSchema
+    }
+
+    async addField(
+        collectionName: string,
+        fieldName: string,
+        fieldType: 'string' | 'number' | 'boolean' | 'date' | 'object' | 'array',
+        defaultValue: any
+    ): Promise<ApiResponse<{ modifiedCount: number }>> {
+        try {
+            // 1. Validation
+            const validation = await this.validateFieldOperation(collectionName, {
+                operation: 'add',
+                fieldName,
+                fieldType
+            });
+            if (!validation.success) {
+                return {success: false, error: validation.error};
+            }
+
+            // 2. Execute document operation
+            const documentResult = await this.executeAddFieldToDocuments(collectionName, fieldName, fieldType, defaultValue);
+
+            // 3. Execute schema operation
+            const schemaResult = await this.updateSchemaForAddField(collectionName, fieldName, fieldType);
+
+            // 4. Handle results
+            return this.handleOperationResult({
+                documentResult,
+                schemaResult,
+                operation: 'addField'
+            }, collectionName);
+
+        } catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to add field'
+            };
         }
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to get collection schema'
-      };
     }
-  }
 
-  private inferFieldType(value: any): string {
-    if (value === null || value === undefined) {
-      return 'null';
+    private async executeRenameFieldInDocuments(
+        collectionName: string,
+        oldFieldName: string,
+        newFieldName: string
+    ): Promise<{ modifiedCount: number }> {
+        const collection = this.getDB().collection(collectionName);
+        const result = await collection.updateMany(
+            {[oldFieldName]: {$exists: true}},
+            {$rename: {[oldFieldName]: newFieldName}}
+        );
+        return {modifiedCount: result.modifiedCount};
     }
-    
-    // Check for Boolean first (most specific)
-    if (typeof value === 'boolean') {
-      return 'boolean';
-    }
-    
-    // Check for Number
-    if (typeof value === 'number' && !isNaN(value)) {
-      return 'number';
-    }
-    
-    // Check for Date (instanceof only - no string parsing)
-    if (value instanceof Date) {
-      return 'date';
-    }
-    
-    // Check for ObjectId (simplified - only MongoDB ObjectId objects)
-    if (typeof value === 'object' && value.constructor && value.constructor.name === 'ObjectId') {
-      return 'objectId';
-    }
-    
-    // Arrays and objects
-    if (Array.isArray(value)) {
-      return 'array';
-    }
-    
-    if (typeof value === 'object') {
-      return 'object';
-    }
-    
-    // Default to string for all other cases (including string values)
-    return 'string';
-  }
 
-  async updateDocument(
-    collectionName: string, 
-    documentId: string, 
-    updateData: any
-  ): Promise<ApiResponse<MongoDocument>> {
-    try {
-      const collection = this.getDB().collection(collectionName);
-      
-      // Remove _id from updates to avoid conflict
-      const { _id, ...updates } = updateData;
-      
-      // Validate document ID
-      if (!ObjectId.isValid(documentId)) {
-        return { success: false, error: 'Invalid document ID' };
-      }
+    private async updateSchemaForRenameField(
+        collectionName: string,
+        oldFieldName: string,
+        newFieldName: string
+    ): Promise<{ success: boolean; error?: string }> {
+        try {
+            const schemaState = await this.getSchemaState(collectionName);
 
-      const result = await collection.updateOne(
-        { _id: new ObjectId(documentId) },
-        { $set: updates }
-      );
+            if (schemaState.hasJsonSchema && oldFieldName in schemaState.currentSchema) {
+                const fieldType = schemaState.currentSchema[oldFieldName];
+                const updatedSchema = {...schemaState.currentSchema};
+                delete updatedSchema[oldFieldName];
+                updatedSchema[newFieldName] = fieldType;
 
-      if (result.matchedCount === 0) {
-        return { success: false, error: 'Document not found' };
-      }
+                const jsonSchema = this.convertInferredSchemaToJsonSchema(updatedSchema);
+                const success = await this.applyJsonSchemaToCollection(collectionName, jsonSchema);
 
-      // Get the updated document
-      const updatedDoc = await collection.findOne({ _id: new ObjectId(documentId) });
-      
-      if (!updatedDoc) {
-        return { success: false, error: 'Failed to retrieve updated document' };
-      }
+                if (!success) {
+                    console.warn(`Schema update failed for collection ${collectionName}, rename ${oldFieldName} to ${newFieldName}`);
+                }
+            }
 
-      // Notify all DataGrid editors of this collection about the change
-      CollectionCommitManager.getInstance().incrementCommit(collectionName);
-
-      return { success: true, data: updatedDoc };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to update document' 
-      };
-    }
-  }
-
-  async createDocument(
-    collectionName: string, 
-    documentData: any
-  ): Promise<ApiResponse<MongoDocument>> {
-    try {
-      // 1. Validation
-      const validation = await this.validateDocumentOperation(collectionName, 'create', { documentData });
-      if (!validation.success) {
-        return { success: false, error: validation.error };
-      }
-      
-      // 2. Type conversion based on schema
-      const conversionResult = await this.validateAndConvertDocumentData(collectionName, documentData);
-      if (!conversionResult.success) {
-        return { success: false, error: conversionResult.error };
-      }
-      
-      // 3. Execute document creation
-      const collection = this.getDB().collection(collectionName);
-      const result = await collection.insertOne(conversionResult.data);
-      
-      if (!result.insertedId) {
-        return this.handleDocumentOperationResult('createDocument', null, 'Failed to create document');
-      }
-
-      // 4. Get the created document
-      const createdDoc = await collection.findOne({ _id: result.insertedId });
-      
-      if (!createdDoc) {
-        return this.handleDocumentOperationResult('createDocument', null, 'Failed to retrieve created document');
-      }
-
-      // Notify all DataGrid editors of this collection about the change
-      CollectionCommitManager.getInstance().incrementCommit(collectionName);
-
-      return this.handleDocumentOperationResult('createDocument', createdDoc);
-    } catch (error) {
-      return this.handleDocumentOperationResult(
-        'createDocument', 
-        null, 
-        error instanceof Error ? error.message : 'Failed to create document'
-      );
-    }
-  }
-
-  async deleteDocument(
-    collectionName: string, 
-    documentId: string
-  ): Promise<ApiResponse<void>> {
-    try {
-      const collection = this.getDB().collection(collectionName);
-      
-      // Validate document ID
-      if (!ObjectId.isValid(documentId)) {
-        return { success: false, error: 'Invalid document ID' };
-      }
-
-      const result = await collection.deleteOne({ _id: new ObjectId(documentId) });
-      
-      if (result.deletedCount === 0) {
-        return { success: false, error: 'Document not found' };
-      }
-
-      // Notify all DataGrid editors of this collection about the change
-      CollectionCommitManager.getInstance().incrementCommit(collectionName);
-
-      return { success: true, data: undefined };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to delete document' 
-      };
-    }
-  }
-
-  private async executeAddFieldToDocuments(
-    collectionName: string,
-    fieldName: string,
-    fieldType: string,
-    defaultValue: any
-  ): Promise<{ modifiedCount: number }> {
-    const collection = this.getDB().collection(collectionName);
-    const convertedValue = this.convertFieldValue(defaultValue, fieldType);
-    
-    const result = await collection.updateMany(
-      { [fieldName]: { $exists: false } },
-      { $set: { [fieldName]: convertedValue } }
-    );
-    
-    return { modifiedCount: result.modifiedCount };
-  }
-
-  private async updateSchemaForAddField(
-    collectionName: string,
-    fieldName: string,
-    fieldType: string
-  ): Promise<{ success: boolean; error?: string }> {
-    try {
-      const schemaState = await this.getSchemaState(collectionName);
-      
-      let newSchema: Record<string, string>;
-      if (schemaState.isEmpty) {
-        // Empty collection - create minimal schema
-        newSchema = { _id: 'objectId', [fieldName]: fieldType };
-      } else {
-        // Add to existing schema
-        newSchema = { ...schemaState.currentSchema, [fieldName]: fieldType };
-      }
-      
-      const jsonSchema = this.convertInferredSchemaToJsonSchema(newSchema);
-      await this.applyJsonSchemaToCollection(collectionName, jsonSchema);
-      
-      return { success: true };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Schema update failed'
-      };
-    }
-  }
-
-  async addField(
-    collectionName: string,
-    fieldName: string,
-    fieldType: 'string' | 'number' | 'boolean' | 'date' | 'object' | 'array',
-    defaultValue: any
-  ): Promise<ApiResponse<{ modifiedCount: number }>> {
-    try {
-      // 1. Validation
-      const validation = await this.validateFieldOperation(collectionName, {
-        operation: 'add',
-        fieldName,
-        fieldType
-      });
-      if (!validation.success) {
-        return { success: false, error: validation.error };
-      }
-      
-      // 2. Execute document operation
-      const documentResult = await this.executeAddFieldToDocuments(collectionName, fieldName, fieldType, defaultValue);
-      
-      // 3. Execute schema operation
-      const schemaResult = await this.updateSchemaForAddField(collectionName, fieldName, fieldType);
-      
-      // 4. Handle results
-      return this.handleOperationResult({
-        documentResult,
-        schemaResult,
-        operation: 'addField'
-      }, collectionName);
-      
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to add field'
-      };
-    }
-  }
-
-  private async executeRenameFieldInDocuments(
-    collectionName: string, 
-    oldFieldName: string, 
-    newFieldName: string
-  ): Promise<{ modifiedCount: number }> {
-    const collection = this.getDB().collection(collectionName);
-    const result = await collection.updateMany(
-      { [oldFieldName]: { $exists: true } },
-      { $rename: { [oldFieldName]: newFieldName } }
-    );
-    return { modifiedCount: result.modifiedCount };
-  }
-
-  private async updateSchemaForRenameField(
-    collectionName: string, 
-    oldFieldName: string, 
-    newFieldName: string
-  ): Promise<{ success: boolean; error?: string }> {
-    try {
-      const schemaState = await this.getSchemaState(collectionName);
-      
-      if (schemaState.hasJsonSchema && oldFieldName in schemaState.currentSchema) {
-        const fieldType = schemaState.currentSchema[oldFieldName];
-        const updatedSchema = { ...schemaState.currentSchema };
-        delete updatedSchema[oldFieldName];
-        updatedSchema[newFieldName] = fieldType;
-        
-        const jsonSchema = this.convertInferredSchemaToJsonSchema(updatedSchema);
-        const success = await this.applyJsonSchemaToCollection(collectionName, jsonSchema);
-        
-        if (!success) {
-          console.warn(`Schema update failed for collection ${collectionName}, rename ${oldFieldName} to ${newFieldName}`);
+            return {success: true};
+        } catch (error) {
+            console.warn(`Schema update error for collection ${collectionName}:`, error);
+            return {success: true};
         }
-      }
-      
-      return { success: true };
-    } catch (error) {
-      console.warn(`Schema update error for collection ${collectionName}:`, error);
-      return { success: true };
     }
-  }
 
-  async renameField(
-    collectionName: string,
-    oldFieldName: string,
-    newFieldName: string
-  ): Promise<ApiResponse<{ modifiedCount: number }>> {
-    try {
-      // 1. Validation
-      const validation = await this.validateFieldOperation(collectionName, {
-        operation: 'rename',
-        oldFieldName,
-        newFieldName
-      });
-      if (!validation.success) {
-        return { success: false, error: validation.error };
-      }
-      
-      // 2. Execute document operation
-      const documentResult = await this.executeRenameFieldInDocuments(collectionName, oldFieldName, newFieldName);
-      
-      // 3. Execute schema operation
-      const schemaResult = await this.updateSchemaForRenameField(collectionName, oldFieldName, newFieldName);
-      
-      // 4. Handle results
-      return this.handleOperationResult({
-        documentResult,
-        schemaResult,
-        operation: 'renameField'
-      }, collectionName);
-      
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to rename field'
-      };
-    }
-  }
+    async renameField(
+        collectionName: string,
+        oldFieldName: string,
+        newFieldName: string
+    ): Promise<ApiResponse<{ modifiedCount: number }>> {
+        try {
+            // 1. Validation
+            const validation = await this.validateFieldOperation(collectionName, {
+                operation: 'rename',
+                oldFieldName,
+                newFieldName
+            });
+            if (!validation.success) {
+                return {success: false, error: validation.error};
+            }
 
-  private async executeRemoveFieldFromDocuments(
-    collectionName: string, 
-    fieldName: string
-  ): Promise<{ modifiedCount: number }> {
-    const collection = this.getDB().collection(collectionName);
-    const result = await collection.updateMany(
-      { [fieldName]: { $exists: true } },
-      { $unset: { [fieldName]: "" } }
-    );
-    return { modifiedCount: result.modifiedCount };
-  }
+            // 2. Execute document operation
+            const documentResult = await this.executeRenameFieldInDocuments(collectionName, oldFieldName, newFieldName);
 
-  private async updateSchemaForRemoveField(
-    collectionName: string, 
-    fieldName: string
-  ): Promise<{ success: boolean; error?: string }> {
-    try {
-      const schemaState = await this.getSchemaState(collectionName);
-      
-      if (schemaState.hasJsonSchema && fieldName in schemaState.currentSchema) {
-        // Prevent removal of _id field from schema
-        if (fieldName === '_id') {
-          console.warn(`Cannot remove _id field from schema for collection ${collectionName}`);
-          return { success: true };
+            // 3. Execute schema operation
+            const schemaResult = await this.updateSchemaForRenameField(collectionName, oldFieldName, newFieldName);
+
+            // 4. Handle results
+            return this.handleOperationResult({
+                documentResult,
+                schemaResult,
+                operation: 'renameField'
+            }, collectionName);
+
+        } catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to rename field'
+            };
         }
-        
-        const updatedSchema = { ...schemaState.currentSchema };
-        delete updatedSchema[fieldName];
-        
-        const jsonSchema = this.convertInferredSchemaToJsonSchema(updatedSchema);
-        const success = await this.applyJsonSchemaToCollection(collectionName, jsonSchema);
-        
-        if (!success) {
-          console.warn(`Schema update failed for collection ${collectionName}, remove field ${fieldName}`);
+    }
+
+    private async executeRemoveFieldFromDocuments(
+        collectionName: string,
+        fieldName: string
+    ): Promise<{ modifiedCount: number }> {
+        const collection = this.getDB().collection(collectionName);
+        const result = await collection.updateMany(
+            {[fieldName]: {$exists: true}},
+            {$unset: {[fieldName]: ""}}
+        );
+        return {modifiedCount: result.modifiedCount};
+    }
+
+    private async updateSchemaForRemoveField(
+        collectionName: string,
+        fieldName: string
+    ): Promise<{ success: boolean; error?: string }> {
+        try {
+            const schemaState = await this.getSchemaState(collectionName);
+
+            if (schemaState.hasJsonSchema && fieldName in schemaState.currentSchema) {
+                // Prevent removal of _id field from schema
+                if (fieldName === '_id') {
+                    console.warn(`Cannot remove _id field from schema for collection ${collectionName}`);
+                    return {success: true};
+                }
+
+                const updatedSchema = {...schemaState.currentSchema};
+                delete updatedSchema[fieldName];
+
+                const jsonSchema = this.convertInferredSchemaToJsonSchema(updatedSchema);
+                const success = await this.applyJsonSchemaToCollection(collectionName, jsonSchema);
+
+                if (!success) {
+                    console.warn(`Schema update failed for collection ${collectionName}, remove field ${fieldName}`);
+                }
+            }
+
+            return {success: true};
+        } catch (error) {
+            console.warn(`Schema update error for collection ${collectionName}:`, error);
+            return {success: true};
         }
-      }
-      
-      return { success: true };
-    } catch (error) {
-      console.warn(`Schema update error for collection ${collectionName}:`, error);
-      return { success: true };
     }
-  }
 
-  async removeField(
-    collectionName: string,
-    fieldName: string
-  ): Promise<ApiResponse<{ modifiedCount: number }>> {
-    try {
-      // 1. Validation
-      const validation = await this.validateFieldOperation(collectionName, {
-        operation: 'remove',
-        fieldName
-      });
-      if (!validation.success) {
-        return { success: false, error: validation.error };
-      }
-      
-      // 2. Execute document operation
-      const documentResult = await this.executeRemoveFieldFromDocuments(collectionName, fieldName);
-      
-      // 3. Execute schema operation
-      const schemaResult = await this.updateSchemaForRemoveField(collectionName, fieldName);
-      
-      // 4. Handle results
-      return this.handleOperationResult({
-        documentResult,
-        schemaResult,
-        operation: 'removeField'
-      }, collectionName);
-      
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to remove field'
-      };
+    async removeField(
+        collectionName: string,
+        fieldName: string
+    ): Promise<ApiResponse<{ modifiedCount: number }>> {
+        try {
+            // 1. Validation
+            const validation = await this.validateFieldOperation(collectionName, {
+                operation: 'remove',
+                fieldName
+            });
+            if (!validation.success) {
+                return {success: false, error: validation.error};
+            }
+
+            // 2. Execute document operation
+            const documentResult = await this.executeRemoveFieldFromDocuments(collectionName, fieldName);
+
+            // 3. Execute schema operation
+            const schemaResult = await this.updateSchemaForRemoveField(collectionName, fieldName);
+
+            // 4. Handle results
+            return this.handleOperationResult({
+                documentResult,
+                schemaResult,
+                operation: 'removeField'
+            }, collectionName);
+
+        } catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to remove field'
+            };
+        }
     }
-  }
 
 
-  private mapFieldTypeToJsonSchema(fieldType: string): object {
-    switch (fieldType) {
-      case 'string':
-        return { bsonType: "string" };
-      case 'number':
-        return { bsonType: ["int", "long", "double"] };
-      case 'boolean':
-        return { bsonType: "bool" };
-      case 'date':
-        return { bsonType: "date" };
-      case 'objectId':
-        return { bsonType: "objectId" };
-      case 'array':
-        return { bsonType: "array" };
-      case 'object':
-        return { bsonType: "object" };
-      default:
-        return { bsonType: ["string", "null"] }; // Flexible fallback
-    }
-  }
-
-  private convertInferredSchemaToJsonSchema(inferredSchema: Record<string, string>): object {
-    const properties: Record<string, any> = {};
-    const required: string[] = [];
-    
-    // Ensure _id is always present in schema
-    const schemaWithId = { _id: 'objectId', ...inferredSchema };
-    
-    Object.entries(schemaWithId).forEach(([field, type]) => {
-      properties[field] = this.mapFieldTypeToJsonSchema(type);
-      if (field === '_id') required.push(field); // _id always required
-    });
-    
-    const schema: any = {
-      $jsonSchema: {
-        bsonType: "object",
-        properties,
-        additionalProperties: true // Always allow extra fields
-      }
-    };
-    
-    // Only add required array if it's not empty
-    // MongoDB doesn't allow empty required arrays
-    if (required.length > 0) {
-      schema.$jsonSchema.required = required;
-    }
-    
-    return schema;
-  }
-
-  private async applyJsonSchemaToCollection(
-    collectionName: string,
-    jsonSchema: object
-  ): Promise<boolean> {
-    try {
-      const db = this.getDB();
-      await db.command({
-        collMod: collectionName,
-        validator: jsonSchema,
-        validationLevel: "moderate", // Only validate inserts and updates to conforming docs
-        validationAction: "warn" // Log validation errors but don't prevent operations
-      });
-      return true;
-    } catch (error) {
-      console.warn(`Failed to apply JSON Schema to ${DATABASE_NAME}.${collectionName}:`, error);
-      return false; // Non-blocking failure
-    }
-  }
-
-  private extractFieldsFromJsonSchema(jsonSchema: any): Record<string, string> {
-    const fields: Record<string, string> = {};
-    
-    // Handle both wrapped ($jsonSchema) and unwrapped formats
-    let schemaProperties;
-    if (jsonSchema && jsonSchema.$jsonSchema && jsonSchema.$jsonSchema.properties) {
-      schemaProperties = jsonSchema.$jsonSchema.properties;
-    } else if (jsonSchema && jsonSchema.properties) {
-      schemaProperties = jsonSchema.properties;
-    }
-    
-    if (schemaProperties) {
-      Object.entries(schemaProperties).forEach(([field, definition]: [string, any]) => {
-        // Convert back from JSON Schema to our field types
-        if (definition.bsonType) {
-          const bsonType = Array.isArray(definition.bsonType) ? definition.bsonType[0] : definition.bsonType;
-          switch (bsonType) {
+    private mapFieldTypeToJsonSchema(fieldType: string): object {
+        switch (fieldType) {
             case 'string':
-              fields[field] = 'string';
-              break;
-            case 'int':
-            case 'long':
-            case 'double':
-              fields[field] = 'number';
-              break;
-            case 'bool':
-              fields[field] = 'boolean';
-              break;
+                return {bsonType: "string"};
+            case 'number':
+                return {bsonType: ["int", "long", "double"]};
+            case 'boolean':
+                return {bsonType: "bool"};
             case 'date':
-              fields[field] = 'date';
-              break;
+                return {bsonType: "date"};
             case 'objectId':
-              fields[field] = 'objectId';
-              break;
+                return {bsonType: "objectId"};
             case 'array':
-              fields[field] = 'array';
-              break;
+                return {bsonType: "array"};
             case 'object':
-              fields[field] = 'object';
-              break;
+                return {bsonType: "object"};
             default:
-              fields[field] = 'unknown';
-          }
+                return {bsonType: ["string", "null"]}; // Flexible fallback
         }
-      });
     }
-    
-    return fields;
-  }
 
-  async testConnection(): Promise<ApiResponse<{ status: string; database: string }>> {
-    try {
-      // Try to get database stats to test connection
-      const admin = this.getDB().admin();
-      await admin.ping();
-      
-      return { 
-        success: true, 
-        data: { 
-          status: 'connected', 
-          database: DATABASE_NAME 
-        } 
-      };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Connection test failed' 
-      };
-    }
-  }
+    private convertInferredSchemaToJsonSchema(inferredSchema: Record<string, string>): object {
+        const properties: Record<string, any> = {};
+        const required: string[] = [];
 
-  // utility functions for refactored schema operations
+        // Ensure _id is always present in schema
+        const schemaWithId = {_id: 'objectId', ...inferredSchema};
 
-  private async validateDocumentOperation(
-    collectionName: string,
-    operation: 'create' | 'update' | 'delete',
-    params: { documentId?: string; documentData?: any }
-  ): Promise<ValidationResult> {
-    // Common validation for document operations
-    if (operation === 'update' || operation === 'delete') {
-      if (!params.documentId || !ObjectId.isValid(params.documentId)) {
-        return { success: false, error: 'Invalid document ID' };
-      }
-    }
-    
-    if (operation === 'create' || operation === 'update') {
-      if (!params.documentData || typeof params.documentData !== 'object') {
-        return { success: false, error: 'Invalid document data' };
-      }
-    }
-    
-    return { success: true };
-  }
+        Object.entries(schemaWithId).forEach(([field, type]) => {
+            properties[field] = this.mapFieldTypeToJsonSchema(type);
+            if (field === '_id') required.push(field); // _id always required
+        });
 
-  private async validateAndConvertDocumentData(
-    collectionName: string, 
-    documentData: any
-  ): Promise<{ success: boolean; data?: any; error?: string }> {
-    try {
-      const schemaState = await this.getSchemaState(collectionName);
-      
-      if (!schemaState.isEmpty) {
-        const convertedData: any = {};
-        for (const [field, value] of Object.entries(documentData)) {
-          if (field === '_id') {
-            // Skip _id field - let MongoDB handle it
-            continue;
-          }
-          
-          if (field in schemaState.currentSchema) {
-            // Convert based on schema type
-            convertedData[field] = this.convertFieldValue(value, schemaState.currentSchema[field]);
-          } else {
-            // Keep unknown fields as-is (schema allows additional properties)
-            convertedData[field] = value;
-          }
+        const schema: any = {
+            $jsonSchema: {
+                bsonType: "object",
+                properties,
+                additionalProperties: true // Always allow extra fields
+            }
+        };
+
+        // Only add required array if it's not empty
+        // MongoDB doesn't allow empty required arrays
+        if (required.length > 0) {
+            schema.$jsonSchema.required = required;
         }
-        return { success: true, data: convertedData };
-      }
-      
-      // No schema - return data as-is (excluding _id)
-      const { _id, ...dataWithoutId } = documentData;
-      return { success: true, data: dataWithoutId };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to convert document data'
-      };
-    }
-  }
 
-  private handleDocumentOperationResult<T>(
-    operation: string,
-    result: T,
-    error?: string
-  ): ApiResponse<T> {
-    if (error) {
-      console.warn(`${operation} failed:`, error);
-      return { success: false, error };
+        return schema;
     }
-    return { success: true, data: result };
-  }
 
-  private async getSchemaState(collectionName: string): Promise<SchemaState> {
-    const schemaResponse = await this.getCollectionSchema(collectionName);
-    
-    if (!schemaResponse.success || !schemaResponse.data) {
-      return { hasJsonSchema: false, hasInferredSchema: false, currentSchema: {}, isEmpty: true };
+    private async applyJsonSchemaToCollection(
+        collectionName: string,
+        jsonSchema: object
+    ): Promise<boolean> {
+        try {
+            const db = this.getDB();
+            await db.command({
+                collMod: collectionName,
+                validator: jsonSchema,
+                validationLevel: "moderate", // Only validate inserts and updates to conforming docs
+                validationAction: "warn" // Log validation errors but don't prevent operations
+            });
+            return true;
+        } catch (error) {
+            console.warn(`Failed to apply JSON Schema to ${DATABASE_NAME}.${collectionName}:`, error);
+            return false; // Non-blocking failure
+        }
     }
-    
-    if (schemaResponse.data.jsonSchema) {
-      return {
-        hasJsonSchema: true,
-        hasInferredSchema: false,
-        currentSchema: this.extractFieldsFromJsonSchema(schemaResponse.data.jsonSchema),
-        isEmpty: false
-      };
-    }
-    
-    if (schemaResponse.data.inferredSchema) {
-      return {
-        hasJsonSchema: false,
-        hasInferredSchema: true,
-        currentSchema: schemaResponse.data.inferredSchema,
-        isEmpty: false
-      };
-    }
-    
-    return { hasJsonSchema: false, hasInferredSchema: false, currentSchema: {}, isEmpty: true };
-  }
 
-  private async validateFieldOperation(
-    collectionName: string, 
-    params: FieldOperationParams
-  ): Promise<ValidationResult> {
-    // Common field name validation
-    if (params.operation === 'add' || params.operation === 'remove') {
-      if (!params.fieldName || params.fieldName.trim() === '') {
-        return { success: false, error: 'Field name cannot be empty' };
-      }
+    private extractFieldsFromJsonSchema(jsonSchema: any): Record<string, string> {
+        const fields: Record<string, string> = {};
+
+        // Handle both wrapped ($jsonSchema) and unwrapped formats
+        let schemaProperties;
+        if (jsonSchema && jsonSchema.$jsonSchema && jsonSchema.$jsonSchema.properties) {
+            schemaProperties = jsonSchema.$jsonSchema.properties;
+        } else if (jsonSchema && jsonSchema.properties) {
+            schemaProperties = jsonSchema.properties;
+        }
+
+        if (schemaProperties) {
+            Object.entries(schemaProperties).forEach(([field, definition]: [string, any]) => {
+                // Convert back from JSON Schema to our field types
+                if (definition.bsonType) {
+                    const bsonType = Array.isArray(definition.bsonType) ? definition.bsonType[0] : definition.bsonType;
+                    switch (bsonType) {
+                        case 'string':
+                            fields[field] = 'string';
+                            break;
+                        case 'int':
+                        case 'long':
+                        case 'double':
+                            fields[field] = 'number';
+                            break;
+                        case 'bool':
+                            fields[field] = 'boolean';
+                            break;
+                        case 'date':
+                            fields[field] = 'date';
+                            break;
+                        case 'objectId':
+                            fields[field] = 'objectId';
+                            break;
+                        case 'array':
+                            fields[field] = 'array';
+                            break;
+                        case 'object':
+                            fields[field] = 'object';
+                            break;
+                        default:
+                            fields[field] = 'unknown';
+                    }
+                }
+            });
+        }
+
+        return fields;
     }
-    
-    if (params.operation === 'rename') {
-      if (!params.oldFieldName || !params.newFieldName || 
-          params.oldFieldName.trim() === '' || params.newFieldName.trim() === '') {
-        return { success: false, error: 'Field names cannot be empty' };
-      }
-      if (params.oldFieldName === params.newFieldName) {
-        return { success: false, error: 'New field name must be different from current name' };
-      }
+
+    async testConnection(): Promise<ApiResponse<{ status: string; database: string }>> {
+        try {
+            // Try to get database stats to test connection
+            const admin = this.getDB().admin();
+            await admin.ping();
+
+            return {
+                success: true,
+                data: {
+                    status: 'connected',
+                    database: DATABASE_NAME
+                }
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Connection test failed'
+            };
+        }
     }
-    
-    try {
-      // Field existence validation - be more lenient for new collections
-      const schemaState = await this.getSchemaState(collectionName);
-      const collection = this.getDB().collection(collectionName);
-      
-      switch (params.operation) {
-        case 'add':
-          // Only check if field exists if we have a schema or documents
-          if (!schemaState.isEmpty && params.fieldName! in schemaState.currentSchema) {
-            return { success: false, error: 'Field already exists in schema' };
-          }
-          
-          // Check in actual documents (be lenient - allow if collection is empty)
-          try {
-            const sampleDoc = await collection.findOne({});
-            if (sampleDoc && params.fieldName! in sampleDoc) {
-              return { success: false, error: 'Field already exists in documents' };
+
+    // utility functions for refactored schema operations
+
+    private async validateDocumentOperation(
+        collectionName: string,
+        operation: 'create' | 'update' | 'delete',
+        params: { documentId?: string; documentData?: any }
+    ): Promise<ValidationResult> {
+        // Common validation for document operations
+        if (operation === 'update' || operation === 'delete') {
+            if (!params.documentId || !ObjectId.isValid(params.documentId)) {
+                return {success: false, error: 'Invalid document ID'};
             }
-          } catch (docError) {
-            // If we can't check documents, still allow the operation
-            console.warn(`Could not check existing documents for field ${params.fieldName}:`, docError);
-          }
-          break;
-          
-        case 'remove':
-          // Field must exist somewhere to be removed - but be lenient
-          try {
-            const hasInSchema = !schemaState.isEmpty && params.fieldName! in schemaState.currentSchema;
-            const hasInDocs = await collection.findOne({ [params.fieldName!]: { $exists: true } });
-            if (!hasInSchema && !hasInDocs) {
-              return { success: false, error: 'Field does not exist' };
-            }
-          } catch (docError) {
-            // If we can't check, still allow removal
-            console.warn(`Could not verify field existence for ${params.fieldName}:`, docError);
-          }
-          break;
-          
-        case 'rename':
-          // Old field must exist, new field must not exist - but be lenient
-          try {
-            const oldExists = await collection.findOne({ [params.oldFieldName!]: { $exists: true } });
-            if (!oldExists) {
-              return { success: false, error: 'Field to rename does not exist' };
-            }
-            const newExists = await collection.findOne({ [params.newFieldName!]: { $exists: true } });
-            if (newExists) {
-              return { success: false, error: 'A field with the new name already exists' };
-            }
-          } catch (docError) {
-            // If we can't check, still allow rename
-            console.warn(`Could not validate rename operation for ${params.oldFieldName} to ${params.newFieldName}:`, docError);
-          }
-          break;
-      }
-      
-      return { success: true };
-    } catch (error) {
-      // If validation fails, log but don't block the operation
-      console.warn(`Field validation error for ${collectionName}:`, error);
-      return { success: true };
-    }
-  }
+        }
 
-  private convertFieldValue(value: any, fieldType: string): any {
-    if (value === undefined || value === null || value === '') {
-      return null;
-    }
-    
-    switch (fieldType) {
-      case 'number':
-        const num = parseFloat(value);
-        return isNaN(num) ? 0 : num;
-      case 'boolean':
-        return Boolean(value);
-      case 'date':
-        return new Date(value);
-      case 'string':
-      default:
-        return String(value);
-    }
-  }
+        if (operation === 'create' || operation === 'update') {
+            if (!params.documentData || typeof params.documentData !== 'object') {
+                return {success: false, error: 'Invalid document data'};
+            }
+        }
 
-  private handleOperationResult(results: OperationResults, collectionName?: string): ApiResponse<{ modifiedCount: number }> {
-    // Always return success if document operation succeeded
-    // Log schema warnings but don't fail the operation
-    if (results.schemaResult && !results.schemaResult.success) {
-      console.warn(`${results.operation} succeeded but schema update failed:`, results.schemaResult.error);
+        return {success: true};
     }
-    
-    // Notify all DataGrid editors of this collection about the change
-    if (collectionName) {
-      CollectionCommitManager.getInstance().incrementCommit(collectionName);
+
+    private async validateAndConvertDocumentData(
+        collectionName: string,
+        documentData: any
+    ): Promise<{ success: boolean; data?: any; error?: string }> {
+        try {
+            const schemaState = await this.getSchemaState(collectionName);
+
+            if (!schemaState.isEmpty) {
+                const convertedData: any = {};
+                for (const [field, value] of Object.entries(documentData)) {
+                    if (field === '_id') {
+                        // Skip _id field - let MongoDB handle it
+                        continue;
+                    }
+
+                    if (field in schemaState.currentSchema) {
+                        // Convert based on schema type
+                        convertedData[field] = this.convertFieldValue(value, schemaState.currentSchema[field]);
+                    } else {
+                        // Keep unknown fields as-is (schema allows additional properties)
+                        convertedData[field] = value;
+                    }
+                }
+                return {success: true, data: convertedData};
+            }
+
+            // No schema - return data as-is (excluding _id)
+            const {_id, ...dataWithoutId} = documentData;
+            return {success: true, data: dataWithoutId};
+        } catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to convert document data'
+            };
+        }
     }
-    
-    return {
-      success: true,
-      data: { modifiedCount: results.documentResult?.modifiedCount || 0 }
-    };
-  }
+
+    private handleDocumentOperationResult<T>(
+        operation: string,
+        result: T,
+        error?: string
+    ): ApiResponse<T> {
+        if (error) {
+            console.warn(`${operation} failed:`, error);
+            return {success: false, error};
+        }
+        return {success: true, data: result};
+    }
+
+    private async getSchemaState(collectionName: string): Promise<SchemaState> {
+        const schemaResponse = await this.getCollectionSchema(collectionName);
+
+        if (!schemaResponse.success || !schemaResponse.data) {
+            return {hasJsonSchema: false, hasInferredSchema: false, currentSchema: {}, isEmpty: true};
+        }
+
+        if (schemaResponse.data.jsonSchema) {
+            return {
+                hasJsonSchema: true,
+                hasInferredSchema: false,
+                currentSchema: this.extractFieldsFromJsonSchema(schemaResponse.data.jsonSchema),
+                isEmpty: false
+            };
+        }
+
+        if (schemaResponse.data.inferredSchema) {
+            return {
+                hasJsonSchema: false,
+                hasInferredSchema: true,
+                currentSchema: schemaResponse.data.inferredSchema,
+                isEmpty: false
+            };
+        }
+
+        return {hasJsonSchema: false, hasInferredSchema: false, currentSchema: {}, isEmpty: true};
+    }
+
+    private async validateFieldOperation(
+        collectionName: string,
+        params: FieldOperationParams
+    ): Promise<ValidationResult> {
+        // Common field name validation
+        if (params.operation === 'add' || params.operation === 'remove') {
+            if (!params.fieldName || params.fieldName.trim() === '') {
+                return {success: false, error: 'Field name cannot be empty'};
+            }
+        }
+
+        if (params.operation === 'rename') {
+            if (!params.oldFieldName || !params.newFieldName ||
+                params.oldFieldName.trim() === '' || params.newFieldName.trim() === '') {
+                return {success: false, error: 'Field names cannot be empty'};
+            }
+            if (params.oldFieldName === params.newFieldName) {
+                return {success: false, error: 'New field name must be different from current name'};
+            }
+        }
+
+        try {
+            // Field existence validation - be more lenient for new collections
+            const schemaState = await this.getSchemaState(collectionName);
+            const collection = this.getDB().collection(collectionName);
+
+            switch (params.operation) {
+                case 'add':
+                    // Only check if field exists if we have a schema or documents
+                    if (!schemaState.isEmpty && params.fieldName! in schemaState.currentSchema) {
+                        return {success: false, error: 'Field already exists in schema'};
+                    }
+
+                    // Check in actual documents (be lenient - allow if collection is empty)
+                    try {
+                        const sampleDoc = await collection.findOne({});
+                        if (sampleDoc && params.fieldName! in sampleDoc) {
+                            return {success: false, error: 'Field already exists in documents'};
+                        }
+                    } catch (docError) {
+                        // If we can't check documents, still allow the operation
+                        console.warn(`Could not check existing documents for field ${params.fieldName}:`, docError);
+                    }
+                    break;
+
+                case 'remove':
+                    // Field must exist somewhere to be removed - but be lenient
+                    try {
+                        const hasInSchema = !schemaState.isEmpty && params.fieldName! in schemaState.currentSchema;
+                        const hasInDocs = await collection.findOne({[params.fieldName!]: {$exists: true}});
+                        if (!hasInSchema && !hasInDocs) {
+                            return {success: false, error: 'Field does not exist'};
+                        }
+                    } catch (docError) {
+                        // If we can't check, still allow removal
+                        console.warn(`Could not verify field existence for ${params.fieldName}:`, docError);
+                    }
+                    break;
+
+                case 'rename':
+                    // Old field must exist, new field must not exist - but be lenient
+                    try {
+                        const oldExists = await collection.findOne({[params.oldFieldName!]: {$exists: true}});
+                        if (!oldExists) {
+                            return {success: false, error: 'Field to rename does not exist'};
+                        }
+                        const newExists = await collection.findOne({[params.newFieldName!]: {$exists: true}});
+                        if (newExists) {
+                            return {success: false, error: 'A field with the new name already exists'};
+                        }
+                    } catch (docError) {
+                        // If we can't check, still allow rename
+                        console.warn(`Could not validate rename operation for ${params.oldFieldName} to ${params.newFieldName}:`, docError);
+                    }
+                    break;
+            }
+
+            return {success: true};
+        } catch (error) {
+            // If validation fails, log but don't block the operation
+            console.warn(`Field validation error for ${collectionName}:`, error);
+            return {success: true};
+        }
+    }
+
+    private convertFieldValue(value: any, fieldType: string): any {
+        if (value === undefined || value === null || value === '') {
+            return null;
+        }
+
+        switch (fieldType) {
+            case 'number':
+                const num = parseFloat(value);
+                return isNaN(num) ? 0 : num;
+            case 'boolean':
+                return Boolean(value);
+            case 'date':
+                return new Date(value);
+            case 'string':
+            default:
+                return String(value);
+        }
+    }
+
+    private handleOperationResult(results: OperationResults, collectionName?: string): ApiResponse<{
+        modifiedCount: number
+    }> {
+        // Always return success if document operation succeeded
+        // Log schema warnings but don't fail the operation
+        if (results.schemaResult && !results.schemaResult.success) {
+            console.warn(`${results.operation} succeeded but schema update failed:`, results.schemaResult.error);
+        }
+
+        // Notify all DataGrid editors of this collection about the change
+        if (collectionName) {
+            CollectionCommitManager.getInstance().incrementCommit(collectionName);
+        }
+
+        return {
+            success: true,
+            data: {modifiedCount: results.documentResult?.modifiedCount || 0}
+        };
+    }
 }

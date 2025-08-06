@@ -1,6 +1,6 @@
-import { Router, Request, Response } from 'express';
-import { A2AClient } from '@a2a-js/sdk/client';
-import { AgentCard, MessageSendParams, Message } from '@a2a-js/sdk';
+import {Request, Response, Router} from 'express';
+import {A2AClient} from '@a2a-js/sdk/client';
+import {AgentCard, Message, MessageSendParams} from '@a2a-js/sdk';
 
 const a2aProxyRouter = Router();
 
@@ -20,18 +20,18 @@ const clientConnections = new Map<string, {
 // Helper function to validate agent URL
 function validateAgentUrl(agentUrl: string): { valid: boolean; error?: string } {
     if (!agentUrl || typeof agentUrl !== 'string') {
-        return { valid: false, error: 'agentUrl must be a non-empty string' };
+        return {valid: false, error: 'agentUrl must be a non-empty string'};
     }
 
     if (!agentUrl.startsWith('http://') && !agentUrl.startsWith('https://')) {
-        return { valid: false, error: 'agentUrl must be a valid HTTP or HTTPS URL' };
+        return {valid: false, error: 'agentUrl must be a valid HTTP or HTTPS URL'};
     }
 
     try {
         new URL(agentUrl);
-        return { valid: true };
+        return {valid: true};
     } catch {
-        return { valid: false, error: 'agentUrl must be a valid URL' };
+        return {valid: false, error: 'agentUrl must be a valid URL'};
     }
 }
 
@@ -44,7 +44,7 @@ function getA2AClient(agentUrl: string, authToken?: string): A2AClient {
         if (DEBUG) {
             console.log(`🔌 Creating new A2A client for: ${agentUrl}`);
         }
-        
+
         const client = new A2AClient(agentUrl);
         connection = {
             client,
@@ -62,12 +62,12 @@ function getA2AClient(agentUrl: string, authToken?: string): A2AClient {
 
 // Get agent card from A2A agent
 a2aProxyRouter.post('/get-agent-card', async (req: Request, res: Response): Promise<void> => {
-    const { agentUrl, authToken } = req.body;
-    
+    const {agentUrl, authToken} = req.body;
+
     // Validate agent URL
     const urlValidation = validateAgentUrl(agentUrl);
     if (!urlValidation.valid) {
-        res.status(400).json({ error: urlValidation.error });
+        res.status(400).json({error: urlValidation.error});
         return;
     }
 
@@ -78,7 +78,7 @@ a2aProxyRouter.post('/get-agent-card', async (req: Request, res: Response): Prom
 
         const client = getA2AClient(agentUrl, authToken);
         const agentCard = await client.getAgentCard();
-        
+
         // Cache the agent card in the connection
         const connectionKey = `${agentUrl}:${authToken || 'no-auth'}`;
         const connection = clientConnections.get(connectionKey);
@@ -97,26 +97,26 @@ a2aProxyRouter.post('/get-agent-card', async (req: Request, res: Response): Prom
 
     } catch (error) {
         console.error('❌ A2A get-agent-card error:', error);
-        res.status(500).json({ 
-            error: error instanceof Error ? error.message : 'Failed to fetch agent card' 
+        res.status(500).json({
+            error: error instanceof Error ? error.message : 'Failed to fetch agent card'
         });
     }
 });
 
 // Send message to A2A agent (non-streaming)
 a2aProxyRouter.post('/send-message', async (req: Request, res: Response): Promise<void> => {
-    const { agentUrl, authToken, message, configuration } = req.body;
-    
+    const {agentUrl, authToken, message, configuration} = req.body;
+
     // Validate agent URL
     const urlValidation = validateAgentUrl(agentUrl);
     if (!urlValidation.valid) {
-        res.status(400).json({ error: urlValidation.error });
+        res.status(400).json({error: urlValidation.error});
         return;
     }
 
     // Validate message
     if (!message || typeof message !== 'object') {
-        res.status(400).json({ error: 'message is required and must be an object' });
+        res.status(400).json({error: 'message is required and must be an object'});
         return;
     }
 
@@ -127,16 +127,16 @@ a2aProxyRouter.post('/send-message', async (req: Request, res: Response): Promis
         }
 
         const client = getA2AClient(agentUrl, authToken);
-        
+
         const params: MessageSendParams = {
             message: message as Message,
-            configuration: configuration || { blocking: true }
+            configuration: configuration || {blocking: true}
         };
 
         // For non-streaming, try sendMessage first, fallback to sendMessageStream
         let response;
         let isStream = false;
-        
+
         try {
             // Try sendMessage method first (if it exists)
             response = await (client as any).sendMessage?.(params);
@@ -177,26 +177,26 @@ a2aProxyRouter.post('/send-message', async (req: Request, res: Response): Promis
 
     } catch (error) {
         console.error('❌ A2A send-message error:', error);
-        res.status(500).json({ 
-            error: error instanceof Error ? error.message : 'Failed to send message to A2A agent' 
+        res.status(500).json({
+            error: error instanceof Error ? error.message : 'Failed to send message to A2A agent'
         });
     }
 });
 
 // Send streaming message to A2A agent
 a2aProxyRouter.post('/send-message-stream', async (req: Request, res: Response): Promise<void> => {
-    const { agentUrl, authToken, message, configuration } = req.body;
-    
+    const {agentUrl, authToken, message, configuration} = req.body;
+
     // Validate agent URL
     const urlValidation = validateAgentUrl(agentUrl);
     if (!urlValidation.valid) {
-        res.status(400).json({ error: urlValidation.error });
+        res.status(400).json({error: urlValidation.error});
         return;
     }
 
     // Validate message
     if (!message || typeof message !== 'object') {
-        res.status(400).json({ error: 'message is required and must be an object' });
+        res.status(400).json({error: 'message is required and must be an object'});
         return;
     }
 
@@ -206,10 +206,10 @@ a2aProxyRouter.post('/send-message-stream', async (req: Request, res: Response):
         }
 
         const client = getA2AClient(agentUrl, authToken);
-        
+
         const params: MessageSendParams = {
             message: message as Message,
-            configuration: configuration || { blocking: false }
+            configuration: configuration || {blocking: false}
         };
 
         const stream = client.sendMessageStream(params);
@@ -236,26 +236,26 @@ a2aProxyRouter.post('/send-message-stream', async (req: Request, res: Response):
 
     } catch (error) {
         console.error('❌ A2A send-message-stream error:', error);
-        res.status(500).json({ 
-            error: error instanceof Error ? error.message : 'Failed to send streaming message to A2A agent' 
+        res.status(500).json({
+            error: error instanceof Error ? error.message : 'Failed to send streaming message to A2A agent'
         });
     }
 });
 
 // Check A2A agent health/connectivity
 a2aProxyRouter.post('/health', async (req: Request, res: Response): Promise<void> => {
-    const { agentUrl, authToken } = req.body;
+    const {agentUrl, authToken} = req.body;
 
     const urlValidation = validateAgentUrl(agentUrl);
     if (!urlValidation.valid) {
-        res.status(400).json({ error: urlValidation.error });
+        res.status(400).json({error: urlValidation.error});
         return;
     }
 
     try {
         const client = getA2AClient(agentUrl, authToken);
         const agentCard = await client.getAgentCard();
-        
+
         res.json({
             healthy: true,
             agentUrl,
@@ -293,10 +293,10 @@ a2aProxyRouter.get('/connections', async (req: Request, res: Response): Promise<
         connections.sort((a, b) => new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime());
 
         console.log(`📊 Listed ${connections.length} active A2A connections`);
-        
-        res.json({ 
+
+        res.json({
             totalConnections: connections.length,
-            connections 
+            connections
         });
 
     } catch (error) {
@@ -309,8 +309,8 @@ a2aProxyRouter.get('/connections', async (req: Request, res: Response): Promise<
 
 // Disconnect from A2A agent (cleanup)
 a2aProxyRouter.post('/disconnect', async (req: Request, res: Response): Promise<void> => {
-    const { agentUrl, authToken } = req.body;
-    
+    const {agentUrl, authToken} = req.body;
+
     try {
         let disconnectedConnections = 0;
 
@@ -329,7 +329,7 @@ a2aProxyRouter.post('/disconnect', async (req: Request, res: Response): Promise<
             console.log(`🔌 Disconnected all ${disconnectedConnections} A2A connections`);
         }
 
-        res.json({ 
+        res.json({
             success: true,
             disconnectedConnections,
             message: `Disconnected ${disconnectedConnections} connection(s)`
@@ -337,8 +337,8 @@ a2aProxyRouter.post('/disconnect', async (req: Request, res: Response): Promise<
 
     } catch (error) {
         console.error('❌ A2A disconnect error:', error);
-        res.status(500).json({ 
-            error: error instanceof Error ? error.message : 'Failed to disconnect from A2A agent' 
+        res.status(500).json({
+            error: error instanceof Error ? error.message : 'Failed to disconnect from A2A agent'
         });
     }
 });
@@ -346,7 +346,7 @@ a2aProxyRouter.post('/disconnect', async (req: Request, res: Response): Promise<
 // Generate unique message ID
 a2aProxyRouter.get('/generate-id', (req: Request, res: Response): void => {
     const id = Math.random().toString(36).substring(2) + Date.now().toString(36);
-    res.json({ id });
+    res.json({id});
 });
 
 // Health check endpoint for the proxy itself

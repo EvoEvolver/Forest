@@ -25,14 +25,14 @@ export function createUserRouter(): Router {
         if (!uid) {
             return res.status(400).json({error: 'UID is required'});
         }
-        
+
         try {
             if (!supabase) {
                 return res.status(500).json({error: 'Supabase client not initialized'});
             }
 
-            const { data: user, error } = await supabase.auth.admin.getUserById(uid);
-            
+            const {data: user, error} = await supabase.auth.admin.getUserById(uid);
+
             if (error) {
                 console.error('Failed to fetch user from Supabase:', error.message);
                 return res.status(500).json({error: 'Failed to fetch user data'});
@@ -53,9 +53,9 @@ export function createUserRouter(): Router {
                 // Include all user metadata for completeness
                 ...user.user?.user_metadata
             };
-            
+
             return res.json(userData);
-            
+
         } catch (err) {
             console.error('Error fetching user info:', err);
             return res.status(500).json({error: 'Server error'});
