@@ -1,19 +1,51 @@
 import {NodeM} from "@forest/schema";
 import {AgentNodeType} from "../AgentNode";
-import {MCPNodeType} from "../MCPNode";
-import {A2ANodeType} from "../A2ANode";
 import {agentSessionState} from "../sessionState";
 import {BaseMessage, NormalMessage, SystemMessage} from "@forest/agent-chat/src/MessageTypes";
 import {fetchChatResponse} from "@forest/agent-chat/src/llm";
-import {ActionableNodeType} from "../ActionableNodeType";
+import {Action, ActionableNodeType} from "../ActionableNodeType";
+import {decomposeTask, updateTodoListAfterTask} from "./todoManager";
 
-async function getSystemMessage(nodeM: NodeM) {
+export async function generateActionListPrompt(node: NodeM, extraActions): Promise<string> {
+    const treeM = node.treeM;
+    const resolvedActionableChildren = [];
+    for (const child of treeM.getChildren(node)) {
+        const nodeType = await treeM.supportedNodesTypes(child.nodeTypeName());
+        if (nodeType instanceof ActionableNodeType) {
+            resolvedActionableChildren.push({child, nodeType});
+        }
+    }
+    if (resolvedActionableChildren.length === 0) {
+        return "";
+    }
+    const actionToPrompt = (a: Action) => `<action>
+Title: ${a.label}
+Description: ${a.description}
+Parameters: ${JSON.stringify(a.parameter, null, 2)}
+</action>
+`
+    const actionPrompts = [];
+    for (const {child, nodeType} of resolvedActionableChildren) {
+        const actions = nodeType.actions(child);
+        for (const action of actions) {
+            actionPrompts.push(actionToPrompt(action));
+        }
+    }
+    for (const action of extraActions) {
+        actionPrompts.push(actionToPrompt(action));
+    }
+    return `<actions>
+${actionPrompts.join('')}
+</actions>
+`;
+}
+
+async function getSystemMessage(nodeM: NodeM, extraActions: Action[] = []) {
     const treeM = nodeM.treeM;
     const nodeTypeName = nodeM.nodeTypeName();
     const agentNodeType = await nodeM.treeM.supportedNodesTypes(nodeTypeName) as AgentNodeType;
     const title = nodeM.title();
 
-    let actionsSection = "";
     const resolvedActionableChildren = [];
     for (const child of treeM.getChildren(nodeM)) {
         const nodeType = await treeM.supportedNodesTypes(child.nodeTypeName());
@@ -22,83 +54,7 @@ async function getSystemMessage(nodeM: NodeM) {
         }
     }
 
-    if (resolvedActionableChildren.length > 0) {
-        const actionPrompts = [];
-        for (const {child, nodeType} of resolvedActionableChildren) {
-            const actions = nodeType.actions(child);
-            
-            // Get context information based on node type
-            let childDescription = "";
-            if (nodeType instanceof AgentNodeType) {
-                const descriptionText = nodeType.agentDescriptionYText(child).toString().trim();
-                if (descriptionText) {
-                    childDescription = `\nAgent Description: ${descriptionText}`;
-                }
-            } else if (nodeType instanceof MCPNodeType) {
-                const connection = nodeType.getMCPConnection(child);
-                if (connection) {
-                    let mcpInfo = `\nMCP Node: ${child.title()}`;
-                    if (connection.connected) {
-                        const serverInfo = connection.serverInfo;
-                        const toolCount = connection.tools?.length || 0;
-                        mcpInfo += `\nStatus: Connected`;
-                        if (serverInfo?.name) {
-                            mcpInfo += `\nServer: ${serverInfo.name}`;
-                            if (serverInfo.version) {
-                                mcpInfo += ` v${serverInfo.version}`;
-                            }
-                        }
-                        mcpInfo += `\nAvailable Tools: ${toolCount}`;
-                    } else {
-                        mcpInfo += `\nStatus: Disconnected`;
-                        if (connection.error) {
-                            mcpInfo += `\nError: ${connection.error}`;
-                        }
-                    }
-                    childDescription = mcpInfo;
-                }
-            } else if (nodeType instanceof A2ANodeType) {
-                const connection = nodeType.getA2AConnection(child);
-                if (connection) {
-                    let a2aInfo = `\nA2A Node: ${child.title()}`;
-                    if (connection.connected && connection.agentCard) {
-                        const agentCard = connection.agentCard;
-                        const skillCount = agentCard.skills?.length || 0;
-                        a2aInfo += `\nStatus: Connected`;
-                        a2aInfo += `\nAgent: ${agentCard.name}`;
-                        if (agentCard.version) {
-                            a2aInfo += ` v${agentCard.version}`;
-                        }
-                        if (agentCard.description) {
-                            a2aInfo += `\nAgent Description: ${agentCard.description}`;
-                        }
-                        a2aInfo += `\nAvailable Skills: ${skillCount}`;
-                    } else {
-                        a2aInfo += `\nStatus: Disconnected`;
-                        if (connection.error) {
-                            a2aInfo += `\nError: ${connection.error}`;
-                        }
-                    }
-                    childDescription = a2aInfo;
-                }
-            }
-            
-            for (const action of actions) {
-                actionPrompts.push(`<action>
-Title: ${action.label}
-Description: ${action.description}${childDescription}
-Parameters: ${JSON.stringify(action.parameter, null, 2)}
-</action>
-`);
-            }
-        }
-
-        actionsSection = `<actions>
-${actionPrompts.join('')}
-</actions>
-`;
-    }
-
+    const actionsSection = await generateActionListPrompt(nodeM, extraActions);
     let formatsSection = "";
     if (resolvedActionableChildren.length > 0) {
         formatsSection += `<action_calling>
@@ -137,18 +93,20 @@ ${formatsSection}`);
 async function getNextStep(nodeM: NodeM): Promise<string | undefined> {
     const treeM = nodeM.treeM;
     const messages = agentSessionState.messages.get(nodeM.id) || [];
-    const systemMessage = await getSystemMessage(nodeM);
+
+    let extraAction: Action[] = []
+
+    const systemMessage = await getSystemMessage(nodeM, extraAction);
     const messagesWithSystem = [...messages, systemMessage];
     const messagesToSubmit = messagesWithSystem.map(m => m.toJson());
-    console.log("messagesToSubmit",messagesToSubmit);
+    console.log("messagesToSubmit", messagesToSubmit);
     let response = await fetchChatResponse(messagesToSubmit as any, "gpt-4.1", agentSessionState.authToken);
-    console.log("response",response);
+    console.log("response", response);
     try {
         response = response.substring(response.indexOf('{'), response.lastIndexOf('}') + 1);
     } catch (e) {
         // ignore if no json
     }
-    console.log("filtered response",response);
 
     // Try to parse the response as JSON
     let parsedResponse: any;
@@ -157,7 +115,7 @@ async function getNextStep(nodeM: NodeM): Promise<string | undefined> {
     } catch {
         parsedResponse = {type: "answer_user", message: response, wait_user: true};
     }
-    console.log("parsedResponse",parsedResponse);
+    console.log("parsedResponse", parsedResponse);
 
     if (parsedResponse.type === "answer_user") {
         const messageContent = parsedResponse.message;
@@ -173,7 +131,6 @@ async function getNextStep(nodeM: NodeM): Promise<string | undefined> {
     } else if (parsedResponse.type === "action_calling") {
         const actionName = parsedResponse.action_title;
         const parameters = parsedResponse.parameters;
-
         // Find the child node that matches this action
         for (const child of treeM.getChildren(nodeM)) {
             const nodeType = await treeM.supportedNodesTypes(child.nodeTypeName());
@@ -183,13 +140,25 @@ async function getNextStep(nodeM: NodeM): Promise<string | undefined> {
                 if (matchingAction) {
                     // Execute the action with the matched label
                     await nodeType.executeAction(child, actionName, parameters, nodeM, agentSessionState);
-                    break;
+
+                    if (AgentNodeType.todoModeSwith(nodeM)) {
+                        const newTodos = await updateTodoListAfterTask(agentSessionState.todos.get(nodeM.id), messages)
+                        console.log("newTodos", newTodos);
+                        agentSessionState.setTodos(nodeM, newTodos)
+                        agentSessionState.addMessage(nodeM, new NormalMessage({
+                            role: "assistant",
+                            content: newTodos,
+                            author: nodeM.title()
+                        }))
+                    }
+
+                    return ""
                 }
             }
         }
-        return ""
+        throw Error(`Unknown action title. LLM output: ${JSON.stringify(parsedResponse)}`);
     } else {
-        throw Error(`Unknown response type. Response: ${JSON.stringify(parsedResponse)}`);
+        throw Error(`Unknown response type. LLM output: ${JSON.stringify(parsedResponse)}`);
     }
 }
 
@@ -197,6 +166,20 @@ export async function invokeAgent(nodeM: NodeM, messages: BaseMessage[]) {
     for (let message of messages) {
         agentSessionState.addMessage(nodeM, message)
     }
+
+    if (messages.length > 0 && AgentNodeType.todoModeSwith(nodeM)) {
+        const initialMessage = messages.map(m => m.toJson()["content"]).join("\n")
+        const todoList = await decomposeTask(initialMessage, nodeM);
+        console.log("todoList", todoList);
+        agentSessionState.setTodos(nodeM, todoList);
+        agentSessionState.addMessage(nodeM, new NormalMessage({
+            role: "assistant",
+            content: `
+${todoList} `,
+            author: nodeM.title()
+        }))
+    }
+
     while (true) {
         let messageContent: string | undefined;
         for (let attempt = 0; attempt < 3; attempt++) {
@@ -210,6 +193,9 @@ export async function invokeAgent(nodeM: NodeM, messages: BaseMessage[]) {
         }
         if (messageContent) {
             return messageContent;
+        }
+        if (agentSessionState.stopFlag) {
+            return messageContent
         }
     }
 }
