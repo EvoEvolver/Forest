@@ -29,8 +29,7 @@ interface VisitedTree {
     lastAccessed: string;
     lastVisited: string;
     nodeCount: number;
-    owner: string;
-    creatorName?: string;
+    owner: string; // Now contains username instead of user ID
 }
 
 export const VisitedTreesList = () => {
@@ -228,7 +227,7 @@ export const VisitedTreesList = () => {
             ),
         },
         {
-            field: 'lastVisited',
+            field: 'lastAccessed',
             headerName: 'Last Accessed',
             width: 140,
             minWidth: 140,
@@ -259,19 +258,6 @@ export const VisitedTreesList = () => {
                     size="small"
                     label={`${getNodeCountLabel(params.value)} (${params.value})`}
                 />
-            ),
-        },
-        {
-            field: 'creatorName',
-            headerName: 'Creator',
-            width: 120,
-            minWidth: 120,
-            align: 'center',
-            headerAlign: 'center',
-            renderCell: (params: GridRenderCellParams) => (
-                <Typography color="textSecondary" variant="subtitle2" fontWeight={400} fontSize="0.75rem">
-                    {params.value || 'Unknown'}
-                </Typography>
             ),
         },
         {
@@ -400,7 +386,7 @@ export const VisitedTreesList = () => {
                         hideFooterSelectedRowCount
                         initialState={{
                             sorting: {
-                                sortModel: [{ field: 'lastVisited', sort: 'desc' }],
+                                sortModel: [{ field: 'lastAccessed', sort: 'desc' }],
                             },
                         }}
                         sx={{
