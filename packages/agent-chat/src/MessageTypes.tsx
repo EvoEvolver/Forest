@@ -155,9 +155,16 @@ export class NormalMessage extends BaseMessage {
     render(): React.ReactNode {
         return (
             <Box sx={{display: 'flex', marginBottom: 2}}>
-                <Card sx={{}}>
+                <Card>
                     <CardContent>
-                        <Typography variant="body1">{this.content}</Typography>
+                        <Typography variant="body1">
+                            {this.content.split('\n').map((line, index) => (
+                                <React.Fragment key={index}>
+                                    {line}
+                                    <br/>
+                                </React.Fragment>
+                            ))}
+                        </Typography>
                     </CardContent>
                 </Card>
             </Box>
@@ -167,7 +174,7 @@ export class NormalMessage extends BaseMessage {
 
 export class SystemMessage extends BaseMessage {
     constructor(content: string) {
-        super({content, author: "", role: "system", });
+        super({content, author: "", role: "system",});
     }
 
     render(): React.ReactNode {

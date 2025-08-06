@@ -210,6 +210,10 @@ export class AgentNodeType extends ActionableNodeType {
         return node.ydata().get(AgentDescriptionText) as Y.Text
     }
 
+    static todoModeSwith(node: NodeM): boolean {
+        return node.ydata().get(TodoMode)?.get('enabled') || false;
+    }
+
     actions(node: NodeM): Action[] {
         return [{
             label: "Ask agent " + node.title(),

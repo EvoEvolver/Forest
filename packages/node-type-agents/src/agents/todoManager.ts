@@ -1,9 +1,8 @@
 import {NodeM} from "@forest/schema";
-import {ActionableNodeType} from "../ActionableNodeType";
 import {generateActionListPrompt} from "./index";
 import {fetchChatResponse} from "@forest/agent-chat/src/llm";
 import {agentSessionState} from "../sessionState";
-import {SystemMessage} from "@forest/agent-chat/src/MessageTypes";
+import {BaseMessage, SystemMessage} from "@forest/agent-chat/src/MessageTypes";
 
 export async function decomposeTask(
     instruction: string,
@@ -42,3 +41,30 @@ export async function decomposeTask(
         return "";
     }
 }
+
+export async function updateTodoListAfterTask(
+    currentTodoList: string,
+    messages: BaseMessage[],
+): Promise<string> {
+    if (!currentTodoList) {
+        return currentTodoList;
+    }
+
+    const updatePrompt = `
+        Current todo list:
+        ${currentTodoList}
+   
+        Please update the todo list based on the message history:
+        1. Mark the completed task with [x] instead of [ ]
+        2. If the result suggests new tasks are needed, add them as new [ ] items
+        Only return the updated todo list, nothing else
+    `;
+
+
+    const systemMessage = new SystemMessage(updatePrompt);
+    const messagesToSubmit = [...messages, systemMessage];
+    const response = await fetchChatResponse(messagesToSubmit.map(m => m.toJson()) as any, "gpt-4.1", agentSessionState.authToken);
+    return response.trim();
+
+}
+

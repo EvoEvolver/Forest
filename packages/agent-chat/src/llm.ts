@@ -8,12 +8,17 @@ export async function fetchChatResponse(messages: { role: string, content: strin
     }
 
     const messageOpenAI = messages.map(msg => {
-            return {
-                role: msg.role,
-                content: msg.content
+            if (msg) {
+                return {
+                    role: msg.role,
+                    content: msg.content
+                }
+            }
+            else {
+                return null
             }
         }
-    );
+    ).filter(Boolean)
 
     try {
         const response = await fetch(httpUrl + "/api/llm", {
