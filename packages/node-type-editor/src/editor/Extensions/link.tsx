@@ -99,16 +99,31 @@ export const LinkExtension = Mark.create<LinkOptions>({
     // 8. Track selection updates to show/hide the hover menu
     onSelectionUpdate() {
         const {$from} = this.editor.state.selection;
+        const linkMark = this.editor.schema.marks.link;
         const marks = $from.marks();
 
-        // If there are no marks, deactivate the link
-        if (!marks.length) {
-            this.options.onLinkActivated(null, this.editor, null);
-            return;
-        }
+        // First check marks at current position
+        let activeLinkMark = marks.find((mark) => mark.type === linkMark);
 
-        const linkMark = this.editor.schema.marks.link;
-        const activeLinkMark = marks.find((mark) => mark.type === linkMark);
+        // If no link mark at current position, check surrounding marks
+        if (!activeLinkMark) {
+            let surroundingMarks = [];
+            
+            // Check node before cursor
+            const nodeBefore = $from.nodeBefore;
+            if (nodeBefore) {
+                surroundingMarks = surroundingMarks.concat(nodeBefore.marks);
+            }
+            
+            // Check node after cursor
+            const nodeAfter = $from.nodeAfter;
+            if (nodeAfter) {
+                surroundingMarks = surroundingMarks.concat(nodeAfter.marks);
+            }
+
+            // Look for link mark in surrounding marks
+            activeLinkMark = surroundingMarks.find((mark) => mark.type === linkMark);
+        }
 
         // Find the active link's href
         const activeUrl = activeLinkMark?.attrs.href || null;
