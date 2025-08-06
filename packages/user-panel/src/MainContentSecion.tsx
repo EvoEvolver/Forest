@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box } from '@mui/material';
-import { UserTreesList } from './UserTreesList';
+import { TreesSection } from './TreesSection';
 import { MyAssignedIssues } from './MyAssignedIssues';
 import { Profile } from './Profile';
 import { AuthGuard } from './AuthGuard';
@@ -34,7 +34,7 @@ export const MainContentSection: React.FC<MainContentSectionProps> = ({ tabId })
                             transition={{ duration: 0.3 }}
                             style={{ flex: '1 1 0', display: 'flex', flexDirection: 'column', minHeight: 0 }}
                         >
-                            <UserTreesList />
+                            <TreesSection />
                         </motion.div>
                     )}
 

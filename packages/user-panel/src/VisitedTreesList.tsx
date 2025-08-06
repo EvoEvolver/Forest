@@ -1,5 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {useAtomValue} from 'jotai';
+import type {GridColDef, GridRenderCellParams} from '@mui/x-data-grid';
+import {DataGrid, GridFooterContainer, GridPagination} from '@mui/x-data-grid';
 import {
     Alert,
     Box,
@@ -7,11 +9,6 @@ import {
     Chip,
     CircularProgress,
     IconButton,
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableRow,
     Tooltip,
     Typography
 } from '@mui/material';
@@ -33,6 +30,7 @@ interface VisitedTree {
     lastVisited: string;
     nodeCount: number;
     owner: string;
+    creatorName?: string;
 }
 
 export const VisitedTreesList = () => {
@@ -40,6 +38,10 @@ export const VisitedTreesList = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [removingTreeId, setRemovingTreeId] = useState<string | null>(null);
+    const [paginationModel, setPaginationModel] = useState({
+        page: 0,
+        pageSize: 25,
+    });
 
     const authToken = useAtomValue(authTokenAtom);
     const user = useAtomValue(userAtom);
@@ -128,13 +130,178 @@ export const VisitedTreesList = () => {
         });
     };
 
-    const getOwnershipColor = (owner: string) => {
-        return owner === user?.id ? "success.main" : "warning.main";
+    const getNodeCountColor = (count: number) => {
+        if (count >= 50) return "error.main";
+        if (count >= 20) return "warning.main";
+        if (count >= 10) return "secondary.main";
+        return "primary.main";
     };
 
-    const getOwnershipLabel = (owner: string) => {
-        return owner === user?.id ? "Owned" : "Shared";
+    const getNodeCountLabel = (count: number) => {
+        if (count >= 50) return "Large";
+        if (count >= 20) return "Medium";
+        if (count >= 10) return "Small";
+        return "Tiny";
     };
+
+    // Custom footer component with Refresh button and pagination
+    const CustomFooter = () => (
+        <GridFooterContainer>
+            <Box sx={{display: 'flex', alignItems: 'center', flex: 1}}>
+                <Tooltip title="Refresh">
+                    <IconButton size="small" onClick={fetchVisitedTrees} sx={{marginLeft: 1}}>
+                        <RefreshIcon fontSize="small"/>
+                    </IconButton>
+                </Tooltip>
+                <Box sx={{flex: 1}}/>
+                <GridPagination/>
+            </Box>
+        </GridFooterContainer>
+    );
+
+    // Define columns for DataGrid
+    const columns: GridColDef[] = [
+        {
+            field: 'treeId',
+            headerName: 'Tree ID',
+            width: 120,
+            minWidth: 120,
+            align: 'center',
+            headerAlign: 'center',
+            renderCell: (params: GridRenderCellParams) => (
+                <Typography
+                    variant="subtitle2"
+                    fontWeight={600}
+                    fontSize="0.8rem"
+                    sx={{
+                        cursor: 'pointer',
+                        color: 'primary.main',
+                        '&:hover': {
+                            textDecoration: 'underline'
+                        }
+                    }}
+                    onClick={() => handleOpenTree(params.value)}
+                >
+                    {params.value !== null ? params.value.slice(0, 8) + '...' : "No ID"}
+                </Typography>
+            ),
+        },
+        {
+            field: 'title',
+            headerName: 'Title',
+            width: 200,
+            minWidth: 200,
+            flex: 1,
+            align: 'center',
+            headerAlign: 'center',
+            renderCell: (params: GridRenderCellParams) => (
+                <Box sx={{textAlign: 'center'}}>
+                    <Typography
+                        variant="subtitle2"
+                        fontWeight={600}
+                        fontSize="0.8rem"
+                        sx={{
+                            cursor: 'pointer',
+                            color: 'primary.main',
+                            '&:hover': {
+                                textDecoration: 'underline'
+                            }
+                        }}
+                        onClick={() => handleOpenTree(params.row.treeId)}
+                    >
+                        {params.value?.trim() ? params.value : 'Untitled'}
+                    </Typography>
+                </Box>
+            ),
+        },
+        {
+            field: 'createdAt',
+            headerName: 'Created',
+            width: 140,
+            minWidth: 140,
+            align: 'center',
+            headerAlign: 'center',
+            renderCell: (params: GridRenderCellParams) => (
+                <Typography color="textSecondary" variant="subtitle2" fontWeight={400} fontSize="0.75rem">
+                    {formatDate(params.value)}
+                </Typography>
+            ),
+        },
+        {
+            field: 'lastVisited',
+            headerName: 'Last Accessed',
+            width: 140,
+            minWidth: 140,
+            align: 'center',
+            headerAlign: 'center',
+            renderCell: (params: GridRenderCellParams) => (
+                <Typography color="textSecondary" variant="subtitle2" fontWeight={400} fontSize="0.75rem">
+                    {formatDate(params.value)}
+                </Typography>
+            ),
+        },
+        {
+            field: 'nodeCount',
+            headerName: 'Size',
+            width: 120,
+            minWidth: 120,
+            align: 'center',
+            headerAlign: 'center',
+            renderCell: (params: GridRenderCellParams) => (
+                <Chip
+                    sx={{
+                        px: "4px",
+                        backgroundColor: getNodeCountColor(params.value),
+                        color: "#fff",
+                        fontSize: "0.65rem",
+                        height: 20
+                    }}
+                    size="small"
+                    label={`${getNodeCountLabel(params.value)} (${params.value})`}
+                />
+            ),
+        },
+        {
+            field: 'creatorName',
+            headerName: 'Creator',
+            width: 120,
+            minWidth: 120,
+            align: 'center',
+            headerAlign: 'center',
+            renderCell: (params: GridRenderCellParams) => (
+                <Typography color="textSecondary" variant="subtitle2" fontWeight={400} fontSize="0.75rem">
+                    {params.value || 'Unknown'}
+                </Typography>
+            ),
+        },
+        {
+            field: 'actions',
+            headerName: 'Actions',
+            width: 80,
+            minWidth: 80,
+            sortable: false,
+            disableColumnMenu: true,
+            align: 'center',
+            headerAlign: 'center',
+            renderCell: (params: GridRenderCellParams) => (
+                <Tooltip title="Remove from history">
+                    <IconButton
+                        size="small"
+                        onClick={() => handleRemoveFromHistory(params.row.treeId)}
+                        disabled={removingTreeId === params.row.treeId}
+                        color="error"
+                        sx={{p: 0.5}}
+                    >
+                        {removingTreeId === params.row.treeId ? (
+                            <CircularProgress size={14}/>
+                        ) : (
+                            <RemoveIcon fontSize="small"/>
+                        )}
+                    </IconButton>
+                </Tooltip>
+            ),
+        },
+    ];
 
     useEffect(() => {
         // Only fetch if we have both auth token and user
@@ -150,10 +317,41 @@ export const VisitedTreesList = () => {
         }
     }, [authToken, user]);
 
+    // Calculate optimal page size based on viewport height
+    useEffect(() => {
+        const calculateOptimalPageSize = () => {
+            const viewportHeight = window.innerHeight;
+            const headerHeight = 64; // AppBar height
+            const footerHeight = 52; // DataGrid footer height
+            const rowHeight = 35; // Row height from sx prop
+            const headerRowHeight = 35; // Header row height
+            const padding = 40; // Some padding for safety
+
+            const availableHeight = viewportHeight - headerHeight - footerHeight - headerRowHeight - padding;
+            const maxRows = Math.floor(availableHeight / rowHeight);
+
+            // Ensure we have at least 10 rows and at most 100 rows
+            return Math.min(Math.max(maxRows, 10), 100);
+        };
+
+        const handleResize = () => {
+            const newPageSize = calculateOptimalPageSize();
+            setPaginationModel(prev => ({...prev, pageSize: newPageSize}));
+        };
+
+        // Set initial page size
+        const newPageSize = calculateOptimalPageSize();
+        setPaginationModel(prev => ({...prev, pageSize: newPageSize}));
+
+        // Add resize listener
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     if (loading) {
         return (
             <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <DashboardCard title="Recently Visited Trees">
+                <DashboardCard title="Recent Trees">
                     <Box display="flex" justifyContent="center" p={2}>
                         <CircularProgress size={20}/>
                     </Box>
@@ -164,8 +362,8 @@ export const VisitedTreesList = () => {
 
     if (error) {
         return (
-            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <DashboardCard title="Recently Visited Trees">
+            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+                <DashboardCard title="Recent Trees">
                     <Alert severity="error" sx={{m: 1}}>
                         {error}
                         <Button size="small" onClick={fetchVisitedTrees} sx={{ml: 1}}>
@@ -178,174 +376,79 @@ export const VisitedTreesList = () => {
     }
 
     return (
-        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <DashboardCard 
-                title={`Recently Visited Trees (${trees.length})`}
-                action={
-                    <Tooltip title="Refresh">
-                        <IconButton size="small" onClick={fetchVisitedTrees}>
-                            <RefreshIcon fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
-                }
+        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+            <DashboardCard
+                title={`Recent Trees (${trees.length})`}
                 sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
             >
                 {trees.length === 0 ? (
-                    <Typography variant="body2" color="text.secondary" textAlign="center" py={3} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
-                        No visited trees yet. Start exploring to see your visit history!
-                    </Typography>
-                ) : (
-                    <Box sx={{
-                        width: '100%',
-                        overflow: 'auto',
-                        flex: 1,
-                        minHeight: 0,
-                        '& .MuiTable-root': {
-                            fontSize: { xs: '0.7rem', md: '0.8rem' }
-                        }
-                    }}>
-                        <Table
-                            aria-label="visited trees table"
-                            size="small"
-                            sx={{
-                                minWidth: { xs: 300, md: 650 },
-                                '& .MuiTableCell-root': {
-                                    padding: { xs: '4px 8px', md: '8px 16px' },
-                                    fontSize: { xs: '0.7rem', md: '0.8rem' }
-                                }
-                            }}
-                        >
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell sx={{py: 1}}>
-                                        <Typography variant="subtitle2" fontWeight={600} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
-                                            Id
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell sx={{ py: 1 }}>
-                                        <Typography variant="subtitle2" fontWeight={600} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
-                                            Details
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell sx={{ py: 1 }}>
-                                        <Typography variant="subtitle2" fontWeight={600} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
-                                            Last Visited
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell sx={{ py: 1 }}>
-                                        <Typography variant="subtitle2" fontWeight={600} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
-                                            Ownership
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell align="right" sx={{ py: 1 }}>
-                                        <Typography variant="subtitle2" fontWeight={600} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
-                                            Actions
-                                        </Typography>
-                                    </TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {trees.map((tree) => (
-                                    <TableRow key={tree.treeId} sx={{ '&:hover': { backgroundColor: 'action.hover' } }}>
-                                        <TableCell sx={{py: 0.5}}>
-                                            <Typography
-                                                variant="subtitle2"
-                                                fontWeight={600}
-                                                fontSize="0.8rem"
-                                                sx={{
-                                                    cursor: 'pointer',
-                                                    color: 'primary.main',
-                                                    '&:hover': {
-                                                        textDecoration: 'underline'
-                                                    }
-                                                }}
-                                                onClick={() => handleOpenTree(tree.treeId)}
-                                            >
-                                                {tree.treeId.slice(0, 8) + '...'}
-                                            </Typography>
-
-                                        </TableCell>
-                                        <TableCell sx={{ py: 0.5 }}>
-                                            <Box>
-                                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                                    <Typography 
-                                                        variant="subtitle2" 
-                                                        fontWeight={600} 
-                                                        fontSize="0.8rem"
-                                                        sx={{
-                                                            cursor: 'pointer',
-                                                            color: 'primary.main',
-                                                            '&:hover': {
-                                                                textDecoration: 'underline'
-                                                            }
-                                                        }}
-                                                        onClick={() => handleOpenTree(tree.treeId)}
-                                                    >
-                                                        {(tree.title?.trim() ? tree.title : 'Untitled')}
-                                                    </Typography>
-                                                    <Chip
-                                                        sx={{
-                                                            px: "3px",
-                                                            backgroundColor: "primary.main",
-                                                            color: "#fff",
-                                                            fontSize: "0.6rem",
-                                                            height: 16,
-                                                            ml: 1
-                                                        }}
-                                                        size="small"
-                                                        label={`${tree.nodeCount}`}
-                                                    />
-                                                </Box>
-                                                <Typography
-                                                    color="textSecondary"
-                                                    sx={{
-                                                        fontSize: "0.7rem",
-                                                    }}
-                                                >
-                                                    Created: {formatDate(tree.createdAt)}
-                                                </Typography>
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell sx={{ py: 0.5 }}>
-                                            <Typography color="textSecondary" variant="subtitle2" fontWeight={400} fontSize="0.75rem">
-                                                {formatDate(tree.lastVisited)}
-                                            </Typography>
-                                        </TableCell>
-                                        <TableCell sx={{ py: 0.5 }}>
-                                            <Chip
-                                                sx={{
-                                                    px: "4px",
-                                                    backgroundColor: getOwnershipColor(tree.owner),
-                                                    color: "#fff",
-                                                    fontSize: "0.65rem",
-                                                    height: 20
-                                                }}
-                                                size="small"
-                                                label={getOwnershipLabel(tree.owner)}
-                                            />
-                                        </TableCell>
-                                        <TableCell align="right" sx={{ py: 0.5 }}>
-                                            <Tooltip title="Remove from history">
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => handleRemoveFromHistory(tree.treeId)}
-                                                    disabled={removingTreeId === tree.treeId}
-                                                    color="error"
-                                                    sx={{ p: 0.5 }}
-                                                >
-                                                    {removingTreeId === tree.treeId ? (
-                                                        <CircularProgress size={14}/>
-                                                    ) : (
-                                                        <RemoveIcon fontSize="small"/>
-                                                    )}
-                                                </IconButton>
-                                            </Tooltip>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                    <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1}}>
+                        <Typography variant="body2" color="text.secondary" textAlign="center" py={3} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
+                            No visited trees yet. Start exploring to see your visit history!
+                        </Typography>
                     </Box>
+                ) : (
+                    <DataGrid
+                        rows={trees}
+                        columns={columns}
+                        loading={loading}
+                        pageSizeOptions={[paginationModel.pageSize]}
+                        paginationModel={paginationModel}
+                        onPaginationModelChange={setPaginationModel}
+                        getRowId={(row) => row.treeId}
+                        disableRowSelectionOnClick
+                        hideFooterSelectedRowCount
+                        initialState={{
+                            sorting: {
+                                sortModel: [{ field: 'lastVisited', sort: 'desc' }],
+                            },
+                        }}
+                        sx={{
+                            width: '100%',
+                            flex: 1,
+                            border: 'none',
+                            '& .MuiDataGrid-main': {
+                                overflow: 'hidden'
+                            },
+                            '& .MuiDataGrid-virtualScroller': {
+                                overflow: 'hidden !important'
+                            },
+                            '& .MuiDataGrid-virtualScrollerContent': {
+                                overflow: 'hidden'
+                            },
+                            '& .MuiDataGrid-virtualScrollerRenderZone': {
+                                overflow: 'hidden'
+                            },
+                            '& .MuiDataGrid-columnHeaders': {
+                                backgroundColor: '#f5f5f5',
+                                minHeight: '35px !important',
+                                maxHeight: '35px !important',
+                            },
+                            '& .MuiDataGrid-columnHeader': {
+                                minHeight: '35px !important',
+                                maxHeight: '35px !important',
+                            },
+                            '& .MuiDataGrid-cell': {
+                                padding: '4px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            },
+                            '& .MuiDataGrid-scrollbar': {
+                                display: 'none'
+                            },
+                            '& .MuiDataGrid-scrollbar--vertical': {
+                                display: 'none'
+                            },
+                            '& .MuiDataGrid-scrollbar--horizontal': {
+                                display: 'none'
+                            }
+                        }}
+                        rowHeight={35}
+                        slots={{
+                            footer: CustomFooter,
+                        }}
+                    />
                 )}
             </DashboardCard>
         </Box>
