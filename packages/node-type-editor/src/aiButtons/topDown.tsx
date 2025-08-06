@@ -13,6 +13,7 @@ import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import AutoAwesomeMotionIcon from '@mui/icons-material/AutoAwesomeMotion';
 import {SelectionConfirmation} from "./SelectionConfirmation";
+import pRetry from 'p-retry';
 
 export const TopDownButton: React.FC<{ node: NodeVM }> = ({node}) => {
         const [loading, setLoading] = React.useState(false);
@@ -62,7 +63,11 @@ export const TopDownButton: React.FC<{ node: NodeVM }> = ({node}) => {
                     treeM.insertNode(newNodeM, node.id, null);
                     const editorNodeType = await treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
                     editorNodeType.ydataInitialize(newNodeM)
-                    editorNodeType.setEditorContent(newNodeM, item.content);
+                    try {
+                        editorNodeType.setEditorContent(newNodeM, item.content);
+                    } catch (e){
+                        alert(e)
+                    }
                 }
             }
             handleCloseDialog();
@@ -155,14 +160,33 @@ You should not put any HTML elements not appearing in the original content.
         role: "user"
     });
 
-    const response = await fetchChatResponse([message.toJson() as any], "gpt-4.1", authToken);
+    return await pRetry(async () => {
+        const response = await fetchChatResponse([message.toJson() as any], "gpt-4.1", authToken);
 
-    try {
-        // The response is expected to be a JSON string array
-        const titleAndContents = JSON.parse(response);
-        return titleAndContents
-    } catch (error) {
-        console.error("Failed to parse LLM response:", error);
-        return [];
-    }
+        try {
+            // The response is expected to be a JSON string array
+            const titleAndContents = JSON.parse(response);
+            
+            // Validate each child content
+            for (const child of titleAndContents) {
+                if (!child.content) continue;
+                const isValid = EditorNodeType.validateEditorContent(child.content);
+                if (!isValid) {
+                    throw new Error(`Child content validation failed for title: ${child.title}`);
+                }
+            }
+            
+            return titleAndContents;
+        } catch (error) {
+            if (error instanceof SyntaxError) {
+                throw new Error("Failed to parse LLM response as JSON");
+            }
+            throw error;
+        }
+    }, {
+        retries: 3,
+        onFailedAttempt: (error) => {
+            console.warn(`Validation failed on attempt ${error.attemptNumber}:`, error.message);
+        }
+    });
 }

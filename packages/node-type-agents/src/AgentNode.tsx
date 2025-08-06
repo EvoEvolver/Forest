@@ -12,6 +12,7 @@ import {AgentCallingMessage, AgentResponseMessage} from "@forest/agent-chat/src/
 import {NormalMessage} from "@forest/agent-chat/src/MessageTypes";
 
 const AgentPromptText = "AgentPromptText"
+const AgentDescriptionText = "AgentDescriptionText"
 
 function AgentFilesComponent() {
     const [files, setFiles] = React.useState(agentSessionState.files);
@@ -65,7 +66,10 @@ export class AgentNodeType extends ActionableNodeType {
     allowReshape = true
     allowAddingChildren = true
     allowEditTitle = true
-    allowedChildrenTypes = ["AgentNodeType", "AgentToolNodeType", "CodeInterpreterNodeType", "KnowledgeNodeType", "MongoDataGridNodeType"]
+
+    allowedChildrenTypes = ["AgentNodeType", "AgentToolNodeType", "CodeInterpreterNodeType", "KnowledgeNodeType", "MongoDataGridNodeType", "A2ANodeType", "MCPNodeType"]
+
+
 
 
     render(node: NodeVM): React.ReactNode {
@@ -75,9 +79,19 @@ export class AgentNodeType extends ActionableNodeType {
     }
 
     renderTool1(node: NodeVM): React.ReactNode {
-        return <Box sx={{width: "100%", height: "100%"}}>
-            <h1>Agent context</h1>
-            <CollaborativeEditor yText={node.ydata.get(AgentPromptText)} langExtension={markdown}/>
+        return <Box sx={{width: "100%", height: "100%", display: "flex", flexDirection: "column"}}>
+            <Box sx={{flex: 1, minHeight: 0, mb: 2}}>
+                <Typography variant="h6" sx={{mb: 1}}>Agent Context</Typography>
+                <Box sx={{height: "calc(100% - 32px)", border: "1px solid #ddd", borderRadius: 1}}>
+                    <CollaborativeEditor yText={node.ydata.get(AgentPromptText)} langExtension={markdown}/>
+                </Box>
+            </Box>
+            <Box sx={{flex: 1, minHeight: 0}}>
+                <Typography variant="h6" sx={{mb: 1}}>Description</Typography>
+                <Box sx={{height: "calc(100% - 32px)", border: "1px solid #ddd", borderRadius: 1}}>
+                    <CollaborativeEditor yText={node.ydata.get(AgentDescriptionText)} langExtension={markdown}/>
+                </Box>
+            </Box>
         </Box>
     }
 
@@ -95,6 +109,10 @@ export class AgentNodeType extends ActionableNodeType {
             // @ts-ignore
             ydata.set(AgentPromptText, new Y.Text())
         }
+        if (!ydata.has(AgentDescriptionText)) {
+            // @ts-ignore
+            ydata.set(AgentDescriptionText, new Y.Text())
+        }
     }
 
     vdataInitialize(node: NodeVM) {
@@ -103,6 +121,11 @@ export class AgentNodeType extends ActionableNodeType {
     agentPromptYText(node: NodeM): Y.Text {
         // @ts-ignore
         return node.ydata().get(AgentPromptText) as Y.Text
+    }
+
+    agentDescriptionYText(node: NodeM): Y.Text {
+        // @ts-ignore
+        return node.ydata().get(AgentDescriptionText) as Y.Text
     }
 
     actions(node: NodeM): Action[] {

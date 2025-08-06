@@ -35,6 +35,7 @@ import {TreeVisitManager} from './services/treeVisitTracker';
 import {createTreePermissionRouter} from "./routes";
 import apiProxyRouter from "./routes/apiProxyRouter.ts";
 import mcpProxyRouter from "./routes/mcpProxyRouter";
+import a2aProxyRouter from "./routes/a2aProxyRouter";
 import { imageRoutes } from './routes/imageRoutes';
 import { initializeMinioService } from './services/minioService';
 
@@ -76,6 +77,7 @@ function main(): void {
     app.use('/api', createNodeSnapshotRouter());
     app.use('/api/api-proxy', apiProxyRouter)
     app.use('/api/mcp-proxy', mcpProxyRouter);
+    app.use('/api/a2a-proxy', a2aProxyRouter);
     app.use('/api/images', imageRoutes);
     app.use('/api/metadata', metadataRoutes);
     app.use('/api/collections', createMongoCollectionRouter());
