@@ -55,6 +55,18 @@ export class EditorNodeType extends NodeType {
         }
     }
 
+    static validateEditorContent(htmlContent: string) {
+        const editor = makeEditor(null, null, true, null, null, null);
+        try {
+            editor.commands.setContent(htmlContent);
+        } catch (e) {
+            editor.destroy()
+            return false
+        }
+        editor.destroy()
+        return true
+    }
+
     renderTool1(node: NodeVM): React.ReactNode {
 
     }

@@ -12,6 +12,7 @@ import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import SummarizeIcon from '@mui/icons-material/Summarize';
 import {ModifyConfirmation} from "./ModifyConfirmation";
+import pRetry from 'p-retry';
 
 
 export const BottomUpButton: React.FC<{ node: NodeVM }> = ({node}) => {
@@ -45,7 +46,11 @@ export const BottomUpButton: React.FC<{ node: NodeVM }> = ({node}) => {
     const handleAccept = async (modifiedContent: string) => {
         await stageThisVersion(node, "Before bottom-up editing");
         const editorNodeType = await node.nodeM.treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
-        editorNodeType.setEditorContent(node.nodeM, modifiedContent);
+        try {
+            editorNodeType.setEditorContent(node.nodeM, modifiedContent)
+        }catch (e) {
+            alert(e)
+        }
         handleCloseDialog();
     };
 
@@ -128,6 +133,18 @@ If there are any annotations in the original text, you should keep them as they 
             role: "user"
         }
     )
-    const response = await fetchChatResponse([message.toJson() as any], "gpt-4.1", authToken);
-    return response;
+    
+    return await pRetry(async () => {
+        const response = await fetchChatResponse([message.toJson() as any], "gpt-4.1", authToken);
+        const isValid = EditorNodeType.validateEditorContent(response);
+        if (!isValid) {
+            throw new Error('Editor content validation failed');
+        }
+        return response;
+    }, {
+        retries: 3,
+        onFailedAttempt: (error) => {
+            console.warn(`Validation failed on attempt ${error.attemptNumber}:`, error.message);
+        }
+    });
 }

@@ -22,8 +22,9 @@ import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import EditIcon from '@mui/icons-material/Edit';
 import {ModifyConfirmation} from "./ModifyConfirmation";
+import pRetry from 'p-retry';
 
-export const ModifyButton: React.FC<{ node: NodeVM}> = ({node}) => {
+export const ModifyButton: React.FC<{ node: NodeVM }> = ({node}) => {
     const [loading, setLoading] = React.useState(false);
     const [dialogOpen, setDialogOpen] = React.useState(false);
     const [prompt, setPrompt] = React.useState("");
@@ -56,7 +57,7 @@ You should only return the HTML content of the modified text without any additio
 Preserve any existing HTML tags and structure unless a modification is specifically requested.
 If there are any annotations in the original text, you should keep them unless the user asks to remove them.
 </output_format>`;
-    
+
     const [customTemplate, setCustomTemplate] = React.useState<string>(
         localStorage.getItem('modifyButtonTemplate') || defaultTemplate
     );
@@ -86,7 +87,7 @@ If there are any annotations in the original text, you should keep them unless t
 
     const handleModify = async () => {
         if (!prompt.trim()) return;
-        
+
         setLoading(true);
         try {
             const editorNodeType = await node.nodeM.treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
@@ -113,7 +114,11 @@ If there are any annotations in the original text, you should keep them unless t
         try {
             await stageThisVersion(node, "Before LLM modification");
             const editorNodeType = await node.nodeM.treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
-            editorNodeType.setEditorContent(node.nodeM, modifiedContent);
+            try {
+                editorNodeType.setEditorContent(node.nodeM, modifiedContent);
+            } catch (e) {
+                alert(e)
+            }
             handleCloseReviewDialog();
         } catch (error) {
             alert("Error applying changes: " + (error instanceof Error ? error.message : String(error)));
@@ -136,8 +141,8 @@ If there are any annotations in the original text, you should keep them unless t
                 }}
                 onClick={handleClick}
             >
-                <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <EditIcon color="primary" />
+                <CardContent sx={{display: 'flex', alignItems: 'center', gap: 2}}>
+                    <EditIcon color="primary"/>
                     <div>
                         <Typography variant="body1" component="div">
                             Modify with AI
@@ -163,24 +168,30 @@ If there are any annotations in the original text, you should keep them unless t
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         placeholder="e.g., Make this more concise, Add more details about..., Rewrite in a formal tone..."
-                        sx={{ mb: 2 }}
+                        sx={{mb: 2}}
                     />
-                    
-                    <Accordion 
-                        expanded={accordionExpanded} 
+
+                    <Accordion
+                        expanded={accordionExpanded}
                         onChange={() => setAccordionExpanded(!accordionExpanded)}
                     >
-                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                        <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
                             <Typography variant="h6">Custom Prompt Template</Typography>
                         </AccordionSummary>
                         <AccordionDetails>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: '16px'
+                            }}>
                                 <Typography variant="body2" color="textSecondary">
-                                    Edit the AI prompt template. Use ${'${parentContent}'}, ${'${originalContent}'} and ${'${userPrompt}'} as placeholders.
+                                    Edit the AI prompt template. Use ${'${parentContent}'}, ${'${originalContent}'} and
+                                    ${'${userPrompt}'} as placeholders.
                                 </Typography>
                                 {isTemplateModified && (
-                                    <Button 
-                                        size="small" 
+                                    <Button
+                                        size="small"
                                         onClick={handleResetTemplate}
                                         color="secondary"
                                     >
@@ -202,12 +213,12 @@ If there are any annotations in the original text, you should keep them unless t
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseDialog}>Cancel</Button>
-                    <Button 
-                        onClick={handleModify} 
-                        color="primary" 
+                    <Button
+                        onClick={handleModify}
+                        color="primary"
                         disabled={!prompt.trim() || loading}
                     >
-                        {loading ? <CircularProgress size={20} /> : "Modify"}
+                        {loading ? <CircularProgress size={20}/> : "Modify"}
                     </Button>
                 </DialogActions>
             </Dialog>
@@ -236,7 +247,7 @@ async function getModifiedContent(node: NodeM, userPrompt: string, authToken: st
     const treeM = node.treeM;
     const editorNodeType = await treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
     const originalContent = editorNodeType.getEditorContent(node);
-    
+
     const parent = treeM.getParent(node);
     const parentContent = parent && parent.nodeTypeName() === "EditorNodeType"
         ? editorNodeType.getEditorContent(parent)
@@ -254,6 +265,18 @@ async function getModifiedContent(node: NodeM, userPrompt: string, authToken: st
             role: "user",
         }
     );
-    
-    return await fetchChatResponse([message.toJson() as any], "gpt-4.1", authToken);
+
+    return await pRetry(async () => {
+        const response = await fetchChatResponse([message.toJson() as any], "gpt-4.1", authToken);
+        const isValid = EditorNodeType.validateEditorContent(response);
+        if (!isValid) {
+            throw new Error('Editor content validation failed');
+        }
+        return response;
+    }, {
+        retries: 3,
+        onFailedAttempt: (error) => {
+            console.warn(`Validation failed on attempt ${error.attemptNumber}:`, error.message);
+        }
+    });
 }

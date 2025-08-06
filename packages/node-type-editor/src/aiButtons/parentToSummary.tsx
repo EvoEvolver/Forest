@@ -50,7 +50,11 @@ export const ParentToSummaryButton: React.FC<{ node: NodeVM }> = ({node}) => {
     const handleAccept = async (modifiedContent: string) => {
         await stageThisVersion(node, "Before parent-to-summary editing");
         const editorNodeType = await node.nodeM.treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
-        editorNodeType.setEditorContent(node.nodeM, modifiedContent);
+        try {
+            editorNodeType.setEditorContent(node.nodeM, modifiedContent);
+        }catch (e){
+            alert(e)
+        }
         handleCloseDialog();
     };
 
