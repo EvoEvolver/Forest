@@ -3,15 +3,20 @@ import { Breadcrumbs, Link, Typography, Box } from '@mui/material';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { NavigateNext as NavigateNextIcon } from '@mui/icons-material';
 import { breadcrumbPathAtom } from '../atoms/BreadcrumbAtoms';
-import { jumpToNodeAtom } from '../../TreeState/TreeState';
+import { jumpToNodeAtom, scrollToNodeAtom } from '../../TreeState/TreeState';
 
 export const Breadcrumb: React.FC = () => {
     const breadcrumbPath = useAtomValue(breadcrumbPathAtom);
     const jumpToNode = useSetAtom(jumpToNodeAtom);
+    const scrollToNode = useSetAtom(scrollToNodeAtom);
 
     const handleBreadcrumbClick = (event: React.MouseEvent<HTMLAnchorElement>, nodeId: string) => {
         event.preventDefault();
         jumpToNode(nodeId);
+        // Add a small delay to ensure the node is selected before scrolling
+        setTimeout(() => {
+            scrollToNode(nodeId);
+        }, 100);
     };
 
     // Don't render if no path or only root
