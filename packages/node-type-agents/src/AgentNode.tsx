@@ -65,7 +65,7 @@ function AgentTool1Component({ node }: { node: NodeVM }) {
     const [todoMode, setTodoMode] = React.useState(false);
     
     React.useEffect(() => {
-        const yMap = node.ydata.get(TodoMode) as Y.Map<boolean>;
+        const yMap = node.ydata.get(TodoMode) as unknown as Y.Map<boolean>;
         if (yMap) {
             setTodoMode(yMap.get('enabled') || false);
             
@@ -79,7 +79,7 @@ function AgentTool1Component({ node }: { node: NodeVM }) {
     }, [node.ydata]);
     
     const handleTodoModeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const yMap = node.ydata.get(TodoMode) as Y.Map<boolean>;
+        const yMap = node.ydata.get(TodoMode) as unknown as Y.Map<boolean>;
         yMap.set('enabled', event.target.checked);
     };
 
