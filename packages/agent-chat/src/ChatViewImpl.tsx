@@ -22,9 +22,15 @@ interface ChatViewImplProps {
 export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewImplProps) {
     const [message, setMessage] = useState("");
     const endRef = useRef(null);
+    const scrollContainerRef = useRef(null);
 
     useEffect(() => {
-        endRef.current?.scrollIntoView({behavior: "smooth"});
+        if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTo({
+                top: scrollContainerRef.current.scrollHeight,
+                behavior: "smooth"
+            });
+        }
     }, [messages]);
 
     useEffect(() => {
@@ -67,7 +73,7 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewI
             </Box>
 
 
-            <CardContent sx={{flex: 1, overflowY: "auto", pb: 1}}>
+            <CardContent ref={scrollContainerRef} sx={{flex: 1, overflowY: "auto", pb: 1}}>
                 <Stack spacing={1}>
                     {messages.map((msg, idx) => (
                         <Box
