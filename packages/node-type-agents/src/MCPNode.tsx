@@ -227,6 +227,9 @@ export class MCPNodeType extends ActionableNodeType {
         // Start/stop status checking based on connection state
         useEffect(() => {
             if (connection && connection.connected && connection.toolsetUrl) {
+                // Immediately check connection status when component mounts or connection becomes available
+                checkConnectionStatus();
+                
                 // Start periodic status checking every 10 seconds
                 const interval = setInterval(() => {
                     checkConnectionStatus();

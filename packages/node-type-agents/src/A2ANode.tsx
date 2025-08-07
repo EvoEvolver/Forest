@@ -138,6 +138,7 @@ export class A2ANodeType extends ActionableNodeType {
         const [connection, setConnection] = useState<A2AConnection | null>(this.getA2AConnection(node.nodeM));
         const [loading, setLoading] = useState(false);
         const [error, setError] = useState<string | null>(null);
+        const [statusCheckInterval, setStatusCheckInterval] = useState<NodeJS.Timeout | null>(null);
 
         // @ts-ignore
         const urlYText: Y.Text = node.ydata.get(A2AAgentUrlText) as Y.Text;
@@ -156,6 +157,78 @@ export class A2ANodeType extends ActionableNodeType {
                 cacheYText.unobserve(observer);
             };
         }, [cacheYText, node.nodeM]);
+
+        const checkConnectionStatus = async () => {
+            if (!connection || !connection.connected || !connection.agentUrl) return;
+
+            try {
+                const client = new A2AClient(connection.agentUrl, connection.authToken);
+                // Try to get agent card to check if connection is still valid
+                const testConnection = await connectToA2AAgent(connection.agentUrl, connection.authToken);
+                
+                if (connection.connected && !testConnection.connected) {
+                    console.log(`A2A connection health check failed, updating status`);
+                    const disconnectedConnection: A2AConnection = {
+                        ...connection,
+                        connected: false,
+                        error: testConnection.error || 'Connection lost',
+                        agentCard: undefined,
+                        extendedCard: undefined
+                    };
+                    this.saveA2AConnection(node.nodeM, disconnectedConnection);
+                    setConnection(disconnectedConnection);
+                    setError(testConnection.error || 'Connection lost');
+                }
+            } catch (err: any) {
+                if (connection.connected) {
+                    console.log(`A2A agent unreachable, assuming disconnected`);
+                    const disconnectedConnection: A2AConnection = {
+                        ...connection,
+                        connected: false,
+                        error: 'Agent unreachable',
+                        agentCard: undefined,
+                        extendedCard: undefined
+                    };
+                    this.saveA2AConnection(node.nodeM, disconnectedConnection);
+                    setConnection(disconnectedConnection);
+                    setError('Agent unreachable');
+                }
+            }
+        };
+
+        // Start/stop status checking based on connection state
+        useEffect(() => {
+            if (connection && connection.connected && connection.agentUrl) {
+                // Immediately check connection status when component mounts or connection becomes available
+                checkConnectionStatus();
+                
+                // Start periodic status checking every 10 seconds
+                const interval = setInterval(() => {
+                    checkConnectionStatus();
+                }, 10000);
+                
+                setStatusCheckInterval(interval);
+                
+                return () => {
+                    clearInterval(interval);
+                };
+            } else {
+                // Stop status checking if disconnected
+                if (statusCheckInterval) {
+                    clearInterval(statusCheckInterval);
+                    setStatusCheckInterval(null);
+                }
+            }
+        }, [connection?.connected, connection?.agentUrl]);
+
+        // Cleanup on unmount
+        useEffect(() => {
+            return () => {
+                if (statusCheckInterval) {
+                    clearInterval(statusCheckInterval);
+                }
+            };
+        }, [statusCheckInterval]);
 
         const handleConnect = async (agentUrl: string, authToken?: string) => {
             setLoading(true);
@@ -219,7 +292,13 @@ export class A2ANodeType extends ActionableNodeType {
         const handleRefresh = async () => {
             if (!connection || !connection.agentUrl) return;
             
-            await handleConnect(connection.agentUrl, connection.authToken);
+            // First check the current status
+            await checkConnectionStatus();
+            
+            // Then try to reconnect if we still think we should be connected
+            if (connection.connected && connection.agentUrl) {
+                await handleConnect(connection.agentUrl, connection.authToken);
+            }
         };
 
         const handleExecuteSkill = async (skillId: string, params: any, authToken?: string) => {
