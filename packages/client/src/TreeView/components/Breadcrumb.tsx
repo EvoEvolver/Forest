@@ -90,7 +90,7 @@ export const Breadcrumb: React.FC = () => {
                             fontWeight: 400,
                             fontSize: '0.875rem',
                             color: 'text.secondary',
-                            lineHeight: 1,
+                            lineHeight: 1.2,
                             display: 'flex',
                             alignItems: 'center',
                             '&:hover': {
@@ -112,7 +112,7 @@ export const Breadcrumb: React.FC = () => {
                         color: 'text.primary',
                         fontWeight: 500,
                         fontSize: '0.875rem',
-                        lineHeight: 1,
+                        lineHeight: 1.2,
                         display: 'flex',
                         alignItems: 'center',
                         // Truncate long titles
