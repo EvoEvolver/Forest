@@ -25,11 +25,20 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewI
     const scrollContainerRef = useRef(null);
 
     useEffect(() => {
-        if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollTo({
-                top: scrollContainerRef.current.scrollHeight,
-                behavior: "smooth"
-            });
+        if (scrollContainerRef.current && endRef.current) {
+            const container = scrollContainerRef.current;
+            const lastMessage = endRef.current.previousElementSibling;
+            
+            if (lastMessage) {
+                const containerRect = container.getBoundingClientRect();
+                const messageRect = lastMessage.getBoundingClientRect();
+                const relativeTop = messageRect.top - containerRect.top + container.scrollTop;
+                
+                container.scrollTo({
+                    top: relativeTop,
+                    behavior: "smooth"
+                });
+            }
         }
     }, [messages]);
 
