@@ -19,6 +19,7 @@
     "axios": "^1.11.0",
     "codemirror": "^6.0.2",
     "jotai": "^2.10.3",
+    "p-retry": "^6.2.1",
     "react": "^19.1.0",
     "y-codemirror.next": "^0.3.5",
     "yjs": "^13.6.27"
