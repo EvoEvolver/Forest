@@ -179,8 +179,8 @@ ${todoList} `,
             author: nodeM.title()
         }))
     }
-
-    while (true) {
+    const maxIter = 50
+    for (let i = 0; i < maxIter; i++) {
         let messageContent: string | undefined;
         for (let attempt = 0; attempt < 3; attempt++) {
             try {
@@ -198,4 +198,5 @@ ${todoList} `,
             return messageContent
         }
     }
+    return "Maximum iterations reached without a response.";
 }
