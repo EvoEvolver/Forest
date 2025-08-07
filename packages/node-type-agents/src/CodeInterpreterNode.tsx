@@ -7,9 +7,10 @@ import * as Y from "yjs";
 import {Box, Button, Paper, TextField, Typography, Dialog, DialogTitle, DialogContent, DialogActions} from "@mui/material";
 import axios from "axios";
 import {Action, ActionableNodeType} from "./ActionableNodeType";
-import {AgentSessionState} from "./sessionState";
+import {AgentSessionState, agentSessionState} from "./sessionState";
 import {CodeInterpreterModifyButton, CodeInterpreterGenerateButton} from "./CodeButtons/CodeInterpreterModifyButton";
 import {json as jsonLang} from "@codemirror/lang-json";
+import {ToolCallingMessage, ToolResponseMessage} from "@forest/agent-chat/src/AgentMessageTypes";
 
 // Configuration component for endpoint URL and description
 const CodeInterpreterTool1Component: React.FC<{ node: NodeVM }> = ({node}) => {
@@ -281,21 +282,36 @@ export class CodeInterpreterNodeType extends ActionableNodeType {
     }
 
     actions(node: NodeM): Action[] {
-        return [{
-            label: "Execute code in " + node.title(),
-            description: this.descriptionYText(node).toJSON(),
-            parameter: {
-                "code": {
-                    "type": "string",
-                    "description": "The Python code to execute in the interpreter."
+        const description = this.descriptionYText(node).toString();
+        const parametersText = this.parameterYText(node).toString();
+        
+        // Parse parameters from the ydata
+        let parameters: Record<string, any> = {
+        };
+        
+        if (parametersText.trim()) {
+            try {
+                const parametersObj = JSON.parse(parametersText);
+                if (typeof parametersObj === 'object' && parametersObj !== null && !Array.isArray(parametersObj)) {
+                    // Merge the parsed parameters with the default code parameter
+                    parameters = {...parametersObj };
                 }
+            } catch (error) {
+                // If parameters are invalid JSON, just use the default code parameter
             }
+        }
+
+        return [{
+            label: "Run " + node.title(),
+            description: description || "Execute Python code in the interpreter",
+            parameter: parameters
         }];
     }
 
     async executeAction(node: NodeM, label: string, parameters: Record<string, any>, callerNode: NodeM, agentSessionState: AgentSessionState): Promise<any> {
-        const code = parameters.code;
+        const code = this.codeYText(node).toString();
         const url = this.endpointUrlYText(node)?.toString().trim();
+        console.log(code, url, parameters);
 
         if (!url) {
             throw new Error("No endpoint URL configured for code interpreter");
@@ -305,9 +321,33 @@ export class CodeInterpreterNodeType extends ActionableNodeType {
             throw new Error("No code provided to execute");
         }
 
+        // Extract all parameters except 'code' to pass as execution parameters
+        const executionParameters: Record<string, any> = {};
+        Object.keys(parameters).forEach(key => {
+            if (key !== 'code') {
+                executionParameters[key] = parameters[key];
+            }
+        });
+
         try {
-            const response = await axios.post(url, {code});
-            return response.data["result"];
+            const requestBody: any = { code };
+            if (Object.keys(executionParameters).length > 0) {
+                requestBody.parameters = executionParameters;
+            }
+            agentSessionState.addMessage(callerNode, new ToolCallingMessage({
+                toolName: node.title(),
+                parameters: executionParameters,
+                author: node.title(),
+            }));
+            
+            const response = await axios.post(url, requestBody);
+            const result =  response.data["result"];
+            agentSessionState.addMessage(callerNode, new ToolResponseMessage({
+                toolName: node.title(),
+                response: result,
+                author: node.title(),
+            }));
+
         } catch (error: any) {
             throw new Error(`Code execution failed: ${error.message}`);
         }
