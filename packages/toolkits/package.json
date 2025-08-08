@@ -18,7 +18,8 @@
     "uuid": "^9.0.1",
     "yjs": "^13.6.27",
     "react": "^19.1.0",
-    "@mui/icons-material": "^7.2.0"
+    "@mui/icons-material": "^7.2.0",
+    "mongodb": "^6.18.0"
   },
   "devDependencies": {
     "@forest/schema": "workspace:*",
