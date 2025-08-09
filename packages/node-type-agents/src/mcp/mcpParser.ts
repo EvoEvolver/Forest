@@ -39,23 +39,19 @@ export interface MCPServerInfo {
     };
 }
 
+// Simplified MCPConnection - only runtime state, not synced to yjs
 export interface MCPConnection {
-    toolsetUrl: string;  // Changed from serverUrl to toolsetUrl
-    mcpConfig: any;      // New: MCP configuration object
-    configHash: string; // New: Server-side config hash
+    toolsetUrl: string;
+    configHash: string;
     connected: boolean;
-    serverInfo?: MCPServerInfo;
-    tools: MCPTool[];
-    resources: MCPResource[];
-    prompts: MCPPrompt[];
-    lastFetched?: Date;
-    error?: string;
-    enabledTools?: string[]; // Array of enabled tool names for serialization
-    
-    // Legacy support (deprecated but kept for backward compatibility)
-    serverUrl?: string;  // Deprecated: kept for backward compatibility
-    type?: 'toolset-managed'; // New connection type
+    tools: MCPTool[];  // Full tool list, browser cache only
+    lastFetched?: Date;  // Keep this for UI display
+    serverInfo?: MCPServerInfo; // Keep this for UI display
+    error?: string; // Keep this for error display
 }
+
+// Tool enabled state map - synced to yjs
+export type ToolEnabledMap = Record<string, boolean>;
 
 export interface MCPCallRequest {
     method: string;

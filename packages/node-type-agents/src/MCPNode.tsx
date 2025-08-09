@@ -7,19 +7,18 @@ import {json as jsonLang} from '@codemirror/lang-json';
 import {
     MCPConnection,
     MCPTool,
-    generatePromptFromMCPTool,
-    createMCPToolCall,
+    ToolEnabledMap,
     createToolsetConnection,
     createToolsetToolCall,
-    parseMCPTools,
-    generateConfigId
+    parseMCPTools
 } from "./mcp/mcpParser";
 import {httpUrl} from "@forest/schema/src/config";
-import {ActionableNodeType, Action, ActionParameter} from "./ActionableNodeType";
+import {ActionableNodeType, Action} from "./ActionableNodeType";
 import {AgentSessionState} from "./sessionState";
 import {ToolCallingMessage, ToolResponseMessage} from "@forest/agent-chat/src/AgentMessageTypes";
 
 const MCPServerConfigText = "MCPServerConfigText";
+const MCPToolEnabledText = "MCPToolEnabledText";
 const MCPConnectionCacheText = "MCPConnectionCacheText";
 
 // New configuration interface for Toolset integration
@@ -67,10 +66,35 @@ export class MCPNodeType extends ActionableNodeType {
         return config && config.toolsetUrl && config.mcpConfig;
     }
 
-    private getRawMCPConnection(node: NodeM): MCPConnection | null {
+    // Get tool enabled state map from yjs
+    private getToolEnabledMap(node: NodeM): ToolEnabledMap {
+        // @ts-ignore
+        const yText: Y.Text = node.ydata().get(MCPToolEnabledText) as Y.Text;
+        if (!yText || yText.length === 0) {
+            return {};
+        }
+        try {
+            return JSON.parse(yText.toString());
+        } catch (e) {
+            return {};
+        }
+    }
+
+    // Save tool enabled state map to yjs  
+    private saveToolEnabledMap(node: NodeM, enabledMap: ToolEnabledMap) {
+        // @ts-ignore
+        const yText: Y.Text = node.ydata().get(MCPToolEnabledText) as Y.Text;
+        if (yText) {
+            yText.delete(0, yText.length);
+            yText.insert(0, JSON.stringify(enabledMap, null, 2));
+        }
+    }
+
+    // Get MCPConnection from yjs cache
+    private getCachedConnection(node: NodeM): MCPConnection | null {
         // @ts-ignore
         const yText: Y.Text = node.ydata().get(MCPConnectionCacheText) as Y.Text;
-        if (!yText) {
+        if (!yText || yText.length === 0) {
             return null;
         }
         try {
@@ -79,37 +103,41 @@ export class MCPNodeType extends ActionableNodeType {
             if (connection.lastFetched) {
                 connection.lastFetched = new Date(connection.lastFetched);
             }
+            // Ensure tools is always an array (for backward compatibility)
+            if (!connection.tools) {
+                connection.tools = [];
+            }
             return connection;
         } catch (e) {
             return null;
         }
     }
 
-    getMCPConnection(node: NodeM): MCPConnection | null {
-        const connection = this.getRawMCPConnection(node);
-        if (!connection) {
-            return null;
-        }
-        
-        // Apply tool enabled states and filter out disabled tools
-        this.applyToolEnabledStates(connection);
-        
-        // Return connection with only enabled tools - disabled tools are invisible to the model
-        const filteredConnection = {
-            ...connection,
-            tools: connection.tools.filter(tool => tool.enabled !== false)
-        };
-        
-        return filteredConnection;
-    }
-
-    private saveMCPConnection(node: NodeM, connection: MCPConnection) {
+    // Save MCPConnection to yjs cache
+    private saveCachedConnection(node: NodeM, connection: MCPConnection) {
         // @ts-ignore
         const yText: Y.Text = node.ydata().get(MCPConnectionCacheText) as Y.Text;
         if (yText) {
             yText.delete(0, yText.length);
             yText.insert(0, JSON.stringify(connection, null, 2));
         }
+    }
+
+    // Get enabled tools by combining MCPConnection.tools with yjs enabled state
+    private getEnabledTools(connection: MCPConnection | null, node: NodeM): MCPTool[] {
+        if (!connection || !connection.tools) {
+            return [];
+        }
+        
+        const enabledMap = this.getToolEnabledMap(node);
+        
+        // If no enabled map exists, default all tools to enabled
+        if (Object.keys(enabledMap).length === 0) {
+            return connection.tools;
+        }
+        
+        // Filter tools based on enabled map
+        return connection.tools.filter(tool => enabledMap[tool.name] !== false);
     }
 
     private saveServerConfig(node: NodeM, config: MCPServerConfig | MCPToolsetConfig) {
@@ -121,57 +149,37 @@ export class MCPNodeType extends ActionableNodeType {
         }
     }
 
-    private applyToolEnabledStates(connection: MCPConnection) {
-        // Get previously saved enabled states
-        const savedEnabledTools = connection.enabledTools;
-        
-        // If enabledTools is undefined, this is the first time - default all to enabled
-        // If enabledTools is an empty array, it means all tools were explicitly disabled
-        if (savedEnabledTools === undefined) {
-            // First time initialization - enable all tools
-            connection.tools = connection.tools.map(tool => ({
-                ...tool,
-                enabled: true
-            }));
-            connection.enabledTools = connection.tools.map(tool => tool.name);
-        } else {
-            // Apply saved enabled states
-            const savedEnabledSet = new Set(savedEnabledTools);
-            connection.tools = connection.tools.map(tool => ({
-                ...tool,
-                enabled: savedEnabledSet.has(tool.name)
-            }));
-            
-            // Update enabledTools array to match current state
-            connection.enabledTools = connection.tools
-                .filter(tool => tool.enabled !== false)
-                .map(tool => tool.name);
-        }
-    }
 
     render(node: NodeVM): React.ReactNode {
-        const [connection, setConnection] = useState<MCPConnection | null>(this.getMCPConnection(node.nodeM));
+        const [connection, setConnection] = useState<MCPConnection | null>(this.getCachedConnection(node.nodeM));
         const [loading, setLoading] = useState(false);
         const [error, setError] = useState<string | null>(null);
         const [statusCheckInterval, setStatusCheckInterval] = useState<NodeJS.Timeout | null>(null);
 
         // @ts-ignore
-        const configYText: Y.Text = node.ydata.get(MCPServerConfigText) as Y.Text;
+        const toolEnabledYText: Y.Text = node.ydata.get(MCPToolEnabledText) as Y.Text;
         // @ts-ignore
-        const cacheYText: Y.Text = node.ydata.get(MCPConnectionCacheText) as Y.Text;
+        const connectionCacheYText: Y.Text = node.ydata.get(MCPConnectionCacheText) as Y.Text;
 
         useEffect(() => {
-            const observer = () => {
-                // Use filtered connection for UI display
-                const newConnection = this.getMCPConnection(node.nodeM);
+            const toolEnabledObserver = () => {
+                // Tool enabled state changed, trigger re-render
+                setConnection((prevConnection: MCPConnection | null) => ({ ...prevConnection }));
+            };
+            
+            const connectionObserver = () => {
+                // Connection cache changed, update state
+                const newConnection = this.getCachedConnection(node.nodeM);
                 setConnection(newConnection);
             };
 
-            cacheYText.observe(observer);
+            toolEnabledYText.observe(toolEnabledObserver);
+            connectionCacheYText.observe(connectionObserver);
             return () => {
-                cacheYText.unobserve(observer);
+                toolEnabledYText.unobserve(toolEnabledObserver);
+                connectionCacheYText.unobserve(connectionObserver);
             };
-        }, [cacheYText, node.nodeM]);
+        }, [toolEnabledYText, connectionCacheYText, node.nodeM]);
 
         const checkConnectionStatus = async () => {
             if (!connection || !connection.toolsetUrl || !connection.configHash) return;
@@ -189,10 +197,8 @@ export class MCPNodeType extends ActionableNodeType {
                         console.log(`MCP connection health check failed, updating status`);
                         const disconnectedConnection: MCPConnection = {
                             ...connection,
-                            connected: false,
-                            error: status.message || 'Connection lost'
+                            connected: false
                         };
-                        this.saveMCPConnection(node.nodeM, disconnectedConnection);
                         setConnection(disconnectedConnection);
                         setError(status.message || 'Connection lost');
                     }
@@ -201,10 +207,8 @@ export class MCPNodeType extends ActionableNodeType {
                     if (connection.connected) {
                         const disconnectedConnection: MCPConnection = {
                             ...connection,
-                            connected: false,
-                            error: 'Health check failed: Server unreachable'
+                            connected: false
                         };
-                        this.saveMCPConnection(node.nodeM, disconnectedConnection);
                         setConnection(disconnectedConnection);
                         setError('Health check failed: Server unreachable');
                     }
@@ -214,10 +218,8 @@ export class MCPNodeType extends ActionableNodeType {
                     console.log(`MCP Toolset proxy unreachable, assuming disconnected`);
                     const disconnectedConnection: MCPConnection = {
                         ...connection,
-                        connected: false,
-                        error: 'Toolset proxy unreachable'
+                        connected: false
                     };
-                    this.saveMCPConnection(node.nodeM, disconnectedConnection);
                     setConnection(disconnectedConnection);
                     setError('Toolset proxy unreachable');
                 }
@@ -263,7 +265,7 @@ export class MCPNodeType extends ActionableNodeType {
             setError(null);
 
             try {
-                // Save Toolset config
+                // Save Toolset config to yjs
                 const config: MCPToolsetConfig = { 
                     toolsetUrl,
                     mcpConfig
@@ -301,43 +303,42 @@ export class MCPNodeType extends ActionableNodeType {
                 const toolsResult = await toolsResponse.json();
                 const tools = parseMCPTools(toolsResult);
 
-                // Create connection object with new Toolset format
+                // Create simplified connection object (browser cache only)
                 const newConnection: MCPConnection = {
                     toolsetUrl,
-                    mcpConfig,
                     configHash,
-                    type: 'toolset-managed',
                     connected: true,
-                    serverInfo: connectResult.result,
                     tools,
-                    resources: [],
-                    prompts: [],
-                    lastFetched: new Date()
+                    lastFetched: new Date(),
+                    serverInfo: connectResult.result
                 };
 
-                // Apply previously saved enabled states or default to all enabled
-                this.applyToolEnabledStates(newConnection);
+                // Generate simple enabled state map and save to yjs
+                const currentEnabledMap = this.getToolEnabledMap(node.nodeM);
+                const newEnabledMap: ToolEnabledMap = {};
                 
-                this.saveMCPConnection(node.nodeM, newConnection);
+                tools.forEach(tool => {
+                    // If tool was previously configured, keep its state; otherwise default to enabled
+                    newEnabledMap[tool.name] = currentEnabledMap[tool.name] !== undefined ? currentEnabledMap[tool.name] : true;
+                });
+                
+                this.saveToolEnabledMap(node.nodeM, newEnabledMap);
+                this.saveCachedConnection(node.nodeM, newConnection);
                 setConnection(newConnection);
 
             } catch (err: any) {
                 console.error('MCP Toolset connection error:', err);
                 setError(err.message || 'Failed to connect to MCP server via Toolset');
                 
-                // Save disconnected state
+                // Save disconnected state (browser cache only)
                 const failedConnection: MCPConnection = {
                     toolsetUrl,
-                    mcpConfig,
                     configHash: "",
-                    type: 'toolset-managed',
                     connected: false,
                     tools: [],
-                    resources: [],
-                    prompts: [],
                     error: err.message
                 };
-                this.saveMCPConnection(node.nodeM, failedConnection);
+                this.saveCachedConnection(node.nodeM, failedConnection);
                 setConnection(failedConnection);
             } finally {
                 setLoading(false);
@@ -349,25 +350,27 @@ export class MCPNodeType extends ActionableNodeType {
 
             setLoading(true);
             try {
-                await fetch(`${httpUrl}/api/mcp-proxy/disconnect`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        toolsetUrl: connection.toolsetUrl, 
-                        mcpConfig: connection.mcpConfig 
-                    })
-                });
+                // Get mcpConfig from yjs for disconnect call
+                const config = this.getServerConfig(node.nodeM);
+                if (config && this.isToolsetConfig(config)) {
+                    await fetch(`${httpUrl}/api/mcp-proxy/disconnect`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            toolsetUrl: connection.toolsetUrl, 
+                            mcpConfig: config.mcpConfig 
+                        })
+                    });
+                }
             } catch (err) {
                 console.warn('Error disconnecting from Toolset:', err);
             } finally {
                 const disconnectedConnection: MCPConnection = {
                     ...connection,
                     connected: false,
-                    tools: [],
-                    resources: [],
-                    prompts: []
+                    tools: []
                 };
-                this.saveMCPConnection(node.nodeM, disconnectedConnection);
+                this.saveCachedConnection(node.nodeM, disconnectedConnection);
                 setConnection(disconnectedConnection);
                 setLoading(false);
             }
@@ -380,8 +383,11 @@ export class MCPNodeType extends ActionableNodeType {
             await checkConnectionStatus();
             
             // Then try to reconnect if we still think we should be connected
-            if (connection.connected && connection.toolsetUrl && connection.mcpConfig) {
-                await handleConnect(connection.toolsetUrl, connection.mcpConfig);
+            if (connection.connected && connection.toolsetUrl) {
+                const config = this.getServerConfig(node.nodeM);
+                if (config && this.isToolsetConfig(config)) {
+                    await handleConnect(connection.toolsetUrl, config.mcpConfig);
+                }
             }
         };
 
@@ -390,13 +396,14 @@ export class MCPNodeType extends ActionableNodeType {
                 throw new Error('Not connected to MCP server via Toolset');
             }
 
-            if (!connection.toolsetUrl || !connection.mcpConfig) {
+            const config = this.getServerConfig(node.nodeM);
+            if (!config || !this.isToolsetConfig(config)) {
                 throw new Error('Invalid Toolset connection configuration');
             }
             
             const toolCallPayload = createToolsetToolCall(
                 connection.toolsetUrl, 
-                connection.mcpConfig, 
+                config.mcpConfig, 
                 toolName, 
                 params,
                 connection.configHash
@@ -440,81 +447,63 @@ export class MCPNodeType extends ActionableNodeType {
         };
 
         const handleToggleToolEnabled = (toolName: string, enabled: boolean) => {
-            // Get raw connection data (with all tools) for modification
-            const rawConnection = this.getRawMCPConnection(node.nodeM);
-            if (!rawConnection) return;
+            // Get current enabled map from yjs
+            const currentEnabledMap = this.getToolEnabledMap(node.nodeM);
             
-            // Apply current tool states to get the latest state
-            this.applyToolEnabledStates(rawConnection);
-            
-            // Update tool enabled state in raw data
-            const updatedTools = rawConnection.tools.map(tool => 
-                tool.name === toolName ? { ...tool, enabled } : tool
-            );
-            
-            // Rebuild enabledTools array from the updated tools
-            const updatedEnabledTools = updatedTools
-                .filter(tool => tool.enabled !== false)
-                .map(tool => tool.name);
-            
-            const updatedConnection = {
-                ...rawConnection,
-                tools: updatedTools,
-                enabledTools: updatedEnabledTools
+            // Update the specific tool's enabled state
+            const updatedEnabledMap = {
+                ...currentEnabledMap,
+                [toolName]: enabled
             };
             
-            // Save updated raw connection
-            this.saveMCPConnection(node.nodeM, updatedConnection);
+            // Save back to yjs
+            this.saveToolEnabledMap(node.nodeM, updatedEnabledMap);
             
-            // Update UI with filtered connection
-            setConnection(this.getMCPConnection(node.nodeM));
+            // Trigger re-render by updating connection object
+            setConnection((prevConnection: MCPConnection | null) => ({ ...prevConnection }));
         };
 
         const handleGetAllTools = (): MCPTool[] => {
-            const rawConnection = this.getRawMCPConnection(node.nodeM);
-            if (!rawConnection) return [];
+            if (!connection || !connection.tools) return [];
             
-            // Apply current tool states and return all tools
-            this.applyToolEnabledStates(rawConnection);
-            return rawConnection.tools;
+            // Return all tools from connection with enabled state from yjs
+            const enabledMap = this.getToolEnabledMap(node.nodeM);
+            return connection.tools.map((tool: MCPTool) => ({
+                ...tool,
+                enabled: enabledMap[tool.name] !== false
+            }));
         };
 
         const handleBulkToggleTools = (enabled: boolean) => {
-            // Get raw connection data (with all tools) for modification
-            const rawConnection = this.getRawMCPConnection(node.nodeM);
-            if (!rawConnection) return;
+            if (!connection || !connection.tools) return;
             
-            // Apply current tool states to get the latest state
-            this.applyToolEnabledStates(rawConnection);
+            // Create new enabled map with all tools set to the same state
+            const newEnabledMap: ToolEnabledMap = {};
+            connection.tools.forEach((tool: MCPTool) => {
+                newEnabledMap[tool.name] = enabled;
+            });
             
-            // Update all tools to the same enabled state
-            const updatedTools = rawConnection.tools.map(tool => ({
-                ...tool,
-                enabled
-            }));
+            // Save to yjs
+            this.saveToolEnabledMap(node.nodeM, newEnabledMap);
             
-            // Rebuild enabledTools array from the updated tools
-            const updatedEnabledTools = enabled 
-                ? updatedTools.map(tool => tool.name)
-                : [];
-            
-            const updatedConnection = {
-                ...rawConnection,
-                tools: updatedTools,
-                enabledTools: updatedEnabledTools
-            };
-            
-            // Save updated raw connection
-            this.saveMCPConnection(node.nodeM, updatedConnection);
-            
-            // Update UI with filtered connection
-            setConnection(this.getMCPConnection(node.nodeM));
+            // Trigger re-render
+            setConnection((prevConnection: MCPConnection | null) => ({ ...prevConnection }));
         };
+
+        // Create filtered connection for display with only enabled tools
+        const displayConnection = connection ? {
+            ...connection,
+            tools: this.getEnabledTools(connection, node.nodeM)
+        } : null;
+
+        // Get current server config from yjs for MCPViewer
+        const currentServerConfig = this.getServerConfig(node.nodeM);
 
         return (
             <div>
                 <MCPViewer
-                    connection={connection}
+                    connection={displayConnection}
+                    currentServerConfig={currentServerConfig}
                     loading={loading}
                     error={error}
                     onConnect={handleConnect}
@@ -541,20 +530,22 @@ export class MCPNodeType extends ActionableNodeType {
     renderTool2(node: NodeVM): React.ReactNode {
         return (
             <>
-                <h1>Connection Cache</h1>
-                <CollaborativeEditor yText={node.ydata.get(MCPConnectionCacheText)} langExtension={jsonLang}/>
+                <h1>Tool Enabled State</h1>
+                <CollaborativeEditor yText={node.ydata.get(MCPToolEnabledText)} langExtension={jsonLang}/>
             </>
         );
     }
 
     actions(node: NodeM): Action[] {
-        const connection = this.getMCPConnection(node);
+        const connection = this.getCachedConnection(node);
         if (!connection || !connection.connected || !connection.tools || connection.tools.length === 0) {
             return [];
         }
 
-        return connection.tools.map(tool => {
-            const parameters: Record<string, ActionParameter> = {};
+        const enabledTools = this.getEnabledTools(connection, node);
+
+        return enabledTools.map(tool => {
+            const parameters: Record<string, any> = {};
             
             if (tool.inputSchema && tool.inputSchema.properties) {
                 Object.entries(tool.inputSchema.properties).forEach(([key, prop]: [string, any]) => {
@@ -574,15 +565,16 @@ export class MCPNodeType extends ActionableNodeType {
     }
 
     async executeAction(node: NodeM, label: string, parameters: Record<string, any>, callerNode: NodeM, agentSessionState: AgentSessionState): Promise<any> {
-        const connection = this.getMCPConnection(node);
+        const connection = this.getCachedConnection(node);
         if (!connection || !connection.connected) {
             throw new Error("MCP server not connected");
         }
 
         const toolName = label;
-        const tool = connection.tools.find(t => t.name === toolName);
+        const enabledTools = this.getEnabledTools(connection, node);
+        const tool = enabledTools.find(t => t.name === toolName);
         if (!tool) {
-            throw new Error(`Tool ${toolName} not found`);
+            throw new Error(`Tool ${toolName} not found or disabled`);
         }
 
         const toolCallingMessage = new ToolCallingMessage({
@@ -593,11 +585,39 @@ export class MCPNodeType extends ActionableNodeType {
         agentSessionState.addMessage(callerNode, toolCallingMessage);
 
         try {
-            const result = await this.callMCPTool(node, toolName, parameters);
+            // Get mcpConfig from yjs for tool execution
+            const config = this.getServerConfig(node);
+            if (!config || !this.isToolsetConfig(config)) {
+                throw new Error("Invalid Toolset connection configuration");
+            }
+
+            const toolCallPayload = createToolsetToolCall(
+                connection.toolsetUrl, 
+                config.mcpConfig, 
+                toolName, 
+                parameters,
+                connection.configHash
+            );
             
+            const response = await fetch(`${httpUrl}/api/mcp-proxy/call-tool`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(toolCallPayload)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `MCP tool call via Toolset failed: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            if (result.error) {
+                throw new Error(result.error || 'MCP tool execution via Toolset failed');
+            }
+
             const toolResponseMessage = new ToolResponseMessage({
                 toolName: toolName,
-                response: result,
+                response: result.result,
                 author: node.title(),
             });
             agentSessionState.addMessage(callerNode, toolResponseMessage);
@@ -615,43 +635,65 @@ export class MCPNodeType extends ActionableNodeType {
     }
 
     renderPrompt(node: NodeM): string {
-        const connection = this.getMCPConnection(node);
+        const connection = this.getCachedConnection(node);
         if (!connection || !connection.connected || !connection.tools || connection.tools.length === 0) {
             return '';
         }
 
-        // Apply tool enabled states before generating prompts
-        this.applyToolEnabledStates(connection);
-        
-        // Only include enabled tools in the prompt
-        const enabledTools = connection.tools.filter(tool => tool.enabled !== false);
+        const enabledTools = this.getEnabledTools(connection, node);
         
         if (enabledTools.length === 0) {
             return '';
         }
 
-        const toolPrompts = enabledTools.map(tool => generatePromptFromMCPTool(tool)).join('\n-------\n');
+        // Import generatePromptFromMCPTool for use here
+        const toolPrompts = enabledTools.map(tool => {
+            const description = tool.description || 'No description provided.';
+            let parametersPrompt = '';
+            
+            if (tool.inputSchema && tool.inputSchema.properties) {
+                parametersPrompt = Object.entries(tool.inputSchema.properties)
+                    .map(([key, prop]: [string, any]) => {
+                        const type = prop.type || 'any';
+                        const desc = prop.description || '';
+                        const required = tool.inputSchema.required?.includes(key) ? ' (required)' : '';
+                        return `"${key}" (${type})${required}: ${desc}`;
+                    })
+                    .join('\n');
+            }
+            
+            return `Title: ${tool.name}
+Description: ${description}
+Parameters:
+${parametersPrompt}`;
+        }).join('\n-------\n');
         
         return toolPrompts;
     }
 
-    async callMCPTool(node: NodeM, toolName: string, params: any) {
-        const connection = this.getMCPConnection(node);
+    async callMCPTool(node: NodeM, toolName: string, params: any): Promise<any> {
+        // This method is for direct tool calls (like from UI), 
+        // not for agent execution with session state
+        const connection = this.getCachedConnection(node);
         if (!connection || !connection.connected) {
-            throw new Error("MCP server not connected via Toolset");
+            throw new Error("MCP server not connected");
         }
 
-        if (!connection.toolsetUrl || !connection.mcpConfig) {
+        const enabledTools = this.getEnabledTools(connection, node);
+        const tool = enabledTools.find(t => t.name === toolName);
+        if (!tool) {
+            throw new Error(`Tool ${toolName} not found or disabled`);
+        }
+
+        // Get mcpConfig from yjs for tool execution
+        const config = this.getServerConfig(node);
+        if (!config || !this.isToolsetConfig(config)) {
             throw new Error("Invalid Toolset connection configuration");
         }
 
-        // Note: No need to check if tool is enabled here because getMCPConnection() 
-        // already filters out disabled tools. If the model tries to call a disabled tool,
-        // it means the tool doesn't exist from the model's perspective.
-
         const toolCallPayload = createToolsetToolCall(
             connection.toolsetUrl, 
-            connection.mcpConfig, 
+            config.mcpConfig, 
             toolName, 
             params,
             connection.configHash
@@ -681,6 +723,10 @@ export class MCPNodeType extends ActionableNodeType {
         if (!ydata.has(MCPServerConfigText)) {
             // @ts-ignore
             ydata.set(MCPServerConfigText, new Y.Text());
+        }
+        if (!ydata.has(MCPToolEnabledText)) {
+            // @ts-ignore
+            ydata.set(MCPToolEnabledText, new Y.Text());
         }
         if (!ydata.has(MCPConnectionCacheText)) {
             // @ts-ignore

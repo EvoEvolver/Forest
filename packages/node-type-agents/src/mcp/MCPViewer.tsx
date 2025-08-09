@@ -8,6 +8,7 @@ import LinkOffIcon from '@mui/icons-material/LinkOff';
 
 interface MCPViewerProps {
     connection: MCPConnection | null;
+    currentServerConfig: any; // Current server config from yjs
     loading: boolean;
     error: string | null;
     onConnect: (toolsetUrl: string, mcpConfig: any) => void;  // Updated signature
@@ -21,6 +22,7 @@ interface MCPViewerProps {
 
 const MCPViewer: React.FC<MCPViewerProps> = ({
     connection,
+    currentServerConfig,
     loading,
     error,
     onConnect,
@@ -31,10 +33,15 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
     onGetAllTools,
     onBulkToggleTools
 }) => {
-    const [toolsetUrl, setToolsetUrl] = React.useState(connection?.toolsetUrl || 'http://127.0.0.1:8001');
+    const [toolsetUrl, setToolsetUrl] = React.useState(
+        connection?.toolsetUrl || 
+        (currentServerConfig?.toolsetUrl) || 
+        'http://127.0.0.1:8001'
+    );
     const [mcpConfigJson, setMcpConfigJson] = React.useState(() => {
-        if (connection?.mcpConfig) {
-            return JSON.stringify(connection.mcpConfig, null, 2);
+        // Get mcpConfig from currentServerConfig (yjs) rather than connection
+        if (currentServerConfig?.mcpConfig) {
+            return JSON.stringify(currentServerConfig.mcpConfig, null, 2);
         }
         return JSON.stringify({
             servers: {
@@ -50,6 +57,16 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
     });
     const [showToolManagement, setShowToolManagement] = React.useState(false);
     const [configError, setConfigError] = React.useState<string | null>(null);
+
+    // Update UI when currentServerConfig changes (from yjs)
+    React.useEffect(() => {
+        if (currentServerConfig?.toolsetUrl) {
+            setToolsetUrl(currentServerConfig.toolsetUrl);
+        }
+        if (currentServerConfig?.mcpConfig) {
+            setMcpConfigJson(JSON.stringify(currentServerConfig.mcpConfig, null, 2));
+        }
+    }, [currentServerConfig]);
 
     const handleEnableAll = () => {
         if (onBulkToggleTools) {
@@ -335,13 +352,13 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
                             </Typography>
                         </>
                     )}
-                    {connection.mcpConfig && (
+                    {currentServerConfig?.mcpConfig && (
                         <Box sx={{mt: 1}}>
                             <Typography variant="body2">
                                 <strong>Configured Servers:</strong>
                             </Typography>
                             <Box sx={{ml: 2}}>
-                                {Object.entries(connection.mcpConfig.servers || {}).map(([name, config]: [string, any]) => (
+                                {Object.entries(currentServerConfig.mcpConfig.servers || {}).map(([name, config]: [string, any]) => (
                                     <Chip 
                                         key={name} 
                                         label={`${name} (${config?.type || 'unknown'})`} 

@@ -139,7 +139,11 @@ async function getNextStep(nodeM: NodeM): Promise<string | undefined> {
                 const matchingAction = actions.find(action => action.label === actionName);
                 if (matchingAction) {
                     // Execute the action with the matched label
-                    await nodeType.executeAction(child, actionName, parameters, nodeM, agentSessionState);
+                    console.log(`[MCP Debug] Executing action: ${actionName} on ${child.nodeTypeName()}`);
+                    console.log(`[MCP Debug] Parameters:`, parameters);
+                    
+                    const result = await nodeType.executeAction(child, actionName, parameters, nodeM, agentSessionState);
+                    console.log(`[MCP Debug] Action execution result:`, result);
 
                     if (AgentNodeType.todoModeSwith(nodeM)) {
                         const newTodos = await updateTodoListAfterTask(agentSessionState.todos.get(nodeM.id), messages)
