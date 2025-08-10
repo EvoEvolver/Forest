@@ -28,30 +28,37 @@ async function createAgentMongoUser() {
         // Step 1: Create custom role with CRUD permissions but no listCollections
         console.log('Creating custom role: crudOnlyNoList...');
         
-        try {
-            await db.command({
-                createRole: 'crudOnlyNoList',
-                privileges: [
-                    {
-                        resource: { db: DATABASE_NAME, collection: '' }, // Empty string means all collections
-                        actions: [
-                            'find',        // Read documents
-                            'insert',      // Create documents
-                            'update',      // Update documents
-                            'remove',      // Delete documents
-                            'createIndex', // Create indexes (useful for performance)
-                            'dropIndex'    // Drop indexes
-                        ]
-                    }
-                ],
-                roles: [] // No inherited roles
-            });
-            console.log('✅ Custom role "crudOnlyNoList" created successfully');
-        } catch (error: any) {
-            if (error.codeName === 'DuplicateKey') {
-                console.log('⚠️  Role "crudOnlyNoList" already exists, skipping creation');
-            } else {
-                throw error;
+        // Check if role exists first
+        const existingRoles = await db.command({ rolesInfo: 'crudOnlyNoList' });
+        
+        if (existingRoles.roles && existingRoles.roles.length > 0) {
+            console.log('⚠️  Role "crudOnlyNoList" already exists, skipping creation');
+        } else {
+            try {
+                await db.command({
+                    createRole: 'crudOnlyNoList',
+                    privileges: [
+                        {
+                            resource: { db: DATABASE_NAME, collection: '' }, // Empty string means all collections
+                            actions: [
+                                'find',        // Read documents
+                                'insert',      // Create documents
+                                'update',      // Update documents
+                                'remove',      // Delete documents
+                                'createIndex', // Create indexes (useful for performance)
+                                'dropIndex'    // Drop indexes
+                            ]
+                        }
+                    ],
+                    roles: [] // No inherited roles
+                });
+                console.log('✅ Custom role "crudOnlyNoList" created successfully');
+            } catch (error: any) {
+                if (error.codeName === 'DuplicateKey') {
+                    console.log('⚠️  Role "crudOnlyNoList" already exists, skipping creation');
+                } else {
+                    throw error;
+                }
             }
         }
         
@@ -104,7 +111,7 @@ async function createAgentMongoUser() {
         
     } catch (error) {
         console.error('❌ Error creating agent user:', error);
-        process.exit(1);
+        throw error;
     } finally {
         await client.close();
         console.log('Disconnected from MongoDB');
@@ -147,7 +154,7 @@ async function testAgentPermissions() {
             console.log('   ✅ Can insert documents');
             
             // Find test
-            const document = await testCollection.findOne({ _id: insertResult.insertedId });
+            await testCollection.findOne({ _id: insertResult.insertedId });
             console.log('   ✅ Can read documents');
             
             // Update test
