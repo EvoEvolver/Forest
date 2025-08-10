@@ -135,7 +135,24 @@ export class MarkdownMessage extends BaseMessage {
             <Box sx={{display: 'flex', marginBottom: 2}}>
                 <Card sx={{}}>
                     <CardContent>
-                        <span dangerouslySetInnerHTML={{__html: html}}/>
+                        <Box sx={{
+                            '& img': {
+                                maxWidth: '100%',
+                                height: 'auto',
+                                borderRadius: 1,
+                                display: 'block',
+                                margin: '8px 0'
+                            },
+                            '& p': {
+                                margin: '8px 0',
+                                lineHeight: 1.5
+                            },
+                            '& h1, & h2, & h3, & h4, & h5, & h6': {
+                                margin: '16px 0 8px 0'
+                            }
+                        }}>
+                            <span dangerouslySetInnerHTML={{__html: html}}/>
+                        </Box>
                     </CardContent>
                 </Card>
             </Box>

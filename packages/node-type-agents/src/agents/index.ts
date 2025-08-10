@@ -1,7 +1,7 @@
 import {NodeM} from "@forest/schema";
 import {AgentNodeType} from "../AgentNode";
 import {agentSessionState} from "../sessionState";
-import {BaseMessage, NormalMessage, SystemMessage} from "@forest/agent-chat/src/MessageTypes";
+import {BaseMessage, NormalMessage, MarkdownMessage, SystemMessage} from "@forest/agent-chat/src/MessageTypes";
 import {fetchChatResponse} from "@forest/agent-chat/src/llm";
 import {Action, ActionableNodeType} from "../ActionableNodeType";
 import {decomposeTask, updateTodoListAfterTask} from "./todoManager";
@@ -120,7 +120,7 @@ async function getNextStep(nodeM: NodeM): Promise<string | undefined> {
     if (parsedResponse.type === "answer_user") {
         const messageContent = parsedResponse.message;
         if (messageContent) {
-            const responseMessage = new NormalMessage({
+            const responseMessage = new MarkdownMessage({
                 content: messageContent,
                 author: nodeM.title(),
                 role: "assistant"
@@ -149,7 +149,7 @@ async function getNextStep(nodeM: NodeM): Promise<string | undefined> {
                         const newTodos = await updateTodoListAfterTask(agentSessionState.todos.get(nodeM.id), messages)
                         console.log("newTodos", newTodos);
                         agentSessionState.setTodos(nodeM, newTodos)
-                        agentSessionState.addMessage(nodeM, new NormalMessage({
+                        agentSessionState.addMessage(nodeM, new MarkdownMessage({
                             role: "assistant",
                             content: newTodos,
                             author: nodeM.title()
@@ -176,7 +176,7 @@ export async function invokeAgent(nodeM: NodeM, messages: BaseMessage[]) {
         const todoList = await decomposeTask(initialMessage, nodeM);
         console.log("todoList", todoList);
         agentSessionState.setTodos(nodeM, todoList);
-        agentSessionState.addMessage(nodeM, new NormalMessage({
+        agentSessionState.addMessage(nodeM, new MarkdownMessage({
             role: "assistant",
             content: `
 ${todoList} `,

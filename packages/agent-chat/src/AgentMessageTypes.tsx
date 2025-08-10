@@ -79,13 +79,27 @@ export class AgentResponseMessage extends BaseMessage {
             <Box sx={{display: 'flex', justifyContent: 'flex-start', marginBottom: 2}}>
                 <Card>
                     <CardContent>
-                        <Box component="pre" sx={{
+                        <Box component="div" sx={{
                             whiteSpace: 'pre-wrap',
-                            wordBreak: 'break-all',
+                            wordBreak: 'break-word',
                             padding: 1,
-                            borderRadius: 1
+                            borderRadius: 1,
+                            '& img': {
+                                maxWidth: '100%',
+                                height: 'auto',
+                                borderRadius: 1,
+                                display: 'block',
+                                margin: '8px 0'
+                            },
+                            '& p': {
+                                margin: '8px 0',
+                                lineHeight: 1.5
+                            },
+                            '& h1, & h2, & h3, & h4, & h5, & h6': {
+                                margin: '16px 0 8px 0'
+                            }
                         }}>
-                            <Typography variant="body2">
+                            <Typography variant="body2" component="div">
                                 <span dangerouslySetInnerHTML={{__html: resultHtml}}/>
                             </Typography>
                         </Box>
