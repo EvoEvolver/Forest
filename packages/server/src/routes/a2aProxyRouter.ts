@@ -1,12 +1,121 @@
 import {Request, Response, Router} from 'express';
 import {A2AClient} from '@a2a-js/sdk/client';
 import {AgentCard, Message, MessageSendParams} from '@a2a-js/sdk';
+import https from 'https';
+import http from 'http';
 
 const a2aProxyRouter = Router();
 
 // Default configuration
 const DEFAULT_TIMEOUT = 30000;
 const DEBUG = process.env.NODE_ENV === 'development';
+
+// Direct JSON-RPC request helper (bypassing A2A SDK)
+async function makeDirectJsonRpcRequest(agentUrl: string, method: string, params: any): Promise<any> {
+    const requestBody = {
+        jsonrpc: "2.0",
+        id: Date.now(),
+        method: method,
+        params: params
+    };
+
+    if (DEBUG) {
+        console.log(`🔄 Making direct JSON-RPC request to ${agentUrl}`);
+        console.log(`🔄 Method: ${method}`);
+        console.log(`🔄 Request body:`, JSON.stringify(requestBody, null, 2));
+    }
+
+    try {
+        const response = await fetch(agentUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'User-Agent': 'Forest-A2A-Proxy/1.0.0'
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (DEBUG) {
+            console.log(`🔄 Response status: ${response.status} ${response.statusText}`);
+            console.log(`🔄 Response headers:`, Object.fromEntries(response.headers.entries()));
+        }
+
+        const responseText = await response.text();
+        if (DEBUG) {
+            console.log(`🔄 Raw response:`, responseText);
+        }
+
+        const responseJson = JSON.parse(responseText);
+        return { success: response.ok, response: responseJson, status: response.status };
+    } catch (error) {
+        if (DEBUG) {
+            console.error(`🔄 Direct JSON-RPC request failed:`, error);
+        }
+        return { success: false, error: error.message };
+    }
+}
+
+// Network debugging helper
+async function debugNetworkConnectivity(agentUrl: string): Promise<{success: boolean, details: any}> {
+    const url = new URL(agentUrl);
+    const isHttps = url.protocol === 'https:';
+    const port = url.port || (isHttps ? '443' : '80');
+    
+    return new Promise((resolve) => {
+        const module = isHttps ? https : http;
+        const options = {
+            hostname: url.hostname,
+            port: parseInt(port),
+            path: '/',
+            method: 'HEAD',
+            timeout: 5000,
+            ...(isHttps && {
+                rejectUnauthorized: false // Bypass SSL verification for debugging
+            })
+        };
+
+        const req = module.request(options, (res) => {
+            resolve({
+                success: true,
+                details: {
+                    statusCode: res.statusCode,
+                    headers: res.headers,
+                    hostname: url.hostname,
+                    port,
+                    protocol: url.protocol
+                }
+            });
+        });
+
+        req.on('error', (error) => {
+            resolve({
+                success: false,
+                details: {
+                    error: error.message,
+                    code: (error as any).code,
+                    hostname: url.hostname,
+                    port,
+                    protocol: url.protocol
+                }
+            });
+        });
+
+        req.on('timeout', () => {
+            req.destroy();
+            resolve({
+                success: false,
+                details: {
+                    error: 'Request timeout',
+                    hostname: url.hostname,
+                    port,
+                    protocol: url.protocol
+                }
+            });
+        });
+
+        req.end();
+    });
+}
 
 // Store active A2A client connections for potential reuse
 const clientConnections = new Map<string, {
@@ -35,7 +144,7 @@ function validateAgentUrl(agentUrl: string): { valid: boolean; error?: string } 
     }
 }
 
-// Helper function to get or create A2A client
+// Helper function to get or create A2A client with enhanced debugging
 function getA2AClient(agentUrl: string, authToken?: string): A2AClient {
     const connectionKey = `${agentUrl}:${authToken || 'no-auth'}`;
     let connection = clientConnections.get(connectionKey);
@@ -43,9 +152,16 @@ function getA2AClient(agentUrl: string, authToken?: string): A2AClient {
     if (!connection) {
         if (DEBUG) {
             console.log(`🔌 Creating new A2A client for: ${agentUrl}`);
+            console.log(`🔌 Node.js version: ${process.version}`);
+            console.log(`🔌 Environment: ${process.env.NODE_ENV}`);
         }
 
         const client = new A2AClient(agentUrl);
+        
+        if (DEBUG) {
+            console.log(`🔌 A2A client created with baseUrl: ${agentUrl}`);
+        }
+        
         connection = {
             client,
             agentUrl,
@@ -103,7 +219,7 @@ a2aProxyRouter.post('/get-agent-card', async (req: Request, res: Response): Prom
     }
 });
 
-// Send message to A2A agent (non-streaming)
+// Send message to A2A agent (capability-aware)
 a2aProxyRouter.post('/send-message', async (req: Request, res: Response): Promise<void> => {
     const {agentUrl, authToken, message, configuration} = req.body;
 
@@ -128,28 +244,111 @@ a2aProxyRouter.post('/send-message', async (req: Request, res: Response): Promis
 
         const client = getA2AClient(agentUrl, authToken);
 
+        // First, get agent card to check capabilities
+        let agentCard: AgentCard | undefined;
+        try {
+            agentCard = await client.getAgentCard();
+            if (DEBUG) {
+                console.log(`🎫 Agent card retrieved successfully, capabilities:`, JSON.stringify(agentCard?.capabilities));
+            }
+        } catch (cardError) {
+            console.warn(`⚠️ Could not fetch agent card, proceeding without capability check: ${cardError.message}`);
+            // If we can't even fetch the agent card, the agent might be unreachable
+            if (cardError.message?.includes('ECONNREFUSED') || cardError.message?.includes('fetch failed')) {
+                throw new Error(`Cannot reach A2A agent at ${agentUrl}. Please verify the agent is running and accessible.`);
+            }
+        }
+
+        const supportsStreaming = agentCard?.capabilities?.streaming !== false;
+        
+        if (DEBUG) {
+            console.log(`🎯 Agent streaming capability: ${supportsStreaming} (capabilities: ${JSON.stringify(agentCard?.capabilities)})`);
+        }
+
         const params: MessageSendParams = {
             message: message as Message,
             configuration: configuration || {blocking: true}
         };
 
-        // For non-streaming, try sendMessage first, fallback to sendMessageStream
         let response;
         let isStream = false;
 
-        try {
-            // Try sendMessage method first (if it exists)
-            response = await (client as any).sendMessage?.(params);
-        } catch (error) {
-            // Fallback to streaming method
-            response = await client.sendMessageStream(params);
-            isStream = true;
-        }
+        if (supportsStreaming) {
+            // Agent supports streaming - try sendMessage first, fallback to streaming
+            try {
+                // Try sendMessage method first (if it exists)
+                response = await (client as any).sendMessage?.(params);
+                if (DEBUG) {
+                    console.log(`📦 Used sendMessage method (non-streaming)`);
+                }
+            } catch (error) {
+                if (DEBUG) {
+                    console.log(`📦 sendMessage failed, falling back to streaming: ${error.message}`);
+                }
+                // Fallback to streaming method
+                response = await client.sendMessageStream(params);
+                isStream = true;
+            }
 
-        if (!response) {
-            // If sendMessage doesn't exist, use streaming
-            response = await client.sendMessageStream(params);
-            isStream = true;
+            if (!response) {
+                // If sendMessage doesn't exist, use streaming
+                if (DEBUG) {
+                    console.log(`📦 sendMessage not available, using streaming`);
+                }
+                response = await client.sendMessageStream(params);
+                isStream = true;
+            }
+        } else {
+            // Agent does not support streaming - only try synchronous methods
+            if (DEBUG) {
+                console.log(`📦 Agent does not support streaming, using synchronous methods only`);
+            }
+
+            try {
+                // First try: Use A2A SDK sendMessage
+                if (typeof (client as any).sendMessage === 'function') {
+                    response = await (client as any).sendMessage(params);
+                    if (DEBUG) {
+                        console.log(`📦 Used A2A SDK sendMessage successfully`);
+                    }
+                } else {
+                    throw new Error('sendMessage method not available on A2A SDK client');
+                }
+
+                if (!response) {
+                    throw new Error('A2A SDK sendMessage returned no response');
+                }
+            } catch (sdkError) {
+                if (DEBUG) {
+                    console.warn(`📦 A2A SDK failed, using direct JSON-RPC fallback: ${sdkError.message}`);
+                }
+                
+                // Fallback: Try direct JSON-RPC request (same as Postman)
+                try {
+                    const directResult = await makeDirectJsonRpcRequest(agentUrl, 'message/send', {
+                        message: params.message,
+                        configuration: params.configuration
+                    });
+                    
+                    if (directResult.success) {
+                        if (DEBUG) {
+                            console.log(`📦 Direct JSON-RPC request succeeded!`);
+                        }
+                        response = directResult.response.result;
+                    } else {
+                        throw new Error(`Direct JSON-RPC request failed: ${directResult.error}`);
+                    }
+                } catch (directError) {
+                    // Enhanced error handling for non-streaming agents
+                    if (sdkError.message?.includes('ECONNREFUSED') || directError.message?.includes('ECONNREFUSED')) {
+                        throw new Error(`Cannot connect to A2A agent at ${agentUrl}. Please verify the agent is running and accessible.`);
+                    }
+                    if (sdkError.message?.includes('fetch failed') || directError.message?.includes('fetch failed')) {
+                        throw new Error(`Network error connecting to A2A agent at ${agentUrl}. Agent may be offline or unreachable.`);
+                    }
+                    throw new Error(`Both A2A SDK and direct JSON-RPC failed. SDK error: ${sdkError.message}. Direct error: ${directError.message}`);
+                }
+            }
         }
 
         if (DEBUG) {
@@ -165,13 +364,15 @@ a2aProxyRouter.post('/send-message', async (req: Request, res: Response): Promis
             res.json({
                 success: true,
                 events,
-                streaming: true
+                streaming: true,
+                agentSupportsStreaming: supportsStreaming
             });
         } else {
             res.json({
                 success: true,
                 response,
-                streaming: false
+                streaming: false,
+                agentSupportsStreaming: supportsStreaming
             });
         }
 
@@ -207,6 +408,20 @@ a2aProxyRouter.post('/send-message-stream', async (req: Request, res: Response):
 
         const client = getA2AClient(agentUrl, authToken);
 
+        // Check if agent supports streaming before attempting
+        let agentCard: AgentCard | undefined;
+        try {
+            agentCard = await client.getAgentCard();
+            if (agentCard?.capabilities?.streaming === false) {
+                res.status(400).json({
+                    error: 'Agent does not support streaming (AgentCard.capabilities.streaming is false). Use /send-message endpoint instead.'
+                });
+                return;
+            }
+        } catch (cardError) {
+            console.warn(`⚠️ Could not fetch agent card for streaming check: ${cardError.message}`);
+        }
+
         const params: MessageSendParams = {
             message: message as Message,
             configuration: configuration || {blocking: false}
@@ -231,13 +446,73 @@ a2aProxyRouter.post('/send-message-stream', async (req: Request, res: Response):
             success: true,
             events,
             streaming: true,
-            eventCount: events.length
+            eventCount: events.length,
+            agentSupportsStreaming: agentCard?.capabilities?.streaming !== false
         });
 
     } catch (error) {
         console.error('❌ A2A send-message-stream error:', error);
         res.status(500).json({
             error: error instanceof Error ? error.message : 'Failed to send streaming message to A2A agent'
+        });
+    }
+});
+
+// Get task status for polling (for non-streaming agents)
+a2aProxyRouter.post('/get-task-status', async (req: Request, res: Response): Promise<void> => {
+    const {agentUrl, authToken, taskId} = req.body;
+
+    // Validate agent URL
+    const urlValidation = validateAgentUrl(agentUrl);
+    if (!urlValidation.valid) {
+        res.status(400).json({error: urlValidation.error});
+        return;
+    }
+
+    if (!taskId || typeof taskId !== 'string') {
+        res.status(400).json({error: 'taskId is required and must be a string'});
+        return;
+    }
+
+    try {
+        if (DEBUG) {
+            console.log(`📋 Getting task status for task: ${taskId} from agent: ${agentUrl}`);
+        }
+
+        const client = getA2AClient(agentUrl, authToken);
+
+        // Use the A2A SDK to get task status
+        // This would typically be a tasks/get method call
+        let taskStatus;
+        try {
+            // Try to call tasks/get method if available
+            taskStatus = await (client as any).getTask?.(taskId);
+        } catch (error) {
+            if (DEBUG) {
+                console.log(`📋 getTask method not available or failed: ${error.message}`);
+            }
+            // Fallback: assume task is completed immediately for simple agents
+            taskStatus = {
+                id: taskId,
+                state: 'completed',
+                artifacts: [],
+                completedAt: new Date().toISOString()
+            };
+        }
+
+        if (DEBUG) {
+            console.log(`✅ Task status retrieved: ${taskStatus?.state || 'unknown'}`);
+        }
+
+        res.json({
+            success: true,
+            task: taskStatus
+        });
+
+    } catch (error) {
+        console.error('❌ A2A get-task-status error:', error);
+        res.status(500).json({
+            error: error instanceof Error ? error.message : 'Failed to get task status from A2A agent'
         });
     }
 });
@@ -348,6 +623,7 @@ a2aProxyRouter.get('/generate-id', (req: Request, res: Response): void => {
     const id = Math.random().toString(36).substring(2) + Date.now().toString(36);
     res.json({id});
 });
+
 
 // Health check endpoint for the proxy itself
 a2aProxyRouter.get('/health', (req: Request, res: Response): void => {

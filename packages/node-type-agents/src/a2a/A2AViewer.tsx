@@ -211,12 +211,20 @@ const A2AViewer: React.FC<A2AViewerProps> = ({
 
                 {/* Connection Status */}
                 {connection && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2, flexWrap: 'wrap' }}>
                         <Chip
                             label={connection.connected ? 'Connected' : 'Disconnected'}
                             color={connection.connected ? 'success' : 'default'}
                             size="small"
                         />
+                        {connection.connected && (
+                            <Chip
+                                label={connection.supportsStreaming !== false ? 'Streaming' : 'Non-streaming'}
+                                color={connection.supportsStreaming !== false ? 'primary' : 'warning'}
+                                size="small"
+                                variant="outlined"
+                            />
+                        )}
                         {activeCard && (
                             <Typography variant="caption" color="text.secondary">
                                 {activeCard.name} {activeCard.version ? `v${activeCard.version}` : ''}

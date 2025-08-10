@@ -38,6 +38,7 @@ export interface A2AConnection {
     lastFetched?: Date;
     error?: string;
     authToken?: string;
+    supportsStreaming?: boolean; // Cached streaming capability
 }
 
 export interface A2AMessage {
@@ -148,7 +149,19 @@ export class A2AClient {
             }
 
             // Return the response or events depending on the type
-            return result.streaming ? result.events : result.response;
+            // Include metadata about streaming capability and method used
+            const responseData = result.streaming ? result.events : result.response;
+            
+            // Add metadata about the communication method used
+            if (typeof responseData === 'object' && responseData !== null) {
+                responseData._metadata = {
+                    streaming: result.streaming,
+                    agentSupportsStreaming: result.agentSupportsStreaming,
+                    communicationMethod: result.streaming ? 'streaming' : 'synchronous'
+                };
+            }
+            
+            return responseData;
         } catch (error) {
             throw new Error(`Error sending message to A2A agent: ${error.message}`);
         }
@@ -196,6 +209,64 @@ export class A2AClient {
     private generateId(): string {
         return Math.random().toString(36).substring(2) + Date.now().toString(36);
     }
+
+    // Polling method for non-streaming agents or task status checking
+    async pollTaskStatus(taskId: string, maxAttempts: number = 10, intervalMs: number = 1000): Promise<any> {
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            try {
+                const response = await fetch(`${httpUrl}/api/a2a-proxy/get-task-status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        agentUrl: this.agentUrl,
+                        authToken: this.authToken,
+                        taskId
+                    })
+                });
+
+                if (!response.ok) {
+                    if (attempt === maxAttempts - 1) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || `Task status check failed: ${response.status} ${response.statusText}`);
+                    }
+                    // Wait before retrying
+                    await new Promise(resolve => setTimeout(resolve, intervalMs));
+                    continue;
+                }
+
+                const result = await response.json();
+                if (!result.success) {
+                    if (attempt === maxAttempts - 1) {
+                        throw new Error(result.error || 'Task status check failed');
+                    }
+                    // Wait before retrying
+                    await new Promise(resolve => setTimeout(resolve, intervalMs));
+                    continue;
+                }
+
+                // Check if task is completed
+                const task = result.task;
+                if (task && (task.state === 'completed' || task.state === 'failed' || task.state === 'cancelled')) {
+                    return task;
+                }
+
+                // Task is still running, wait before polling again
+                if (attempt < maxAttempts - 1) {
+                    await new Promise(resolve => setTimeout(resolve, intervalMs));
+                }
+            } catch (error) {
+                if (attempt === maxAttempts - 1) {
+                    throw error;
+                }
+                // Wait before retrying
+                await new Promise(resolve => setTimeout(resolve, intervalMs));
+            }
+        }
+
+        throw new Error(`Task ${taskId} did not complete within ${maxAttempts} polling attempts`);
+    }
 }
 
 // Utility functions
@@ -238,6 +309,9 @@ export async function connectToA2AAgent(
         // Fetch public agent card
         const agentCard = await resolver.getAgentCard();
         
+        // Determine streaming capability
+        const supportsStreaming = agentCard.capabilities?.streaming !== false;
+        
         // Try to fetch extended card if supported and auth token provided
         let extendedCard: A2AAgentCard | undefined;
         if (agentCard.supportsAuthenticatedExtendedCard && authToken) {
@@ -250,7 +324,8 @@ export async function connectToA2AAgent(
             agentCard,
             extendedCard,
             lastFetched: new Date(),
-            authToken
+            authToken,
+            supportsStreaming
         };
 
         return connection;
@@ -259,7 +334,8 @@ export async function connectToA2AAgent(
             agentUrl,
             connected: false,
             error: error.message,
-            lastFetched: new Date()
+            lastFetched: new Date(),
+            supportsStreaming: false // Assume no streaming on connection failure
         };
     }
 }

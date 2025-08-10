@@ -247,6 +247,10 @@ export class A2ANodeType extends ActionableNodeType {
                     
                     this.saveA2AConnection(node.nodeM, newConnection);
                     setConnection(newConnection);
+                    
+                    // Log streaming capability for debugging
+                    const activeCard = getActiveAgentCard(newConnection);
+                    console.log(`🔗 A2A agent connected: ${activeCard?.name || 'Unknown'} (streaming: ${newConnection.supportsStreaming})`);
                 } else {
                     setError(newConnection.error || 'Failed to connect to A2A agent');
                     this.saveA2AConnection(node.nodeM, newConnection);
@@ -262,7 +266,8 @@ export class A2ANodeType extends ActionableNodeType {
                     agentUrl,
                     connected: false,
                     error: err.message,
-                    authToken
+                    authToken,
+                    supportsStreaming: false
                 };
                 this.saveA2AConnection(node.nodeM, failedConnection);
                 setConnection(failedConnection);
@@ -315,15 +320,28 @@ export class A2ANodeType extends ActionableNodeType {
                 const client = new A2AClient(connection.agentUrl, authToken || connection.authToken);
                 const message = createA2AMessage(params.query || JSON.stringify(params));
                 
+                // Configure based on agent's streaming capability
+                const configuration = {
+                    blocking: true,
+                    // For non-streaming agents, ensure we use synchronous mode
+                    ...(connection.supportsStreaming === false && { 
+                        acceptedOutputModes: ['text'], // Request simple text output
+                    })
+                };
+                
+                console.log(`🎯 Executing A2A skill (streaming support: ${connection.supportsStreaming})`);
+                
                 const response = await client.sendMessage({
                     message,
-                    configuration: {
-                        blocking: true
-                    }
+                    configuration
                 });
 
                 return response;
             } catch (error) {
+                // Provide more context for streaming-related errors
+                if (error.message?.includes('streaming')) {
+                    throw new Error(`A2A agent communication failed (agent streaming support: ${connection.supportsStreaming}): ${error.message}`);
+                }
                 throw error;
             }
         };
@@ -569,16 +587,29 @@ export class A2ANodeType extends ActionableNodeType {
             const client = new A2AClient(connection.agentUrl, connection.authToken);
             const message = createA2AMessage(params.query || JSON.stringify(params));
             
+            // Configure based on agent's streaming capability
+            const configuration = {
+                blocking: true,
+                // For non-streaming agents, ensure we use synchronous mode
+                ...(connection.supportsStreaming === false && { 
+                    acceptedOutputModes: ['text'], // Request simple text output
+                })
+            };
+            
+            console.log(`🎯 Calling A2A agent (streaming support: ${connection.supportsStreaming})`);
+            
             const response = await client.sendMessage({
                 message,
-                configuration: {
-                    blocking: true
-                }
+                configuration
             });
 
             return response;
         } catch (error) {
-            throw new Error(`A2A agent call failed: ${error.message}`);
+            // Provide more context for streaming-related errors
+            const errorMessage = error.message?.includes('streaming')
+                ? `A2A agent call failed (agent streaming support: ${connection.supportsStreaming}): ${error.message}`
+                : `A2A agent call failed: ${error.message}`;
+            throw new Error(errorMessage);
         }
     }
 
