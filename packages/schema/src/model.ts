@@ -146,6 +146,21 @@ export class TreeM {
     deleteNode(nodeId: string) {
         this.nodeDict.delete(nodeId)
     }
+
+    // Get all descendant nodes of a given node (recursive subtree traversal)
+    getAllDescendantNodes(nodeM: NodeM): NodeM[] {
+        const descendants: NodeM[] = [];
+        const children = this.getChildren(nodeM);
+        
+        for (const child of children) {
+            descendants.push(child);
+            // Recursively get descendants of this child
+            const childDescendants = this.getAllDescendantNodes(child);
+            descendants.push(...childDescendants);
+        }
+        
+        return descendants;
+    }
 }
 
 

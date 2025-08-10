@@ -797,6 +797,67 @@ export class A2ANodeType extends ActionableNodeType {
         }
     }
 
+    // Auto-connection method that can be called programmatically
+    async attemptAutoConnect(node: NodeM): Promise<boolean> {
+        try {
+            // Check if already connected
+            const connection = this.getA2AConnection(node);
+            if (connection?.connected) {
+                return true; // Already connected
+            }
+
+            // Get agent URL
+            const agentUrl = this.getAgentUrl(node);
+            if (!agentUrl) {
+                console.log(`🔌 [A2A Auto-Connect] No agent URL found for node ${node.title()}`);
+                return false; // No URL configured
+            }
+
+            // Get auth token (if any)
+            const rawConnection = this.getRawA2AConnection(node);
+            const authToken = rawConnection?.authToken;
+
+            console.log(`🔌 [A2A Auto-Connect] Attempting to connect node ${node.title()} to ${agentUrl}`);
+
+            // Connect to A2A agent
+            const newConnection = await connectToA2AAgent(agentUrl, authToken);
+
+            if (newConnection.connected) {
+                // Apply previously saved enabled states or default to all enabled
+                this.applySkillEnabledStates(newConnection);
+                
+                this.saveA2AConnection(node, newConnection);
+                
+                // Log streaming capability for debugging
+                const activeCard = getActiveAgentCard(newConnection);
+                console.log(`✅ [A2A Auto-Connect] Successfully connected node ${node.title()} to ${activeCard?.name || 'Unknown'} (streaming: ${newConnection.supportsStreaming})`);
+                return true;
+            } else {
+                console.warn(`🔌 [A2A Auto-Connect] Connection failed for ${node.title()}: ${newConnection.error || 'Unknown error'}`);
+                this.saveA2AConnection(node, newConnection);
+                return false;
+            }
+
+        } catch (err: any) {
+            console.error(`❌ [A2A Auto-Connect] Connection error for ${node.title()}:`, err);
+            
+            // Save disconnected state
+            const agentUrl = this.getAgentUrl(node);
+            if (agentUrl) {
+                const rawConnection = this.getRawA2AConnection(node);
+                const failedConnection: A2AConnection = {
+                    agentUrl,
+                    connected: false,
+                    error: err.message,
+                    authToken: rawConnection?.authToken,
+                    supportsStreaming: false
+                };
+                this.saveA2AConnection(node, failedConnection);
+            }
+            return false;
+        }
+    }
+
     ydataInitialize(node: NodeM) {
         const ydata = node.ydata();
         if (!ydata.has(A2AAgentUrlText)) {

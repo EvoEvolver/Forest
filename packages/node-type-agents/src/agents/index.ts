@@ -5,6 +5,9 @@ import {BaseMessage, NormalMessage, MarkdownMessage, SystemMessage} from "@fores
 import {fetchChatResponse} from "@forest/agent-chat/src/llm";
 import {Action, ActionableNodeType} from "../ActionableNodeType";
 import {decomposeTask, updateTodoListAfterTask} from "./todoManager";
+import {getConnectableNodes} from "../utils/nodeTypeUtils";
+import {MCPNodeType} from "../MCPNode";
+import {A2ANodeType} from "../A2ANode";
 
 export async function generateActionListPrompt(node: NodeM, extraActions): Promise<string> {
     const treeM = node.treeM;
@@ -166,10 +169,58 @@ async function getNextStep(nodeM: NodeM): Promise<string | undefined> {
     }
 }
 
+// Auto-connect MCP and A2A nodes in the agent's subtree
+async function autoConnectSubtreeNodes(agentNode: NodeM): Promise<void> {
+    try {
+        const treeM = agentNode.treeM;
+        
+        // Get all descendant nodes of the agent
+        const descendantNodes = treeM.getAllDescendantNodes(agentNode);
+        console.log(`🔌 [Auto-Connect] Found ${descendantNodes.length} descendant nodes for agent ${agentNode.title()}`);
+        
+        // Filter to get only MCP and A2A nodes
+        const { mcpNodes, a2aNodes } = getConnectableNodes(descendantNodes);
+        console.log(`🔌 [Auto-Connect] Found ${mcpNodes.length} MCP nodes and ${a2aNodes.length} A2A nodes`);
+        
+        // Auto-connect MCP nodes
+        if (mcpNodes.length > 0) {
+            const mcpNodeType = new MCPNodeType();
+            const mcpPromises = mcpNodes.map(async (mcpNode) => {
+                try {
+                    await mcpNodeType.attemptAutoConnect(mcpNode);
+                } catch (error) {
+                    console.error(`🔌 [Auto-Connect] Failed to auto-connect MCP node ${mcpNode.title()}:`, error);
+                }
+            });
+            await Promise.all(mcpPromises);
+        }
+        
+        // Auto-connect A2A nodes
+        if (a2aNodes.length > 0) {
+            const a2aNodeType = new A2ANodeType();
+            const a2aPromises = a2aNodes.map(async (a2aNode) => {
+                try {
+                    await a2aNodeType.attemptAutoConnect(a2aNode);
+                } catch (error) {
+                    console.error(`🔌 [Auto-Connect] Failed to auto-connect A2A node ${a2aNode.title()}:`, error);
+                }
+            });
+            await Promise.all(a2aPromises);
+        }
+        
+        console.log(`🔌 [Auto-Connect] Completed auto-connection for agent ${agentNode.title()}`);
+    } catch (error) {
+        console.error(`🔌 [Auto-Connect] Error during auto-connection for agent ${agentNode.title()}:`, error);
+    }
+}
+
 export async function invokeAgent(nodeM: NodeM, messages: BaseMessage[]) {
     for (let message of messages) {
         agentSessionState.addMessage(nodeM, message)
     }
+
+    // Auto-connect MCP and A2A nodes in the subtree before processing the agent
+    await autoConnectSubtreeNodes(nodeM);
 
     if (messages.length > 0 && AgentNodeType.todoModeSwith(nodeM)) {
         const initialMessage = messages.map(m => m.toJson()["content"]).join("\n")

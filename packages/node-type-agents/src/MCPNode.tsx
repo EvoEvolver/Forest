@@ -718,6 +718,101 @@ ${parametersPrompt}`;
         return result.result;
     }
 
+    // Auto-connection method that can be called programmatically
+    async attemptAutoConnect(node: NodeM): Promise<boolean> {
+        try {
+            // Check if already connected
+            const connection = this.getCachedConnection(node);
+            if (connection?.connected) {
+                return true; // Already connected
+            }
+
+            // Get server config
+            const config = this.getServerConfig(node);
+            if (!config || !this.isToolsetConfig(config)) {
+                console.log(`🔌 [MCP Auto-Connect] No valid config found for node ${node.title()}`);
+                return false; // No configuration available
+            }
+
+            console.log(`🔌 [MCP Auto-Connect] Attempting to connect node ${node.title()}`);
+
+            // Connect to MCP server via Toolset
+            const connectPayload = createToolsetConnection(config.toolsetUrl, config.mcpConfig);
+            const connectResponse = await fetch(`${httpUrl}/api/mcp-proxy/connect`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(connectPayload)
+            });
+
+            if (!connectResponse.ok) {
+                const errorData = await connectResponse.json();
+                console.warn(`🔌 [MCP Auto-Connect] Connection failed for ${node.title()}: ${errorData.error || connectResponse.statusText}`);
+                return false;
+            }
+
+            const connectResult = await connectResponse.json();
+            const configHash = connectResult._metadata.configHash;
+            
+            // Fetch tools list
+            const toolsResponse = await fetch(`${httpUrl}/api/mcp-proxy/list-tools`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(connectPayload)
+            });
+
+            if (!toolsResponse.ok) {
+                const errorData = await toolsResponse.json();
+                console.warn(`🔌 [MCP Auto-Connect] Failed to fetch tools for ${node.title()}: ${errorData.error || toolsResponse.statusText}`);
+                return false;
+            }
+
+            const toolsResult = await toolsResponse.json();
+            const tools = parseMCPTools(toolsResult);
+
+            // Create simplified connection object
+            const newConnection: MCPConnection = {
+                toolsetUrl: config.toolsetUrl,
+                configHash,
+                connected: true,
+                tools,
+                lastFetched: new Date(),
+                serverInfo: connectResult.result
+            };
+
+            // Generate enabled state map and save to yjs
+            const currentEnabledMap = this.getToolEnabledMap(node);
+            const newEnabledMap: ToolEnabledMap = {};
+            
+            tools.forEach(tool => {
+                // If tool was previously configured, keep its state; otherwise default to enabled
+                newEnabledMap[tool.name] = currentEnabledMap[tool.name] !== undefined ? currentEnabledMap[tool.name] : true;
+            });
+            
+            this.saveToolEnabledMap(node, newEnabledMap);
+            this.saveCachedConnection(node, newConnection);
+
+            console.log(`✅ [MCP Auto-Connect] Successfully connected node ${node.title()} with ${tools.length} tools`);
+            return true;
+
+        } catch (err: any) {
+            console.error(`❌ [MCP Auto-Connect] Connection error for ${node.title()}:`, err);
+            
+            // Save disconnected state
+            const config = this.getServerConfig(node);
+            if (config && this.isToolsetConfig(config)) {
+                const failedConnection: MCPConnection = {
+                    toolsetUrl: config.toolsetUrl,
+                    configHash: "",
+                    connected: false,
+                    tools: [],
+                    error: err.message
+                };
+                this.saveCachedConnection(node, failedConnection);
+            }
+            return false;
+        }
+    }
+
     ydataInitialize(node: NodeM) {
         const ydata = node.ydata();
         if (!ydata.has(MCPServerConfigText)) {
