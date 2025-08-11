@@ -134,7 +134,7 @@ The request is:
 
 Please modify the code according to the user request. 
 Maintain good Python coding practices and ensure the code remains functional.
-If there are parameters for the code, you should load the JSON of it from sys.argv[1] and parse it with pydantic.
+If the code should take parameters, you must load the parameters by param=json.loads(sys.argv[1]) and validate it with pydantic V2.
 Use the description and parameters context to better understand the code's purpose and expected inputs.
 
 <output_format>

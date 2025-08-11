@@ -21,15 +21,18 @@ const linearNodeListAtom = atom((get) => {
 
     // do a depth-first traversal to get all node in a linear list
     const traverse = (node: NodeM, level: number = 0): Array<{ node: NodeM, level: number }> => {
-        if (node.nodeTypeName() !== "EditorNodeType" || node.data["archived"] === true) {
-            // if node is not EditorNodeType or archived, return empty array
+        // if node is not EditorNodeType or archived, return empty array
+        if (node.data()["archived"] === true){
+            return [];
+        }
+        if (node.nodeTypeName() !== "EditorNodeType") {
             return [];
         }
         const children = treeM.getChildren(node)
         if (children.length === 0) {
             return [{node, level}];
         }
-        return [{node, level}, ...children.flatMap(child => traverse(child), level + 1)]
+        return [{node, level}, ...children.flatMap(child => traverse(child, level + 1))]
     };
     const linearNodes = traverse(rootNode);
     return linearNodes;

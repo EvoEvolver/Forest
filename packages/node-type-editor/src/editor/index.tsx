@@ -89,7 +89,7 @@ export function makeEditor(yXML, provider, contentEditable, onCommentActivated, 
 
     const extensions = makeExtensions(yXML, provider, onCommentActivated, onLinkActivated, setHoverElements);
     if (yXML) {
-        console.log(yXML)
+        //console.log(yXML)
     }
 
     const editor = new Editor({
