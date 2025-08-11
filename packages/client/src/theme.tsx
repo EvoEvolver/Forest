@@ -50,7 +50,7 @@ const darkTheme: ThemeOptions = {
 
 
 // Create theme function that accepts mode
-export const createAppTheme = (mode: 'light' | 'dark' | 'system', isDev: boolean = false) => {
+export const createAppTheme = (mode: 'light' | 'dark' | 'system') => {
     const resolvedMode = mode === 'system' ? getSystemPreference() : mode;
     return createTheme(resolvedMode === 'light' ? lightTheme : darkTheme);
 };

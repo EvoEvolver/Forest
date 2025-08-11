@@ -13,22 +13,17 @@ import {getPastelHexFromUsername, getRandomAnimal} from "@forest/user-system/src
 import {recordTreeVisit} from "./TreeState/treeVisitService";
 import {treeAtom} from "./TreeState/TreeState";
 import {LoadingSuspense} from "./LoadingSuspense";
-import {
-    clearOAuthTokensFromUrl,
-    clearSavedUrlBeforeLogin,
-    hasOAuthTokensInUrl,
-    parseOAuthTokensFromHash
-} from "../../user-system/src/authUtils";
+import { handleOAuthTokensFromUrl } from "../../user-system/src/authUtils";
 import {useTheme} from "@mui/system";
 
 // @ts-ignore
 const FlowVisualizer = lazy(() => import('./FlowView'));
 
 export default function App() {
-    const [subscription, setSubscription] = useAtom(subscriptionAtom);
+
+    const supabaseClient = useAtomValue(supabaseClientAtom)
     const [currentPage, setCurrentPage] = useAtom(currentPageAtom);
     const [userPanelModalOpen, setUserPanelModalOpen] = useAtom(userPanelModalOpenAtom);
-    const supabaseClient = useAtomValue(supabaseClientAtom)
     const setupYDoc = useSetAtom(setupYDocAtom);
     const theme = useTheme();
 
@@ -36,7 +31,6 @@ export default function App() {
         if (treeId) {
             setupYDoc()
         }
-        setSubscription()
 
         // Check if user accessed /user path directly and open modal
         if (window.location.pathname === '/user') {
@@ -44,74 +38,9 @@ export default function App() {
             // Replace the URL without page reload to remove /user from the path
             window.history.replaceState({}, '', window.location.origin + window.location.search)
         }
-
         return () => {
-            if (subscription)
-                subscription.unsubscribe()
         }
     }, []);
-
-    // Handle OAuth tokens from URL hash (for direct homepage visits from OAuth providers)
-    useEffect(() => {
-        if (supabaseClient && hasOAuthTokensInUrl()) {
-            console.log('Processing OAuth tokens from URL hash...')
-            const tokens = parseOAuthTokensFromHash()
-            console.log('Parsed tokens:', {
-                hasAccessToken: !!tokens?.access_token,
-                hasRefreshToken: !!tokens?.refresh_token,
-                expiresAt: tokens?.expires_at,
-                expiresIn: tokens?.expires_in,
-                tokenType: tokens?.token_type
-            })
-
-            if (tokens?.access_token && tokens?.refresh_token) {
-                // Check if token is expired
-                if (tokens.expires_at) {
-                    const expiresAt = parseInt(tokens.expires_at) * 1000 // Convert to milliseconds
-                    const now = Date.now()
-                    if (now >= expiresAt) {
-                        console.error('OAuth token has expired', {
-                            expiresAt: new Date(expiresAt),
-                            now: new Date(now)
-                        })
-                        clearOAuthTokensFromUrl()
-                        return
-                    }
-                    console.log('Token is valid, expires at:', new Date(expiresAt))
-                }
-
-                console.log('Setting session with tokens...')
-                supabaseClient.auth.setSession({
-                    access_token: tokens.access_token,
-                    refresh_token: tokens.refresh_token
-                }).then(({data, error}) => {
-                    if (error) {
-                        console.error('Error setting session from OAuth tokens:', error)
-                        console.error('Error details:', {
-                            name: error.name,
-                            message: error.message,
-                            status: error.status
-                        })
-                    } else if (data.session) {
-                        console.log('OAuth session established successfully:', data.session.user.email)
-                        // Clear tokens from URL
-                        clearOAuthTokensFromUrl()
-                        // Clear any saved pre-login URL since login was successful
-                        clearSavedUrlBeforeLogin()
-                    } else {
-                        console.warn('No session returned from setSession')
-                    }
-                }).catch(error => {
-                    console.error('Error processing OAuth tokens:', error)
-                })
-            } else {
-                console.error('Missing required tokens:', {
-                    hasAccessToken: !!tokens?.access_token,
-                    hasRefreshToken: !!tokens?.refresh_token
-                })
-            }
-        }
-    }, [supabaseClient]); // Only run when supabaseClient is available
 
     const user = useAtomValue(userAtom)
     const provider = useAtomValue(YjsProviderAtom)

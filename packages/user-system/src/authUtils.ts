@@ -116,3 +116,77 @@ export function getRedirectUrlAfterLogin(): string {
     // Fallback to home page
     return window.location.origin;
 }
+
+/**
+ * Handle OAuth tokens from URL and set session
+ * Processes tokens from URL hash and sets up authentication session
+ */
+export async function handleOAuthTokensFromUrl(supabaseClient: any): Promise<boolean> {
+    if (!supabaseClient || !hasOAuthTokensInUrl()) {
+        return false;
+    }
+
+    console.log('Processing OAuth tokens from URL hash...');
+    const tokens = parseOAuthTokensFromHash();
+    console.log('Parsed tokens:', {
+        hasAccessToken: !!tokens?.access_token,
+        hasRefreshToken: !!tokens?.refresh_token,
+        expiresAt: tokens?.expires_at,
+        expiresIn: tokens?.expires_in,
+        tokenType: tokens?.token_type
+    });
+
+    if (tokens?.access_token && tokens?.refresh_token) {
+        // Check if token is expired
+        if (tokens.expires_at) {
+            const expiresAt = parseInt(tokens.expires_at) * 1000; // Convert to milliseconds
+            const now = Date.now();
+            if (now >= expiresAt) {
+                console.error('OAuth token has expired', {
+                    expiresAt: new Date(expiresAt),
+                    now: new Date(now)
+                });
+                clearOAuthTokensFromUrl();
+                return false;
+            }
+            console.log('Token is valid, expires at:', new Date(expiresAt));
+        }
+
+        console.log('Setting session with tokens...');
+        try {
+            const {data, error} = await supabaseClient.auth.setSession({
+                access_token: tokens.access_token,
+                refresh_token: tokens.refresh_token
+            });
+
+            if (error) {
+                console.error('Error setting session from OAuth tokens:', error);
+                console.error('Error details:', {
+                    name: error.name,
+                    message: error.message,
+                    status: error.status
+                });
+                return false;
+            } else if (data.session) {
+                console.log('OAuth session established successfully:', data.session.user.email);
+                // Clear tokens from URL
+                clearOAuthTokensFromUrl();
+                // Clear any saved pre-login URL since login was successful
+                clearSavedUrlBeforeLogin();
+                return true;
+            } else {
+                console.warn('No session returned from setSession');
+                return false;
+            }
+        } catch (error) {
+            console.error('Error processing OAuth tokens:', error);
+            return false;
+        }
+    } else {
+        console.error('Missing required tokens:', {
+            hasAccessToken: !!tokens?.access_token,
+            hasRefreshToken: !!tokens?.refresh_token
+        });
+        return false;
+    }
+}
