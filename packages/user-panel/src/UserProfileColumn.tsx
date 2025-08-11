@@ -4,11 +4,21 @@ import {
     Box,
     Typography, useTheme, Button,
 } from '@mui/material';
+import LogoutIcon from '@mui/icons-material/Logout';
+import { useAtom, useSetAtom } from 'jotai';
 import { UserAvatar } from './UserAvatar';
 import { UserDisplayName } from './UserDisplayName';
 import DashboardCard from './DashboardCard';
 import { AuthGuard } from './AuthGuard';
 import { TabId } from './TopBar';
+import { 
+    userAtom, 
+    authTokenAtom, 
+    userPermissionsAtom, 
+    supabaseClientAtom,
+    userPanelModalOpenAtom 
+} from '@forest/user-system/src/authStates';
+import { setupSupabaseClient } from '@forest/user-system/src/supabase';
 
 interface UserProfileProps {
     user: any;
@@ -30,12 +40,34 @@ export const UserProfileColumn: React.FC<UserProfileProps> = ({
       setTab
   }) => {
     const theme = useTheme();
+    const setAuthToken = useSetAtom(authTokenAtom);
+    const setUserPermissions = useSetAtom(userPermissionsAtom);
+    const setUserPanelModalOpen = useSetAtom(userPanelModalOpenAtom);
     
     const tabs = [
         { id: 'profile' as TabId, label: 'Profile' },
         { id: 'trees' as TabId, label: 'Trees' },
         { id: 'issues' as TabId, label: 'Issues' }
     ];
+
+    const handleLogout = async () => {
+        try {
+            const supabase = setupSupabaseClient();
+            if (supabase) {
+                await supabase.auth.signOut();
+            }
+            setUser(null);
+            setAuthToken(null);
+            setUserPermissions({
+                canUseAI: false,
+                canUploadFiles: false,
+                maxFileSize: 0
+            });
+            setUserPanelModalOpen(false); // Close the panel
+        } catch (error) {
+            console.error('Error signing out:', error);
+        }
+    };
     
     return (
         <AuthGuard>
@@ -95,6 +127,23 @@ export const UserProfileColumn: React.FC<UserProfileProps> = ({
                             }}>
                                 {user?.email}
                             </Typography>
+
+                            {/* Sign out button */}
+                            <Button
+                                onClick={handleLogout}
+                                startIcon={<LogoutIcon />}
+                                size="small"
+                                sx={{
+                                    mt: 2,
+                                    textTransform: 'none',
+                                    color: 'text.secondary',
+                                    '&:hover': {
+                                        backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                                    }
+                                }}
+                            >
+                                Sign out
+                            </Button>
                         </Box>
                     </DashboardCard>
                 </Box>
