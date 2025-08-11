@@ -10,11 +10,15 @@ import {
     Button,
     TextField,
     Alert,
-    useTheme
+    useTheme,
+    RadioGroup,
+    Radio,
+    FormControl
 } from '@mui/material';
 import { 
     Brightness4 as DarkModeIcon, 
     WbSunny as LightModeIcon,
+    SettingsBrightness as SystemModeIcon,
     Edit as EditIcon,
     Save as SaveIcon,
     Cancel as CancelIcon
@@ -40,13 +44,8 @@ export const Profile: React.FC = () => {
         }
     }, [user]);
 
-    const handleThemeToggle = () => {
-        var newMode;
-        if (currentMode == 'light') {
-            newMode = 'dark';
-        } else {
-            newMode = 'light';
-        }
+    const handleThemeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const newMode = event.target.value as 'light' | 'dark' | 'system';
         localStorage.setItem('userThemePreference', newMode);
         setCurrentMode(newMode);
     };
@@ -176,28 +175,59 @@ export const Profile: React.FC = () => {
                             Appearance
                         </Typography>
                         
-                        <FormGroup>
-                            <FormControlLabel
-                                control={
-                                    <Switch 
-                                        checked={currentMode === 'dark'} 
-                                        onChange={handleThemeToggle}
-                                        icon={<LightModeIcon color="primary" />}
-                                        checkedIcon={<DarkModeIcon />}
-                                    />
-                                }
-                                label={
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Typography>
-                                            {currentMode === 'light' ? 'Light Mode' : 'Dark Mode'}
-                                        </Typography>
-                                    </Box>
-                                }
-                            />
-                            <Typography variant="caption" color="text.secondary" sx={{ ml: 6 }}>
-                                Switch between light and dark theme
-                            </Typography>
-                        </FormGroup>
+                        <FormControl>
+                            <RadioGroup
+                                value={currentMode}
+                                onChange={handleThemeChange}
+                                sx={{ gap: 1 }}
+                            >
+                                <FormControlLabel
+                                    value="light"
+                                    control={<Radio />}
+                                    label={
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <LightModeIcon sx={{ fontSize: 20 }} />
+                                            <Box>
+                                                <Typography>Light</Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Always use light theme
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    }
+                                />
+                                <FormControlLabel
+                                    value="dark"
+                                    control={<Radio />}
+                                    label={
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <DarkModeIcon sx={{ fontSize: 20 }} />
+                                            <Box>
+                                                <Typography>Dark</Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Always use dark theme
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    }
+                                />
+                                <FormControlLabel
+                                    value="system"
+                                    control={<Radio />}
+                                    label={
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <SystemModeIcon sx={{ fontSize: 20 }} />
+                                            <Box>
+                                                <Typography>System</Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Follow system preference
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    }
+                                />
+                            </RadioGroup>
+                        </FormControl>
                     </Box>
 
                     <Divider sx={{ my: 3 }} />

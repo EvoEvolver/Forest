@@ -3,7 +3,7 @@ import { Box, Grid } from '@mui/material';
 import { userAtom } from "@forest/user-system/src/authStates";
 import { useAtom } from "jotai/index";
 import { setupSupabaseClient } from '@forest/user-system/src/supabase';
-import TopBar, {TabId} from "./TopBar";
+import {TabId} from "./TopBar";
 import { EditDisplayNameDialog } from './EditDisplayNameDialog';
 import {UserProfileColumn} from "./UserProfileColumn";
 import {MainContentSection} from "./MainContentSecion";
@@ -109,13 +109,8 @@ export const UserPanel = ({}) => {
                 flexDirection: 'column'
             }}
         >
-            {/* Top Bar  */}
-            <Box sx={{ flexShrink: 0 }}>
-                <TopBar setActiveTab={setTab} activeTab={tab}/>
-            </Box>
-
             {/* Main Content Area */}
-            <Box sx={{ flex: 1, minHeight: 0, marginTop: 2 }}>
+            <Box sx={{ flex: 1, minHeight: 0 }}>
                 <Grid container
                       spacing={3}
                       sx={{
@@ -141,6 +136,8 @@ export const UserPanel = ({}) => {
                             setAvatarUrl={setAvatarUrl}
                             setUser={setUser}
                             onEditClick={handleEditClick}
+                            tab={tab}
+                            setTab={setTab}
                         />
                     </Grid>
 
