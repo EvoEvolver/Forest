@@ -2,7 +2,7 @@
  * MiddleContents component for TreeView with drag and drop functionality
  */
 
-import React, { useState } from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import { useAtomValue, useSetAtom } from "jotai";
 import { selectedNodeAtom, setNodePositionAtom, treeAtom } from "../../TreeState/TreeState";
 import { NodeVM } from "@forest/schema";
@@ -39,8 +39,39 @@ export const MiddleContents = ({ node }: MiddleContentsProps) => {
         parentNode = useAtomValue(tree.nodeDict[parentId]);
     }
 
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const element = ref.current;
+        if (!element) return;
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    const rect = entry.boundingClientRect;
+                    const viewportCenter = window.innerHeight / 3.6;
+                    const elementCenter = rect.top + rect.height / 2;
+                    const tolerance = 50;
+                    if (Math.abs(elementCenter - viewportCenter) < tolerance) {
+                        setSelectedNode(node.id);
+                    }
+                }
+            },
+            {
+                rootMargin: '-20% 0px -20% 0px', // This creates a 60% height zone in the center
+                threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+            }
+        );
+
+        observer.observe(element);
+
+        return () => {
+            observer.unobserve(element);
+        };
+    }, []);
+
     const handleClick = () => {
-        setSelectedNode(node.id)
+        setSelectedNode(node.id);
     }
 
     const handleDragOver = (e: React.DragEvent) => {
@@ -102,6 +133,7 @@ export const MiddleContents = ({ node }: MiddleContentsProps) => {
     }
 
     return <div
+        ref={ref}
         style={{
             padding: '24px',
             marginBottom: '24px',

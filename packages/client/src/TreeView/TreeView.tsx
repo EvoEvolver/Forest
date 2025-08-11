@@ -19,9 +19,11 @@ const TreeViewContent = () => {
     const commitNumber = useAtomValue(tree.viewCommitNumberAtom)
     const countChildren = useSetAtom(updateChildrenCountAtom)
     const [showArchived, setShowArchived] = useState(false);
+
     useEffect(() => {
         countChildren({})
     }, [commitNumber]);
+
     if (leaves.length === 0)
         return null
     return (
@@ -88,7 +90,6 @@ const TreeViewContent = () => {
                 boxSizing: "border-box"
             }}>
                 <div>
-        
                     <div>
                         {leaves.filter((n) => n.data["archived"] !== true).map((n) => <MiddleContents node={n}
                                                                                                       key={n.id}/>)}

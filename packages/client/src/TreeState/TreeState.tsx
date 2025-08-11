@@ -260,9 +260,42 @@ export const clearAllMarkedNodesAtom = atom(null, (get, set) => {
 export const scrollToNodeAtom = atom(null, (get, set, nodeId: string) => {
     const nodeElement = document.querySelector(`#node-${nodeId}`);
     if (nodeElement) {
-        nodeElement.scrollIntoView({behavior: 'instant', block: 'start'});
+        // Find the scrollable ancestor
+        const scrollableContainer = findScrollableParent(nodeElement);
+
+        if (scrollableContainer) {
+            const offset = 200;
+            const containerRect = scrollableContainer.getBoundingClientRect();
+            const elementRect = nodeElement.getBoundingClientRect();
+            const targetScrollTop = scrollableContainer.scrollTop + (elementRect.top - containerRect.top) - offset;
+
+            scrollableContainer.scrollTo({
+                top: targetScrollTop,
+                behavior: 'instant'
+            });
+        }
     }
-})
+});
+
+function findScrollableParent(element: Element): Element | null {
+    let parent = element.parentElement;
+
+    while (parent) {
+        const computedStyle = window.getComputedStyle(parent);
+        const overflowY = computedStyle.overflowY;
+
+        if (overflowY === 'scroll' || overflowY === 'auto') {
+            // Check if it actually has scrollable content
+            if (parent.scrollHeight > parent.clientHeight) {
+                return parent;
+            }
+        }
+
+        parent = parent.parentElement;
+    }
+
+    return null;
+}
 
 const nodesIdBeforeJumpAtom = atom<string[]>([])
 
