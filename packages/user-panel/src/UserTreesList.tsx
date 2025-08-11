@@ -15,12 +15,11 @@ import {
 } from '@mui/material';
 import {Delete as DeleteIcon, Refresh as RefreshIcon, Add as AddIcon} from '@mui/icons-material';
 import {authTokenAtom, userAtom} from '@forest/user-system/src/authStates';
-const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
-const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort}`
 import DashboardCard from './DashboardCard';
 import {TreeJson} from '@forest/schema';
 import MiniFlowView from './MiniFlowView';
 import { TreeCreationDialog } from './TreeCreationDialog';
+import {httpUrl} from "@forest/schema/src/config";
 
 interface UserTree {
     treeId: string;
@@ -228,7 +227,7 @@ export const UserTreesList = ({}) => {
         // Show preview after delay
         hoverTimeoutRef.current = setTimeout(() => {
             showPreview(rowElement, treeId);
-        }, 500); // Increased delay to 500ms
+        }, 1000); // Increased delay to 1000ms
     }, [showPreview]);
 
     const handleRowLeave = useCallback(() => {
@@ -615,12 +614,12 @@ export const UserTreesList = ({}) => {
                     anchorEl={previewState.anchorEl}
                     onClose={hidePreview}
                     anchorOrigin={{
-                        vertical: 'center',
+                        vertical: 'bottom',
                         horizontal: 'right',
                     }}
                     transformOrigin={{
-                        vertical: 'center',
-                        horizontal: 'left',
+                        vertical: -10,
+                        horizontal: 'center',
                     }}
                     sx={{
                         pointerEvents: 'none',
