@@ -103,29 +103,6 @@ export const TreesSection = () => {
                 <Box sx={{display: 'flex'}}>
                     <TabButton tabId="my-trees" label="My Trees" count={myTreesCount}/>
                     <TabButton tabId="recent-trees" label="Recent Trees" count={recentTreesCount}/>
-
-
-                    <Button
-                        startIcon={<AddIcon/>}
-                        variant="contained"
-                        size="small"
-                        sx={{
-                            textTransform: 'none',
-                            fontSize: '0.875rem',
-                            px: 2,
-                            py: 0.5,
-                            mb: '5px'
-                        }}
-                        onClick={() => {
-                            if (authToken) {
-                                setCreateTreeDialogOpen(true);
-                            } else {
-                                window.open('/', '_blank');
-                            }
-                        }}
-                    >
-                        New Tree
-                    </Button>
                 </Box>
             </Box>
 

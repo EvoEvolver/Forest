@@ -274,16 +274,27 @@ export const UserTreesList = ({}) => {
     const CustomFooter = () => (
         <GridFooterContainer>
             <Box sx={{display: 'flex', alignItems: 'center', flex: 1}}>
-                <Tooltip title="Create New Tree">
-                    <IconButton
-                        color="primary"
-                        size="small"
-                        onClick={handleCreateTreeClick}
-                        sx={{marginLeft: 1}}
-                    >
-                        <AddIcon/>
-                    </IconButton>
-                </Tooltip>
+                <Button
+                    startIcon={<AddIcon/>}
+                    variant="contained"
+                    size="small"
+                    sx={{
+                        textTransform: 'none',
+                        fontSize: '0.875rem',
+                        px: 2,
+                        py: 0.5,
+                        mb: '5px'
+                    }}
+                    onClick={() => {
+                        if (authToken) {
+                            setCreateTreeDialogOpen(true);
+                        } else {
+                            window.open('/', '_blank');
+                        }
+                    }}
+                >
+                    New Tree
+                </Button>
                 <Tooltip title="Refresh">
                     <IconButton size="small" onClick={fetchUserTrees} sx={{marginLeft: 1}}>
                         <RefreshIcon fontSize="small"/>
