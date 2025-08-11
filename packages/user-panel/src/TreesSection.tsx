@@ -114,7 +114,7 @@ export const TreesSection = () => {
                             fontSize: '0.875rem',
                             px: 2,
                             py: 0.5,
-                            mb: '2px'
+                            mb: '5px'
                         }}
                         onClick={() => {
                             if (authToken) {
