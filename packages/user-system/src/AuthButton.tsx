@@ -1,6 +1,6 @@
 import React from 'react'
 import {useAtomValue, useSetAtom} from 'jotai'
-import {Avatar, Button, Typography} from '@mui/material'
+import {Avatar, Button, Typography, useTheme} from '@mui/material'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import {
     authModalOpenAtom,
@@ -16,7 +16,7 @@ const AuthButton: React.FC = () => {
 
     const setAuthModalOpen = useSetAtom(authModalOpenAtom)
     const setUserPanelModalOpen = useSetAtom(userPanelModalOpenAtom)
-
+    const theme = useTheme()
     const [userMetadata, setUserMetadata] = React.useState<{username: string, avatar: string | null} | null>(null)
 
     React.useEffect(() => {
@@ -62,7 +62,6 @@ const AuthButton: React.FC = () => {
 
     return (
         <Button
-            color="primary"
             onClick={handleUserMenuClick}
             sx={{
                 textTransform: 'none',
@@ -77,11 +76,11 @@ const AuthButton: React.FC = () => {
         >
             <Avatar 
                 src={userMetadata?.avatar || undefined}
-                sx={{width: 24, height: 24, bgcolor: 'rgba(78, 137, 192, 0.8)'}}
+                sx={{width: 24, height: 24}}
             >
                 {!userMetadata?.avatar && (userMetadata?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase())}
             </Avatar>
-            <Typography variant="body2">
+            <Typography variant="body2" sx={{color: theme.palette.text.secondary, textTransform: 'none'}}>
                 {userMetadata?.username || user?.email?.split('@')[0]}
             </Typography>
         </Button>
