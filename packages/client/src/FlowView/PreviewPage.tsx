@@ -2,13 +2,15 @@ import {NodeVM} from "@forest/schema";
 import {Box, Typography} from "@mui/material";
 import React from "react";
 import {contentEditableContext} from "@forest/schema/src/viewContext";
+import {useTheme} from "@mui/system";
 
 
 // Create a proper React component that can use hooks
 export const NodePreview: React.FC<{ node: NodeVM }> = ({node}) => {
+    const theme = useTheme()
     try {
         return <>
-            <Typography variant="h6" gutterBottom sx={{color: '#1976d2', mb: 1}}>
+            <Typography variant="h6" gutterBottom sx={{color: theme.palette.primary.main, mb: 1}}>
                 {node.nodeM.title()}
             </Typography>
 

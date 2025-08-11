@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTheme } from '@mui/material';
 import ReactFlow, {
     Background,
     Controls,
@@ -128,6 +129,7 @@ const nodeTypes = {
 };
 
 const FlowVisualizer = () => {
+    const theme = useTheme();
     // We use useAtom instead of useAtomValue to get the setter for recalculating layout
     const [flowData, recomputeFlowData] = useAtom(flowDataAtom);
     const [nodes, setNodes, onNodesChange] = useNodesState(flowData.nodes);
@@ -147,7 +149,7 @@ const FlowVisualizer = () => {
     if (nodes.length === 0) return null;
 
     return (
-        <div style={{width: '100vw', height: '100vh', background: '#fafafa'}}>
+        <div style={{width: '100vw', height: '100vh', background: theme.palette.background.default}}>
             <ReactFlow
                 nodes={nodes}
                 edges={edges}
@@ -163,29 +165,28 @@ const FlowVisualizer = () => {
                 }}
                 defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
                 proOptions={{hideAttribution: true}}
-                style={{ background: '#fafafa' }}
+                style={{ background: theme.palette.background.default }}
             >
                 <Background
-                    color="#e0e0e0"
                     gap={20}
                     size={1}
                     variant="dots"
                 />
                 <MiniMap
-                    nodeColor="#1976d2"
-                    maskColor="rgba(0, 0, 0, 0.1)"
+                    nodeColor={theme.palette.primary.main}
+                    maskColor={theme.palette.mode === 'dark' ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)"}
                     style={{
-                        background: '#fff',
-                        border: '1px solid #e0e0e0',
+                        background: theme.palette.background.paper,
+                        border: `1px solid ${theme.palette.divider}`,
                         borderRadius: 8
                     }}
                 />
                 <Controls
                     style={{
-                        background: '#fff',
-                        border: '1px solid #e0e0e0',
+                        background: theme.palette.background.paper,
+                        border: `1px solid ${theme.palette.divider}`,
                         borderRadius: 8,
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                     }}
                 />
             </ReactFlow>

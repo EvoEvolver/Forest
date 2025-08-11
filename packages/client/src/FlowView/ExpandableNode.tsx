@@ -3,7 +3,7 @@ import {createPortal} from 'react-dom';
 import {Handle, NodeProps, Position} from 'reactflow';
 import {useAtomValue, useSetAtom} from 'jotai';
 import {nodeStateAtom} from './nodeStateAtom';
-import {Box, Card, CardContent, IconButton, Menu, MenuItem, Paper, Typography} from '@mui/material';
+import {Box, Card, CardContent, IconButton, Menu, MenuItem, Paper, Typography, useTheme} from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import {jumpToNodeAtom, scrollToNodeAtom, treeAtom} from "../TreeState/TreeState";
@@ -14,6 +14,7 @@ import {currentPageAtom} from "../appState";
 
 
 const ExpandableNode = ({id, data}: NodeProps) => {
+    const theme = useTheme();
     const setNodeState = useSetAtom(nodeStateAtom(id));
     const [mouseInNode, setMouseInNode] = useState(false);
     const [mouseInPreview, setMouseInPreview] = useState(false);
@@ -141,9 +142,9 @@ const ExpandableNode = ({id, data}: NodeProps) => {
                         maxHeight: 500,
                         overflow: 'auto',
                         boxShadow: 6,
-                        border: '2px solid #1976d2',
+                        border: `2px solid ${theme.palette.primary.main}`,
                         borderRadius: 3,
-                        backgroundColor: 'white',
+                        backgroundColor: theme.palette.background.paper,
                         zIndex: 10000,
                         transform: 'translateY(-50%)',
                     }}
@@ -162,11 +163,11 @@ const ExpandableNode = ({id, data}: NodeProps) => {
                 onContextMenu={handleContextMenu}
                 sx={{
                     p: 2,
-                    border: '1px solid #e0e0e0',
+                    border: `1px solid ${theme.palette.divider}`,
                     borderRadius: 3,
-                    background: 'linear-gradient(135deg, #fafafa 0%, #ffffff 100%)',
+                    backgroundColor: theme.palette.background.paper,
                     textAlign: 'center',
-                    color: '#333',
+                    color: theme.palette.text.primary,
                     minWidth: 140,
                     maxWidth: 220,
                     position: 'relative',
@@ -174,8 +175,8 @@ const ExpandableNode = ({id, data}: NodeProps) => {
                     transition: 'all 0.3s ease',
                     '&:hover': {
                         elevation: 4,
-                        borderColor: '#1976d2',
-                        background: 'linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%)'
+                        borderColor: theme.palette.primary.main,
+                        backgroundColor: theme.palette.action.hover
                     }
                 }}
             >
@@ -183,10 +184,10 @@ const ExpandableNode = ({id, data}: NodeProps) => {
                     type="target"
                     position={Position.Left}
                     style={{
-                        background: '#1976d2',
+                        background: theme.palette.primary.main,
                         width: 10,
                         height: 10,
-                        border: '2px solid #fff',
+                        border: `2px solid ${theme.palette.background.paper}`,
                         boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                     }}
                 />
@@ -197,7 +198,7 @@ const ExpandableNode = ({id, data}: NodeProps) => {
                         fontSize={12}
                         sx={{
                             flexGrow: 1,
-                            color: '#2c3e50',
+                            color: theme.palette.text.primary,
                             lineHeight: 1.3,
                             textAlign: 'left',
                             wordBreak: 'break-word'
@@ -215,13 +216,13 @@ const ExpandableNode = ({id, data}: NodeProps) => {
                             sx={{
                                 width: 24,
                                 height: 24,
-                                background: data.isCollapsed ? '#e3f2fd' : '#1976d2',
-                                color: data.isCollapsed ? '#1976d2' : '#fff',
-                                border: '1px solid #1976d2',
+                                background: data.isCollapsed ? theme.palette.primary.light : theme.palette.primary.main,
+                                color: data.isCollapsed ? theme.palette.primary.main : theme.palette.primary.contrastText,
+                                border: `1px solid ${theme.palette.primary.main}`,
                                 borderRadius: '50%',
                                 transition: 'all 0.2s ease',
                                 '&:hover': {
-                                    background: data.isCollapsed ? '#bbdefb' : '#1565c0',
+                                    background: data.isCollapsed ? theme.palette.primary.light : theme.palette.primary.dark,
                                     transform: 'scale(1.1)'
                                 }
                             }}
@@ -235,10 +236,10 @@ const ExpandableNode = ({id, data}: NodeProps) => {
                     type="source"
                     position={Position.Right}
                     style={{
-                        background: '#1976d2',
+                        background: theme.palette.primary.main,
                         width: 10,
                         height: 10,
-                        border: '2px solid #fff',
+                        border: `2px solid ${theme.palette.background.paper}`,
                         boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                     }}
                 />
