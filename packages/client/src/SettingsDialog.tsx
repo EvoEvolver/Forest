@@ -10,7 +10,7 @@ import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import IconButton from '@mui/material/IconButton';
-import { Close as CloseIcon, Share as ShareIcon, BugReport as BugReportIcon, ContentCopy as ContentCopyIcon } from '@mui/icons-material';
+import { Close as CloseIcon, BugReport as BugReportIcon, ContentCopy as ContentCopyIcon } from '@mui/icons-material';
 import {Box, Button, Chip, Avatar, Divider, Stack, Snackbar, Alert} from "@mui/material";
 import {useAtom} from "jotai";
 import {userAtom} from "@forest/user-system/src/authStates";
@@ -27,19 +27,8 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({open, onClose}) => {
     
     const handleShare = async () => {
         const inviteUrl = `${frontendUrl}/tree-invite?treeId=${treeId}`;
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: 'Join my Forest tree',
-                    url: inviteUrl
-                });
-            } catch (err) {
-                // User cancelled share
-            }
-        } else {
-            await navigator.clipboard.writeText(inviteUrl);
-            setShowCopiedAlert(true);
-        }
+        await navigator.clipboard.writeText(inviteUrl);
+        setShowCopiedAlert(true);
     };
 
     return (
@@ -85,7 +74,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({open, onClose}) => {
             <Stack spacing={2} sx={{ mb: 3 }}>
                 <Button 
                     variant="contained" 
-                    startIcon={<ShareIcon />}
+                    startIcon={<ContentCopyIcon />}
                     onClick={handleShare}
                     fullWidth
                     sx={{ 
@@ -100,7 +89,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({open, onClose}) => {
                         }
                     }}
                 >
-                    Share invite link
+                    Copy invite link
                 </Button>
                 <Button
                     variant="outlined"
