@@ -8,25 +8,19 @@ import {
     Button,
     Chip,
     CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogContentText,
-    DialogTitle,
     IconButton,
     Popover,
     Tooltip,
     Typography
 } from '@mui/material';
 import {Delete as DeleteIcon, Refresh as RefreshIcon, Add as AddIcon} from '@mui/icons-material';
-import {v4 as uuidv4} from 'uuid';
 import {authTokenAtom, userAtom} from '@forest/user-system/src/authStates';
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
 const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort}`
 import DashboardCard from './DashboardCard';
-import {NodeJson, TreeJson, TreeMetadata} from '@forest/schema';
-import {supportedNodeTypes} from '@forest/node-types';
+import {TreeJson} from '@forest/schema';
 import MiniFlowView from './MiniFlowView';
+import { TreeCreationDialog } from './TreeCreationDialog';
 
 interface UserTree {
     treeId: string;
@@ -36,10 +30,6 @@ interface UserTree {
     nodeCount: number;
 }
 
-interface NodeTypeForDisplay {
-    name: string;
-    displayName: string;
-}
 
 export const UserTreesList = ({}) => {
     const [trees, setTrees] = useState<UserTree[]>([]);
@@ -47,7 +37,6 @@ export const UserTreesList = ({}) => {
     const [error, setError] = useState<string | null>(null);
     const [deletingTreeId, setDeletingTreeId] = useState<string | null>(null);
     const [createTreeDialogOpen, setCreateTreeDialogOpen] = useState(false);
-    const [availableNodeTypes, setAvailableNodeTypes] = useState<NodeTypeForDisplay[]>([]);
     const [paginationModel, setPaginationModel] = useState({
         page: 0,
         pageSize: 25,
@@ -73,104 +62,14 @@ export const UserTreesList = ({}) => {
     const authToken = useAtomValue(authTokenAtom);
     const user = useAtomValue(userAtom);
 
-    // Load available node types
-    useEffect(() => {
-        const loadNodeTypes = async () => {
-            const nodeTypeNames = [
-                "EditorNodeType",
-                "AgentNodeType"
-            ];
 
-            const promises = nodeTypeNames.map(async (typeName) => {
-                try {
-                    const nodeType = await supportedNodeTypes(typeName);
-                    return {
-                        name: typeName,
-                        displayName: nodeType?.displayName || typeName
-                    };
-                } catch (error) {
-                    console.warn(`Failed to load node type ${typeName}:`, error);
-                    return null;
-                }
-            });
-
-            const nodeTypes = await Promise.all(promises);
-            setAvailableNodeTypes(nodeTypes.filter(type => type !== null) as NodeTypeForDisplay[]);
-        };
-
-        loadNodeTypes();
-    }, []);
-
-    const handleApiResponse = async (response: Response, errorContext: string) => {
-        if (!response.ok) {
-            const status = response.status;
-            if (status === 401) throw new Error("AUTHENTICATION_FAILED");
-            if (status === 403) throw new Error("PERMISSION_DENIED");
-            throw new Error(`HTTP_ERROR_${status}`);
-        }
-
-        const data = await response.json();
-        if (data.error) throw new Error(data.error);
-        return data;
-    };
-
-    const handleCreateTree = async (nodeTypeName: string = "EditorNodeType") => {
-        const nodeId = uuidv4()
-        const newRootJson: NodeJson = {
-            title: "Root",
-            children: [],
-            id: nodeId,
-            parent: null,
-            data: {},
-            nodeTypeName: nodeTypeName
-        }
-        const newTreeMetadata: TreeMetadata = {
-            rootId: newRootJson.id
-        }
-        const newTreeJson: TreeJson = {
-            nodeDict: {
-                [nodeId]: newRootJson
-            },
-            metadata: newTreeMetadata
-        }
-
-        try {
-            const data = await handleApiResponse(
-                await fetch(httpUrl + "/api/createTree", {
-                    method: "PUT",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${authToken}`,
-                    },
-                    body: JSON.stringify({"tree": newTreeJson})
-                }),
-                "create tree"
-            );
-            if (!data.tree_id) throw new Error("No tree_id returned from server");
-            window.location.href = `${window.location.origin}/?id=${data.tree_id}`;
-
-        } catch (error) {
-            console.error("Error creating tree:", error);
-            throw error;
-        }
-    };
 
     const handleCreateTreeClick = () => {
-        if (availableNodeTypes.length === 1) {
-            handleCreateTree(availableNodeTypes[0].name);
-            return;
-        }
-
         setCreateTreeDialogOpen(true);
     };
 
     const handleCloseCreateTreeDialog = () => {
         setCreateTreeDialogOpen(false);
-    };
-
-    const handleSelectNodeType = (nodeTypeName: string) => {
-        handleCreateTree(nodeTypeName);
-        handleCloseCreateTreeDialog();
     };
 
     const fetchTreeData = useCallback(async (treeId: string): Promise<TreeJson | null> => {
@@ -704,34 +603,10 @@ export const UserTreesList = ({}) => {
                 )}
             </DashboardCard>
 
-            {/* Dialog for choosing root node type */}
-            <Dialog
+            <TreeCreationDialog 
                 open={createTreeDialogOpen}
                 onClose={handleCloseCreateTreeDialog}
-            >
-                <DialogTitle>Choose Root Node Type</DialogTitle>
-                <DialogContent>
-                    <DialogContentText>
-                        Select the type of root node for your new tree:
-                    </DialogContentText>
-                    {availableNodeTypes.map((type) => (
-                        <Button
-                            key={type.name}
-                            fullWidth
-                            variant="outlined"
-                            onClick={() => handleSelectNodeType(type.name)}
-                            sx={{ mb: 1, justifyContent: 'flex-start' }}
-                        >
-                            {type.displayName}
-                        </Button>
-                    ))}
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleCloseCreateTreeDialog} color="primary">
-                        Cancel
-                    </Button>
-                </DialogActions>
-            </Dialog>
+            />
 
             {/* Tree Preview Popover */}
             {previewState.isOpen && previewState.treeData && (
