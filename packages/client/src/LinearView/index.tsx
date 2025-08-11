@@ -204,7 +204,7 @@ export default function LinearView() {
         }).filter(html => html.length > 0).join('\n\n');
     };
 
-    if (!nodes) return null;
+    if (!nodes || nodes.length===0) return null;
 
     return <>
         <div style={{
