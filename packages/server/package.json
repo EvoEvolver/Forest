@@ -3,8 +3,14 @@
   "version": "1.0.0",
   "main": "src/index.ts",
   "scripts": {
-    "dev": "nodemon src/index.ts --BackendPort=29999 --noFrontend=true",
+    "dev": "nodemon",
     "build": "node build.js"
+  },
+  "nodemonConfig": {
+    "ext": "js,jsx,json",
+    "execMap": {
+      "jsx": "node -r @babel/register"
+    }
   },
   "dependencies": {
     "@a2a-js/sdk": "^0.2.4",
@@ -32,7 +38,8 @@
     "y-mongodb-provider": "^0.2.1",
     "y-protocols": "^1.0.6",
     "yjs": "13.6.27",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "@forest/node-types": "workspace:*"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
@@ -43,6 +50,9 @@
     "@types/ws": "^8.18.1",
     "esbuild": "^0.24.0",
     "nodemon": "^3.1.7",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "@babel/core": "^7.28.0",
+    "@babel/preset-react": "^7.27.1",
+    "@babel/register": "^7.27.1"
   }
 }

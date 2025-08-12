@@ -53,13 +53,13 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDrag
     // Snackbar state for copy link
     const [copySuccess, setCopySuccess] = React.useState(false);
 
-    const availableTypeNames = node.nodeType.allowedChildrenTypes
+    const availableTypeNames = node.nodeM.nodeType.allowedChildrenTypes
 
 
     useEffect(() => {
         const fetchTypes = async () => {
             const promises = availableTypeNames.map(async (typeName) => {
-                const nodeType = await node.treeVM.treeM.supportedNodesTypes(typeName);
+                const nodeType = node.treeVM.treeM.supportedNodeTypesM(typeName);
                 return {
                     name: typeName,
                     displayName: nodeType.displayName
@@ -161,7 +161,7 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDrag
                 </Tooltip>
 
                 {/* Archive/Unarchive */}
-                {node.nodeType.allowReshape && <Tooltip title={node.data['archived'] ? "Unarchive" : "Archive"} placement="left">
+                {node.nodeM.nodeType.allowReshape && <Tooltip title={node.data['archived'] ? "Unarchive" : "Archive"} placement="left">
                     <IconButton
                         size="small"
                         onClick={node.data['archived'] ? unarchiveNode : archiveNode}

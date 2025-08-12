@@ -170,7 +170,7 @@ export const MiddleContents = ({ node }: MiddleContentsProps) => {
                 <NodeTitle
                     node={node}
                 />
-                {!isDragging && node.nodeType.render(node)}
+                {!isDragging && node.nodeTypeVM.render(node)}
             </thisNodeContext.Provider>
         </div>
         <NodeButtons node={node}/>

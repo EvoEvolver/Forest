@@ -1,18 +1,21 @@
 import {Map as YMap} from "yjs";
 import {atom, PrimitiveAtom} from "jotai";
 import {WebsocketProvider} from "@forest/schema/src/y-websocket";
-import {treeId, wsUrl} from "../appState";
+import {treeId} from "../appState";
 import {scrollToNodeAtom, selectedNodeAtom, treeAtom} from "./TreeState";
 import {updateChildrenCountAtom} from "./childrenCount";
 import {TreeM, TreeVM} from "@forest/schema";
-import {supportedNodeTypes} from "@forest/node-types"
+import { supportedNodeTypesM } from "@forest/node-types/src/model";
+
+const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
+const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
+export const wsUrl = `${wsProtocol}://${location.hostname}:${currentPort}`
 
 export const YjsProviderAtom: PrimitiveAtom<WebsocketProvider> = atom();
 export const YjsConnectionStatusAtom = atom("connecting");
 
 export const setupYDocAtom = atom(null, async (get, set) => {
-    const [treeM, wsProvider] = await TreeM.treeFromWs(wsUrl, treeId)
-    treeM.supportedNodesTypes = supportedNodeTypes
+    const [treeM, wsProvider] = await TreeM.treeFromWs(wsUrl, treeId, supportedNodeTypesM);
     set(treeAtom, treeM)
     const currTree = get(treeAtom)
     set(YjsProviderAtom, wsProvider)

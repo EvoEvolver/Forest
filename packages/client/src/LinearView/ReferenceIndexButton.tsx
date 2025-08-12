@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Dialog, DialogTitle, DialogContent, DialogActions, Typography, CircularProgress, Box, RadioGroup, FormControlLabel, Radio, FormControl, FormLabel } from '@mui/material';
 import {NodeM} from "@forest/schema";
-import {EditorNodeType} from '@forest/node-type-editor/src';
+import {EditorNodeTypeM} from '@forest/node-type-editor/src';
 import {useAtomValue} from "jotai";
 import {treeAtom} from "../TreeState/TreeState";
 
@@ -24,7 +24,6 @@ export default function ReferenceIndexButton({ nodes }: ReferenceIndexButtonProp
     const [currentChange, setCurrentChange] = useState<ContentChange | null>(null);
     const [pendingChanges, setPendingChanges] = useState<ContentChange[]>([]);
     const [currentChangeIndex, setCurrentChangeIndex] = useState(0);
-    const editorNodeType = new EditorNodeType();
     const treeVM = useAtomValue(treeAtom)
 
     // Function to get cached citation data or fetch from server
@@ -146,7 +145,7 @@ export default function ReferenceIndexButton({ nodes }: ReferenceIndexButtonProp
                 if (childrenValue.length > 0) continue;
                 
                 // Get current content
-                const currentContent = editorNodeType.getEditorContent(node);
+                const currentContent = EditorNodeTypeM.getEditorContent(node);
                 
                 // Parse and replace links
                 const parser = new DOMParser();
@@ -247,7 +246,7 @@ export default function ReferenceIndexButton({ nodes }: ReferenceIndexButtonProp
     const applyCurrentChange = () => {
         try {
             if (currentChange) {
-                editorNodeType.setEditorContent(currentChange.node, currentChange.newContent);
+                EditorNodeTypeM.setEditorContent(currentChange.node, currentChange.newContent);
             }
             
             // Move to next change or close if done

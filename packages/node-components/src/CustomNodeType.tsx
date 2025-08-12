@@ -1,4 +1,4 @@
-import {NodeM, NodeType, NodeVM} from "@forest/schema"
+import {NodeM, NodeVM} from "@forest/schema"
 import React, {ReactNode} from "react";
 import JsxParser from "react-jsx-parser";
 import TabContext from "@mui/lab/TabContext";
@@ -6,7 +6,9 @@ import {Box} from "@mui/material";
 import TabList from "@mui/lab/TabList";
 import Tab from "@mui/material/Tab";
 import TabPanel from "@mui/lab/TabPanel";
-import { componentsForCustomNode } from "./index";
+import {componentsForCustomNode} from "./index";
+import {NodeTypeM} from "@forest/schema/src/nodeTypeM";
+import {NodeTypeVM} from "@forest/schema/src/nodeTypeVM";
 
 
 const renderTabs = (tabs, node: NodeVM) => {
@@ -50,36 +52,34 @@ const renderTabs = (tabs, node: NodeVM) => {
     </>
 }
 
-interface CustomNodeData {
-    tabs: Record<string, string>,
-    tools: Record<string, string>[]
+
+export class CustomNodeTypeM extends NodeTypeM {
+    static renderPrompt(node: NodeM): string {
+        return ""
+    }
+
+    static ydataInitialize(node: NodeM) {
+
+    }
+
 }
 
-export class CustomNodeType extends NodeType {
-    render(node: NodeVM): ReactNode {
+export class CustomNodeTypeVM extends NodeTypeVM {
+    static render(node: NodeVM): ReactNode {
         //const data = node.data as CustomNodeData
         const tabs = node.tabs
         return renderTabs(tabs, node)
     }
 
-    renderTool1(node: NodeVM): ReactNode {
+    static renderTool1(node: NodeVM): ReactNode {
         //const data = node.data as CustomNodeData
         const tabs = node.tools[0]
         return renderTabs(tabs, node)
     }
 
-    renderTool2(node: NodeVM): ReactNode {
+    static renderTool2(node: NodeVM): ReactNode {
         //const data = node.data as CustomNodeData
         const tabs = node.tools[1]
         return renderTabs(tabs, node)
     }
-
-    renderPrompt(node: NodeM): string {
-        return ""
-    }
-
-    ydataInitialize(node: NodeM) {
-
-    }
-
 }

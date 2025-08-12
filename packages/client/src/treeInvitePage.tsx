@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {httpUrl} from './appState';
+import {httpUrl} from '@forest/schema/src/config';
 import {useAtom, useAtomValue} from 'jotai';
 import {subscriptionAtom, supabaseClientAtom, userAtom} from '@forest/user-system/src/authStates';
 import {AppBar, Toolbar, Container, Paper, Typography, Button, Alert, Box, CircularProgress} from "@mui/material";

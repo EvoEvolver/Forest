@@ -1,4 +1,4 @@
-import {NodeM, NodeType, NodeVM} from "@forest/schema"
+import {NodeM, NodeVM} from "@forest/schema"
 import React from "react";
 import TiptapEditor, {makeEditor} from "./editor";
 import {XmlFragment} from "yjs";
@@ -7,44 +7,35 @@ import {TopDownButton} from "./aiButtons/topDown";
 import {ParentToSummaryButton} from "./aiButtons/parentToSummary";
 import {ModifyButton} from "./aiButtons/modifyButton";
 import {useAtomValue} from "jotai";
+import {NodeTypeM} from "@forest/schema/src/nodeTypeM";
+import {NodeTypeVM} from "@forest/schema/src/nodeTypeVM";
 
-interface EditorNodeData {
-}
+const EditorXmlFragment = "ydatapaperEditor"
 
-export class EditorNodeType extends NodeType {
-    displayName = "Editor"
-    allowReshape = true
-    allowAddingChildren = true
-    allowEditTitle = true
-    allowedChildrenTypes = ["EditorNodeType"]
+export class EditorNodeTypeM extends NodeTypeM {
+    static displayName = "Editor"
+    static allowReshape = true
+    static allowAddingChildren = true
+    static allowEditTitle = true
+    static allowedChildrenTypes = ["EditorNodeType"]
 
-    getYxml(node: NodeM): XmlFragment {
-        const ydataKey = "ydatapaperEditor"
-        let yXML: XmlFragment = node.ydata().get(ydataKey) as unknown as XmlFragment;
+    static getYxml(node: NodeM): XmlFragment {
+        let yXML: XmlFragment = node.ydata().get(EditorXmlFragment) as unknown as XmlFragment;
         if (!yXML) {
-            yXML = new XmlFragment();
-            // @ts-ignore
-            node.ydata().set(ydataKey, yXML);
+            throw new Error("Missing yXML in EditorNodeType.getYxml, node: " + node.id);
         }
         return yXML;
     }
 
-    render(node: NodeVM): React.ReactNode {
-        const yXML = this.getYxml(node.nodeM);
-        return <>
-            <TiptapEditor yXML={yXML} node={node}/>
-        </>
-    }
-
-    getEditorContent(node: NodeM): string {
-        const editor = makeEditor(this.getYxml(node), null, true, null, null, null);
+    static getEditorContent(node: NodeM): string {
+        const editor = makeEditor(EditorNodeTypeM.getYxml(node), null, true, null, null, null);
         const htmlContent = editor.getHTML();
         editor.destroy()
         return htmlContent;
     }
 
-    setEditorContent(node: NodeM, htmlContent: string) {
-        const editor = makeEditor(this.getYxml(node), null, true, null, null, null);
+    static setEditorContent(node: NodeM, htmlContent: string) {
+        const editor = makeEditor(EditorNodeTypeM.getYxml(node), null, true, null, null, null);
         try {
             editor.commands.setContent(htmlContent);
         } catch (e) {
@@ -67,21 +58,34 @@ export class EditorNodeType extends NodeType {
         return true
     }
 
-    renderTool1(node: NodeVM): React.ReactNode {
-
-    }
-
-    renderTool2(node: NodeVM): React.ReactNode {
-        return <EditorTools node={node}/>
-    }
-
-    renderPrompt(node: NodeM): string {
+    static renderPrompt(node: NodeM): string {
         return ""
     }
 
-    ydataInitialize(node: NodeM) {
+    static ydataInitialize(node: NodeM) {
+        const yXML = new XmlFragment();
+        // @ts-ignore
+        node.ydata().set(EditorNodeData, yXML);
     }
 }
+
+export class EditorNodeTypeVM extends NodeTypeVM {
+    static render(node: NodeVM): React.ReactNode {
+        const yXML = EditorNodeTypeM.getYxml(node.nodeM);
+        return <>
+            <TiptapEditor yXML={yXML} node={node}/>
+        </>
+    }
+
+    static renderTool1(node: NodeVM): React.ReactNode {
+        return null
+    }
+
+    static renderTool2(node: NodeVM): React.ReactNode {
+        return <EditorTools node={node}/>
+    }
+}
+
 
 function EditorTools({node}: { node: NodeVM }) {
     const children = useAtomValue(node.children)

@@ -1,4 +1,4 @@
-import { httpUrl } from "@forest/client/src/appState";
+import { httpUrl } from "@forest/schema/src/config";
 
 interface UserMetadata {
     userId: string;

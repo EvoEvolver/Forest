@@ -1,0 +1,5 @@
+{
+  "watch": ["src"],
+  "ext": "ts",
+  "exec": "ts-node --transpile-only  src/index.ts  --BackendPort=29999 --noFrontend=true"
+}

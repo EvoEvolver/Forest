@@ -15,8 +15,5 @@ isMobileModeAtom.onMount = (set) => {
         window.removeEventListener('resize', handleResize);
     };
 }
-const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
-export const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort}`
-const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
-export const wsUrl = `${wsProtocol}://${location.hostname}:${currentPort}`
-export const treeId = new URLSearchParams(window.location.search).get("id");
+
+export const treeId = typeof window !== undefined ? new URLSearchParams(window.location.search).get("id") : undefined

@@ -4,12 +4,24 @@ import CollaborativeEditor from "./CodeEditor";
 import {markdown} from "@codemirror/lang-markdown";
 import * as Y from "yjs";
 import {ChatComponent} from "./ChatComponent";
-import {Box, Button, FormControlLabel, Link, List, ListItem, ListItemText, Stack, Switch, Typography} from "@mui/material";
+import {
+    Box,
+    Button,
+    FormControlLabel,
+    Link,
+    List,
+    ListItem,
+    ListItemText,
+    Stack,
+    Switch,
+    Typography
+} from "@mui/material";
 import {AgentSessionState, agentSessionState} from "./sessionState";
 import {Action, ActionableNodeType} from "./ActionableNodeType";
 import {invokeAgent} from "./agents";
 import {AgentCallingMessage, AgentResponseMessage} from "@forest/agent-chat/src/AgentMessageTypes";
 import {NormalMessage} from "@forest/agent-chat/src/MessageTypes";
+import {NodeTypeVM} from "@forest/schema/src/nodeTypeVM";
 
 const AgentPromptText = "AgentPromptText"
 const AgentDescriptionText = "AgentDescriptionText"
@@ -61,23 +73,23 @@ function AgentFilesComponent() {
     );
 }
 
-function AgentTool1Component({ node }: { node: NodeVM }) {
+function AgentTool1Component({node}: { node: NodeVM }) {
     const [todoMode, setTodoMode] = React.useState(false);
-    
+
     React.useEffect(() => {
         const yMap = node.ydata.get(TodoMode) as unknown as Y.Map<boolean>;
         if (yMap) {
             setTodoMode(yMap.get('enabled') || false);
-            
+
             const observer = () => {
                 setTodoMode(yMap.get('enabled') || false);
             };
-            
+
             yMap.observe(observer);
             return () => yMap.unobserve(observer);
         }
     }, [node.ydata]);
-    
+
     const handleTodoModeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const yMap = node.ydata.get(TodoMode) as unknown as Y.Map<boolean>;
         yMap.set('enabled', event.target.checked);
@@ -86,9 +98,9 @@ function AgentTool1Component({ node }: { node: NodeVM }) {
     return (
         <Box sx={{width: "100%", height: "100%", display: "flex", flexDirection: "column"}}>
             <Box sx={{mb: 2}}>
-                <FormControlLabel 
+                <FormControlLabel
                     control={
-                        <Switch 
+                        <Switch
                             checked={todoMode}
                             onChange={handleTodoModeChange}
                         />
@@ -123,18 +135,18 @@ function AgentTool2Component() {
 
     return (
         <>
-            <Box sx={{ mb: 2 }}>
+            <Box sx={{mb: 2}}>
                 <Stack direction="row" spacing={1}>
-                    <Button 
-                        variant="contained" 
-                        color="error" 
+                    <Button
+                        variant="contained"
+                        color="error"
                         onClick={handleStop}
                     >
                         Stop
                     </Button>
-                    <Button 
-                        variant="outlined" 
-                        color="warning" 
+                    <Button
+                        variant="outlined"
+                        color="warning"
                         onClick={handleReset}
                     >
                         Reset
@@ -146,14 +158,14 @@ function AgentTool2Component() {
     );
 }
 
-export class AgentNodeType extends ActionableNodeType {
+export class AgentNodeTypeM extends ActionableNodeType {
 
-    displayName = "Agent"
-    allowReshape = true
-    allowAddingChildren = true
-    allowEditTitle = true
+    static displayName = "Agent"
+    static allowReshape = true
+    static allowAddingChildren = true
+    static allowEditTitle = true
 
-    allowedChildrenTypes = [
+    static allowedChildrenTypes = [
         "AgentNodeType",
         "AgentToolNodeType",
         "CodeInterpreterNodeType",
@@ -163,25 +175,7 @@ export class AgentNodeType extends ActionableNodeType {
         "MCPNodeType"
     ]
 
-    render(node: NodeVM): React.ReactNode {
-        return <>
-            <ChatComponent node={node}/>
-        </>
-    }
-
-    renderTool1(node: NodeVM): React.ReactNode {
-        return <AgentTool1Component node={node} />;
-    }
-
-    renderTool2(node: NodeVM): React.ReactNode {
-        return <AgentTool2Component />;
-    }
-
-    renderPrompt(node: NodeM): string {
-        return this.agentDescriptionYText(node).toJSON()
-    }
-
-    ydataInitialize(node: NodeM) {
+    static ydataInitialize(node: NodeM) {
         const ydata = node.ydata()
         if (!ydata.has(AgentPromptText)) {
             // @ts-ignore
@@ -197,15 +191,12 @@ export class AgentNodeType extends ActionableNodeType {
         }
     }
 
-    vdataInitialize(node: NodeVM) {
-    }
-
-    agentPromptYText(node: NodeM): Y.Text {
+    static agentPromptYText(node: NodeM): Y.Text {
         // @ts-ignore
         return node.ydata().get(AgentPromptText) as Y.Text
     }
 
-    agentDescriptionYText(node: NodeM): Y.Text {
+    static agentDescriptionYText(node: NodeM): Y.Text {
         // @ts-ignore
         return node.ydata().get(AgentDescriptionText) as Y.Text
     }
@@ -214,10 +205,10 @@ export class AgentNodeType extends ActionableNodeType {
         return node.ydata().get(TodoMode)?.get('enabled') || false;
     }
 
-    actions(node: NodeM): Action[] {
+    static actions(node: NodeM): Action[] {
         return [{
             label: "Ask agent " + node.title(),
-            description: this.agentDescriptionYText(node).toJSON(),
+            description: AgentNodeTypeM.agentDescriptionYText(node).toJSON(),
             parameter: {
                 "query": {
                     "type": "string",
@@ -227,7 +218,11 @@ export class AgentNodeType extends ActionableNodeType {
         }];
     }
 
-    async executeAction(node: NodeM, label: string, parameters: Record<string, any>, callerNode: NodeM, agentSessionState: AgentSessionState): Promise<any> {
+    static renderPrompt(node: NodeM): string {
+        return AgentNodeTypeM.agentDescriptionYText(node).toJSON()
+    }
+
+    static async executeAction(node: NodeM, label: string, parameters: Record<string, any>, callerNode: NodeM, agentSessionState: AgentSessionState): Promise<any> {
         const agentCallingMessage = new AgentCallingMessage({
             author: callerNode.title(),
             agentName: node.title(),
@@ -252,3 +247,19 @@ export class AgentNodeType extends ActionableNodeType {
     }
 }
 
+export class AgentNodeTypeVM extends NodeTypeVM {
+
+    static render(node: NodeVM): React.ReactNode {
+        return <>
+            <ChatComponent node={node}/>
+        </>
+    }
+
+    static renderTool1(node: NodeVM): React.ReactNode {
+        return <AgentTool1Component node={node}/>;
+    }
+
+    static renderTool2(node: NodeVM): React.ReactNode {
+        return <AgentTool2Component/>;
+    }
+}

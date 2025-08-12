@@ -1,8 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react'
-import {Box, Button, Card, CardContent, Paper, Stack, TextField, Typography,} from "@mui/material";
+import {Box, Button, CardContent, Stack, TextField, Typography,} from "@mui/material";
 import SendIcon from '@mui/icons-material/Send';
 import {BaseMessage} from "./MessageTypes";
-import {useDragContext} from "../../client/src/TreeView/DragContext";
 
 // Types for Messages
 export interface Message {
@@ -28,12 +27,12 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewI
         if (scrollContainerRef.current && endRef.current) {
             const container = scrollContainerRef.current;
             const lastMessage = endRef.current.previousElementSibling;
-            
+
             if (lastMessage) {
                 const containerRect = container.getBoundingClientRect();
                 const messageRect = lastMessage.getBoundingClientRect();
                 const relativeTop = messageRect.top - containerRect.top + container.scrollTop;
-                
+
                 container.scrollTo({
                     top: relativeTop,
                     behavior: "smooth"

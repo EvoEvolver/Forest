@@ -3,8 +3,11 @@ import {Map as YMap} from 'yjs'
 import {PrimitiveAtom} from "jotai";
 import {atom} from "jotai/index";
 import {getYjsBindedAtom, nodeMToNodeVMAtom} from "./node";
-import {NodeM, SupportedNodeTypesMap, TreeM, TreeMetadata} from "./model";
-import {NodeType} from "./nodeType";
+import {NodeM, TreeM, TreeMetadata} from "./model";
+import {NodeTypeVM} from "./nodeTypeVM.ts";
+import {NodeTypeM} from "./nodeTypeM.ts";
+
+type SupportedNodeTypesVM = (typeName: string) => typeof NodeTypeVM;
 
 /*
 The data type hold only by the frontend as ViewModel (VM) for components to consume
@@ -18,14 +21,16 @@ export class TreeVM {
     nodeMapObserver: any
     viewCommitNumberAtom = atom(0)
     viewCommitNumber: number = 0
+    supportedNodeTypesVM: SupportedNodeTypesVM
 
     /*
     The constructor links the TreeVM to the TreeM
      */
-    constructor(treeM: TreeM, get, set) {
+    constructor(treeM: TreeM, get, set, supportedNodeTypesVM: SupportedNodeTypesVM) {
         this.get = get
         this.set = set
         this.treeM = treeM
+        this.supportedNodeTypesVM = supportedNodeTypesVM
         this.nodeDict = {}
         let nodeDictyMap: YMap<YMap<any>> = treeM.nodeDict
         this.nodeMapObserver = (ymapEvent) => {
@@ -91,17 +96,13 @@ export class TreeVM {
         delete this.nodeDict[nodeId];
     }
 
-    initSelectedNode() {
-
-    }
-
     commitViewToRender() {
         this.viewCommitNumber = this.viewCommitNumber + 1
         console.log("commit number: ", this.viewCommitNumber)
         this.set(this.viewCommitNumberAtom, this.viewCommitNumber)
     }
 
-    getNonReactiveNodeInfo(nodeId: string): {title: string, children: string[], parent: string | null} | null {
+    getNonReactiveNodeInfo(nodeId: string): { title: string, children: string[], parent: string | null } | null {
         const nodeM = this.treeM.getNode(nodeId)
         if (!nodeM) {
             return null;
@@ -130,7 +131,8 @@ export class NodeVM {
     // data for UI. Will not be synced and saved
     vdata: any
     nodeTypeName: string
-    nodeType: NodeType
+    nodeType: typeof NodeTypeM
+    nodeTypeVM: typeof NodeTypeVM
     nodeM: NodeM
     treeVM: TreeVM
 
@@ -159,10 +161,8 @@ export class NodeVM {
             nodeVM.tabs = yjsMapNode.get("tabs")
         if (yjsMapNode.has("tools"))
             nodeVM.tools = yjsMapNode.get("tools")
-
-        nodeVM.nodeType = await nodeVM.getNodeType(treeVM.treeM.supportedNodesTypes)
-        nodeVM.nodeType.ydataInitialize(nodeVM.nodeM)
-
+        nodeVM.nodeType = nodeM.nodeType
+        nodeVM.nodeTypeVM = nodeVM.getNodeType(treeVM.supportedNodeTypesVM)
         return nodeVM
     }
 
@@ -170,7 +170,7 @@ export class NodeVM {
         this.treeVM = treeVM
     }
 
-    async getNodeType(supportedNodesTypes: SupportedNodeTypesMap): Promise<NodeType> {
+    getNodeType(supportedNodesTypes: SupportedNodeTypesVM): typeof NodeTypeVM {
         if (!this.nodeTypeName) {
             if (this?.tabs["content"] === `<PaperEditorMain/>`) {
                 this.nodeTypeName = "EditorNodeType"
@@ -180,15 +180,15 @@ export class NodeVM {
                 this.nodeM.ymap.set("nodeTypeName", this.nodeTypeName)
             }
         }
-        return await getNodeType(this.nodeTypeName, supportedNodesTypes)
+        return getNodeType(this.nodeTypeName, supportedNodesTypes)
     }
 
-    commitDataChange(){
+    commitDataChange() {
         this.nodeM.ymap.set("data", this.data)
     }
 
 }
 
-export async function getNodeType(nodeTypeName: string, supportedNodesTypes: SupportedNodeTypesMap): Promise<NodeType> {
-    return await supportedNodesTypes(nodeTypeName)
+export function getNodeType(nodeTypeName: string, supportedNodesTypes: SupportedNodeTypesVM): typeof NodeTypeVM {
+    return supportedNodesTypes(nodeTypeName)
 }

@@ -1,5 +1,5 @@
 import React, {useContext, useEffect, useState} from 'react'
-import './style.css';
+//import './style.css';
 import {useAtomValue} from "jotai";
 import {YjsProviderAtom} from "@forest/client/src/TreeState/YjsConnection";
 import {XmlFragment} from 'yjs';
@@ -60,9 +60,7 @@ export function makeExtensions(yXML, provider, onCommentActivated, onLinkActivat
         ListItem,
         Image,
         ImageUploadExtension,
-        Bold.configure({
-            inclusive: false, // Prevent bold from extending to new content
-        }),
+        Bold.configure({}),
         MathExtension.configure({evaluation: false}),
         CommentExtension.configure({
             HTMLAttributes: {class: "comment"},
@@ -162,6 +160,7 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
     if (!editor) {
         return null;
     }
+    // @ts-ignore
     return (
         <div className="column-half">
             <EditorContent editor={editor} className="main-group"/>

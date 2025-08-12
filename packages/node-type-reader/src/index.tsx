@@ -1,13 +1,15 @@
 import React from "react";
-import {NodeM, NodeType, NodeVM} from "@forest/schema"
+import {NodeM, NodeVM} from "@forest/schema"
 import TurndownService from 'turndown'
+import {NodeTypeVM} from "@forest/schema/src/nodeTypeVM";
+import {NodeTypeM} from "@forest/schema/src/nodeTypeM";
 
 interface ReaderNodeData {
     htmlContent: string,
     htmlOriginalContent: string,
 }
 
-export class ReaderNodeType extends NodeType {
+export class ReaderNodeTypeVM extends NodeTypeVM {
     render(node: NodeVM): React.ReactNode {
         const data: ReaderNodeData = node.data
         const htmlContent = data.htmlContent
@@ -24,14 +26,16 @@ export class ReaderNodeType extends NodeType {
     renderTool2(node: NodeVM): React.ReactNode {
         const data: ReaderNodeData = node.data
         const htmlOriginalContent = data.htmlOriginalContent
-        if(!htmlOriginalContent){
+        if (!htmlOriginalContent) {
             return null
         }
         return <>
             <span dangerouslySetInnerHTML={{__html: htmlOriginalContent}}/>
         </>
     }
+}
 
+export class ReaderNodeTypeM extends NodeTypeM {
     renderPrompt(node: NodeM): string {
         const data: ReaderNodeData = node.data()
         const htmlContent = data.htmlContent

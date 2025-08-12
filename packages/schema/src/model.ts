@@ -1,8 +1,8 @@
 import * as Y from 'yjs'
 import {Doc as YDoc, Map as YMap} from 'yjs'
 import {WebsocketProvider} from "./y-websocket";
-import {v4} from "uuid";
-import {NodeType} from "./nodeType";
+import {v4} from "uuid"
+import {NodeTypeM} from "./nodeTypeM.ts";
 
 export interface NodeJson {
     id: string,
@@ -25,7 +25,7 @@ export interface TreeMetadata {
     treeId?: string,
 }
 
-export type SupportedNodeTypesMap = (typeName: string) => Promise<NodeType>
+export type SupportedNodeTypesM = (typeName: string) => typeof NodeTypeM
 
 /*
 The data type shared between backend and frontend
@@ -34,25 +34,26 @@ export class TreeM {
     ydoc: YDoc
     nodeDict: YMap<YMap<any>>
     metadata: YMap<any>
-    supportedNodesTypes: SupportedNodeTypesMap
+    supportedNodeTypesM: SupportedNodeTypesM
 
-    constructor(ydoc: YDoc) {
+    constructor(ydoc: YDoc, supportedNodeTypesM: SupportedNodeTypesM) {
         this.ydoc = ydoc
         this.metadata = this.ydoc.getMap("metadata")
         this.nodeDict = this.ydoc.getMap("nodeDict")
+        this.supportedNodeTypesM = supportedNodeTypesM
     }
 
-    static treeFromWs(wsUrl: string, treeId: string): [TreeM, WebsocketProvider] {
+    static treeFromWs(wsUrl: string, treeId: string, supportedNodeTypesM: SupportedNodeTypesM): [TreeM, WebsocketProvider] {
         const ydoc = new Y.Doc()
-        const treeM = new TreeM(ydoc)
+        const treeM = new TreeM(ydoc, supportedNodeTypesM)
         let wsProvider = new WebsocketProvider(wsUrl, treeId, ydoc)
         return [treeM, wsProvider]
     }
 
-    static treeFromWsWait(wsUrl: string, treeId: string): Promise<TreeM> {
+    static treeFromWsWait(wsUrl: string, treeId: string, supportedNodeTypesM: SupportedNodeTypesM): Promise<TreeM> {
         return new Promise((resolve) => {
             const ydoc = new Y.Doc()
-            const treeM = new TreeM(ydoc)
+            const treeM = new TreeM(ydoc, supportedNodeTypesM)
             const wsProvider = new WebsocketProvider(wsUrl, treeId, ydoc)
             wsProvider.on('sync', (isSynced: boolean) => {
                 if (isSynced) {
@@ -62,7 +63,7 @@ export class TreeM {
         })
     }
 
-    patchFromTreeJson(treeJson: TreeJson, treeId: string) {
+    async patchFromTreeJson(treeJson: TreeJson, treeId: string) {
         this.ydoc.transact(() => {
             // Update metadata
             const metadata = treeJson.metadata;
@@ -76,7 +77,7 @@ export class TreeM {
 
             // Update nodeDict
             const nodeDictJson = treeJson.nodeDict;
-            Object.entries(nodeDictJson).forEach(([key, nodeJson]) => {
+            Object.entries(nodeDictJson).forEach(async ([key, nodeJson]) => {
                 const nodeM = NodeM.fromNodeJson(nodeJson, this);
                 this.addNode(nodeM)
             });
@@ -171,6 +172,7 @@ export class NodeM {
     ymap: YMap<any>;
     id: string
     treeM: TreeM
+    nodeType: typeof NodeTypeM | undefined
 
     static fromNodeJson(nodeJson: NodeJson, treeM: TreeM): NodeM {
         const ymap = new YMap<any>();
@@ -192,13 +194,17 @@ export class NodeM {
         ymap.set("tabs", nodeJson.tabs)
         ymap.set("tools", nodeJson.tools)
 
-        return new NodeM(ymap, nodeJson.id, treeM)
+        const newNodeM = new NodeM(ymap, nodeJson.id, treeM)
+        const nodeType = treeM.supportedNodeTypesM(nodeJson.nodeTypeName)
+        nodeType.ydataInitialize(newNodeM)
+        return newNodeM
     }
 
     constructor(ymap: YMap<any>, nodeId: string, treeM: TreeM) {
         this.id = nodeId
         this.ymap = ymap
         this.treeM = treeM
+        this.nodeType = treeM.supportedNodeTypesM(this.nodeTypeName())
     }
 
     title(): string {

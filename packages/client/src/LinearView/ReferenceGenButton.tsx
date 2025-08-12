@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import {generateCitationsFromHTML} from './generateReferences';
 import {NodeJson, NodeM} from "@forest/schema";
-import {EditorNodeType} from '@forest/node-type-editor/src';
+import {EditorNodeTypeM} from '@forest/node-type-editor/src';
 import {v4 as uuidv4} from "uuid";
 
 interface ReferenceGenButtonProps {
@@ -84,10 +84,6 @@ export default function ReferenceGenButton({getHtml, rootNode}: ReferenceGenButt
                 };
                 referenceNodeM = NodeM.fromNodeJson(newNodeJson, treeM);
                 treeM.insertNode(referenceNodeM, rootNode.id, null);
-
-                // Initialize the editor content
-                const editorNodeType = await treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
-                editorNodeType.ydataInitialize(referenceNodeM);
             }
 
             // Generate HTML content for references using titles
@@ -96,9 +92,8 @@ export default function ReferenceGenButton({getHtml, rootNode}: ReferenceGenButt
             ).join('\n');
 
             // Set the content
-            const editorNodeType = await treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
             try {
-                editorNodeType.setEditorContent(referenceNodeM, citationsHtml);
+                EditorNodeTypeM.setEditorContent(referenceNodeM, citationsHtml);
             } catch (e) {
                 alert(e)
             }

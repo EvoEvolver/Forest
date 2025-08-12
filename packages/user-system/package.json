@@ -14,7 +14,8 @@
     "react": "^19.1.0",
     "jotai": "^2.10.3",
     "uuid": "^9.0.1",
-    "@forest/client": "workspace:*"
+    "@forest/client": "workspace:*",
+    "@forest/schema": "workspace:*"
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",

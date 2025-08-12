@@ -1,4 +1,4 @@
-import {httpUrl} from "../appState";
+import {httpUrl} from "@forest/schema/src/config";
 
 // Record tree visit if user is authenticated
 export async function recordTreeVisit(treeId: string, supabaseClient: any): Promise<void> {

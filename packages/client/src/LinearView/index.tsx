@@ -3,7 +3,7 @@ import {atom, useAtomValue, useSetAtom} from "jotai";
 import {jumpToNodeAtom, scrollToNodeAtom, treeAtom} from "../TreeState/TreeState";
 import {Box, Paper, Skeleton} from '@mui/material';
 import {NodeM} from '@forest/schema';
-import {EditorNodeType} from '@forest/node-type-editor/src';
+import {EditorNodeTypeM} from '@forest/node-type-editor/src';
 import {currentPageAtom} from "../appState";
 import {useTheme} from '@mui/system';
 import ReferenceGenButton from './ReferenceGenButton';
@@ -54,7 +54,7 @@ const ButtonsSection = ({getHtml, rootNode, nodes}: {
 }
 
 // Memoized node component with lazy HTML generation
-const NodeRenderer = ({ node, level, editorNodeType }: { node: NodeM, level: number, editorNodeType: EditorNodeType })=> {
+const NodeRenderer = ({ node, level }: { node: NodeM, level: number })=> {
     const children = node.children().toJSON()
     const title = node.title()
     const [htmlContent, setHtmlContent] = useState<string | null>(null);
@@ -100,13 +100,13 @@ const NodeRenderer = ({ node, level, editorNodeType }: { node: NodeM, level: num
         if (isVisible && !htmlContent && children && children.length === 0) {
             // Use setTimeout to make HTML generation non-blocking
             const timer = setTimeout(() => {
-                const content = editorNodeType.getEditorContent(node);
+                const content = EditorNodeTypeM.getEditorContent(node);
                 setHtmlContent(content);
             }, 0);
 
             return () => clearTimeout(timer);
         }
-    }, [isVisible, htmlContent, children, node, editorNodeType]);
+    }, [isVisible, htmlContent, children, node]);
 
     if (!children) {
         return <></>;
@@ -187,7 +187,6 @@ const NodeRenderer = ({ node, level, editorNodeType }: { node: NodeM, level: num
 
 export default function LinearView() {
     const nodes: { node: NodeM; level: number; }[] = useAtomValue(linearNodeListAtom);
-    const editorNodeType = useMemo(() => new EditorNodeType(), []);
     const theme = useTheme();
 
     const getHtml = () => {
@@ -195,7 +194,7 @@ export default function LinearView() {
 
         return nodes.map(({node, level}) => {
             try {
-                const content = editorNodeType.getEditorContent(node);
+                const content = EditorNodeTypeM.getEditorContent(node);
                 return content;
             } catch (error) {
                 console.warn('Error generating HTML for node:', error);
@@ -229,8 +228,7 @@ export default function LinearView() {
             >
                 <ButtonsSection getHtml={getHtml} rootNode={nodes[0].node} nodes={nodes}/>
                 {nodes.map(({node, level}) => (
-                    <NodeRenderer key={node.id} node={node} level={level}
-                                  editorNodeType={editorNodeType}/>
+                    <NodeRenderer key={node.id} node={node} level={level}/>
                 ))}
             </Paper>
         </div>

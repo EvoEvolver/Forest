@@ -2,7 +2,7 @@ import React from 'react';
 import {Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Typography} from '@mui/material';
 import {DataGrid, GridColDef, GridRenderCellParams} from '@mui/x-data-grid';
 import {NodeM, NodeVM} from '@forest/schema';
-import {httpUrl} from '../appState';
+import {httpUrl} from '@forest/schema/src/config';
 import {useAtomValue} from 'jotai';
 import {treeAtom} from '../TreeState/TreeState';
 import {contentEditableContext} from "@forest/schema/src/viewContext";
@@ -172,7 +172,7 @@ export const StageVersionDialog = ({open, onClose, node}: StageVersionDialogProp
                 {previewNodeVM && (
                     <Box mt={2} sx={{border: '1px solid #ddd', borderRadius: 1, p: 2}}>
                         <contentEditableContext.Provider value={false}>
-                            {previewNodeVM.nodeType.render(previewNodeVM)}
+                            {previewNodeVM.nodeTypeVM.render(previewNodeVM)}
                         </contentEditableContext.Provider>
                     </Box>
                 )}

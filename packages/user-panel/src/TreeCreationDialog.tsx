@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useAtomValue } from 'jotai';
 import { authTokenAtom } from '@forest/user-system/src/authStates';
 import { NodeJson, TreeJson, TreeMetadata } from '@forest/schema';
-import { supportedNodeTypes } from '@forest/node-types';
+import { supportedNodeTypesM } from '@forest/node-types/src/model';
 
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
 const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort}`;
@@ -39,7 +39,7 @@ export const TreeCreationDialog: React.FC<TreeCreationDialogProps> = ({ open, on
 
             const promises = nodeTypeNames.map(async (typeName) => {
                 try {
-                    const nodeType = await supportedNodeTypes(typeName);
+                    const nodeType = await supportedNodeTypesM(typeName);
                     return {
                         name: typeName,
                         displayName: nodeType?.displayName || typeName

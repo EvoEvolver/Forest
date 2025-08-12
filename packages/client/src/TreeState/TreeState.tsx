@@ -6,6 +6,7 @@ import {updateChildrenCountAtom} from "./childrenCount";
 import {treeId} from "../appState";
 import {NodeJson, NodeM, TreeM, TreeVM} from "@forest/schema"
 import {wouldCreateCycle} from "../TreeView/utils/NodeTypeUtils";
+import {supportedNodeTypesVM} from "@forest/node-types/src/vmodel"
 
 const treeValueAtom: PrimitiveAtom<TreeVM> = atom()
 
@@ -18,7 +19,7 @@ export const treeAtom = atom(
         if (currentTree) {
             currentTree.deconstruct()
         }
-        const treeVM = new TreeVM(treeM, get, set)
+        const treeVM = new TreeVM(treeM, get, set, supportedNodeTypesVM)
         set(treeValueAtom, treeVM)
     }
 )
@@ -205,7 +206,7 @@ export const moveNodeToSubtreeAtom = atom(null, (get, set, props: {
 })
 
 
-export const addNewNodeAtom = atom(null, (get, set, props: {
+export const addNewNodeAtom = atom(null, async (get, set, props: {
     parentId: string,
     positionId: string,
     nodeTypeName: string

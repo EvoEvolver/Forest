@@ -4,17 +4,37 @@ import * as Y from "yjs";
 import CollaborativeEditor from "./CodeEditor";
 import CardViewer from "./openapi/CardViewer";
 import {json as jsonLang} from '@codemirror/lang-json';
-import {parseApiSpec} from "./openapi/apiParser";
 import {httpUrl} from "@forest/schema/src/config"
 import {Action, ActionableNodeType, ActionParameter} from "./ActionableNodeType";
 import {AgentSessionState} from "./sessionState";
 import {ToolCallingMessage, ToolResponseMessage} from "@forest/agent-chat/src/AgentMessageTypes";
+import {jsonToSpec} from "./openapi/utils";
+import {NodeTypeVM} from "@forest/schema/src/nodeTypeVM";
 
 const AgentToolOpenApiSpecText = "AgentToolOpenApiSpecText"
 
-export class AgentToolNodeType extends ActionableNodeType {
-    actions(node: NodeM): Action[] {
-        const apiSpec = this.getApiSpec(node);
+export class AgentToolNodeTypeM extends ActionableNodeType {
+    static displayName = "Tool"
+    static allowReshape = true
+    static allowAddingChildren = false
+    static allowEditTitle = true
+
+    static getApiSpec(node: NodeM): any {
+        // @ts-ignore
+        const yText: Y.Text = node.ydata().get(AgentToolOpenApiSpecText) as Y.Text;
+        if (!yText) {
+            return null;
+        }
+        try {
+            const apiSpec = jsonToSpec(yText.toString());
+            return apiSpec;
+        } catch (e) {
+            return null
+        }
+    }
+
+    static actions(node: NodeM): Action[] {
+        const apiSpec = AgentToolNodeTypeM.getApiSpec(node);
         if (!apiSpec || !apiSpec.endpoints || apiSpec.endpoints.length === 0) {
             return [];
         }
@@ -37,7 +57,7 @@ export class AgentToolNodeType extends ActionableNodeType {
         }];
     }
 
-    async executeAction(node: NodeM, label: string, parameters: Record<string, any>, callerNode: NodeM, agentSessionState: AgentSessionState): Promise<any> {
+    static async executeAction(node: NodeM, label: string, parameters: Record<string, any>, callerNode: NodeM, agentSessionState: AgentSessionState): Promise<any> {
         // Handle other actionable nodes
         const toolCallingMessage = new ToolCallingMessage({
             toolName: node.title(),
@@ -46,7 +66,7 @@ export class AgentToolNodeType extends ActionableNodeType {
         });
         agentSessionState.addMessage(callerNode, toolCallingMessage);
 
-        const res = await this.callApi(node, parameters)
+        const res = await AgentToolNodeTypeM.callApi(node, parameters)
 
         // Check for URLs starting with https://storage.treer.ai in the response
         const resString = typeof res === 'string' ? res : JSON.stringify(res);
@@ -68,62 +88,8 @@ export class AgentToolNodeType extends ActionableNodeType {
         agentSessionState.addMessage(callerNode, toolResponseMessage);
     }
 
-    displayName = "Tool"
-    allowReshape = true
-    allowAddingChildren = false
-    allowEditTitle = true
-
-    getApiSpec(node: NodeM): any {
-        // @ts-ignore
-        const yText: Y.Text = node.ydata().get(AgentToolOpenApiSpecText) as Y.Text;
-        if (!yText) {
-            return null;
-        }
-        try {
-            const apiSpec = jsonToSpec(yText.toString());
-            return apiSpec;
-        } catch (e) {
-            return null
-        }
-    }
-
-    render(node: NodeVM): React.ReactNode {
-        //@ts-ignore
-        const yText: Y.Text = node.ydata.get(AgentToolOpenApiSpecText) as Y.Text
-        const [apiSpec, setApiSpec] = useState(jsonToSpec(yText.toString()));
-        useEffect(() => {
-            const observer = () => {
-                const apiSpec = jsonToSpec(yText.toString())
-                setApiSpec(apiSpec)
-            }
-            yText.observe(observer)
-            return () => {
-                yText.unobserve(observer)
-            }
-        }, []);
-        if (!apiSpec) {
-            return <div>Loading...</div>
-        }
-        return <div>
-            <CardViewer apiSpec={apiSpec} loading={false} error={null}/>
-        </div>
-    }
-
-
-    renderTool1(node: NodeVM): React.ReactNode {
-        return <>
-            <h1>OpenAPI spec</h1>
-            <CollaborativeEditor yText={node.ydata.get(AgentToolOpenApiSpecText)} langExtension={jsonLang}/>
-        </>
-    }
-
-    renderTool2(node: NodeVM): React.ReactNode {
-        return <>
-        </>
-    }
-
-    callApi(node: NodeM, parameters: any) {
-        const apiSpec = this.getApiSpec(node);
+    static callApi(node: NodeM, parameters: any) {
+        const apiSpec = AgentToolNodeTypeM.getApiSpec(node);
         if (!apiSpec || !apiSpec.endpoints || apiSpec.endpoints.length === 0) {
             throw new Error("No API endpoints available");
         }
@@ -146,85 +112,51 @@ export class AgentToolNodeType extends ActionableNodeType {
         }).then(response => response.json());
     }
 
-    ydataInitialize(node: NodeM) {
+    static renderPrompt(node: NodeM): string {
+        return "";
+    }
+
+    static ydataInitialize(node: NodeM) {
         const ydata = node.ydata()
         if (!ydata.has(AgentToolOpenApiSpecText)) {
             // @ts-ignore
             ydata.set(AgentToolOpenApiSpecText, new Y.Text())
         }
     }
-
-    renderPrompt(node: NodeM): string {
-        return "";
-    }
 }
 
-function jsonToSpec(json: string): any {
-    try {
-        const parsedJson = JSON.parse(json)
-        const dereferencedJson = resolveRefs(parsedJson, parsedJson);
-        const apiSpec = parseApiSpec(dereferencedJson);
-        return apiSpec
-    } catch (e) {
-        return null;
-    }
-}
-
-type JSONObject = { [key: string]: any };
-
-// Parse JSON pointer like "#/components/schemas/addInput"
-function resolveJsonPointer(obj: JSONObject, ref: string): any {
-    if (!ref.startsWith('#/')) throw new Error(`Unsupported $ref format: ${ref}`);
-    const path = ref.slice(2).split('/');
-    return path.reduce((acc, key) => {
-        if (!(key in acc)) {
-            console.error(`ref: ${ref}`);
-            console.error(`missing key: ${key}`);
-            console.error(`current object keys:`, Object.keys(acc));
-            throw new Error(`Invalid $ref path segment: ${key}`);
+export class AgentToolNodeTypeVM extends NodeTypeVM {
+    static render(node: NodeVM): React.ReactNode {
+        //@ts-ignore
+        const yText: Y.Text = node.ydata.get(AgentToolOpenApiSpecText) as Y.Text
+        const [apiSpec, setApiSpec] = useState(jsonToSpec(yText.toString()));
+        useEffect(() => {
+            const observer = () => {
+                const apiSpec = jsonToSpec(yText.toString())
+                setApiSpec(apiSpec)
+            }
+            yText.observe(observer)
+            return () => {
+                yText.unobserve(observer)
+            }
+        }, []);
+        if (!apiSpec) {
+            return <div>Loading...</div>
         }
-        return acc[key];
-    }, obj);
-}
-
-
-// Recursively resolve all $ref in the JSON
-function resolveRefs(obj: JSONObject, root: JSONObject): any {
-    if (Array.isArray(obj)) {
-        return obj.map(item => resolveRefs(item, root));
+        return <div>
+            <CardViewer apiSpec={apiSpec} loading={false} error={null}/>
+        </div>
     }
 
-    if (typeof obj === 'object' && obj !== null) {
-        if ('$ref' in obj && typeof obj['$ref'] === 'string') {
-            const resolved = resolveJsonPointer(root, obj['$ref']);
-            // Recursively resolve the resolved object too
-            return resolveRefs(resolved, root);
-        }
-
-        const result: JSONObject = {};
-        for (const key of Object.keys(obj)) {
-            result[key] = resolveRefs(obj[key], root);
-        }
-        return result;
+    static renderTool1(node: NodeVM): React.ReactNode {
+        return <>
+            <h1>OpenAPI spec</h1>
+            <CollaborativeEditor yText={node.ydata.get(AgentToolOpenApiSpecText)} langExtension={jsonLang}/>
+        </>
     }
 
-    return obj; // primitive value
-}
-
-function generatePromptFromSchema(schema: any): string {
-    if (schema.type === 'object' && schema.properties) {
-        return Object.entries(schema.properties)
-            .map(([key, prop]: [string, any]) => {
-                const type = prop.type || 'any';
-                const desc = prop.description || '';
-                return `"${key}" (${type}): ${desc}`;
-            })
-            .join('\n');
+    static renderTool2(node: NodeVM): React.ReactNode {
+        return <>
+        </>
     }
-    if (schema.type === 'array' && schema.items) {
-        return `[${generatePromptFromSchema(schema.items)}]`;
-    }
-    const type = schema.type || 'any';
-    const desc = schema.description || '';
-    return `(${type}): ${desc}`;
 }

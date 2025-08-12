@@ -1,7 +1,7 @@
 import * as React from "react";
 import CircularProgress from "@mui/material/CircularProgress";
 import {NodeJson, NodeM, NodeVM} from "@forest/schema";
-import {EditorNodeType} from "..";
+import {EditorNodeTypeM} from "..";
 import {stageThisVersion} from "@forest/schema/src/stageService";
 import {useAtomValue} from "jotai";
 import {authTokenAtom} from "@forest/user-system/src/authStates";
@@ -61,10 +61,8 @@ export const TopDownButton: React.FC<{ node: NodeVM }> = ({node}) => {
                     };
                     const newNodeM = NodeM.fromNodeJson(newNodeJson, treeM);
                     treeM.insertNode(newNodeM, node.id, null);
-                    const editorNodeType = await treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
-                    editorNodeType.ydataInitialize(newNodeM)
                     try {
-                        editorNodeType.setEditorContent(newNodeM, item.content);
+                        EditorNodeTypeM.setEditorContent(newNodeM, item.content);
                     } catch (e){
                         alert(e)
                     }
@@ -131,8 +129,7 @@ interface TitleAndContent {
 
 async function getTopDownNewChildren(node: NodeM, authToken: string): Promise<TitleAndContent[]> {
     const treeM = node.treeM;
-    const editorNodeType = await treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
-    const parentContent = editorNodeType.getEditorContent(node);
+    const parentContent = EditorNodeTypeM.getEditorContent(node);
     const prompt = `You are a professional editor. Your task is to break a long content into multiple children nodes.
 Generate a list of titles for new children nodes that completely cover the original content.
 
@@ -170,7 +167,7 @@ You should not put any HTML elements not appearing in the original content.
             // Validate each child content
             for (const child of titleAndContents) {
                 if (!child.content) continue;
-                const isValid = EditorNodeType.validateEditorContent(child.content);
+                const isValid = EditorNodeTypeM.validateEditorContent(child.content);
                 if (!isValid) {
                     throw new Error(`Child content validation failed for title: ${child.title}`);
                 }

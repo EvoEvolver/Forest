@@ -36,7 +36,7 @@ export const NodeButtons = (props: { node: NodeVM }) => {
     useEffect(() => {
         const fetchTypes = async () => {
             const promises = availableTypeNames.map(async (typeName) => {
-                const nodeType = await node.treeVM.treeM.supportedNodesTypes(typeName);
+                const nodeType = node.treeVM.treeM.supportedNodesTypes(typeName);
                 return {
                     name: typeName,
                     displayName: nodeType.displayName

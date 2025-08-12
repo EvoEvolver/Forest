@@ -92,12 +92,12 @@ export function ColumnRight() {
             <thisNodeContext.Provider value={node}>
                 <Box sx={{flex: 1, minHeight: 0}}>
                     <NodeContentFrame>
-                        {node.nodeType.renderTool1(node)}
+                        {node.nodeTypeVM.renderTool1(node)}
                     </NodeContentFrame>
                 </Box>
                 <Box sx={{flex: 1, minHeight: 0}}>
                     <NodeContentFrame>
-                        {node.nodeType.renderTool2(node)}
+                        {node.nodeTypeVM.renderTool2(node)}
                     </NodeContentFrame>
                 </Box>
             </thisNodeContext.Provider>

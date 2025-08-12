@@ -16,7 +16,7 @@ export const NodePreview: React.FC<{ node: NodeVM }> = ({node}) => {
 
             <Box sx={{maxHeight: 400, overflow: 'auto'}}>
                 <contentEditableContext.Provider value={false}>
-                    {node.nodeType.render(node)}
+                    {node.nodeTypeVM.render(node)}
                 </contentEditableContext.Provider>
             </Box>
         </>

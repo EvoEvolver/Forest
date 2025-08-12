@@ -1,7 +1,7 @@
 import * as React from "react";
 import CircularProgress from "@mui/material/CircularProgress";
 import {NodeM, NodeVM} from "@forest/schema";
-import {EditorNodeType} from "..";
+import {EditorNodeTypeM} from "..";
 import {stageThisVersion} from "@forest/schema/src/stageService";
 import {useAtomValue} from "jotai";
 import {authTokenAtom} from "@forest/user-system/src/authStates";
@@ -25,8 +25,7 @@ export const BottomUpButton: React.FC<{ node: NodeVM }> = ({node}) => {
     const handleClick = async () => {
         setLoading(true);
         try {
-            const editorNodeType = await node.nodeM.treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
-            const original = editorNodeType.getEditorContent(node.nodeM);
+            const original = EditorNodeTypeM.getEditorContent(node.nodeM);
             const revised = await getBottomUpRevisedContent(node.nodeM, authToken);
 
             setOriginalContent(original);
@@ -45,9 +44,8 @@ export const BottomUpButton: React.FC<{ node: NodeVM }> = ({node}) => {
 
     const handleAccept = async (modifiedContent: string) => {
         await stageThisVersion(node, "Before bottom-up editing");
-        const editorNodeType = await node.nodeM.treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
         try {
-            editorNodeType.setEditorContent(node.nodeM, modifiedContent)
+            EditorNodeTypeM.setEditorContent(node.nodeM, modifiedContent)
         }catch (e) {
             alert(e)
         }
@@ -107,9 +105,8 @@ export const BottomUpButton: React.FC<{ node: NodeVM }> = ({node}) => {
 async function getBottomUpRevisedContent(node: NodeM, authToken): Promise<string> {
     const treeM = node.treeM;
     const children = treeM.getChildren(node).filter((n) => n.nodeTypeName() === "EditorNodeType" && n.data()["archived"] !== true);
-    const editorNodeType = await treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
-    const childrenContent = children.map(child => "# " + child.title() + "\n" + editorNodeType.getEditorContent(child)).join("\n");
-    const orginalContent = editorNodeType.getEditorContent(node);
+    const childrenContent = children.map(child => "# " + child.title() + "\n" + EditorNodeTypeM.getEditorContent(child)).join("\n");
+    const orginalContent = EditorNodeTypeM.getEditorContent(node);
     const prompt = `You are a professional editor. The given original text is a summary of some children contents. 
 Your task is to revise the original context to make it serve as a better summary of the children contents.
 <original_content>
@@ -136,7 +133,7 @@ If there are any annotations in the original text, you should keep them as they 
     
     return await pRetry(async () => {
         const response = await fetchChatResponse([message.toJson() as any], "gpt-4.1", authToken);
-        const isValid = EditorNodeType.validateEditorContent(response);
+        const isValid = EditorNodeTypeM.validateEditorContent(response);
         if (!isValid) {
             throw new Error('Editor content validation failed');
         }

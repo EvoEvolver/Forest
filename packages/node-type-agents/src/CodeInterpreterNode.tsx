@@ -4,13 +4,24 @@ import CollaborativeEditor from "./CodeEditor";
 import {python} from "@codemirror/lang-python";
 import {markdown} from "@codemirror/lang-markdown";
 import * as Y from "yjs";
-import {Box, Button, Paper, TextField, Typography, Dialog, DialogTitle, DialogContent, DialogActions} from "@mui/material";
+import {
+    Box,
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Paper,
+    TextField,
+    Typography
+} from "@mui/material";
 import axios from "axios";
 import {Action, ActionableNodeType} from "./ActionableNodeType";
-import {AgentSessionState, agentSessionState} from "./sessionState";
-import {CodeInterpreterModifyButton, CodeInterpreterGenerateButton} from "./CodeButtons/CodeInterpreterModifyButton";
+import {AgentSessionState} from "./sessionState";
+import {CodeInterpreterGenerateButton, CodeInterpreterModifyButton} from "./CodeButtons/CodeInterpreterModifyButton";
 import {json as jsonLang} from "@codemirror/lang-json";
 import {ToolCallingMessage, ToolResponseMessage} from "@forest/agent-chat/src/AgentMessageTypes";
+import {NodeTypeVM} from "@forest/schema/src/nodeTypeVM";
 
 // Configuration component for endpoint URL and description
 const CodeInterpreterTool1Component: React.FC<{ node: NodeVM }> = ({node}) => {
@@ -69,14 +80,123 @@ const CodeInterpreterEndpointUrl = "CodeInterpreterEndpointUrl"
 const CodeInterpreterDescriptionText = "CodeInterpreterDescriptionText"
 const CodeInterpreterParameterText = "CodeInterpreterParameterText"
 
-export class CodeInterpreterNodeType extends ActionableNodeType {
-    displayName = "Code Interpreter"
-    allowReshape = true
-    allowAddingChildren = false
-    allowEditTitle = true
-    allowedChildrenTypes = []
+export class CodeInterpreterNodeTypeM extends ActionableNodeType {
+    static displayName = "Code Interpreter"
+    static allowReshape = true
+    static allowAddingChildren = false
+    static allowEditTitle = true
+    static allowedChildrenTypes = []
 
-    render(node: NodeVM): React.ReactNode {
+    static ydataInitialize(node: NodeM) {
+        const ydata = node.ydata();
+        if (!ydata.has(CodeInterpreterCodeText)) {
+            ydata.set(CodeInterpreterCodeText, new Y.Text());
+        }
+        if (!ydata.has(CodeInterpreterEndpointUrl)) {
+            ydata.set(CodeInterpreterEndpointUrl, new Y.Text());
+        }
+        if (!ydata.has(CodeInterpreterDescriptionText)) {
+            ydata.set(CodeInterpreterDescriptionText, new Y.Text());
+        }
+        if (!ydata.has(CodeInterpreterParameterText)) {
+            ydata.set(CodeInterpreterParameterText, new Y.Text());
+        }
+    }
+
+    static codeYText(node: NodeM): Y.Text {
+        return node.ydata().get(CodeInterpreterCodeText) as Y.Text;
+    }
+
+    static endpointUrlYText(node: NodeM): Y.Text {
+        return node.ydata().get(CodeInterpreterEndpointUrl) as Y.Text;
+    }
+
+    static descriptionYText(node: NodeM): Y.Text {
+        return node.ydata().get(CodeInterpreterDescriptionText) as Y.Text;
+    }
+
+    static parameterYText(node: NodeM): Y.Text {
+        return node.ydata().get(CodeInterpreterParameterText) as Y.Text;
+    }
+
+    static renderPrompt(node: NodeM): string {
+        return CodeInterpreterNodeTypeM.descriptionYText(node).toJSON();
+    }
+
+    static actions(node: NodeM): Action[] {
+        const description = CodeInterpreterNodeTypeM.descriptionYText(node).toString();
+        const parametersText = CodeInterpreterNodeTypeM.parameterYText(node).toString();
+
+        // Parse parameters from the ydata
+        let parameters: Record<string, any> = {};
+
+        if (parametersText.trim()) {
+            try {
+                const parametersObj = JSON.parse(parametersText);
+                if (typeof parametersObj === 'object' && parametersObj !== null && !Array.isArray(parametersObj)) {
+                    // Merge the parsed parameters with the default code parameter
+                    parameters = {...parametersObj};
+                }
+            } catch (error) {
+                // If parameters are invalid JSON, just use the default code parameter
+            }
+        }
+
+        return [{
+            label: "Run " + node.title(),
+            description: description || "Execute Python code in the interpreter",
+            parameter: parameters
+        }];
+    }
+
+    static async executeAction(node: NodeM, label: string, parameters: Record<string, any>, callerNode: NodeM, agentSessionState: AgentSessionState): Promise<any> {
+        const code = CodeInterpreterNodeTypeM.codeYText(node).toString();
+        const url = CodeInterpreterNodeTypeM.endpointUrlYText(node)?.toString().trim();
+        console.log(code, url, parameters);
+
+        if (!url) {
+            throw new Error("No endpoint URL configured for code interpreter");
+        }
+
+        if (!code?.trim()) {
+            throw new Error("No code provided to execute");
+        }
+
+        // Extract all parameters except 'code' to pass as execution parameters
+        const executionParameters: Record<string, any> = {};
+        Object.keys(parameters).forEach(key => {
+            if (key !== 'code') {
+                executionParameters[key] = parameters[key];
+            }
+        });
+
+        try {
+            const requestBody: any = {code};
+            if (Object.keys(executionParameters).length > 0) {
+                requestBody.parameters = executionParameters;
+            }
+            agentSessionState.addMessage(callerNode, new ToolCallingMessage({
+                toolName: node.title(),
+                parameters: executionParameters,
+                author: node.title(),
+            }));
+
+            const response = await axios.post(url, requestBody);
+            const result = response.data["result"];
+            agentSessionState.addMessage(callerNode, new ToolResponseMessage({
+                toolName: node.title(),
+                response: result,
+                author: node.title(),
+            }));
+
+        } catch (error: any) {
+            throw new Error(`Code execution failed: ${error.message}`);
+        }
+    }
+}
+
+export class CodeInterpreterNodeTypeVM extends NodeTypeVM {
+    static render(node: NodeVM): React.ReactNode {
         const [result, setResult] = useState<string>("");
         const [loading, setLoading] = useState<boolean>(false);
         const [parameterDialogOpen, setParameterDialogOpen] = useState<boolean>(false);
@@ -86,7 +206,7 @@ export class CodeInterpreterNodeType extends ActionableNodeType {
 
         const runCode = async () => {
             const code = node.ydata.get(CodeInterpreterCodeText)?.toString() || "";
-            const url = this.endpointUrlYText(node.nodeM)?.toString().trim();
+            const url = CodeInterpreterNodeTypeM.endpointUrlYText(node.nodeM)?.toString().trim();
             const parametersText = node.ydata.get(CodeInterpreterParameterText)?.toString() || "";
 
             if (!url) {
@@ -133,7 +253,7 @@ export class CodeInterpreterNodeType extends ActionableNodeType {
 
         const executeCodeWithParameters = async (parameters: Record<string, any>) => {
             const code = node.ydata.get(CodeInterpreterCodeText)?.toString() || "";
-            const url = this.endpointUrlYText(node.nodeM)?.toString().trim();
+            const url = CodeInterpreterNodeTypeM.endpointUrlYText(node.nodeM)?.toString().trim();
 
             setLoading(true);
             try {
@@ -186,16 +306,17 @@ export class CodeInterpreterNodeType extends ActionableNodeType {
                     </Paper>
                 )}
 
-                <Dialog open={parameterDialogOpen} onClose={() => setParameterDialogOpen(false)} maxWidth="md" fullWidth>
+                <Dialog open={parameterDialogOpen} onClose={() => setParameterDialogOpen(false)} maxWidth="md"
+                        fullWidth>
                     <DialogTitle>Enter Parameters</DialogTitle>
                     <DialogContent>
-                        <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                        <Typography variant="body2" color="textSecondary" sx={{mb: 2}}>
                             Please provide values for the following parameters:
                         </Typography>
                         {Object.keys(parameterSchema).map((paramKey) => {
                             const param = parameterSchema[paramKey];
                             return (
-                                <Box key={paramKey} sx={{ mb: 2 }}>
+                                <Box key={paramKey} sx={{mb: 2}}>
                                     <TextField
                                         fullWidth
                                         label={paramKey}
@@ -209,7 +330,8 @@ export class CodeInterpreterNodeType extends ActionableNodeType {
                                             <>
                                                 Type: {param.type || "string"}
                                                 {param.description && <><br/>{param.description}</>}
-                                                {param.default !== undefined && <><br/>Default: {JSON.stringify(param.default)}</>}
+                                                {param.default !== undefined && <>
+                                                    <br/>Default: {JSON.stringify(param.default)}</>}
                                                 {param.required && <><br/>Required: Yes</>}
                                             </>
                                         }
@@ -232,124 +354,13 @@ export class CodeInterpreterNodeType extends ActionableNodeType {
         );
     }
 
-    renderTool1(node: NodeVM): React.ReactNode {
+    static renderTool1(node: NodeVM): React.ReactNode {
         return <CodeInterpreterTool1Component node={node}/>;
     }
 
-    renderTool2(node: NodeVM): React.ReactNode {
+    static renderTool2(node: NodeVM): React.ReactNode {
         return <>
             <CodeInterpreterTool2Component node={node}/>
         </>;
-    }
-
-    ydataInitialize(node: NodeM) {
-        const ydata = node.ydata();
-        if (!ydata.has(CodeInterpreterCodeText)) {
-            ydata.set(CodeInterpreterCodeText, new Y.Text());
-        }
-        if (!ydata.has(CodeInterpreterEndpointUrl)) {
-            ydata.set(CodeInterpreterEndpointUrl, new Y.Text());
-        }
-        if (!ydata.has(CodeInterpreterDescriptionText)) {
-            ydata.set(CodeInterpreterDescriptionText, new Y.Text());
-        }
-        if (!ydata.has(CodeInterpreterParameterText)) {
-            ydata.set(CodeInterpreterParameterText, new Y.Text());
-        }
-    }
-
-    vdataInitialize(node: NodeVM) {
-    }
-
-    codeYText(node: NodeM): Y.Text {
-        return node.ydata().get(CodeInterpreterCodeText) as Y.Text;
-    }
-
-    endpointUrlYText(node: NodeM): Y.Text {
-        return node.ydata().get(CodeInterpreterEndpointUrl) as Y.Text;
-    }
-
-    descriptionYText(node: NodeM): Y.Text {
-        return node.ydata().get(CodeInterpreterDescriptionText) as Y.Text;
-    }
-
-    parameterYText(node: NodeM): Y.Text {
-        return node.ydata().get(CodeInterpreterParameterText) as Y.Text;
-    }
-
-    renderPrompt(node: NodeM): string {
-        return this.descriptionYText(node).toJSON();
-    }
-
-    actions(node: NodeM): Action[] {
-        const description = this.descriptionYText(node).toString();
-        const parametersText = this.parameterYText(node).toString();
-        
-        // Parse parameters from the ydata
-        let parameters: Record<string, any> = {
-        };
-        
-        if (parametersText.trim()) {
-            try {
-                const parametersObj = JSON.parse(parametersText);
-                if (typeof parametersObj === 'object' && parametersObj !== null && !Array.isArray(parametersObj)) {
-                    // Merge the parsed parameters with the default code parameter
-                    parameters = {...parametersObj };
-                }
-            } catch (error) {
-                // If parameters are invalid JSON, just use the default code parameter
-            }
-        }
-
-        return [{
-            label: "Run " + node.title(),
-            description: description || "Execute Python code in the interpreter",
-            parameter: parameters
-        }];
-    }
-
-    async executeAction(node: NodeM, label: string, parameters: Record<string, any>, callerNode: NodeM, agentSessionState: AgentSessionState): Promise<any> {
-        const code = this.codeYText(node).toString();
-        const url = this.endpointUrlYText(node)?.toString().trim();
-        console.log(code, url, parameters);
-
-        if (!url) {
-            throw new Error("No endpoint URL configured for code interpreter");
-        }
-
-        if (!code?.trim()) {
-            throw new Error("No code provided to execute");
-        }
-
-        // Extract all parameters except 'code' to pass as execution parameters
-        const executionParameters: Record<string, any> = {};
-        Object.keys(parameters).forEach(key => {
-            if (key !== 'code') {
-                executionParameters[key] = parameters[key];
-            }
-        });
-
-        try {
-            const requestBody: any = { code };
-            if (Object.keys(executionParameters).length > 0) {
-                requestBody.parameters = executionParameters;
-            }
-            agentSessionState.addMessage(callerNode, new ToolCallingMessage({
-                toolName: node.title(),
-                parameters: executionParameters,
-                author: node.title(),
-            }));
-            
-            const response = await axios.post(url, requestBody);
-            const result =  response.data["result"];
-            agentSessionState.addMessage(callerNode, new ToolResponseMessage({
-                toolName: node.title(),
-                response: result,
-                author: node.title(),
-            }));
-
-        } catch (error: any) {
-            throw new Error(`Code execution failed: ${error.message}`);
-        }
     }
 }

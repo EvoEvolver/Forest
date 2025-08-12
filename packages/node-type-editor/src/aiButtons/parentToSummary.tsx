@@ -5,7 +5,7 @@ import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import DownloadIcon from '@mui/icons-material/Download';
 import {NodeM, NodeVM} from "@forest/schema";
-import {EditorNodeType} from "..";
+import {EditorNodeTypeM} from "..";
 import {stageThisVersion} from "@forest/schema/src/stageService";
 import {useAtomValue} from "jotai";
 import {authTokenAtom} from "@forest/user-system/src/authStates";
@@ -25,10 +25,9 @@ export const ParentToSummaryButton: React.FC<{ node: NodeVM }> = ({node}) => {
         try {
             const treeM = node.nodeM.treeM;
             const parent = treeM.getParent(node.nodeM);
-            const editorNodeType = await node.nodeM.treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
 
             const parentContentText = parent && parent.nodeTypeName() === "EditorNodeType"
-                ? editorNodeType.getEditorContent(parent)
+                ? EditorNodeTypeM.getEditorContent(parent)
                 : "No suitable parent node found.";
 
             const summary = await getParentBasedSummary(node.nodeM, authToken);
@@ -49,9 +48,8 @@ export const ParentToSummaryButton: React.FC<{ node: NodeVM }> = ({node}) => {
 
     const handleAccept = async (modifiedContent: string) => {
         await stageThisVersion(node, "Before parent-to-summary editing");
-        const editorNodeType = await node.nodeM.treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
         try {
-            editorNodeType.setEditorContent(node.nodeM, modifiedContent);
+            EditorNodeTypeM.setEditorContent(node.nodeM, modifiedContent);
         }catch (e){
             alert(e)
         }
@@ -115,9 +113,8 @@ async function getParentBasedSummary(node: NodeM, authToken: string): Promise<st
         return "No suitable parent node found to generate summary from.";
     }
 
-    const editorNodeType = await treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
-    const parentContent = editorNodeType.getEditorContent(parent);
-    const currentContent = editorNodeType.getEditorContent(node);
+    const parentContent = EditorNodeTypeM.getEditorContent(parent);
+    const currentContent = EditorNodeTypeM.getEditorContent(node);
 
     const prompt = `You are a professional writer. Your task is to write a paragraph based on the parent node's content.
 

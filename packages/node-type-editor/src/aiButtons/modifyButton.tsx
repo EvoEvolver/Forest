@@ -11,7 +11,7 @@ import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {NodeM, NodeVM} from "@forest/schema";
-import {EditorNodeType} from "..";
+import {EditorNodeTypeM} from "..";
 import {stageThisVersion} from "@forest/schema/src/stageService";
 import {useAtomValue} from "jotai";
 import {authTokenAtom} from "@forest/user-system/src/authStates";
@@ -90,8 +90,7 @@ If there are any annotations in the original text, you should keep them unless t
 
         setLoading(true);
         try {
-            const editorNodeType = await node.nodeM.treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
-            const original = editorNodeType.getEditorContent(node.nodeM);
+            const original = EditorNodeTypeM.getEditorContent(node.nodeM);
             const revised = await getModifiedContent(node.nodeM, prompt, authToken, customTemplate);
 
             setOriginalContent(original);
@@ -113,9 +112,8 @@ If there are any annotations in the original text, you should keep them unless t
     const handleAccept = async (modifiedContent: string) => {
         try {
             await stageThisVersion(node, "Before LLM modification");
-            const editorNodeType = await node.nodeM.treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
             try {
-                editorNodeType.setEditorContent(node.nodeM, modifiedContent);
+                EditorNodeTypeM.setEditorContent(node.nodeM, modifiedContent);
             } catch (e) {
                 alert(e)
             }
@@ -245,12 +243,11 @@ If there are any annotations in the original text, you should keep them unless t
 
 async function getModifiedContent(node: NodeM, userPrompt: string, authToken: string, customTemplate?: string): Promise<string> {
     const treeM = node.treeM;
-    const editorNodeType = await treeM.supportedNodesTypes("EditorNodeType") as EditorNodeType;
-    const originalContent = editorNodeType.getEditorContent(node);
+    const originalContent = EditorNodeTypeM.getEditorContent(node);
 
     const parent = treeM.getParent(node);
     const parentContent = parent && parent.nodeTypeName() === "EditorNodeType"
-        ? editorNodeType.getEditorContent(parent)
+        ? EditorNodeTypeM.getEditorContent(parent)
         : "No parent node available.";
 
     const prompt = customTemplate
@@ -268,7 +265,7 @@ async function getModifiedContent(node: NodeM, userPrompt: string, authToken: st
 
     return await pRetry(async () => {
         const response = await fetchChatResponse([message.toJson() as any], "gpt-4.1", authToken);
-        const isValid = EditorNodeType.validateEditorContent(response);
+        const isValid = EditorNodeTypeM.validateEditorContent(response);
         if (!isValid) {
             throw new Error('Editor content validation failed');
         }

@@ -29,7 +29,7 @@ export const HoverPlusButton = ({ node, parentNode, isVisible, position }: Hover
     useEffect(() => {
         const fetchTypes = async () => {
             const promises = availableTypeNames.map(async (typeName) => {
-                const nodeType = await parentNode.treeVM.treeM.supportedNodesTypes(typeName);
+                const nodeType = parentNode.treeVM.treeM.supportedNodeTypesM(typeName);
                 return {
                     name: typeName,
                     displayName: nodeType.displayName
@@ -66,7 +66,7 @@ export const HoverPlusButton = ({ node, parentNode, isVisible, position }: Hover
         handleClose();
     };
 
-    if (!isVisible || !parentNode.nodeType.allowAddingChildren) {
+    if (!isVisible || !parentNode.nodeM.nodeType.allowAddingChildren) {
         return null;
     }
 

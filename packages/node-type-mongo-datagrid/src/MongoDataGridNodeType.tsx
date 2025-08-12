@@ -1,34 +1,26 @@
 import React, {useEffect, useState} from 'react';
 import {Box, Button, Paper, TextField} from '@mui/material';
 import {MongoDataGridEditor} from './components/MongoDataGridEditor';
-import {NodeM, NodeType, NodeVM} from '@forest/schema';
+import {NodeM, NodeVM} from '@forest/schema';
 import {httpUrl} from "@forest/schema/src/config";
+import {NodeTypeVM} from "@forest/schema/src/nodeTypeVM";
+import {NodeTypeM} from "@forest/schema/src/nodeTypeM";
 
-export class MongoDataGridNodeType extends NodeType {
-    displayName = "Mongo DataGrid";
-    allowReshape = true;
-    allowAddingChildren = false;
-    allowEditTitle = true;
-    allowedChildrenTypes: string[] = [];
+export class MongoDataGridNodeTypeM extends NodeTypeM {
 
-    render(node: NodeVM): React.ReactNode {
-        return <MongoDataGridRenderer node={node}/>;
-    }
+    static displayName = "Mongo DataGrid";
+    static allowReshape = true;
+    static allowAddingChildren = false;
+    static allowEditTitle = true;
+    static allowedChildrenTypes: string[] = [];
 
-    renderTool1(node: NodeVM): React.ReactNode {
-        return <CollectionSelectorTool node={node}/>;
-    }
 
-    renderTool2(node: NodeVM): React.ReactNode {
-        return null;
-    }
-
-    renderPrompt(node: NodeM): string {
+    static renderPrompt(node: NodeM): string {
         const collectionName = this.getCollectionName(node);
         return `MongoDB DataGrid for collection: ${collectionName || 'No collection selected'}`;
     }
 
-    ydataInitialize(node: NodeM): void {
+    static ydataInitialize(node: NodeM): void {
         const ydata = node.ydata();
         if (ydata && !ydata.has('collectionName')) {
             ydata.set('collectionName', '');
@@ -38,7 +30,7 @@ export class MongoDataGridNodeType extends NodeType {
         }
     }
 
-    private getCollectionName(node: any): string {
+    static getCollectionName(node: any): string {
         const ydata = node.nodeM ? node.nodeM.ydata() : node.ydata();
         return ydata?.get('collectionName') || '';
     }
@@ -137,6 +129,20 @@ const CollectionSelectorTool: React.FC<{ node: NodeVM }> = ({node}) => {
         </Box>
     );
 };
+
+export class MongoDataGridNodeTypeVM extends NodeTypeVM {
+    render(node: NodeVM): React.ReactNode {
+        return <MongoDataGridRenderer node={node}/>;
+    }
+
+    renderTool1(node: NodeVM): React.ReactNode {
+        return <CollectionSelectorTool node={node}/>;
+    }
+
+    renderTool2(node: NodeVM): React.ReactNode {
+        return null;
+    }
+}
 
 // Separate renderer component to handle state and effects
 const MongoDataGridRenderer: React.FC<{ node: NodeVM }> = ({node}) => {
