@@ -1,5 +1,5 @@
 import React, {useContext, useEffect, useState} from 'react'
-//import './style.css';
+import './style.css';
 import {useAtomValue} from "jotai";
 import {YjsProviderAtom} from "@forest/client/src/TreeState/YjsConnection";
 import {XmlFragment} from 'yjs';

@@ -1,7 +1,7 @@
 import {NodeM, NodeVM} from "@forest/schema"
 import React from "react";
 import TiptapEditor, {makeEditor} from "./editor";
-import {XmlFragment} from "yjs";
+import {Map as YMap, XmlFragment} from "yjs";
 import {BottomUpButton} from "./aiButtons/buttomUp";
 import {TopDownButton} from "./aiButtons/topDown";
 import {ParentToSummaryButton} from "./aiButtons/parentToSummary";
@@ -20,13 +20,10 @@ export class EditorNodeTypeM extends NodeTypeM {
     static allowedChildrenTypes = ["EditorNodeType"]
 
     static getYxml(node: NodeM): XmlFragment {
-        let yXML: XmlFragment = node.ydata().get(EditorXmlFragment) as unknown as XmlFragment;
-        if (!yXML) {
-            yXML = new XmlFragment();
-            // @ts-ignore
-            node.ydata().set(EditorXmlFragment, yXML);
-            //throw new Error("Missing yXML in EditorNodeType.getYxml, node: " + node.id);
+        if (!node.ydata().has(EditorXmlFragment)) {
+            EditorNodeTypeM.ydataInitialize(node);
         }
+        let yXML: XmlFragment = node.ydata().get(EditorXmlFragment) as unknown as XmlFragment;
         return yXML;
     }
 
@@ -66,18 +63,18 @@ export class EditorNodeTypeM extends NodeTypeM {
     }
 
     static ydataInitialize(node: NodeM) {
+        const ydata = new YMap()
         const yXML = new XmlFragment();
-        // @ts-ignore
-        node.ydata().set(EditorNodeData, yXML);
+        ydata.set(EditorXmlFragment, yXML);
+        node.ymap.set("ydata", ydata);
+        console.log("Initialized ydata for EditorNodeTypeM", node.id, node.ymap.get("ydata"))
     }
 }
 
 export class EditorNodeTypeVM extends NodeTypeVM {
+
     static render(node: NodeVM): React.ReactNode {
-        const yXML = EditorNodeTypeM.getYxml(node.nodeM);
-        return <>
-            <TiptapEditor yXML={yXML} node={node}/>
-        </>
+        return <EditorMainView node={node}/>
     }
 
     static renderTool1(node: NodeVM): React.ReactNode {
@@ -87,6 +84,13 @@ export class EditorNodeTypeVM extends NodeTypeVM {
     static renderTool2(node: NodeVM): React.ReactNode {
         return <EditorTools node={node}/>
     }
+}
+
+function EditorMainView({node}: { node: NodeVM }) {
+    const yXML = EditorNodeTypeM.getYxml(node.nodeM)
+    return <>
+        <TiptapEditor yXML={yXML} node={node}/>
+    </>
 }
 
 

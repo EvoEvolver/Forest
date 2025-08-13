@@ -128,6 +128,7 @@ export class TreeM {
     insertNode(node: NodeM, parentId: string, positionId: string) {
         this.ydoc.transact(() => {
             this.addNode(node)
+            node.nodeType().ydataInitialize(node)
             const parentChildrenArray = this.nodeDict.get(parentId).get("children")
             const childrenJson = parentChildrenArray.toJSON()
             // find the position of the node with positionId in parentChildrenArray
