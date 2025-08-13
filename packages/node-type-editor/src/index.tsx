@@ -67,7 +67,7 @@ export class EditorNodeTypeM extends NodeTypeM {
         const yXML = new XmlFragment();
         ydata.set(EditorXmlFragment, yXML);
         node.ymap.set("ydata", ydata);
-        console.log("Initialized ydata for EditorNodeTypeM", node.id, node.ymap.get("ydata"))
+        //console.log("Initialized ydata for EditorNodeTypeM", node.id, node.ymap.get("ydata"))
     }
 }
 

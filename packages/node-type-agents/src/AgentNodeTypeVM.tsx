@@ -18,7 +18,7 @@ import {
 import * as Y from "yjs";
 import CollaborativeEditor from "./CodeEditor";
 import {markdown} from "@codemirror/lang-markdown";
-import {AgentDescriptionText, AgentPromptText, TodoMode} from "./AgentNode";
+import {AgentDescriptionText, AgentNodeTypeM, AgentPromptText, TodoMode} from "./AgentNode";
 
 function AgentFilesComponent() {
     const [files, setFiles] = React.useState(agentSessionState.files);
@@ -152,18 +152,26 @@ function AgentTool2Component() {
 }
 
 export class AgentNodeTypeVM extends NodeTypeVM {
-
     static render(node: NodeVM): React.ReactNode {
+        if (!node.ydata.has(AgentPromptText)) {
+            AgentNodeTypeM.ydataInitialize(node.nodeM);
+        }
         return <>
             <ChatComponent node={node}/>
         </>
     }
 
     static renderTool1(node: NodeVM): React.ReactNode {
+        if (!node.ydata.has(AgentDescriptionText)) {
+            AgentNodeTypeM.ydataInitialize(node.nodeM);
+        }
         return <AgentTool1Component node={node}/>;
     }
 
     static renderTool2(node: NodeVM): React.ReactNode {
+        if (!node.ydata.has(AgentPromptText)) {
+            AgentNodeTypeM.ydataInitialize(node.nodeM);
+        }
         return <AgentTool2Component/>;
     }
 }

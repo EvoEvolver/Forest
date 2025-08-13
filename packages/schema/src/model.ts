@@ -1,9 +1,8 @@
 import * as Y from 'yjs'
 import {Doc as YDoc, Map as YMap} from 'yjs'
 import {WebsocketProvider} from "./y-websocket";
-import {v4} from "uuid"
 import {NodeTypeM} from "./nodeTypeM.ts";
-import {v4 as uuidv4} from "uuid";
+import {v4 as uuidv4} from 'uuid';
 
 export interface NodeJson {
     id: string,
@@ -270,7 +269,7 @@ export class NodeM {
         }
         Y.applyUpdate(snapdoc, stateVectorArray)
         const nodeYmap = snapdoc.getMap("node")
-        const tempId = v4()
+        const tempId = uuidv4()
         nodeYmap.set("id", tempId)
         return new NodeM(nodeYmap, tempId, null)
     }

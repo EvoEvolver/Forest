@@ -5,7 +5,7 @@ import {NodeM, TreeM, TreeMetadata} from "./model";
 import {NodeTypeVM} from "./nodeTypeVM.ts";
 import {NodeTypeM} from "./nodeTypeM.ts";
 
-type SupportedNodeTypesVM = (typeName: string) => typeof NodeTypeVM;
+export type SupportedNodeTypesVM = (typeName: string) => Promise<typeof NodeTypeVM>;
 
 /*
 The data type hold only by the frontend as ViewModel (VM) for components to consume
@@ -161,7 +161,7 @@ export class NodeVM {
         if (yjsMapNode.has("tools"))
             nodeVM.tools = yjsMapNode.get("tools")
         nodeVM.nodeType = nodeM.nodeType()
-        nodeVM.nodeTypeVM = nodeVM.getNodeType(treeVM.supportedNodeTypesVM)
+        nodeVM.nodeTypeVM = await nodeVM.getNodeType(treeVM.supportedNodeTypesVM)
         return nodeVM
     }
 
@@ -169,7 +169,7 @@ export class NodeVM {
         this.treeVM = treeVM
     }
 
-    getNodeType(supportedNodesTypes: SupportedNodeTypesVM): typeof NodeTypeVM {
+    async getNodeType(supportedNodesTypes: SupportedNodeTypesVM): Promise<typeof NodeTypeVM> {
         if (!this.nodeTypeName) {
             if (this?.tabs["content"] === `<PaperEditorMain/>`) {
                 this.nodeTypeName = "EditorNodeType"
@@ -179,7 +179,7 @@ export class NodeVM {
                 this.nodeM.ymap.set("nodeTypeName", this.nodeTypeName)
             }
         }
-        return supportedNodesTypes(this.nodeTypeName)
+        return await supportedNodesTypes(this.nodeTypeName)
     }
 
     commitDataChange() {
@@ -244,10 +244,10 @@ async function nodeMToNodeVMAtom(nodeM: NodeM, treeVM: TreeVM): Promise<Primitiv
         const observeFunc = (ymapEvent) => {
             {
                 ymapEvent.changes.keys.forEach((change, key) => {
-                    console.log(key, change, "change in ydata: ", nodeM.ymap.get("ydata"))
-                    if (change.action !== 'update') {
+                    //console.log(key, change, "change in ydata: ", nodeM.ymap.get("ydata"))
+                    /*if (change.action !== 'update') {
                         throw Error(`Property "${key}" was ${change.action}, which is not supported.`)
-                    }
+                    }*/
                 })
             }
             NodeVM.create(nodeM, treeVM).then(newNode => {

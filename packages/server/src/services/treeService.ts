@@ -8,8 +8,8 @@ export class TreeService {
     constructor(private treeMetadataManager: TreeMetadataManager) {
     }
 
-    async createTree(treeJson: TreeJson, userId: string): Promise<string> {
-        const tree: TreeM = await createNewTree(treeJson);
+    createTree(treeJson: TreeJson, userId: string): string {
+        const tree: TreeM = createNewTree(treeJson);
         const rootId = treeJson.metadata.rootId;
         let rootTitle
         if (rootId) {
@@ -97,7 +97,7 @@ export class TreeService {
     }
 }
 
-async function createNewTree(treeJson: TreeJson): Promise<TreeM> {
+function createNewTree(treeJson: TreeJson): TreeM {
     const treeId = crypto.randomUUID();
     const doc = getYDoc(treeId)
     // @ts-ignore

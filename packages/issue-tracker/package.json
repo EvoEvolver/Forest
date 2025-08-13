@@ -21,7 +21,8 @@
     "jotai": "^2.10.3",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.3",
-    "@forest/user-system": "workspace:*"
+    "@forest/user-system": "workspace:*",
+    "@forest/schema": "workspace:*"
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",
