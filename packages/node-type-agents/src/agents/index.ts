@@ -15,7 +15,7 @@ export async function generateActionListPrompt(node: NodeM, extraActions): Promi
     const resolvedActionableChildren = [];
     for (const child of treeM.getChildren(node)) {
         const nodeType = treeM.supportedNodeTypesM(child.nodeTypeName());
-        if (nodeType instanceof ActionableNodeType) {
+        if (nodeType.prototype instanceof ActionableNodeType) {
             resolvedActionableChildren.push({child, nodeType});
         }
     }
@@ -24,7 +24,7 @@ export async function generateActionListPrompt(node: NodeM, extraActions): Promi
     }
     const actionToPrompt = (a: Action) => `<action>
 Title: ${a.label}
-Description: ${a.description}
+Description: ${a.description.trim()}
 Parameters: ${JSON.stringify(a.parameter, null, 2)}
 </action>
 `
@@ -52,7 +52,7 @@ async function getSystemMessage(nodeM: NodeM, extraActions: Action[] = []) {
     const resolvedActionableChildren = [];
     for (const child of treeM.getChildren(nodeM)) {
         const nodeType = treeM.supportedNodeTypesM(child.nodeTypeName());
-        if (nodeType instanceof ActionableNodeType) {
+        if (nodeType.prototype instanceof ActionableNodeType) {
             resolvedActionableChildren.push({child, nodeType});
         }
     }
