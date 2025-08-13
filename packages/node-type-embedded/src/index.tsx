@@ -64,36 +64,7 @@ export class EmbeddedNodeTypeVM extends NodeTypeVM {
     }
 
     static renderTool2(node: NodeVM): React.ReactNode {
-        if (!node.ydata.has(EmbedUrlText)) {
-            EmbeddedNodeTypeM.ydataInitialize(node.nodeM);
-        }
-        
-        const yText = node.ydata.get(EmbedUrlText) as Y.Text;
-        const embedUrl = yText ? yText.toJSON() : '';
-        
-        if (!embedUrl) {
-            return null;
-        }
-
-        return (
-            <Box sx={{ p: 2 }}>
-                <Typography variant="h6" sx={{ mb: 2 }}>
-                    Embed Information
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    Current URL:
-                </Typography>
-                <Typography variant="body2" sx={{ 
-                    wordBreak: 'break-all', 
-                    p: 1, 
-                    bgcolor: 'grey.100', 
-                    borderRadius: 1,
-                    fontSize: '0.8rem'
-                }}>
-                    {embedUrl}
-                </Typography>
-            </Box>
-        );
+        return null;
     }
 }
 
