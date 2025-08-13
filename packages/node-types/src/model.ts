@@ -1,5 +1,6 @@
 import {EditorNodeTypeM} from "@forest/node-type-editor"
 import {ReaderNodeTypeM} from "@forest/node-type-reader"
+import {EmbeddedNodeTypeM} from "@forest/node-type-embedded"
 import {CustomNodeTypeM} from "@forest/node-components"
 import {A2ANodeTypeM} from "@forest/node-type-agents/src/A2ANode"
 import {AgentNodeTypeM} from "@forest/node-type-agents/src/AgentNode"
@@ -21,6 +22,7 @@ const typeInstances = {
     "MongoDataGridNodeType": MongoDataGridNodeTypeM,
     "EditorNodeType": EditorNodeTypeM,
     "ReaderNodeType": ReaderNodeTypeM,
+    "EmbeddedNodeType": EmbeddedNodeTypeM,
 };
 
 export const supportedNodeTypesM = (typeName: string): typeof NodeTypeM | null => {

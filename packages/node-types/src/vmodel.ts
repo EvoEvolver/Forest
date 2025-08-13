@@ -1,5 +1,6 @@
 import {EditorNodeTypeVM} from "@forest/node-type-editor"
 import {ReaderNodeTypeVM} from "@forest/node-type-reader"
+import {EmbeddedNodeTypeVM} from "@forest/node-type-embedded"
 import {SupportedNodeTypesVM} from "@forest/schema/src/viewModel";
 
 // @ts-ignore
@@ -14,6 +15,7 @@ const typeModules = {
     "MongoDataGridNodeType": () => import("@forest/node-type-mongo-datagrid").then(m => m.MongoDataGridNodeTypeVM),
     "EditorNodeType": async () => EditorNodeTypeVM,
     "ReaderNodeType": async () => ReaderNodeTypeVM,
+    "EmbeddedNodeType": async () => EmbeddedNodeTypeVM,
 };
 
 // Cache for loaded types AND loading promises

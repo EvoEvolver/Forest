@@ -17,7 +17,7 @@ export class EditorNodeTypeM extends NodeTypeM {
     static allowReshape = true
     static allowAddingChildren = true
     static allowEditTitle = true
-    static allowedChildrenTypes = ["EditorNodeType"]
+    static allowedChildrenTypes = ["EditorNodeType", "EmbeddedNodeType"]
 
     static getYxml(node: NodeM): XmlFragment {
         if (!node.ydata().has(EditorXmlFragment)) {

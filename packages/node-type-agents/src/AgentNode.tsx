@@ -24,7 +24,8 @@ export class AgentNodeTypeM extends ActionableNodeType {
         "KnowledgeNodeType",
         "MongoDataGridNodeType",
         "A2ANodeType",
-        "MCPNodeType"
+        "MCPNodeType",
+        "EmbeddedNodeType"
     ]
 
     static ydataInitialize(node: NodeM) {
