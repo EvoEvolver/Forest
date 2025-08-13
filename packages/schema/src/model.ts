@@ -3,6 +3,7 @@ import {Doc as YDoc, Map as YMap} from 'yjs'
 import {WebsocketProvider} from "./y-websocket";
 import {v4} from "uuid"
 import {NodeTypeM} from "./nodeTypeM.ts";
+import {v4 as uuidv4} from "uuid";
 
 export interface NodeJson {
     id: string,
@@ -34,9 +35,9 @@ export class TreeM {
     ydoc: YDoc
     nodeDict: YMap<YMap<any>>
     metadata: YMap<any>
-    supportedNodeTypesM: SupportedNodeTypesM
+    supportedNodeTypesM: SupportedNodeTypesM | null
 
-    constructor(ydoc: YDoc, supportedNodeTypesM: SupportedNodeTypesM) {
+    constructor(ydoc: YDoc, supportedNodeTypesM: SupportedNodeTypesM = null) {
         this.ydoc = ydoc
         this.metadata = this.ydoc.getMap("metadata")
         this.nodeDict = this.ydoc.getMap("nodeDict")
@@ -63,7 +64,7 @@ export class TreeM {
         })
     }
 
-    async patchFromTreeJson(treeJson: TreeJson, treeId: string) {
+    patchFromTreeJson(treeJson: TreeJson, treeId: string) {
         this.ydoc.transact(() => {
             // Update metadata
             const metadata = treeJson.metadata;
@@ -77,7 +78,7 @@ export class TreeM {
 
             // Update nodeDict
             const nodeDictJson = treeJson.nodeDict;
-            Object.entries(nodeDictJson).forEach(async ([key, nodeJson]) => {
+            Object.entries(nodeDictJson).forEach(([key, nodeJson]) => {
                 const nodeM = NodeM.fromNodeJson(nodeJson, this);
                 this.addNode(nodeM)
             });
@@ -152,14 +153,14 @@ export class TreeM {
     getAllDescendantNodes(nodeM: NodeM): NodeM[] {
         const descendants: NodeM[] = [];
         const children = this.getChildren(nodeM);
-        
+
         for (const child of children) {
             descendants.push(child);
             // Recursively get descendants of this child
             const childDescendants = this.getAllDescendantNodes(child);
             descendants.push(...childDescendants);
         }
-        
+
         return descendants;
     }
 }
@@ -172,7 +173,18 @@ export class NodeM {
     ymap: YMap<any>;
     id: string
     treeM: TreeM
-    nodeType: typeof NodeTypeM | undefined
+
+    static newNode(title: string, parentId: string, nodeTypeName: string, treeM: TreeM): NodeM {
+        const newNodeJson: NodeJson = {
+            id: uuidv4(),
+            title: title,
+            parent: parentId,
+            children: [],
+            data: {},
+            nodeTypeName: nodeTypeName,
+        };
+        return NodeM.fromNodeJson(newNodeJson, treeM);
+    }
 
     static fromNodeJson(nodeJson: NodeJson, treeM: TreeM): NodeM {
         const ymap = new YMap<any>();
@@ -194,17 +206,17 @@ export class NodeM {
         ymap.set("tabs", nodeJson.tabs)
         ymap.set("tools", nodeJson.tools)
 
-        const newNodeM = new NodeM(ymap, nodeJson.id, treeM)
-        const nodeType = treeM.supportedNodeTypesM(nodeJson.nodeTypeName)
-        nodeType.ydataInitialize(newNodeM)
-        return newNodeM
+        return new NodeM(ymap, nodeJson.id, treeM)
     }
 
     constructor(ymap: YMap<any>, nodeId: string, treeM: TreeM) {
         this.id = nodeId
         this.ymap = ymap
         this.treeM = treeM
-        this.nodeType = treeM.supportedNodeTypesM(this.nodeTypeName())
+    }
+
+    nodeType(): typeof NodeTypeM | undefined {
+        return this.treeM.supportedNodeTypesM(this.nodeTypeName());
     }
 
     title(): string {

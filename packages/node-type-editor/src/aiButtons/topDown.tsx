@@ -1,11 +1,10 @@
 import * as React from "react";
 import CircularProgress from "@mui/material/CircularProgress";
-import {NodeJson, NodeM, NodeVM} from "@forest/schema";
+import {NodeM, NodeVM} from "@forest/schema";
 import {EditorNodeTypeM} from "..";
 import {stageThisVersion} from "@forest/schema/src/stageService";
 import {useAtomValue} from "jotai";
 import {authTokenAtom} from "@forest/user-system/src/authStates";
-import {v4 as uuidv4} from "uuid";
 import {fetchChatResponse} from "@forest/agent-chat/src/llm";
 import {NormalMessage} from "@forest/agent-chat/src/MessageTypes";
 import {Card} from "@mui/material";
@@ -45,25 +44,17 @@ export const TopDownButton: React.FC<{ node: NodeVM }> = ({node}) => {
             setSelectedTitles({});
         };
 
-        const handleAccept = async (modifiedItems: {id: string; title: string; content: string}[]) => {
+        const handleAccept = async (modifiedItems: { id: string; title: string; content: string }[]) => {
             await stageThisVersion(node, "Before top-down child generation");
             const itemsToCreate = modifiedItems.filter(item => selectedTitles[item.id]);
             if (itemsToCreate.length > 0) {
                 const treeM = node.nodeM.treeM;
                 for (const item of itemsToCreate) {
-                    const newNodeJson: NodeJson = {
-                        id: uuidv4(),
-                        title: item.title,
-                        parent: node.id,
-                        children: [],
-                        data: {},
-                        nodeTypeName: "EditorNodeType",
-                    };
-                    const newNodeM = NodeM.fromNodeJson(newNodeJson, treeM);
+                    const newNodeM = NodeM.newNode(item.title, node.id, "EditorNodeType", treeM);
                     treeM.insertNode(newNodeM, node.id, null);
                     try {
                         EditorNodeTypeM.setEditorContent(newNodeM, item.content);
-                    } catch (e){
+                    } catch (e) {
                         alert(e)
                     }
                 }
@@ -163,7 +154,7 @@ You should not put any HTML elements not appearing in the original content.
         try {
             // The response is expected to be a JSON string array
             const titleAndContents = JSON.parse(response);
-            
+
             // Validate each child content
             for (const child of titleAndContents) {
                 if (!child.content) continue;
@@ -172,7 +163,7 @@ You should not put any HTML elements not appearing in the original content.
                     throw new Error(`Child content validation failed for title: ${child.title}`);
                 }
             }
-            
+
             return titleAndContents;
         } catch (error) {
             if (error instanceof SyntaxError) {

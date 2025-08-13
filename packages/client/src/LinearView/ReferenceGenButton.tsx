@@ -74,15 +74,7 @@ export default function ReferenceGenButton({getHtml, rootNode}: ReferenceGenButt
 
             // Create "References" node if it doesn't exist
             if (!referenceNodeM) {
-                const newNodeJson: NodeJson = {
-                    id: uuidv4(),
-                    title: "References",
-                    parent: rootNode.id,
-                    children: [],
-                    data: {},
-                    nodeTypeName: "EditorNodeType",
-                };
-                referenceNodeM = NodeM.fromNodeJson(newNodeJson, treeM);
+                referenceNodeM = NodeM.newNode("References", rootNode.id, "EditorNodeType", treeM)
                 treeM.insertNode(referenceNodeM, rootNode.id, null);
             }
 

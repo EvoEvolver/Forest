@@ -161,7 +161,7 @@ export class NodeVM {
             nodeVM.tabs = yjsMapNode.get("tabs")
         if (yjsMapNode.has("tools"))
             nodeVM.tools = yjsMapNode.get("tools")
-        nodeVM.nodeType = nodeM.nodeType
+        nodeVM.nodeType = nodeM.nodeType()
         nodeVM.nodeTypeVM = nodeVM.getNodeType(treeVM.supportedNodeTypesVM)
         return nodeVM
     }

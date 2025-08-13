@@ -66,7 +66,7 @@ export const HoverPlusButton = ({ node, parentNode, isVisible, position }: Hover
         handleClose();
     };
 
-    if (!isVisible || !parentNode.nodeM.nodeType.allowAddingChildren) {
+    if (!isVisible || !parentNode.nodeType.allowAddingChildren) {
         return null;
     }
 

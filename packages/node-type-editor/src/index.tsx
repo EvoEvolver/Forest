@@ -22,7 +22,10 @@ export class EditorNodeTypeM extends NodeTypeM {
     static getYxml(node: NodeM): XmlFragment {
         let yXML: XmlFragment = node.ydata().get(EditorXmlFragment) as unknown as XmlFragment;
         if (!yXML) {
-            throw new Error("Missing yXML in EditorNodeType.getYxml, node: " + node.id);
+            yXML = new XmlFragment();
+            // @ts-ignore
+            node.ydata().set(EditorXmlFragment, yXML);
+            //throw new Error("Missing yXML in EditorNodeType.getYxml, node: " + node.id);
         }
         return yXML;
     }
