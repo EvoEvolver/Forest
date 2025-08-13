@@ -2,12 +2,11 @@ import {EditorNodeTypeVM} from "@forest/node-type-editor"
 import {ReaderNodeTypeVM} from "@forest/node-type-reader"
 import {CustomNodeTypeVM} from "@forest/node-components"
 import {A2ANodeTypeVM} from "@forest/node-type-agents/src/A2ANodeTypeVM"
-import {AgentNodeTypeVM} from "@forest/node-type-agents/src/AgentNode"
 import {AgentToolNodeTypeVM} from "@forest/node-type-agents/src/ToolNode"
-import {CodeInterpreterNodeTypeVM} from "@forest/node-type-agents/src/CodeInterpreterNode"
 import {KnowledgeNodeTypeVM} from "@forest/node-type-agents/src/KnowledgeNode"
 import {MCPNodeTypeVM} from "@forest/node-type-agents/src/MCPNodeTypeVM"
-
+import {AgentNodeTypeVM} from "@forest/node-type-agents/src/AgentNodeTypeVM"
+import {CodeInterpreterNodeTypeVM} from "@forest/node-type-agents/src/CodeInterpreterNodeTypeVM"
 import {MongoDataGridNodeTypeVM} from "@forest/node-type-mongo-datagrid"
 import {NodeTypeVM} from "@forest/schema/src/nodeTypeVM";
 

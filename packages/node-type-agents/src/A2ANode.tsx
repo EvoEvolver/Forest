@@ -21,7 +21,7 @@ export class A2ANodeTypeM extends ActionableNodeType {
     static displayName = "A2A Agent"
     static allowReshape = true
     static allowAddingChildren = false
-    staticallowEditTitle = true
+    static allowEditTitle = true
 
     static getAgentUrl(node: NodeM): string | null {
         // @ts-ignore

@@ -1,4 +1,4 @@
-import {NodeM, NodeType} from "@forest/schema";
+import {NodeM} from "@forest/schema";
 import {AgentSessionState} from "./sessionState";
 import {BaseMessage} from "@forest/agent-chat/src/MessageTypes";
 import {NodeTypeM} from "@forest/schema/src/nodeTypeM";
