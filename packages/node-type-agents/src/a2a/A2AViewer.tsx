@@ -7,7 +7,6 @@ import {
     Button,
     TextField,
     Chip,
-    FormControlLabel,
     Switch,
     Dialog,
     DialogTitle,

@@ -12,8 +12,6 @@ import {
     Divider,
     TextField,
     Typography,
-    Checkbox,
-    FormControlLabel,
     useTheme
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -45,7 +43,7 @@ const MCPCard: React.FC<MCPCardProps> = ({tool, onExecute, onToggleEnabled}) => 
 
     const handleExecute = async () => {
         if (!onExecute || !isEnabled) return;
-        
+
         setLoading(true);
         setError(null);
         setResponse(null);
@@ -54,7 +52,7 @@ const MCPCard: React.FC<MCPCardProps> = ({tool, onExecute, onToggleEnabled}) => 
             // Validate required parameters
             const requiredParams = tool.inputSchema.required || [];
             const missingParams = requiredParams.filter(param => !parameters[param] || parameters[param].trim() === '');
-            
+
             if (missingParams.length > 0) {
                 throw new Error(`Missing required parameters: ${missingParams.join(', ')}`);
             }
@@ -101,7 +99,7 @@ const MCPCard: React.FC<MCPCardProps> = ({tool, onExecute, onToggleEnabled}) => 
     const renderParameterInput = (paramName: string, paramSchema: any) => {
         const isRequired = tool.inputSchema.required?.includes(paramName) || false;
         const paramType = paramSchema.type || 'string';
-        
+
         return (
             <Box key={paramName} sx={{mb: 2}}>
                 <Typography variant="subtitle2" sx={{mb: 1}}>
@@ -113,7 +111,7 @@ const MCPCard: React.FC<MCPCardProps> = ({tool, onExecute, onToggleEnabled}) => 
                         sx={{ml: 1, fontSize: '0.7rem', height: '20px'}}
                     />
                 </Typography>
-                
+
                 {paramType === 'boolean' ? (
                     <TextField
                         select
@@ -158,7 +156,7 @@ const MCPCard: React.FC<MCPCardProps> = ({tool, onExecute, onToggleEnabled}) => 
                         }))}
                     />
                 )}
-                
+
                 {paramSchema.description && (
                     <Typography variant="caption" color="text.secondary" sx={{display: 'block', mt: 0.5}}>
                         {paramSchema.description}
@@ -172,7 +170,7 @@ const MCPCard: React.FC<MCPCardProps> = ({tool, onExecute, onToggleEnabled}) => 
 
     return (
         <Card sx={{
-            mb: 2, 
+            mb: 2,
             border: `2px solid ${isEnabled ? theme.palette.success.main : theme.palette.grey[400]}`,
             opacity: isEnabled ? 1 : 0.7,
             backgroundColor: isEnabled ? 'inherit' : theme.palette.grey[100]
@@ -181,7 +179,7 @@ const MCPCard: React.FC<MCPCardProps> = ({tool, onExecute, onToggleEnabled}) => 
                 <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
                     <Box sx={{display: 'flex', alignItems: 'center', width: '100%'}}>
                         <Chip
-                            icon={<BuildIcon />}
+                            icon={<BuildIcon/>}
                             label="MCP"
                             sx={{
                                 backgroundColor: isEnabled ? theme.palette.success.main : theme.palette.grey[500],
@@ -256,8 +254,18 @@ const MCPCard: React.FC<MCPCardProps> = ({tool, onExecute, onToggleEnabled}) => 
                                 )}
 
                                 {response && (
-                                    <Box sx={{p: 2, backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[900] : theme.palette.grey[100], borderRadius: 1}}>
-                                        <pre style={{margin: 0, fontSize: '0.8rem', overflow: 'auto', whiteSpace: 'pre-wrap', color: theme.palette.text.primary}}>
+                                    <Box sx={{
+                                        p: 2,
+                                        backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[900] : theme.palette.grey[100],
+                                        borderRadius: 1
+                                    }}>
+                                        <pre style={{
+                                            margin: 0,
+                                            fontSize: '0.8rem',
+                                            overflow: 'auto',
+                                            whiteSpace: 'pre-wrap',
+                                            color: theme.palette.text.primary
+                                        }}>
                                             {typeof response === 'string' ? response : JSON.stringify(response, null, 2)}
                                         </pre>
                                     </Box>
@@ -268,8 +276,17 @@ const MCPCard: React.FC<MCPCardProps> = ({tool, onExecute, onToggleEnabled}) => 
                         {tool.inputSchema && (
                             <Box sx={{mt: 2}}>
                                 <Typography variant="h6" sx={{mb: 1}}>Schema</Typography>
-                                <Box sx={{p: 2, backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[900] : theme.palette.grey[50], borderRadius: 1}}>
-                                    <pre style={{margin: 0, fontSize: '0.7rem', overflow: 'auto', color: theme.palette.text.primary}}>
+                                <Box sx={{
+                                    p: 2,
+                                    backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[900] : theme.palette.grey[50],
+                                    borderRadius: 1
+                                }}>
+                                    <pre style={{
+                                        margin: 0,
+                                        fontSize: '0.7rem',
+                                        overflow: 'auto',
+                                        color: theme.palette.text.primary
+                                    }}>
                                         {JSON.stringify(tool.inputSchema, null, 2)}
                                     </pre>
                                 </Box>

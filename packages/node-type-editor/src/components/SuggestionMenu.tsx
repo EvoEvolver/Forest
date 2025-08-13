@@ -1,15 +1,7 @@
-import React, { useEffect, useRef } from 'react';
-import { 
-    Paper, 
-    MenuList, 
-    MenuItem, 
-    Typography, 
-    Box,
-    Fade
-} from '@mui/material';
+import React, {useEffect, useRef} from 'react';
+import {Box, Fade, MenuItem, MenuList, Paper, Typography} from '@mui/material';
 import LinkIcon from '@mui/icons-material/Link';
 import TitleIcon from '@mui/icons-material/Title';
-import BookmarkIcon from '@mui/icons-material/Bookmark';
 
 export interface SuggestionOption {
     id: string;
@@ -26,11 +18,11 @@ interface SuggestionMenuProps {
 }
 
 export const SuggestionMenu: React.FC<SuggestionMenuProps> = ({
-    options,
-    selectedIndex,
-    onSelect,
-    visible = true
-}) => {
+                                                                  options,
+                                                                  selectedIndex,
+                                                                  onSelect,
+                                                                  visible = true
+                                                              }) => {
     const menuRef = useRef<HTMLDivElement>(null);
     const selectedItemRef = useRef<HTMLLIElement>(null);
 
@@ -62,7 +54,7 @@ export const SuggestionMenu: React.FC<SuggestionMenuProps> = ({
                     borderRadius: 2
                 }}
             >
-                <MenuList dense sx={{ p: 0.5 }}>
+                <MenuList dense sx={{p: 0.5}}>
                     {options.map((option, index) => (
                         <MenuItem
                             key={option.id}
@@ -146,7 +138,7 @@ export const SuggestionMenu: React.FC<SuggestionMenuProps> = ({
                     <Typography
                         variant="caption"
                         color="text.secondary"
-                        sx={{ fontSize: '0.7rem' }}
+                        sx={{fontSize: '0.7rem'}}
                     >
                         ↑↓ Navigate • ↵ Select • Esc Cancel
                     </Typography>
@@ -162,13 +154,13 @@ export const createPasteSuggestionOptions = (url: string): SuggestionOption[] =>
         id: 'paste-link',
         label: 'Paste as link',
         description: 'Insert as a clickable link',
-        icon: <LinkIcon fontSize="small" />
+        icon: <LinkIcon fontSize="small"/>
     },
     {
         id: 'paste-title',
         label: 'Paste with title',
         description: 'Fetch website title and insert as a link',
-        icon: <TitleIcon fontSize="small" />
+        icon: <TitleIcon fontSize="small"/>
     },
     // {
     //     id: 'paste-bookmark',

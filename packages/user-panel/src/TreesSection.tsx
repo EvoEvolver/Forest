@@ -1,11 +1,10 @@
 import React, {useEffect, useState} from 'react';
 import {Box, Button} from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
 import {UserTreesList} from './UserTreesList';
 import {VisitedTreesList} from './VisitedTreesList';
 import {useAtomValue} from 'jotai';
 import {authTokenAtom, userAtom} from '@forest/user-system/src/authStates';
-import { TreeCreationDialog } from './TreeCreationDialog';
+import {TreeCreationDialog} from './TreeCreationDialog';
 
 type TreeTabId = 'my-trees' | 'recent-trees';
 
@@ -111,8 +110,8 @@ export const TreesSection = () => {
                 {activeTab === 'my-trees' && <UserTreesList/>}
                 {activeTab === 'recent-trees' && <VisitedTreesList/>}
             </Box>
-            
-            <TreeCreationDialog 
+
+            <TreeCreationDialog
                 open={createTreeDialogOpen}
                 onClose={() => setCreateTreeDialogOpen(false)}
             />

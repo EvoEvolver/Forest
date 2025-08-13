@@ -5,7 +5,7 @@
 
 import React from 'react';
 import {Box, useTheme} from '@mui/material';
-import { UserPanel } from './UserPanel';
+import {UserPanel} from './UserPanel';
 
 export const UserPanelPage: React.FC = () => {
     const theme = useTheme();
@@ -18,7 +18,7 @@ export const UserPanelPage: React.FC = () => {
             display: 'flex',
             flexDirection: 'column'
         }}>
-            <UserPanel />
+            <UserPanel/>
         </Box>
     );
 };

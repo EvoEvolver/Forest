@@ -258,7 +258,6 @@ export function makeOnLinkActivated(setHoverElements) {
                     if (el) break;
                 } catch (e) {
                     // Continue searching if position is invalid
-                    continue;
                 }
             }
             

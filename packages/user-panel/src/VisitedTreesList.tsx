@@ -2,20 +2,8 @@ import React, {useEffect, useState} from 'react';
 import {useAtomValue} from 'jotai';
 import type {GridColDef, GridRenderCellParams} from '@mui/x-data-grid';
 import {DataGrid, GridFooterContainer, GridPagination} from '@mui/x-data-grid';
-import {
-    Alert,
-    Box,
-    Button,
-    Chip,
-    CircularProgress,
-    IconButton,
-    Tooltip,
-    Typography
-} from '@mui/material';
-import {
-    RemoveCircleOutline as RemoveIcon,
-    Refresh as RefreshIcon
-} from '@mui/icons-material';
+import {Alert, Box, Button, Chip, CircularProgress, IconButton, Tooltip, Typography} from '@mui/material';
+import {Refresh as RefreshIcon, RemoveCircleOutline as RemoveIcon} from '@mui/icons-material';
 import {authTokenAtom, userAtom} from '@forest/user-system/src/authStates';
 import DashboardCard from './DashboardCard';
 
@@ -336,7 +324,7 @@ export const VisitedTreesList = () => {
 
     if (loading) {
         return (
-            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{height: '100%', display: 'flex', flexDirection: 'column'}}>
                 <DashboardCard title="Recent Trees">
                     <Box display="flex" justifyContent="center" p={2}>
                         <CircularProgress size={20}/>
@@ -348,7 +336,14 @@ export const VisitedTreesList = () => {
 
     if (error) {
         return (
-            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+            <Box sx={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 2
+            }}>
                 <DashboardCard title="Recent Trees">
                     <Alert severity="error" sx={{m: 1}}>
                         {error}
@@ -362,14 +357,28 @@ export const VisitedTreesList = () => {
     }
 
     return (
-        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+        <Box sx={{
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 2
+        }}>
             <DashboardCard
                 title={`Recent Trees (${trees.length})`}
-                sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                sx={{height: '100%', display: 'flex', flexDirection: 'column'}}
             >
                 {trees.length === 0 ? (
-                    <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1}}>
-                        <Typography variant="body2" color="text.secondary" textAlign="center" py={3} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
+                    <Box sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flex: 1
+                    }}>
+                        <Typography variant="body2" color="text.secondary" textAlign="center" py={3}
+                                    fontSize={{xs: '0.7rem', md: '0.8rem'}}>
                             No visited trees yet. Start exploring to see your visit history!
                         </Typography>
                     </Box>
@@ -386,7 +395,7 @@ export const VisitedTreesList = () => {
                         hideFooterSelectedRowCount
                         initialState={{
                             sorting: {
-                                sortModel: [{ field: 'lastAccessed', sort: 'desc' }],
+                                sortModel: [{field: 'lastAccessed', sort: 'desc'}],
                             },
                         }}
                         sx={{

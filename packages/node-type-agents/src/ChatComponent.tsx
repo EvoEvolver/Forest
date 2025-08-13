@@ -7,7 +7,6 @@ import {invokeAgent} from "./agents";
 import {agentSessionState} from "./sessionState";
 import {BaseMessage, NormalMessage} from "@forest/agent-chat/src/MessageTypes";
 import {ChatViewImpl} from "@forest/agent-chat/src/ChatViewImpl";
-import {AgentNodeType} from "./AgentNode";
 
 
 export function ChatComponent({node}: { node: NodeVM }) {

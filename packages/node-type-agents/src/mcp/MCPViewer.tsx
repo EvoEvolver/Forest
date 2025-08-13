@@ -1,5 +1,21 @@
 import React from 'react';
-import {Alert, Box, CircularProgress, Typography, Button, TextField, Chip, FormControlLabel, Checkbox, Collapse, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemText, Switch} from '@mui/material';
+import {
+    Alert,
+    Box,
+    Button,
+    Chip,
+    CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    List,
+    ListItem,
+    ListItemText,
+    Switch,
+    TextField,
+    Typography
+} from '@mui/material';
 import {MCPConnection, MCPTool} from './mcpParser';
 import MCPCard from './MCPCard';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -21,21 +37,21 @@ interface MCPViewerProps {
 }
 
 const MCPViewer: React.FC<MCPViewerProps> = ({
-    connection,
-    currentServerConfig,
-    loading,
-    error,
-    onConnect,
-    onDisconnect,
-    onRefresh,
-    onExecuteTool,
-    onToggleToolEnabled,
-    onGetAllTools,
-    onBulkToggleTools
-}) => {
+                                                 connection,
+                                                 currentServerConfig,
+                                                 loading,
+                                                 error,
+                                                 onConnect,
+                                                 onDisconnect,
+                                                 onRefresh,
+                                                 onExecuteTool,
+                                                 onToggleToolEnabled,
+                                                 onGetAllTools,
+                                                 onBulkToggleTools
+                                             }) => {
     const [toolsetUrl, setToolsetUrl] = React.useState(
-        connection?.toolsetUrl || 
-        (currentServerConfig?.toolsetUrl) || 
+        connection?.toolsetUrl ||
+        (currentServerConfig?.toolsetUrl) ||
         'http://127.0.0.1:8001'
     );
     const [mcpConfigJson, setMcpConfigJson] = React.useState(() => {
@@ -104,12 +120,12 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
 
     const handleConnect = () => {
         setConfigError(null);
-        
+
         if (!toolsetUrl.trim()) {
             setConfigError('Toolset URL is required');
             return;
         }
-        
+
         let mcpConfig;
         try {
             mcpConfig = JSON.parse(mcpConfigJson);
@@ -117,19 +133,19 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
             setConfigError('Invalid JSON in MCP Configuration');
             return;
         }
-        
+
         // Basic validation
         if (!mcpConfig.servers || typeof mcpConfig.servers !== 'object') {
             setConfigError('MCP Configuration must have a "servers" object');
             return;
         }
-        
+
         const serverNames = Object.keys(mcpConfig.servers);
         if (serverNames.length === 0) {
             setConfigError('MCP Configuration must have at least one server');
             return;
         }
-        
+
         onConnect(toolsetUrl.trim(), mcpConfig);
     };
 
@@ -141,7 +157,7 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
 
     const groupToolsByCategory = (tools: MCPTool[]) => {
         // Simple grouping - you can enhance this based on tool naming conventions
-        const grouped: Record<string, MCPTool[]> = { 'Tools': tools };
+        const grouped: Record<string, MCPTool[]> = {'Tools': tools};
         return grouped;
     };
 
@@ -170,11 +186,18 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
     return (
         <Box>
             {/* Connection Section */}
-            <Box sx={{mb: 3, p: 2, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider'}}>
+            <Box sx={{
+                mb: 3,
+                p: 2,
+                bgcolor: 'background.paper',
+                borderRadius: 1,
+                border: '1px solid',
+                borderColor: 'divider'
+            }}>
                 <Typography variant="h6" sx={{mb: 2}}>
                     MCP Toolset Connection
                 </Typography>
-                
+
                 {/* Toolset URL Field */}
                 <Box sx={{mb: 2}}>
                     <TextField
@@ -188,7 +211,7 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
                         helperText="URL of the Python Toolset backend service"
                     />
                 </Box>
-                
+
                 {/* MCP Configuration JSON */}
                 <Box sx={{mb: 2}}>
                     <Typography variant="subtitle2" sx={{mb: 1}}>
@@ -217,7 +240,7 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
                         Example: Supports both HTTP servers (with headers) and stdio servers (NPM packages)
                     </Typography>
                 </Box>
-                
+
                 {/* Connect/Disconnect Button */}
                 <Box sx={{display: 'flex', gap: 1}}>
                     {connection?.connected ? (
@@ -226,7 +249,7 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
                             color="error"
                             onClick={onDisconnect}
                             disabled={loading}
-                            startIcon={<LinkOffIcon />}
+                            startIcon={<LinkOffIcon/>}
                         >
                             Disconnect
                         </Button>
@@ -235,7 +258,7 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
                             variant="contained"
                             onClick={handleConnect}
                             disabled={loading || !toolsetUrl.trim()}
-                            startIcon={<LinkIcon />}
+                            startIcon={<LinkIcon/>}
                         >
                             Connect
                         </Button>
@@ -270,7 +293,7 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
                         size="small"
                         onClick={onRefresh}
                         disabled={loading}
-                        startIcon={<RefreshIcon />}
+                        startIcon={<RefreshIcon/>}
                     >
                         Refresh Tools
                     </Button>
@@ -299,11 +322,11 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
                 <Box>
                     {getTotalToolsCount() > 0 ? (
                         <>
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+                            <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3}}>
                                 <Typography variant="h5">
                                     Available Tools ({getEnabledToolsCount()}/{getTotalToolsCount()} enabled)
                                 </Typography>
-                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                <Box sx={{display: 'flex', gap: 1}}>
                                     <Button
                                         size="small"
                                         variant="outlined"
@@ -317,7 +340,7 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
                             {connection.tools.length > 0 ? (
                                 renderToolsByCategory()
                             ) : (
-                                <Alert severity="info" sx={{ mb: 2 }}>
+                                <Alert severity="info" sx={{mb: 2}}>
                                     All tools are currently disabled. Use "Manage Tools" to enable some tools.
                                 </Alert>
                             )}
@@ -332,7 +355,14 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
 
             {/* Connection Info */}
             {connection && (
-                <Box sx={{mt: 4, p: 2, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider'}}>
+                <Box sx={{
+                    mt: 4,
+                    p: 2,
+                    bgcolor: 'background.paper',
+                    borderRadius: 1,
+                    border: '1px solid',
+                    borderColor: 'divider'
+                }}>
                     <Typography variant="h6" sx={{mb: 2}}>
                         Connection Information
                     </Typography>
@@ -359,11 +389,11 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
                             </Typography>
                             <Box sx={{ml: 2}}>
                                 {Object.entries(currentServerConfig.mcpConfig.servers || {}).map(([name, config]: [string, any]) => (
-                                    <Chip 
-                                        key={name} 
-                                        label={`${name} (${config?.type || 'unknown'})`} 
-                                        size="small" 
-                                        sx={{mr: 1, mb: 1}} 
+                                    <Chip
+                                        key={name}
+                                        label={`${name} (${config?.type || 'unknown'})`}
+                                        size="small"
+                                        sx={{mr: 1, mb: 1}}
                                     />
                                 ))}
                             </Box>
@@ -376,16 +406,16 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
                             </Typography>
                             <Box sx={{ml: 2}}>
                                 {connection.serverInfo?.capabilities?.tools && (
-                                    <Chip label="Tools" size="small" sx={{mr: 1, mb: 1}} />
+                                    <Chip label="Tools" size="small" sx={{mr: 1, mb: 1}}/>
                                 )}
                                 {connection.serverInfo?.capabilities?.resources && (
-                                    <Chip label="Resources" size="small" sx={{mr: 1, mb: 1}} />
+                                    <Chip label="Resources" size="small" sx={{mr: 1, mb: 1}}/>
                                 )}
                                 {connection.serverInfo?.capabilities?.prompts && (
-                                    <Chip label="Prompts" size="small" sx={{mr: 1, mb: 1}} />
+                                    <Chip label="Prompts" size="small" sx={{mr: 1, mb: 1}}/>
                                 )}
                                 {connection.serverInfo?.capabilities?.logging && (
-                                    <Chip label="Logging" size="small" sx={{mr: 1, mb: 1}} />
+                                    <Chip label="Logging" size="small" sx={{mr: 1, mb: 1}}/>
                                 )}
                             </Box>
                         </Box>
@@ -409,13 +439,13 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
             >
                 <DialogTitle>Manage MCP Tools</DialogTitle>
                 <DialogContent>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        Enable or disable tools to control which ones are available to the AI model. 
+                    <Typography variant="body2" color="text.secondary" sx={{mb: 2}}>
+                        Enable or disable tools to control which ones are available to the AI model.
                         Disabled tools are completely hidden from the model.
                     </Typography>
                     <List>
                         {onGetAllTools && onGetAllTools().map((tool) => (
-                            <ListItem key={tool.name} sx={{ px: 0 }}>
+                            <ListItem key={tool.name} sx={{px: 0}}>
                                 <ListItemText
                                     primary={tool.name}
                                     secondary={tool.description || 'No description'}

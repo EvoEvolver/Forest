@@ -1,9 +1,9 @@
 import React from 'react';
-import { Box, Paper, Typography } from '@mui/material';
-import { SimpleTreeView } from '@mui/x-tree-view/SimpleTreeView';
-import { TreeItem2 } from '@mui/x-tree-view/TreeItem2';
-import { ChevronRight, ExpandMore } from '@mui/icons-material';
-import { TreeJson } from '@forest/schema';
+import {Box, Paper, Typography} from '@mui/material';
+import {SimpleTreeView} from '@mui/x-tree-view/SimpleTreeView';
+import {TreeItem2} from '@mui/x-tree-view/TreeItem2';
+import {ChevronRight, ExpandMore} from '@mui/icons-material';
+import {TreeJson} from '@forest/schema';
 
 interface MiniFlowViewProps {
     treeData: TreeJson;
@@ -11,15 +11,15 @@ interface MiniFlowViewProps {
     height?: number;
 }
 
-const MiniFlowView: React.FC<MiniFlowViewProps> = ({ 
-    treeData, 
-    width = 400, 
-    height = 300 
-}) => {
+const MiniFlowView: React.FC<MiniFlowViewProps> = ({
+                                                       treeData,
+                                                       width = 400,
+                                                       height = 300
+                                                   }) => {
     const getAllNodeIds = (nodeId: string, ids: string[] = []): string[] => {
         const node = treeData.nodeDict[nodeId];
         if (!node) return ids;
-        
+
         ids.push(node.id);
         if (node.children) {
             node.children.forEach(childId => getAllNodeIds(childId, ids));
@@ -35,9 +35,9 @@ const MiniFlowView: React.FC<MiniFlowViewProps> = ({
         const hasChildren = node.children && node.children.length > 0;
 
         return (
-            <TreeItem2 
+            <TreeItem2
                 key={node.id}
-                itemId={node.id} 
+                itemId={node.id}
                 label={label}
             >
                 {hasChildren && node.children
@@ -51,8 +51,8 @@ const MiniFlowView: React.FC<MiniFlowViewProps> = ({
 
     if (!treeData || !treeData.nodeDict || !treeData.metadata?.rootId) {
         return (
-            <Paper 
-                elevation={8} 
+            <Paper
+                elevation={8}
                 sx={{
                     width,
                     height,
@@ -71,8 +71,8 @@ const MiniFlowView: React.FC<MiniFlowViewProps> = ({
     }
 
     return (
-        <Paper 
-            elevation={8} 
+        <Paper
+            elevation={8}
             sx={{
                 width,
                 height,
@@ -106,11 +106,11 @@ const MiniFlowView: React.FC<MiniFlowViewProps> = ({
                     Tree Preview
                 </Typography>
             </Box>
-            
+
             {/* Tree View */}
-            <Box sx={{ 
-                flex: 1, 
-                overflow: 'auto', 
+            <Box sx={{
+                flex: 1,
+                overflow: 'auto',
                 padding: '8px',
                 '& .MuiTreeItem2-root': {
                     '& .MuiTreeItem2-content': {
@@ -133,14 +133,14 @@ const MiniFlowView: React.FC<MiniFlowViewProps> = ({
                 },
             }}>
                 <SimpleTreeView
-                    defaultCollapseIcon={<ExpandMore />}
-                    defaultExpandIcon={<ChevronRight />}
+                    defaultCollapseIcon={<ExpandMore/>}
+                    defaultExpandIcon={<ChevronRight/>}
                     defaultExpandedItems={treeData.metadata?.rootId ? getAllNodeIds(treeData.metadata.rootId) : []}
                 >
                     {buildTreeItems(treeData.metadata.rootId)}
                 </SimpleTreeView>
             </Box>
-            
+
             {/* Node Count Badge */}
             <Box
                 sx={{
@@ -159,7 +159,7 @@ const MiniFlowView: React.FC<MiniFlowViewProps> = ({
                     gap: 0.5,
                 }}
             >
-                <span style={{ fontSize: '9px' }}>●</span> {nodeCount} nodes
+                <span style={{fontSize: '9px'}}>●</span> {nodeCount} nodes
             </Box>
         </Paper>
     );

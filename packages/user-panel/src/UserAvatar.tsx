@@ -1,13 +1,7 @@
 // UserAvatar.tsx
-import React, { useRef, useState } from 'react';
-import {
-    Alert,
-    Avatar,
-    Box,
-    CircularProgress,
-    Tooltip,
-} from '@mui/material';
-import { setupSupabaseClient } from '@forest/user-system/src/supabase';
+import React, {useRef, useState} from 'react';
+import {Alert, Avatar, Box, CircularProgress, Tooltip,} from '@mui/material';
+import {setupSupabaseClient} from '@forest/user-system/src/supabase';
 
 interface UserAvatarProps {
     user: any;
@@ -148,7 +142,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
                 position: 'relative',
                 display: 'flex',
                 justifyContent: 'center',
-                mb: { xs: 1, md: 2 }
+                mb: {xs: 1, md: 2}
             }}>
                 <Tooltip title="Click to change avatar">
                     <Avatar

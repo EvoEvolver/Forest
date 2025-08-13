@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Button } from '@mui/material';
+import {Box, Button} from '@mui/material';
 
 export type TabId = 'profile' | 'trees' | 'issues';
 
@@ -13,17 +13,17 @@ interface TopBarProps {
     setActiveTab: React.Dispatch<React.SetStateAction<TabId>>;
 }
 
-const TopBar: React.FC<TopBarProps> = ({ activeTab, setActiveTab }) => {
+const TopBar: React.FC<TopBarProps> = ({activeTab, setActiveTab}) => {
     const [hoveredTab, setHoveredTab] = React.useState<TabId | null>(null);
 
     const tabs: Tab[] = [
-        { id: 'profile', label: 'Profile' },
-        { id: 'trees', label: 'Trees' },
-        { id: 'issues', label: 'Issues' }
+        {id: 'profile', label: 'Profile'},
+        {id: 'trees', label: 'Trees'},
+        {id: 'issues', label: 'Issues'}
     ];
 
     return (
-        <Box sx={{ width: '100%', position: 'relative', overflow: 'hidden' }}>
+        <Box sx={{width: '100%', position: 'relative', overflow: 'hidden'}}>
             {/* Main container */}
             <Box
                 sx={{
@@ -45,7 +45,7 @@ const TopBar: React.FC<TopBarProps> = ({ activeTab, setActiveTab }) => {
                     }}
                 >
                     {tabs.map((tab) => (
-                        <Box key={tab.id} sx={{ position: 'relative' }}>
+                        <Box key={tab.id} sx={{position: 'relative'}}>
                             <Button
                                 onClick={() => setActiveTab(tab.id)}
                                 onMouseEnter={() => setHoveredTab(tab.id)}
@@ -99,7 +99,7 @@ const TopBar: React.FC<TopBarProps> = ({ activeTab, setActiveTab }) => {
                             >
                                 <Box
                                     component="span"
-                                    sx={{ position: 'relative', zIndex: 10 }}
+                                    sx={{position: 'relative', zIndex: 10}}
                                 >
                                     {tab.label}
                                 </Box>
@@ -111,7 +111,7 @@ const TopBar: React.FC<TopBarProps> = ({ activeTab, setActiveTab }) => {
 
             {/* Subtle bottom border */}
             <Box
-                sx={{ height: 1, backgroundColor: 'rgba(0, 0, 0, 0.1)' }}
+                sx={{height: 1, backgroundColor: 'rgba(0, 0, 0, 0.1)'}}
             />
         </Box>
     );

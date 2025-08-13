@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { Box, Grid } from '@mui/material';
-import { userAtom } from "@forest/user-system/src/authStates";
-import { useAtom } from "jotai/index";
-import { setupSupabaseClient } from '@forest/user-system/src/supabase';
+import React, {useEffect, useState} from 'react';
+import {Box, Grid} from '@mui/material';
+import {userAtom} from "@forest/user-system/src/authStates";
+import {useAtom} from "jotai/index";
+import {setupSupabaseClient} from '@forest/user-system/src/supabase';
 import {TabId} from "./TopBar";
-import { EditDisplayNameDialog } from './EditDisplayNameDialog';
+import {EditDisplayNameDialog} from './EditDisplayNameDialog';
 import {UserProfileColumn} from "./UserProfileColumn";
 import {MainContentSection} from "./MainContentSecion";
 
@@ -103,14 +103,14 @@ export const UserPanel = ({}) => {
     return (
         <Box
             sx={{
-                padding: { xs: 2 },
+                padding: {xs: 2},
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column'
             }}
         >
             {/* Main Content Area */}
-            <Box sx={{ flex: 1, minHeight: 0 }}>
+            <Box sx={{flex: 1, minHeight: 0}}>
                 <Grid container
                       spacing={3}
                       sx={{
@@ -154,7 +154,7 @@ export const UserPanel = ({}) => {
                             flexDirection: 'column'
                         }}
                     >
-                        <MainContentSection tabId={tab} />
+                        <MainContentSection tabId={tab}/>
                     </Grid>
                 </Grid>
             </Box>

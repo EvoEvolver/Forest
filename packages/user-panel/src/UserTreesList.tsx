@@ -1,24 +1,14 @@
-import React, {useEffect, useState, useRef, useCallback} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {useAtomValue} from 'jotai';
 import type {GridColDef, GridRenderCellParams} from '@mui/x-data-grid';
 import {DataGrid, GridFooterContainer, GridPagination} from '@mui/x-data-grid';
-import {
-    Alert,
-    Box,
-    Button,
-    Chip,
-    CircularProgress,
-    IconButton,
-    Popover,
-    Tooltip,
-    Typography
-} from '@mui/material';
-import {Delete as DeleteIcon, Refresh as RefreshIcon, Add as AddIcon} from '@mui/icons-material';
+import {Alert, Box, Button, Chip, CircularProgress, IconButton, Popover, Tooltip, Typography} from '@mui/material';
+import {Add as AddIcon, Delete as DeleteIcon, Refresh as RefreshIcon} from '@mui/icons-material';
 import {authTokenAtom, userAtom} from '@forest/user-system/src/authStates';
 import DashboardCard from './DashboardCard';
 import {TreeJson} from '@forest/schema';
 import MiniFlowView from './MiniFlowView';
-import { TreeCreationDialog } from './TreeCreationDialog';
+import {TreeCreationDialog} from './TreeCreationDialog';
 import {httpUrl} from "@forest/schema/src/config";
 
 interface UserTree {
@@ -40,7 +30,7 @@ export const UserTreesList = ({}) => {
         page: 0,
         pageSize: 25,
     });
-    
+
     // Hover preview state
     const [previewState, setPreviewState] = useState<{
         treeId: string | null;
@@ -62,7 +52,6 @@ export const UserTreesList = ({}) => {
     const user = useAtomValue(userAtom);
 
 
-
     const handleCreateTreeClick = () => {
         setCreateTreeDialogOpen(true);
     };
@@ -79,7 +68,7 @@ export const UserTreesList = ({}) => {
         try {
             setLoadingTreeData(true);
             const url = `${httpUrl}/api/trees/${treeId}`;
-            
+
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
@@ -216,7 +205,7 @@ export const UserTreesList = ({}) => {
     const handleRowHover = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
         const rowElement = event.currentTarget;
         const treeId = rowElement.getAttribute('data-id');
-        
+
         if (!treeId) return;
 
         // Clear any existing timeout
@@ -236,12 +225,12 @@ export const UserTreesList = ({}) => {
             clearTimeout(hoverTimeoutRef.current);
             hoverTimeoutRef.current = null;
         }
-        
+
         // Clear any existing hide timeout
         if (hideTimeoutRef.current) {
             clearTimeout(hideTimeoutRef.current);
         }
-        
+
         // Hide preview after a short delay (to allow moving to popover)
         hideTimeoutRef.current = setTimeout(() => {
             hidePreview();
@@ -496,7 +485,7 @@ export const UserTreesList = ({}) => {
 
     if (loading) {
         return (
-            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{height: '100%', display: 'flex', flexDirection: 'column'}}>
                 <DashboardCard title="My Trees">
                     <Box display="flex" justifyContent="center" p={2}>
                         <CircularProgress size={20}/>
@@ -508,7 +497,14 @@ export const UserTreesList = ({}) => {
 
     if (error) {
         return (
-            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+            <Box sx={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 2
+            }}>
                 <DashboardCard title="My Trees">
                     <Alert severity="error" sx={{m: 1}}>
                         {error}
@@ -522,22 +518,36 @@ export const UserTreesList = ({}) => {
     }
 
     return (
-        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+        <Box sx={{
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 2
+        }}>
             <DashboardCard
                 title={`My Trees (${trees.length})`}
-                sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                sx={{height: '100%', display: 'flex', flexDirection: 'column'}}
             >
                 {trees.length === 0 ? (
-                    <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1}}>
-                        <Typography variant="body2" color="text.secondary" textAlign="center" py={3} fontSize={{ xs: '0.7rem', md: '0.8rem' }}>
+                    <Box sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flex: 1
+                    }}>
+                        <Typography variant="body2" color="text.secondary" textAlign="center" py={3}
+                                    fontSize={{xs: '0.7rem', md: '0.8rem'}}>
                             You haven't created any trees yet. Click the + button below to get started!
                         </Typography>
                         <Button
                             variant="contained"
                             onClick={handleCreateTreeClick}
-                            startIcon={<AddIcon />}
+                            startIcon={<AddIcon/>}
                             size="small"
-                            sx={{fontSize: { xs: '0.65rem', md: '0.75rem' }, py: 0.5, px: 1}}
+                            sx={{fontSize: {xs: '0.65rem', md: '0.75rem'}, py: 0.5, px: 1}}
                         >
                             Create New Tree
                         </Button>
@@ -561,7 +571,7 @@ export const UserTreesList = ({}) => {
                         }}
                         initialState={{
                             sorting: {
-                                sortModel: [{ field: 'lastAccessed', sort: 'desc' }],
+                                sortModel: [{field: 'lastAccessed', sort: 'desc'}],
                             },
                         }}
                         sx={{
@@ -613,7 +623,7 @@ export const UserTreesList = ({}) => {
                 )}
             </DashboardCard>
 
-            <TreeCreationDialog 
+            <TreeCreationDialog
                 open={createTreeDialogOpen}
                 onClose={handleCloseCreateTreeDialog}
             />
@@ -645,8 +655,8 @@ export const UserTreesList = ({}) => {
                     disableRestoreFocus
                     disableScrollLock
                 >
-                    <Box 
-                        sx={{ position: 'relative' }}
+                    <Box
+                        sx={{position: 'relative'}}
                         onMouseEnter={() => {
                             isOverPopoverRef.current = true;
                             // Clear any pending hide timeout
@@ -662,20 +672,20 @@ export const UserTreesList = ({}) => {
                         }}
                     >
                         {loadingTreeData ? (
-                            <Box 
-                                sx={{ 
-                                    width: 400, 
-                                    height: 300, 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
+                            <Box
+                                sx={{
+                                    width: 400,
+                                    height: 300,
+                                    display: 'flex',
+                                    alignItems: 'center',
                                     justifyContent: 'center',
                                     backgroundColor: '#fafafa',
                                 }}
                             >
-                                <CircularProgress size={30} />
+                                <CircularProgress size={30}/>
                             </Box>
                         ) : (
-                            <MiniFlowView treeData={previewState.treeData} width={400} height={300} />
+                            <MiniFlowView treeData={previewState.treeData} width={400} height={300}/>
                         )}
                     </Box>
                 </Popover>

@@ -3,20 +3,20 @@
  * before rendering child components that require authentication
  */
 
-import React, { useEffect, useState } from 'react';
-import { Box, CircularProgress, Typography } from '@mui/material';
-import { useAtom } from 'jotai';
-import { subscriptionAtom } from '@forest/user-system/src/authStates';
+import React, {useEffect, useState} from 'react';
+import {Box, CircularProgress, Typography} from '@mui/material';
+import {useAtom} from 'jotai';
+import {subscriptionAtom} from '@forest/user-system/src/authStates';
 
 interface AuthGuardProps {
     children: React.ReactNode;
     fallback?: React.ReactNode;
 }
 
-export const AuthGuard: React.FC<AuthGuardProps> = ({ 
-    children, 
-    fallback = <AuthLoadingState /> 
-}) => {
+export const AuthGuard: React.FC<AuthGuardProps> = ({
+                                                        children,
+                                                        fallback = <AuthLoadingState/>
+                                                    }) => {
     const [, setSubscription] = useAtom(subscriptionAtom);
     const [authInitialized, setAuthInitialized] = useState(false);
     const [authInitializing, setAuthInitializing] = useState(true);
@@ -27,7 +27,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
                 setAuthInitializing(true);
                 // Initialize subscription and wait for auth state to be determined
                 await setSubscription();
-                
+
                 // Give a small delay to ensure all auth state updates are processed
                 setTimeout(() => {
                     setAuthInitialized(true);
@@ -64,7 +64,7 @@ const AuthLoadingState: React.FC = () => {
                 gap: 2
             }}
         >
-            <CircularProgress size={24} />
+            <CircularProgress size={24}/>
             <Typography variant="body2" color="text.secondary">
                 Initializing authentication...
             </Typography>

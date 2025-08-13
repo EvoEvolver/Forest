@@ -1,6 +1,6 @@
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import {Alert, Box, CircularProgress, Typography} from '@mui/material';
-import {ApiEndpoint, ApiSpec, parseApiSpec} from './apiParser';
+import {ApiEndpoint, ApiSpec} from './apiParser';
 import EndpointCard from './EndpointCard';
 
 
@@ -9,7 +9,11 @@ interface CardViewerProps {
     title?: string;
 }
 
-const CardViewer: React.FC<CardViewerProps> = ({apiSpec, loading, error}: {apiSpec: ApiSpec, loading: boolean, error: string}) => {
+const CardViewer: React.FC<CardViewerProps> = ({apiSpec, loading, error}: {
+    apiSpec: ApiSpec,
+    loading: boolean,
+    error: string
+}) => {
 
     const baseUrl = apiSpec?.servers?.[0]?.url || '';
 
@@ -92,7 +96,6 @@ const CardViewer: React.FC<CardViewerProps> = ({apiSpec, loading, error}: {apiSp
             )}
         </Box>)
 };
-
 
 
 export default CardViewer;

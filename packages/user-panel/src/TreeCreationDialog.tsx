@@ -1,17 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import {
-    Button,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogContentText,
-    DialogTitle,
-} from '@mui/material';
-import { v4 as uuidv4 } from 'uuid';
-import { useAtomValue } from 'jotai';
-import { authTokenAtom } from '@forest/user-system/src/authStates';
-import { NodeJson, TreeJson, TreeMetadata } from '@forest/schema';
-import { supportedNodeTypesM } from '@forest/node-types/src/model';
+import React, {useEffect, useState} from 'react';
+import {Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,} from '@mui/material';
+import {v4 as uuidv4} from 'uuid';
+import {useAtomValue} from 'jotai';
+import {authTokenAtom} from '@forest/user-system/src/authStates';
+import {NodeJson, TreeJson, TreeMetadata} from '@forest/schema';
+import {supportedNodeTypesM} from '@forest/node-types/src/model';
 
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
 const httpUrl = `${window.location.protocol}//${location.hostname}:${currentPort}`;
@@ -26,7 +19,7 @@ interface TreeCreationDialogProps {
     onClose: () => void;
 }
 
-export const TreeCreationDialog: React.FC<TreeCreationDialogProps> = ({ open, onClose }) => {
+export const TreeCreationDialog: React.FC<TreeCreationDialogProps> = ({open, onClose}) => {
     const [availableNodeTypes, setAvailableNodeTypes] = useState<NodeTypeForDisplay[]>([]);
     const authToken = useAtomValue(authTokenAtom);
 
@@ -129,7 +122,7 @@ export const TreeCreationDialog: React.FC<TreeCreationDialogProps> = ({ open, on
                         fullWidth
                         variant="outlined"
                         onClick={() => handleSelectNodeType(type.name)}
-                        sx={{ mb: 1, justifyContent: 'flex-start' }}
+                        sx={{mb: 1, justifyContent: 'flex-start'}}
                     >
                         {type.displayName}
                     </Button>

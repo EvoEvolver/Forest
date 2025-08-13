@@ -1,18 +1,17 @@
-import React, { useState } from 'react';
-import { 
-    Card, 
-    CardContent, 
-    Avatar, 
-    Typography, 
-    Tooltip, 
-    CircularProgress, 
+import React, {useState} from 'react';
+import {
+    Avatar,
     Box,
+    Card,
+    CardContent,
+    CircularProgress,
+    ClickAwayListener,
     Fade,
-    Popper,
     Paper,
-    ClickAwayListener
+    Popper,
+    Typography
 } from '@mui/material';
-import { WebsiteMetadata } from '../services/bookmarkService';
+import {WebsiteMetadata} from '../services/bookmarkService';
 import LinkIcon from '@mui/icons-material/Link';
 
 interface BookmarkCardProps {
@@ -25,13 +24,13 @@ interface BookmarkCardProps {
 }
 
 export const BookmarkCard: React.FC<BookmarkCardProps> = ({
-    metadata,
-    loading = false,
-    error,
-    onClick,
-    onDoubleClick,
-    style
-}) => {
+                                                              metadata,
+                                                              loading = false,
+                                                              error,
+                                                              onClick,
+                                                              onDoubleClick,
+                                                              style
+                                                          }) => {
     const [summaryOpen, setSummaryOpen] = useState(false);
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
@@ -59,7 +58,7 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
         if (loading) {
             return (
                 <Box display="flex" alignItems="center" gap={1}>
-                    <CircularProgress size={16} />
+                    <CircularProgress size={16}/>
                     <Typography variant="body2" color="text.secondary">
                         Fetching bookmark...
                     </Typography>
@@ -70,7 +69,7 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
         if (error) {
             return (
                 <Box display="flex" alignItems="center" gap={1}>
-                    <LinkIcon fontSize="small" color="error" />
+                    <LinkIcon fontSize="small" color="error"/>
                     <Typography variant="body2" color="error">
                         Failed to load bookmark
                     </Typography>
@@ -81,7 +80,7 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
         if (!metadata) {
             return (
                 <Box display="flex" alignItems="center" gap={1}>
-                    <LinkIcon fontSize="small" color="disabled" />
+                    <LinkIcon fontSize="small" color="disabled"/>
                     <Typography variant="body2" color="text.secondary">
                         No bookmark data
                     </Typography>
@@ -90,22 +89,22 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
         }
 
         return (
-            <Box display="flex" alignItems="center" gap={1} sx={{ minWidth: 0 }}>
+            <Box display="flex" alignItems="center" gap={1} sx={{minWidth: 0}}>
                 <Avatar
                     src={metadata.favicon}
-                    sx={{ 
-                        width: 16, 
+                    sx={{
+                        width: 16,
                         height: 16,
                         '& img': {
                             objectFit: 'contain'
                         }
                     }}
                 >
-                    <LinkIcon sx={{ fontSize: 12 }} />
+                    <LinkIcon sx={{fontSize: 12}}/>
                 </Avatar>
-                <Typography 
-                    variant="body2" 
-                    sx={{ 
+                <Typography
+                    variant="body2"
+                    sx={{
                         fontWeight: 500,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -140,9 +139,9 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
                 onDoubleClick={handleDoubleClick}
                 elevation={1}
             >
-                <CardContent sx={{ 
+                <CardContent sx={{
                     padding: '8px 12px !important',
-                    '&:last-child': { paddingBottom: '8px !important' }
+                    '&:last-child': {paddingBottom: '8px !important'}
                 }}>
                     {renderContent()}
                 </CardContent>
@@ -154,9 +153,9 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
                 anchorEl={anchorEl}
                 placement="bottom-start"
                 transition
-                sx={{ zIndex: 1300 }}
+                sx={{zIndex: 1300}}
             >
-                {({ TransitionProps }) => (
+                {({TransitionProps}) => (
                     <Fade {...TransitionProps}>
                         <Paper
                             elevation={4}
@@ -176,41 +175,41 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
                                             <Box display="flex" alignItems="center" gap={1} mb={1}>
                                                 <Avatar
                                                     src={metadata.favicon}
-                                                    sx={{ 
-                                                        width: 20, 
+                                                    sx={{
+                                                        width: 20,
                                                         height: 20,
                                                         '& img': {
                                                             objectFit: 'contain'
                                                         }
                                                     }}
                                                 >
-                                                    <LinkIcon sx={{ fontSize: 14 }} />
+                                                    <LinkIcon sx={{fontSize: 14}}/>
                                                 </Avatar>
                                                 <Typography variant="subtitle2" fontWeight="bold">
                                                     {metadata.title}
                                                 </Typography>
                                             </Box>
-                                            <Typography 
-                                                variant="body2" 
+                                            <Typography
+                                                variant="body2"
                                                 color="text.secondary"
-                                                sx={{ mb: 1 }}
+                                                sx={{mb: 1}}
                                             >
                                                 {metadata.description}
                                             </Typography>
-                                            <Typography 
-                                                variant="caption" 
+                                            <Typography
+                                                variant="caption"
                                                 color="text.disabled"
-                                                sx={{ 
+                                                sx={{
                                                     wordBreak: 'break-all',
                                                     fontSize: '0.75rem'
                                                 }}
                                             >
                                                 {metadata.url}
                                             </Typography>
-                                            <Typography 
-                                                variant="caption" 
+                                            <Typography
+                                                variant="caption"
                                                 color="text.disabled"
-                                                sx={{ 
+                                                sx={{
                                                     display: 'block',
                                                     mt: 0.5,
                                                     fontStyle: 'italic'

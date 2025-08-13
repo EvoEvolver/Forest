@@ -1,13 +1,8 @@
 import React, {useEffect, useState} from 'react';
 import {useAtomValue} from 'jotai';
-import {
-    Alert,
-    Box,
-    CircularProgress,
-    Chip
-} from '@mui/material';
+import {Alert, Box, Chip, CircularProgress} from '@mui/material';
 import {DataGrid, GridColDef, GridRenderCellParams} from '@mui/x-data-grid';
-import {userAtom, authTokenAtom} from '@forest/user-system/src/authStates';
+import {authTokenAtom, userAtom} from '@forest/user-system/src/authStates';
 import {issueServiceAtom} from '@forest/issue-tracker/src/services/issueService';
 import {Issue} from '@forest/issue-tracker/src/types/Issue';
 import IssueDetail from '@forest/issue-tracker/src/components/IssueDetail/IssueDetail';
@@ -46,7 +41,7 @@ export const MyAssignedIssues: React.FC = () => {
             setLoading(false);
             return;
         }
-        try {   
+        try {
             console.log(`${httpUrl}/api/tree-permission/user/${user.id}`);
             const response = await fetch(`${httpUrl}/api/tree-permission/user/${user.id}`, {
                 method: 'GET',
@@ -84,7 +79,7 @@ export const MyAssignedIssues: React.FC = () => {
                 Promise.all(trees.map(tree => issueService.getIssuesByTree(tree.treeId))),
                 fetchTreeMetadata(treeIds)
             ]);
-            
+
             // Flatten and deduplicate issues by _id, adding tree titles
             const issuesMap = new Map<string, IssueWithTreeTitle>();
             allIssuesArrays.forEach(issuesArray => {
@@ -96,16 +91,16 @@ export const MyAssignedIssues: React.FC = () => {
                     issuesMap.set(issue._id, issueWithTitle);
                 });
             });
-            
+
             const allIssues = Array.from(issuesMap.values());
-            
+
             // Filter issues assigned to the current user and not resolved/closed
             const myAssignedIssues = allIssues.filter(issue => {
                 const isAssignedToMe = issue.assignees?.some(assignee => assignee.userId === user?.id);
                 const isNotResolved = issue.status !== 'resolved' && issue.status !== 'closed';
                 return isAssignedToMe && isNotResolved;
             });
-            
+
             setAllIssues(myAssignedIssues);
         } catch (err) {
             console.error('Error fetching issues from trees:', err);
@@ -124,12 +119,12 @@ export const MyAssignedIssues: React.FC = () => {
                     'Authorization': `Bearer ${authToken}`,
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ treeIds })
+                body: JSON.stringify({treeIds})
             });
-            
+
             if (response.ok) {
                 const data = await response.json();
-                console.log("treeMetadata",data);
+                console.log("treeMetadata", data);
                 return data;
             } else {
                 console.error('Failed to fetch tree metadata');
@@ -147,7 +142,14 @@ export const MyAssignedIssues: React.FC = () => {
 
     if (loading) {
         return (
-            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+            <Box sx={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 2
+            }}>
                 <DashboardCard title="Remaining Issues Assigned To Me">
                     <Box display="flex" justifyContent="center" p={2}>
                         <CircularProgress size={20}/>
@@ -159,7 +161,14 @@ export const MyAssignedIssues: React.FC = () => {
 
     if (error) {
         return (
-            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+            <Box sx={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 2
+            }}>
                 <DashboardCard title="Remaining Issues Assigned To Me">
                     <Alert severity="info" sx={{m: 1}}>
                         {error}
@@ -194,20 +203,27 @@ export const MyAssignedIssues: React.FC = () => {
 
     // Custom wrapper around IssueList that sets the title
     return (
-        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
-            <DashboardCard 
+        <Box sx={{
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 2
+        }}>
+            <DashboardCard
                 title="Remaining Issues Assigned To Me"
-                sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                sx={{height: '100%', display: 'flex', flexDirection: 'column'}}
             >
-                <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                    <MultiTreeIssueListWrapper 
-                        issues={allIssues} 
-                        loading={loading} 
+                <Box sx={{height: '100%', display: 'flex', flexDirection: 'column'}}>
+                    <MultiTreeIssueListWrapper
+                        issues={allIssues}
+                        loading={loading}
                         onIssueSelect={setSelectedIssue}
                     />
                 </Box>
             </DashboardCard>
-            
+
             {/* Issue Detail Dialog */}
             <IssueDetail
                 issue={selectedIssue}
@@ -230,11 +246,11 @@ export const MyAssignedIssues: React.FC = () => {
 
 // Multi-tree issue list wrapper using DataGrid to match existing IssueList design
 const MultiTreeIssueListWrapper: React.FC<{
-    issues: IssueWithTreeTitle[], 
+    issues: IssueWithTreeTitle[],
     loading: boolean,
     onIssueSelect: (issue: Issue) => void
 }> = ({issues, loading, onIssueSelect}) => {
-    
+
     if (issues.length === 0 && !loading) {
         return (
             <Alert severity="info" sx={{m: 1}}>
@@ -244,7 +260,7 @@ const MultiTreeIssueListWrapper: React.FC<{
     }
 
     // Tree Title Cell component
-    const TreeTitleCell: React.FC<{value: string, treeId: string}> = ({value, treeId}) => {
+    const TreeTitleCell: React.FC<{ value: string, treeId: string }> = ({value, treeId}) => {
         const handleTreeClick = () => {
             // Navigate to the tree by opening it in the current window
             const baseUrl = `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
@@ -252,12 +268,12 @@ const MultiTreeIssueListWrapper: React.FC<{
         };
 
         return (
-            <Chip 
-                label={value || 'Unknown Tree'} 
+            <Chip
+                label={value || 'Unknown Tree'}
                 size="small"
                 variant="outlined"
                 onClick={handleTreeClick}
-                sx={{ 
+                sx={{
                     maxWidth: '100%',
                     cursor: 'pointer',
                     '&:hover': {
@@ -319,14 +335,14 @@ const MultiTreeIssueListWrapper: React.FC<{
     ];
 
     return (
-        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{height: '100%', display: 'flex', flexDirection: 'column'}}>
             <DataGrid
                 rows={issues}
                 columns={columns}
                 loading={loading}
                 pageSizeOptions={[5, 10, 25]}
                 initialState={{
-                    pagination: { paginationModel: { pageSize: 5 } },
+                    pagination: {paginationModel: {pageSize: 5}},
                 }}
                 getRowId={(row) => row._id}
                 disableRowSelectionOnClick
