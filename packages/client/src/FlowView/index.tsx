@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { useTheme } from '@mui/material';
+import React, {useMemo} from 'react';
+import {useTheme} from '@mui/material';
 import ReactFlow, {
     Background,
     Controls,
@@ -163,9 +163,9 @@ const FlowVisualizer = () => {
                     minZoom: 0.5,
                     maxZoom: 1.5
                 }}
-                defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
+                defaultViewport={{x: 0, y: 0, zoom: 0.8}}
                 proOptions={{hideAttribution: true}}
-                style={{ background: theme.palette.background.default }}
+                style={{background: theme.palette.background.default}}
             >
                 <Background
                     gap={20}

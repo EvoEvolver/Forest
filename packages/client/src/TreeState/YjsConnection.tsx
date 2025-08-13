@@ -5,7 +5,7 @@ import {treeId} from "../appState";
 import {scrollToNodeAtom, selectedNodeAtom, treeAtom} from "./TreeState";
 import {updateChildrenCountAtom} from "./childrenCount";
 import {TreeM, TreeVM} from "@forest/schema";
-import { supportedNodeTypesM } from "@forest/node-types/src/model";
+import {supportedNodeTypesM} from "@forest/node-types/src/model";
 
 const currentPort = (process.env.NODE_ENV || 'development') == 'development' ? "29999" : window.location.port;
 const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'

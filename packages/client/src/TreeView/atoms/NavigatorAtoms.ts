@@ -2,8 +2,8 @@
  * Atoms and state management for NavigatorLayer component
  */
 
-import { atom } from "jotai";
-import { selectedNodeAtom, treeAtom } from "../../TreeState/TreeState";
+import {atom} from "jotai";
+import {selectedNodeAtom, treeAtom} from "../../TreeState/TreeState";
 import {NodeM, NodeVM} from '@forest/schema';
 
 export const NavigatorItemsAtom = atom((get) => {
@@ -70,7 +70,7 @@ export function getAncestorIds(node: NodeVM): string[] {
     const ancestorIds = []
     let nodeM = node.nodeM
     const treeM = nodeM.treeM;
-    while(true){
+    while (true) {
         const parent = treeM.getParent(nodeM)
         if (!parent) {
             break;

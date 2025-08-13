@@ -78,8 +78,8 @@ export const MarkedNodesBar = () => {
                             {markedCount} marked:
                         </Typography>
                     </Box>
-                    
-                    <Box display="flex" alignItems="center" gap={1} flexWrap="wrap" sx={{ flex: 1 }}>
+
+                    <Box display="flex" alignItems="center" gap={1} flexWrap="wrap" sx={{flex: 1}}>
                         {markedNodeTitles.map((node) => (
                             <Chip
                                 key={node.id}

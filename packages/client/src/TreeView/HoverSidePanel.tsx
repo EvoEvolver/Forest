@@ -16,7 +16,7 @@ import {
     Snackbar,
     Tooltip
 } from "@mui/material";
-import React, {useEffect, useState} from "react";
+import React, {useEffect} from "react";
 import ArchiveIcon from '@mui/icons-material/Archive';
 import TagIcon from '@mui/icons-material/Tag';
 import InsertLinkIcon from '@mui/icons-material/InsertLink';
@@ -32,7 +32,7 @@ interface childTypesForDisplay {
     "displayName": string,
 }
 
-export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDragging?: boolean}) => {
+export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDragging?: boolean }) => {
     const theme = useTheme()
     const node = props.node;
     const addNewNode = useSetAtom(addNewNodeAtom)
@@ -161,17 +161,18 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDrag
                 </Tooltip>
 
                 {/* Archive/Unarchive */}
-                {node.nodeType.allowReshape && <Tooltip title={node.data['archived'] ? "Unarchive" : "Archive"} placement="left">
-                    <IconButton
-                        size="small"
-                        onClick={node.data['archived'] ? unarchiveNode : archiveNode}
-                        sx={{
-                            color: theme.palette.primary.main
-                        }}
-                    >
-                        <ArchiveIcon fontSize="small"/>
-                    </IconButton>
-                </Tooltip>}
+                {node.nodeType.allowReshape &&
+                    <Tooltip title={node.data['archived'] ? "Unarchive" : "Archive"} placement="left">
+                        <IconButton
+                            size="small"
+                            onClick={node.data['archived'] ? unarchiveNode : archiveNode}
+                            sx={{
+                                color: theme.palette.primary.main
+                            }}
+                        >
+                            <ArchiveIcon fontSize="small"/>
+                        </IconButton>
+                    </Tooltip>}
 
                 {/* Copy Node Link */}
                 <Tooltip title="Copy Node Link" placement="left">

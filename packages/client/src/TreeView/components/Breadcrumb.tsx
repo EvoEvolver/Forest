@@ -1,9 +1,9 @@
 import React from 'react';
-import { Breadcrumbs, Link, Typography, Box, IconButton } from '@mui/material';
-import { useAtomValue, useSetAtom } from 'jotai';
-import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
-import { breadcrumbPathAtom } from '../atoms/BreadcrumbAtoms';
-import { jumpToNodeAtom, scrollToNodeAtom } from '../../TreeState/TreeState';
+import {Box, Breadcrumbs, IconButton, Link, Typography} from '@mui/material';
+import {useAtomValue, useSetAtom} from 'jotai';
+import {ArrowBack as ArrowBackIcon} from '@mui/icons-material';
+import {breadcrumbPathAtom} from '../atoms/BreadcrumbAtoms';
+import {jumpToNodeAtom, scrollToNodeAtom} from '../../TreeState/TreeState';
 
 export const Breadcrumb: React.FC = () => {
     const breadcrumbPath = useAtomValue(breadcrumbPathAtom);
@@ -36,7 +36,7 @@ export const Breadcrumb: React.FC = () => {
     }
 
     return (
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+        <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1}}>
             {/* Back button - only show if not at root */}
             {breadcrumbPath.length > 1 && (
                 <IconButton
@@ -51,7 +51,7 @@ export const Breadcrumb: React.FC = () => {
                     }}
                     title="Go to parent"
                 >
-                    <ArrowBackIcon fontSize="small" />
+                    <ArrowBackIcon fontSize="small"/>
                 </IconButton>
             )}
 

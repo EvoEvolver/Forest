@@ -11,8 +11,6 @@ import {NodePreview} from "./PreviewPage";
 import {currentPageAtom} from "../appState";
 
 
-
-
 const ExpandableNode = ({id, data}: NodeProps) => {
     const theme = useTheme();
     const setNodeState = useSetAtom(nodeStateAtom(id));
@@ -22,7 +20,7 @@ const ExpandableNode = ({id, data}: NodeProps) => {
     const showTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const [mousePosition, setMousePosition] = useState({x: 0, y: 0});
-    const [contextMenu, setContextMenu] = useState<null | { x: number; y: number }>( null);
+    const [contextMenu, setContextMenu] = useState<null | { x: number; y: number }>(null);
 
     const toggleCollapse = () => {
         if (!data.isExpandable)
@@ -113,7 +111,7 @@ const ExpandableNode = ({id, data}: NodeProps) => {
         event.preventDefault();
         setContextMenu(
             contextMenu === null
-                ? { x: event.clientX + 2, y: event.clientY - 6 }
+                ? {x: event.clientX + 2, y: event.clientY - 6}
                 : null
         );
     };
@@ -250,7 +248,7 @@ const ExpandableNode = ({id, data}: NodeProps) => {
                 anchorReference="anchorPosition"
                 anchorPosition={
                     contextMenu !== null
-                        ? { top: contextMenu.y, left: contextMenu.x }
+                        ? {top: contextMenu.y, left: contextMenu.x}
                         : undefined
                 }
             >

@@ -2,32 +2,32 @@
  * Custom tree item component for NavigatorLayer with drag and drop functionality
  */
 
-import React, { forwardRef } from 'react';
-import { useTreeItem2 } from '@mui/x-tree-view';
-import { TreeItem2Content, TreeItem2IconContainer, TreeItem2Root, TreeItem2GroupTransition } from '@mui/x-tree-view';
-import type { UseTreeItem2Parameters } from '@mui/x-tree-view';
-import { Box, IconButton } from '@mui/material';
-import { DragIndicator, ExpandMore, ChevronRight } from '@mui/icons-material';
-import { useAtomValue, useSetAtom } from "jotai";
+import React, {forwardRef} from 'react';
+import type {UseTreeItem2Parameters} from '@mui/x-tree-view';
 import {
-    setNodePositionAtom,
-    moveNodeToSubtreeAtom,
-    treeAtom,
-    selectedNodeAtom
-} from "../../TreeState/TreeState";
-import { useDragContext } from '../DragContext';
-import { setupDragImage, setupDragData, calculateDropPosition } from '../utils/DragUtils';
-import { validateDropCompatibility } from '../utils/NodeTypeUtils';
+    TreeItem2Content,
+    TreeItem2GroupTransition,
+    TreeItem2IconContainer,
+    TreeItem2Root,
+    useTreeItem2
+} from '@mui/x-tree-view';
+import {Box, IconButton} from '@mui/material';
+import {ChevronRight, DragIndicator, ExpandMore} from '@mui/icons-material';
+import {useAtomValue, useSetAtom} from "jotai";
+import {moveNodeToSubtreeAtom, selectedNodeAtom, setNodePositionAtom, treeAtom} from "../../TreeState/TreeState";
+import {useDragContext} from '../DragContext';
+import {calculateDropPosition, setupDragData, setupDragImage} from '../utils/DragUtils';
+import {validateDropCompatibility} from '../utils/NodeTypeUtils';
 
 // Global state to track the currently dragged item
 let currentDraggedItemId: string | null = null;
 
 export const CustomTreeItem = forwardRef<HTMLLIElement, UseTreeItem2Parameters>(
     (props, ref) => {
-        const { id, itemId, label, disabled, children } = props;
+        const {id, itemId, label, disabled, children} = props;
         const [dragOver, setDragOver] = React.useState<'top' | 'bottom' | 'center' | 'invalid' | null>(null);
         const [isDragging, setIsDragging] = React.useState(false);
-        
+
         const {
             getRootProps,
             getContentProps,
@@ -35,16 +35,16 @@ export const CustomTreeItem = forwardRef<HTMLLIElement, UseTreeItem2Parameters>(
             getLabelProps,
             getGroupTransitionProps,
             status,
-        } = useTreeItem2({ id, itemId, children, label, disabled, rootRef: ref });
+        } = useTreeItem2({id, itemId, children, label, disabled, rootRef: ref});
 
-        const expandIcon = status.expanded ? <ExpandMore /> : <ChevronRight />;
+        const expandIcon = status.expanded ? <ExpandMore/> : <ChevronRight/>;
 
         const setNodePosition = useSetAtom(setNodePositionAtom);
         const moveNodeToSubtree = useSetAtom(moveNodeToSubtreeAtom);
         const tree = useAtomValue(treeAtom);
         const selectedNode = useAtomValue(selectedNodeAtom);
-        const { setDraggedNodeId } = useDragContext();
-        
+        const {setDraggedNodeId} = useDragContext();
+
         // Check if this item is currently selected
         const isSelected = selectedNode && selectedNode.id === itemId;
 
@@ -55,7 +55,7 @@ export const CustomTreeItem = forwardRef<HTMLLIElement, UseTreeItem2Parameters>(
             setDraggedNodeId(itemId); // Set DragContext state for chat functionality
             setupDragData(e, itemId);
             currentDraggedItemId = itemId; // Set global state
-            
+
             // Create drag image
             setupDragImage(e, label as string);
         };
@@ -70,15 +70,15 @@ export const CustomTreeItem = forwardRef<HTMLLIElement, UseTreeItem2Parameters>(
             e.preventDefault();
             e.stopPropagation(); // Prevent event bubbling to parent nodes
             e.dataTransfer.dropEffect = 'move';
-            
+
             const draggedItemId = currentDraggedItemId; // Use global state instead of getData
-            
+
             if (!draggedItemId || draggedItemId === itemId) {
                 return;
             }
-            
+
             const dropPosition = calculateDropPosition(e, true);
-            
+
             // Validate drop compatibility
             const validation = await validateDropCompatibility(
                 tree.treeM,
@@ -86,7 +86,7 @@ export const CustomTreeItem = forwardRef<HTMLLIElement, UseTreeItem2Parameters>(
                 itemId,
                 dropPosition
             );
-            
+
             if (validation.isValid) {
                 setDragOver(dropPosition);
             } else {
@@ -106,7 +106,7 @@ export const CustomTreeItem = forwardRef<HTMLLIElement, UseTreeItem2Parameters>(
             e.preventDefault();
             e.stopPropagation(); // Prevent event bubbling to parent nodes
             const draggedItemId = e.dataTransfer.getData('text/plain');
-            
+
             if (draggedItemId === itemId) {
                 setDragOver(null);
                 return;
@@ -128,7 +128,7 @@ export const CustomTreeItem = forwardRef<HTMLLIElement, UseTreeItem2Parameters>(
                 if (dragOver === 'center') {
                     // Drop as child of target node
                     const isCrossSubtree = currentParentId !== itemId;
-                    
+
                     if (isCrossSubtree) {
                         // Move to different parent
                         moveNodeToSubtree({
@@ -142,7 +142,7 @@ export const CustomTreeItem = forwardRef<HTMLLIElement, UseTreeItem2Parameters>(
                     // Drop as sibling (top or bottom)
                     const shift = dragOver === 'bottom' ? 1 : 0;
                     const isCrossSubtree = currentParentId !== targetParentId;
-                    
+
                     if (isCrossSubtree) {
                         // Move to different parent
                         moveNodeToSubtree({
@@ -161,16 +161,16 @@ export const CustomTreeItem = forwardRef<HTMLLIElement, UseTreeItem2Parameters>(
                     }
                 }
 
-                console.log('Drop successful:', { 
-                    draggedItemId, 
-                    targetItemId: itemId, 
+                console.log('Drop successful:', {
+                    draggedItemId,
+                    targetItemId: itemId,
                     position: dragOver,
                     isCrossSubtree: currentParentId !== (dragOver === 'center' ? itemId : targetParentId)
                 });
             } catch (error) {
                 console.error('Error in drop operation:', error);
             }
-            
+
             setDragOver(null);
         };
 
@@ -178,7 +178,7 @@ export const CustomTreeItem = forwardRef<HTMLLIElement, UseTreeItem2Parameters>(
         const contentProps = getContentProps();
 
         return (
-            <TreeItem2Root 
+            <TreeItem2Root
                 {...rootProps}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -216,15 +216,15 @@ export const CustomTreeItem = forwardRef<HTMLLIElement, UseTreeItem2Parameters>(
                         zIndex: 1000,
                     } : {},
                     // Drop indicators - border around entire item
-                    border: dragOver === 'invalid' ? '2px dashed #f44336' : 
-                           dragOver === 'center' ? '2px solid rgba(25, 118, 210, 0.3)' : 'none',
+                    border: dragOver === 'invalid' ? '2px dashed #f44336' :
+                        dragOver === 'center' ? '2px solid rgba(25, 118, 210, 0.3)' : 'none',
                 }}
             >
-                <TreeItem2Content 
+                <TreeItem2Content
                     {...contentProps}
                     style={{
-                        backgroundColor: dragOver === 'center' ? 'rgba(25, 118, 210, 0.08)' : 
-                                       dragOver === 'invalid' ? 'rgba(244, 67, 54, 0.08)' : 'transparent',
+                        backgroundColor: dragOver === 'center' ? 'rgba(25, 118, 210, 0.08)' :
+                            dragOver === 'invalid' ? 'rgba(244, 67, 54, 0.08)' : 'transparent',
                         opacity: isDragging ? 0.5 : 1,
                         transition: 'opacity 0.2s ease, background-color 0.2s ease',
                     }}
@@ -232,12 +232,12 @@ export const CustomTreeItem = forwardRef<HTMLLIElement, UseTreeItem2Parameters>(
                     <TreeItem2IconContainer {...getIconContainerProps()}>
                         {status.expandable && expandIcon}
                     </TreeItem2IconContainer>
-                    
-                    <Box 
-                        {...getLabelProps()} 
-                        sx={{ 
-                            flexGrow: 1, 
-                            display: 'flex', 
+
+                    <Box
+                        {...getLabelProps()}
+                        sx={{
+                            flexGrow: 1,
+                            display: 'flex',
                             alignItems: 'center',
                             fontWeight: isSelected ? 600 : 400,
                             color: isSelected ? 'primary.main' : 'inherit',
@@ -246,22 +246,22 @@ export const CustomTreeItem = forwardRef<HTMLLIElement, UseTreeItem2Parameters>(
                     >
                         {label}
                     </Box>
-                    
+
                     <IconButton
                         size="small"
-                        sx={{ 
+                        sx={{
                             opacity: 0.6,
-                            '&:hover': { opacity: 1 },
+                            '&:hover': {opacity: 1},
                             cursor: isDragging ? 'grabbing' : 'grab',
                         }}
                         draggable
                         onDragStart={handleDragStart}
                         onDragEnd={handleDragEnd}
                     >
-                        <DragIndicator fontSize="small" />
+                        <DragIndicator fontSize="small"/>
                     </IconButton>
                 </TreeItem2Content>
-                
+
                 {children && <TreeItem2GroupTransition {...getGroupTransitionProps()} />}
             </TreeItem2Root>
         );

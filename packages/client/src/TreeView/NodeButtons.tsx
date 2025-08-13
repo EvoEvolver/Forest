@@ -1,16 +1,20 @@
 import {useAtomValue, useSetAtom} from "jotai";
-import {
-    scrollToNodeAtom,
-    setToNodeChildrenAtom,
-    setToNodeParentAtom,
-    addNewNodeAtom
-} from "../TreeState/TreeState";
+import {addNewNodeAtom, scrollToNodeAtom, setToNodeChildrenAtom, setToNodeParentAtom} from "../TreeState/TreeState";
 import {useTheme} from "@mui/system";
-import {Button, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions} from "@mui/material";
+import {
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    IconButton,
+    Tooltip
+} from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import AddIcon from "@mui/icons-material/Add";
-import React, { useState, useEffect } from "react";
+import React, {useEffect, useState} from "react";
 import {NodeVM} from "@forest/schema";
 
 interface childTypesForDisplay {
@@ -27,10 +31,10 @@ export const NodeButtons = (props: { node: NodeVM }) => {
     const nodeChildren = useAtomValue(props.node.children)
     const theme = useTheme()
     const node = props.node;
-    
+
     const [dialogOpen, setDialogOpen] = useState(false);
     const [availableTypesForDisplay, setAvailableTypesForDisplay] = useState<childTypesForDisplay[]>([]);
-    
+
     const availableTypeNames = node.nodeType.allowedChildrenTypes;
 
     useEffect(() => {
@@ -62,7 +66,7 @@ export const NodeButtons = (props: { node: NodeVM }) => {
 
     const handleAddChild = (event: React.MouseEvent<HTMLButtonElement>) => {
         event.stopPropagation();
-        
+
         if (availableTypesForDisplay.length === 1) {
             addNewNode({
                 parentId: node.id,
@@ -71,7 +75,7 @@ export const NodeButtons = (props: { node: NodeVM }) => {
             });
             return;
         }
-        
+
         setDialogOpen(true);
     };
 
@@ -148,12 +152,12 @@ export const NodeButtons = (props: { node: NodeVM }) => {
                             }
                         }}
                     >
-                        <AddIcon fontSize="small" />
+                        <AddIcon fontSize="small"/>
                     </IconButton>
                 </Tooltip>
             )
         )}
-        
+
         {/* Dialog for choosing child type */}
         <Dialog
             open={dialogOpen}
@@ -170,7 +174,7 @@ export const NodeButtons = (props: { node: NodeVM }) => {
                         fullWidth
                         variant="outlined"
                         onClick={() => handleAdd(type.name)}
-                        sx={{ mb: 1, justifyContent: 'flex-start' }}
+                        sx={{mb: 1, justifyContent: 'flex-start'}}
                     >
                         {type.displayName}
                     </Button>

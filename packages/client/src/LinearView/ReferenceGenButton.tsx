@@ -10,9 +10,8 @@ import {
     Typography
 } from '@mui/material';
 import {generateCitationsFromHTML} from './generateReferences';
-import {NodeJson, NodeM} from "@forest/schema";
+import {NodeM} from "@forest/schema";
 import {EditorNodeTypeM} from '@forest/node-type-editor/src';
-import {v4 as uuidv4} from "uuid";
 
 interface ReferenceGenButtonProps {
     getHtml: () => string;

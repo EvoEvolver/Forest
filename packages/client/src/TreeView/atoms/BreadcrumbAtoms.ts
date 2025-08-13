@@ -2,9 +2,9 @@
  * Atoms and utilities for breadcrumb navigation
  */
 
-import { atom } from "jotai";
-import { selectedNodeAtom, treeAtom } from "../../TreeState/TreeState";
-import { NodeVM } from '@forest/schema';
+import {atom} from "jotai";
+import {selectedNodeAtom, treeAtom} from "../../TreeState/TreeState";
+import {NodeVM} from '@forest/schema';
 
 export interface BreadcrumbItem {
     id: string;

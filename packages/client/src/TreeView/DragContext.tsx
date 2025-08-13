@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, {createContext, useContext, useState} from 'react';
 
 interface DragContextType {
     isDraggingOverChat: boolean;
@@ -9,7 +9,7 @@ interface DragContextType {
 
 const DragContext = createContext<DragContextType | undefined>(undefined);
 
-export const DragProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const DragProvider: React.FC<{ children: React.ReactNode }> = ({children}) => {
     const [isDraggingOverChat, setIsDraggingOverChat] = useState(false);
     const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
 

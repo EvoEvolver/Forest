@@ -46,7 +46,7 @@ const TreeViewContent = () => {
                     width: 'auto',
                 }}
             >
-                <Breadcrumb />
+                <Breadcrumb/>
             </Box>
 
             {/* Fixed left column */}
@@ -116,9 +116,9 @@ const TreeViewContent = () => {
                     )}
                 </div>
             </div>
-            
+
             {/* Floating bottom bar for marked nodes */}
-            <MarkedNodesBar />
+            <MarkedNodesBar/>
         </>
     );
 };
@@ -126,12 +126,10 @@ const TreeViewContent = () => {
 const TreeView = () => {
     return (
         <DragProvider>
-            <TreeViewContent />
+            <TreeViewContent/>
         </DragProvider>
     );
 };
-
-
 
 
 export default TreeView;

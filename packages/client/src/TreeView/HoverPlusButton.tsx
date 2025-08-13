@@ -1,10 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
-import { useTheme } from '@mui/system';
-import { useSetAtom } from 'jotai';
+import React, {useEffect, useState} from 'react';
+import {
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    IconButton,
+    Tooltip
+} from '@mui/material';
+import {useTheme} from '@mui/system';
+import {useSetAtom} from 'jotai';
 import AddIcon from '@mui/icons-material/Add';
-import { addNewNodeAtom } from '../TreeState/TreeState';
-import { NodeVM } from '@forest/schema';
+import {addNewNodeAtom} from '../TreeState/TreeState';
+import {NodeVM} from '@forest/schema';
 
 interface childTypesForDisplay {
     name: string;
@@ -18,7 +27,7 @@ interface HoverPlusButtonProps {
     position: 'bottom' | 'top';
 }
 
-export const HoverPlusButton = ({ node, parentNode, isVisible, position }: HoverPlusButtonProps) => {
+export const HoverPlusButton = ({node, parentNode, isVisible, position}: HoverPlusButtonProps) => {
     const theme = useTheme();
     const [dialogOpen, setDialogOpen] = useState(false);
     const addNewNode = useSetAtom(addNewNodeAtom);
@@ -43,12 +52,12 @@ export const HoverPlusButton = ({ node, parentNode, isVisible, position }: Hover
 
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         event.stopPropagation();
-        
+
         if (availableTypesForDisplay.length === 1) {
             handleAdd(availableTypesForDisplay[0].name);
             return;
         }
-        
+
         setDialogOpen(true);
     };
 
@@ -104,7 +113,7 @@ export const HoverPlusButton = ({ node, parentNode, isVisible, position }: Hover
                             }
                         }}
                     >
-                        <AddIcon fontSize="small" />
+                        <AddIcon fontSize="small"/>
                     </IconButton>
                 </Tooltip>
             </div>
@@ -124,7 +133,7 @@ export const HoverPlusButton = ({ node, parentNode, isVisible, position }: Hover
                             fullWidth
                             variant="outlined"
                             onClick={() => handleAdd(type.name)}
-                            sx={{ mb: 1, justifyContent: 'flex-start' }}
+                            sx={{mb: 1, justifyContent: 'flex-start'}}
                         >
                             {type.displayName}
                         </Button>

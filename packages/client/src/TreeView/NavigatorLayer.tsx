@@ -1,13 +1,9 @@
 import React, {useEffect} from 'react';
 import {RichTreeView} from '@mui/x-tree-view/RichTreeView';
 import {useAtom, useAtomValue, useSetAtom} from "jotai";
-import {
-    jumpToNodeAtom,
-    scrollToNodeAtom,
-    selectedNodeAtom
-} from "../TreeState/TreeState";
+import {jumpToNodeAtom, scrollToNodeAtom, selectedNodeAtom} from "../TreeState/TreeState";
 import {useTreeViewApiRef} from "@mui/x-tree-view";
-import {NavigatorItemsAtom, selectedItemAtom, expandedItemsAtom, getAncestorIds} from './atoms/NavigatorAtoms';
+import {expandedItemsAtom, getAncestorIds, NavigatorItemsAtom, selectedItemAtom} from './atoms/NavigatorAtoms';
 import {CustomTreeItem} from './components/CustomTreeItem';
 
 
@@ -19,7 +15,7 @@ export const NavigatorLayer = () => {
     const apiRef = useTreeViewApiRef();
     const jumpToNode = useSetAtom(jumpToNodeAtom)
     const scrollToNode = useSetAtom(scrollToNodeAtom)
-    
+
     useEffect(() => {
         if (!selectedNode || !selectedNode.id) {
             return;
@@ -47,7 +43,7 @@ export const NavigatorLayer = () => {
         } else if (Array.isArray(selection) && selection.length > 0) {
             itemId = selection[0];
         }
-        
+
         if (itemId) {
             jumpToNode(itemId)
             if (scrollToNode) {

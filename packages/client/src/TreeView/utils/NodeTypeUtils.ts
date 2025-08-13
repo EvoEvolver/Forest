@@ -2,7 +2,7 @@
  * Node type validation utilities for drag and drop operations
  */
 
-import { TreeM } from '@forest/schema';
+import {TreeM} from '@forest/schema';
 
 /**
  * Checks if a node type can be dropped as a child of another node type
@@ -52,17 +52,17 @@ export const wouldCreateCycle = (
     if (nodeId === potentialParentId) {
         return true;
     }
-    
+
     const potentialParentNode = treeM.getNode(potentialParentId);
     if (!potentialParentNode) {
         return false;
     }
-    
+
     const parentId = potentialParentNode.parent()
     if (!parentId) {
         return false;
     }
-    
+
     return wouldCreateCycle(treeM, nodeId, parentId);
 };
 
@@ -78,11 +78,11 @@ export const validateDropCompatibility = async (
     try {
         const draggedNodeM = treeM.getNode(draggedNodeId);
         const targetNodeM = treeM.getNode(targetNodeId);
-        
+
         if (!draggedNodeM || !targetNodeM) {
-            return { isValid: false, reason: 'Node not found' };
+            return {isValid: false, reason: 'Node not found'};
         }
-        
+
         // Check for cycles before type validation
         let potentialParentId: string;
         if (dropPosition === 'center') {
@@ -90,24 +90,24 @@ export const validateDropCompatibility = async (
         } else {
             potentialParentId = targetNodeM.parent()
             if (!potentialParentId) {
-                return { isValid: false, reason: 'Target has no parent' };
+                return {isValid: false, reason: 'Target has no parent'};
             }
         }
-        
+
         if (wouldCreateCycle(treeM, draggedNodeId, potentialParentId)) {
-            return { 
-                isValid: false, 
-                reason: 'Cannot move node into its own descendant - would create a cycle' 
+            return {
+                isValid: false,
+                reason: 'Cannot move node into its own descendant - would create a cycle'
             };
         }
-        
+
         const draggedNodeTypeName = draggedNodeM.nodeTypeName();
-        
+
         if (dropPosition === 'center') {
             // Dropping as child
             const targetNodeTypeName = targetNodeM.nodeTypeName();
             const isValid = await canDropAsChild(treeM, draggedNodeTypeName, targetNodeTypeName);
-            
+
             if (!isValid) {
                 return {
                     isValid: false,
@@ -118,17 +118,17 @@ export const validateDropCompatibility = async (
             // Dropping as sibling
             const targetParentId = targetNodeM.ymap.get('parent');
             if (!targetParentId) {
-                return { isValid: false, reason: 'Target has no parent' };
+                return {isValid: false, reason: 'Target has no parent'};
             }
-            
+
             const parentNodeM = treeM.getNode(targetParentId);
             if (!parentNodeM) {
-                return { isValid: false, reason: 'Parent node not found' };
+                return {isValid: false, reason: 'Parent node not found'};
             }
-            
+
             const parentNodeTypeName = parentNodeM.nodeTypeName();
             const isValid = await canDropAsSibling(treeM, draggedNodeTypeName, parentNodeTypeName);
-            
+
             if (!isValid) {
                 return {
                     isValid: false,
@@ -136,11 +136,11 @@ export const validateDropCompatibility = async (
                 };
             }
         }
-        
-        return { isValid: true };
+
+        return {isValid: true};
     } catch (error) {
         console.warn('Error validating drop compatibility:', error);
-        return { isValid: false, reason: 'Validation error' };
+        return {isValid: false, reason: 'Validation error'};
     }
 };
 

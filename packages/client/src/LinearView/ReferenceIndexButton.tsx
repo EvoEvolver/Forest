@@ -1,12 +1,26 @@
-import React, { useState } from 'react';
-import { Button, Dialog, DialogTitle, DialogContent, DialogActions, Typography, CircularProgress, Box, RadioGroup, FormControlLabel, Radio, FormControl, FormLabel } from '@mui/material';
+import React, {useState} from 'react';
+import {
+    Box,
+    Button,
+    CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    FormControl,
+    FormControlLabel,
+    FormLabel,
+    Radio,
+    RadioGroup,
+    Typography
+} from '@mui/material';
 import {NodeM} from "@forest/schema";
 import {EditorNodeTypeM} from '@forest/node-type-editor/src';
 import {useAtomValue} from "jotai";
 import {treeAtom} from "../TreeState/TreeState";
 
 interface ReferenceIndexButtonProps {
-    nodes: Array<{node: NodeM, level: number}>
+    nodes: Array<{ node: NodeM, level: number }>
 }
 
 interface ContentChange {
@@ -16,7 +30,7 @@ interface ContentChange {
     nodeTitle: string;
 }
 
-export default function ReferenceIndexButton({ nodes }: ReferenceIndexButtonProps) {
+export default function ReferenceIndexButton({nodes}: ReferenceIndexButtonProps) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [style, setStyle] = useState<'index' | 'apa'>('index');
@@ -30,17 +44,17 @@ export default function ReferenceIndexButton({ nodes }: ReferenceIndexButtonProp
     const getCitationData = async (url: string): Promise<any> => {
         const CACHE_KEY_PREFIX = 'zotero_response_';
         const CACHE_EXPIRY_HOURS = 2400;
-        
+
         // Check cache first
         try {
             const cacheKey = `${CACHE_KEY_PREFIX}${btoa(url)}`;
             const cached = localStorage.getItem(cacheKey);
-            
+
             if (cached) {
-                const { responseData, timestamp } = JSON.parse(cached);
+                const {responseData, timestamp} = JSON.parse(cached);
                 const now = Date.now();
                 const expiryTime = timestamp + (CACHE_EXPIRY_HOURS * 60 * 60 * 1000);
-                
+
                 if (now <= expiryTime) {
                     return responseData[0];
                 } else {
@@ -66,7 +80,7 @@ export default function ReferenceIndexButton({ nodes }: ReferenceIndexButtonProp
             }
 
             const data = await response.json();
-            
+
             if (!data || !Array.isArray(data) || data.length === 0) {
                 throw new Error('No citation data found');
             }
@@ -92,16 +106,16 @@ export default function ReferenceIndexButton({ nodes }: ReferenceIndexButtonProp
 
     // Format APA in-text citation
     const formatAPAInText = (item: any): string => {
-        const { creators = [], date = '', title = '' } = item;
-        
+        const {creators = [], date = '', title = ''} = item;
+
         if (creators.length === 0) {
             const year = date ? new Date(date).getFullYear() : 'n.d.';
             const shortTitle = title.length > 20 ? title.substring(0, 20) + '...' : title;
             return `${shortTitle}, ${year}`;
         }
-        
+
         const year = date ? new Date(date).getFullYear() : 'n.d.';
-        
+
         if (creators.length === 1) {
             const author = creators[0];
             return `${author.lastName}, ${year}`;
@@ -117,17 +131,17 @@ export default function ReferenceIndexButton({ nodes }: ReferenceIndexButtonProp
 
     // Create identity key for citation based on title and author
     const getCitationIdentity = (item: any): string => {
-        const { creators = [], title = '' } = item;
-        
+        const {creators = [], title = ''} = item;
+
         // Use first author's last name + title as identity
         let authorPart = '';
         if (creators.length > 0) {
             authorPart = creators[0].lastName || '';
         }
-        
+
         // Clean and truncate title for identity
         const titlePart = title.replace(/[^\w\s]/g, '').substring(0, 50);
-        
+
         return `${authorPart}::${titlePart}`.toLowerCase();
     };
 
@@ -137,23 +151,23 @@ export default function ReferenceIndexButton({ nodes }: ReferenceIndexButtonProp
             let linkIndex = 1;
             const citationMap = new Map<string, { index: number; citation: string }>();
             const changes: ContentChange[] = [];
-            
+
             for (const {node} of nodes) {
                 // Skip nodes with children (headers only)
                 const children = node.children().toJSON()
                 const childrenValue = Array.isArray(children) ? children : [];
                 if (childrenValue.length > 0) continue;
-                
+
                 // Get current content
                 const currentContent = EditorNodeTypeM.getEditorContent(node);
-                
+
                 // Parse and replace links
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(currentContent, 'text/html');
                 const links = doc.querySelectorAll('a[href]');
-                
+
                 let hasChanges = false;
-                
+
                 for (const link of links) {
                     const href = link.getAttribute('href')?.trim();
                     if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
@@ -162,7 +176,7 @@ export default function ReferenceIndexButton({ nodes }: ReferenceIndexButtonProp
                             const citationData = await getCitationData(href);
                             if (citationData) {
                                 const identity = getCitationIdentity(citationData);
-                                
+
                                 // Check if we've seen this citation before
                                 if (citationMap.has(identity)) {
                                     // Reuse existing index
@@ -170,9 +184,9 @@ export default function ReferenceIndexButton({ nodes }: ReferenceIndexButtonProp
                                     link.textContent = `${existingIndex}`;
                                 } else {
                                     // New citation, assign new index
-                                    citationMap.set(identity, { 
-                                        index: linkIndex, 
-                                        citation: formatAPAInText(citationData) 
+                                    citationMap.set(identity, {
+                                        index: linkIndex,
+                                        citation: formatAPAInText(citationData)
                                     });
                                     link.textContent = `${linkIndex}`;
                                     linkIndex++;
@@ -186,16 +200,16 @@ export default function ReferenceIndexButton({ nodes }: ReferenceIndexButtonProp
                             const citationData = await getCitationData(href);
                             if (citationData) {
                                 const identity = getCitationIdentity(citationData);
-                                
+
                                 // For APA, we can reuse the same formatted citation
                                 if (citationMap.has(identity)) {
                                     const existingCitation = citationMap.get(identity)!.citation;
                                     link.textContent = existingCitation;
                                 } else {
                                     const formattedCitation = formatAPAInText(citationData);
-                                    citationMap.set(identity, { 
-                                        index: linkIndex, 
-                                        citation: formattedCitation 
+                                    citationMap.set(identity, {
+                                        index: linkIndex,
+                                        citation: formattedCitation
                                     });
                                     link.textContent = formattedCitation;
                                     linkIndex++; // Still increment for potential mixed usage
@@ -207,11 +221,11 @@ export default function ReferenceIndexButton({ nodes }: ReferenceIndexButtonProp
                         hasChanges = true;
                     }
                 }
-                
+
                 // Store changes for confirmation only if content actually changed
                 if (hasChanges) {
                     const newContent = doc.body.innerHTML;
-                    
+
                     // Only add to changes if the content is actually different
                     if (newContent.trim() !== currentContent.trim()) {
                         changes.push({
@@ -223,7 +237,7 @@ export default function ReferenceIndexButton({ nodes }: ReferenceIndexButtonProp
                     }
                 }
             }
-            
+
             // Show confirmation dialog one by one if there are changes
             if (changes.length > 0) {
                 setPendingChanges(changes);
@@ -234,7 +248,7 @@ export default function ReferenceIndexButton({ nodes }: ReferenceIndexButtonProp
                 // No changes detected - show user feedback
                 alert('No changes were made. The document may already have the selected citation format or contain no links to convert.');
             }
-            
+
         } catch (error) {
             console.error('Error processing references:', error);
         } finally {
@@ -248,7 +262,7 @@ export default function ReferenceIndexButton({ nodes }: ReferenceIndexButtonProp
             if (currentChange) {
                 EditorNodeTypeM.setEditorContent(currentChange.node, currentChange.newContent);
             }
-            
+
             // Move to next change or close if done
             const nextIndex = currentChangeIndex + 1;
             if (nextIndex < pendingChanges.length) {
@@ -294,17 +308,17 @@ export default function ReferenceIndexButton({ nodes }: ReferenceIndexButtonProp
 
     return (
         <>
-            <Button 
-                variant="outlined" 
+            <Button
+                variant="outlined"
                 onClick={() => setOpen(true)}
                 size="small"
-                sx={{ mb: 2 }}
+                sx={{mb: 2}}
             >
                 Reference Index
             </Button>
 
-            <Dialog 
-                open={open} 
+            <Dialog
+                open={open}
                 onClose={handleClose}
                 maxWidth="sm"
                 fullWidth
@@ -313,32 +327,32 @@ export default function ReferenceIndexButton({ nodes }: ReferenceIndexButtonProp
                 <DialogContent>
                     {loading ? (
                         <Box display="flex" justifyContent="center" alignItems="center" p={3}>
-                            <CircularProgress />
-                            <Typography variant="body2" sx={{ ml: 2 }}>
+                            <CircularProgress/>
+                            <Typography variant="body2" sx={{ml: 2}}>
                                 Processing references...
                             </Typography>
                         </Box>
                     ) : (
                         <Box>
-                            <FormControl component="fieldset" sx={{ mb: 3 }}>
+                            <FormControl component="fieldset" sx={{mb: 3}}>
                                 <FormLabel component="legend">Select citation style:</FormLabel>
                                 <RadioGroup
                                     value={style}
                                     onChange={(e) => setStyle(e.target.value as 'index' | 'apa')}
                                 >
-                                    <FormControlLabel 
-                                        value="index" 
-                                        control={<Radio />} 
-                                        label="Numbered references ([1], [2], [3])" 
+                                    <FormControlLabel
+                                        value="index"
+                                        control={<Radio/>}
+                                        label="Numbered references ([1], [2], [3])"
                                     />
-                                    <FormControlLabel 
-                                        value="apa" 
-                                        control={<Radio />} 
-                                        label="APA style ((Smith, 2023), (Jones & Brown, 2022))" 
+                                    <FormControlLabel
+                                        value="apa"
+                                        control={<Radio/>}
+                                        label="APA style ((Smith, 2023), (Jones & Brown, 2022))"
                                     />
                                 </RadioGroup>
                             </FormControl>
-                            
+
                             <Typography variant="body2" color="text.secondary">
                                 This will replace all links in the document with the selected citation format.
                                 {style === 'apa' && ' Note: APA citations will fetch author and year information from each URL.'}
@@ -355,8 +369,8 @@ export default function ReferenceIndexButton({ nodes }: ReferenceIndexButtonProp
             </Dialog>
 
             {/* Confirmation Dialog - One by One */}
-            <Dialog 
-                open={confirmationOpen} 
+            <Dialog
+                open={confirmationOpen}
                 onClose={cancelAllChanges}
                 maxWidth="lg"
                 fullWidth
@@ -365,49 +379,50 @@ export default function ReferenceIndexButton({ nodes }: ReferenceIndexButtonProp
                     Confirm Change ({currentChangeIndex + 1} of {pendingChanges.length})
                 </DialogTitle>
                 <DialogContent>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                        Review this change before applying it. The left column shows the original content, and the right column shows the content after applying {style === 'index' ? 'numbered' : 'APA'} citations.
+                    <Typography variant="body2" color="text.secondary" sx={{mb: 3}}>
+                        Review this change before applying it. The left column shows the original content, and the right
+                        column shows the content after applying {style === 'index' ? 'numbered' : 'APA'} citations.
                     </Typography>
-                    
+
                     {currentChange && (
-                        <Box sx={{ mb: 4 }}>
-                            <Typography variant="h6" sx={{ mb: 2 }}>
+                        <Box sx={{mb: 4}}>
+                            <Typography variant="h6" sx={{mb: 2}}>
                                 {currentChange.nodeTitle}
                             </Typography>
-                            <Box sx={{ display: 'flex', gap: 2 }}>
-                                <Box sx={{ flex: 1 }}>
-                                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
+                            <Box sx={{display: 'flex', gap: 2}}>
+                                <Box sx={{flex: 1}}>
+                                    <Typography variant="subtitle2" sx={{mb: 1, fontWeight: 'bold'}}>
                                         Before:
                                     </Typography>
-                                    <Box 
-                                        sx={{ 
-                                            border: 1, 
-                                            borderColor: 'divider', 
-                                            borderRadius: 1, 
-                                            p: 2, 
-                                            maxHeight: 300, 
+                                    <Box
+                                        sx={{
+                                            border: 1,
+                                            borderColor: 'divider',
+                                            borderRadius: 1,
+                                            p: 2,
+                                            maxHeight: 300,
                                             overflow: 'auto',
                                             backgroundColor: 'grey.50'
                                         }}
-                                        dangerouslySetInnerHTML={{ __html: currentChange.originalContent }}
+                                        dangerouslySetInnerHTML={{__html: currentChange.originalContent}}
                                     />
                                 </Box>
-                                <Box sx={{ flex: 1 }}>
-                                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
+                                <Box sx={{flex: 1}}>
+                                    <Typography variant="subtitle2" sx={{mb: 1, fontWeight: 'bold'}}>
                                         After:
                                     </Typography>
-                                    <Box 
-                                        sx={{ 
-                                            border: 1, 
-                                            borderColor: 'divider', 
-                                            borderRadius: 1, 
-                                            p: 2, 
-                                            maxHeight: 300, 
+                                    <Box
+                                        sx={{
+                                            border: 1,
+                                            borderColor: 'divider',
+                                            borderRadius: 1,
+                                            p: 2,
+                                            maxHeight: 300,
                                             overflow: 'auto',
                                             backgroundColor: 'success.light',
                                             color: 'success.contrastText'
                                         }}
-                                        dangerouslySetInnerHTML={{ __html: currentChange.newContent }}
+                                        dangerouslySetInnerHTML={{__html: currentChange.newContent}}
                                     />
                                 </Box>
                             </Box>

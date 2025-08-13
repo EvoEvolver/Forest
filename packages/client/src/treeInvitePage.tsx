@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {httpUrl} from '@forest/schema/src/config';
 import {useAtom, useAtomValue} from 'jotai';
 import {subscriptionAtom, supabaseClientAtom, userAtom} from '@forest/user-system/src/authStates';
-import {AppBar, Toolbar, Container, Paper, Typography, Button, Alert, Box, CircularProgress} from "@mui/material";
+import {Alert, AppBar, Box, Button, CircularProgress, Container, Paper, Toolbar, Typography} from "@mui/material";
 import {ArrowBack as ArrowBackIcon} from '@mui/icons-material';
 import AuthButton from "@forest/user-system/src/AuthButton";
 import AuthModal from "@forest/user-system/src/AuthModal";
@@ -70,25 +70,25 @@ const TreeInvitePage = () => {
         const getBaseUrl = () => {
             return `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
         };
-        
+
         const baseUrl = getBaseUrl();
         const treeUrl = `${baseUrl}/?id=${treeId}`;
-        
+
         // Navigate to the tree URL
         window.location.href = treeUrl;
     };
 
     return (
-        <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+        <Box sx={{minHeight: '100vh', bgcolor: 'background.default'}}>
             <AppBar position="fixed">
                 <Toolbar variant="dense">
                     {/* Back to Tree button */}
                     {treeId && (
                         <Button
                             color="inherit"
-                            startIcon={<ArrowBackIcon />}
+                            startIcon={<ArrowBackIcon/>}
                             onClick={handleBackToTree}
-                            sx={{ mr: 2 }}
+                            sx={{mr: 2}}
                         >
                             Back to Tree
                         </Button>
@@ -98,23 +98,24 @@ const TreeInvitePage = () => {
                 </Toolbar>
             </AppBar>
             {supabaseClient && <AuthModal/>}
-            <Container maxWidth="sm" sx={{ pt: 10, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <Paper elevation={3} sx={{ p: 4, mt: 4, width: '100%', maxWidth: 500, textAlign: 'center' }}>
+            <Container maxWidth="sm" sx={{pt: 10, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+                <Paper elevation={3} sx={{p: 4, mt: 4, width: '100%', maxWidth: 500, textAlign: 'center'}}>
                     <Typography variant="h4" gutterBottom color="primary">
                         Grant Editor Permission
                     </Typography>
-                    <Typography variant="body1" sx={{ mb: 2 }}>
-                        This page allows you to accept an invitation to become an <b>editor</b> for a specific tree in Forest.
+                    <Typography variant="body1" sx={{mb: 2}}>
+                        This page allows you to accept an invitation to become an <b>editor</b> for a specific tree in
+                        Forest.
                         <br/>
                         By clicking the button below, you will be granted editor access to the tree.
                     </Typography>
                     {treeId && (
-                        <Alert severity="info" sx={{ mb: 2 }}>
+                        <Alert severity="info" sx={{mb: 2}}>
                             You are about to join tree: <b>{treeId}</b> as an editor.
                         </Alert>
                     )}
                     {!treeId && (
-                        <Alert severity="warning" sx={{ mb: 2 }}>
+                        <Alert severity="warning" sx={{mb: 2}}>
                             No treeId found in the URL. Please check your invitation link.
                         </Alert>
                     )}
@@ -124,32 +125,35 @@ const TreeInvitePage = () => {
                             variant="contained"
                             color="primary"
                             size="large"
-                            sx={{ mt: 2, mb: 1 }}
+                            sx={{mt: 2, mb: 1}}
                             disabled={!treeId || !user?.id}
                         >
                             Grant Permission
                         </Button>
                     )}
-                    {status === 'loading' && <Box sx={{ mt: 2, mb: 1 }}><CircularProgress size={28} /><Typography variant="body2" sx={{ mt: 1 }}>Granting permission...</Typography></Box>}
+                    {status === 'loading' &&
+                        <Box sx={{mt: 2, mb: 1}}><CircularProgress size={28}/><Typography variant="body2" sx={{mt: 1}}>Granting
+                            permission...</Typography></Box>}
                     {status === 'success' && (
                         <>
-                            <Alert severity="success" sx={{ mt: 2, mb: 2 }}>{message}</Alert>
+                            <Alert severity="success" sx={{mt: 2, mb: 2}}>{message}</Alert>
                             <Button
                                 onClick={handleBackToTree}
                                 variant="contained"
                                 color="primary"
                                 size="large"
-                                startIcon={<ArrowBackIcon />}
-                                sx={{ mt: 1 }}
+                                startIcon={<ArrowBackIcon/>}
+                                sx={{mt: 1}}
                             >
                                 Go to Tree
                             </Button>
                         </>
                     )}
-                    {status === 'error' && <Alert severity="error" sx={{ mt: 2 }}>{message}</Alert>}
-                    <Box sx={{ mt: 3 }}>
+                    {status === 'error' && <Alert severity="error" sx={{mt: 2}}>{message}</Alert>}
+                    <Box sx={{mt: 3}}>
                         <Typography variant="caption" color="text.secondary">
-                            If you have any issues, please contact the person who invited you or the Forest support team.
+                            If you have any issues, please contact the person who invited you or the Forest support
+                            team.
                         </Typography>
                     </Box>
                 </Paper>

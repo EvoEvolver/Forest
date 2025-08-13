@@ -2,19 +2,19 @@
  * Custom hooks for drag and drop handling in TreeView components
  */
 
-import { useState } from 'react';
-import { useSetAtom, useAtomValue } from "jotai";
-import { setNodePositionAtom, moveNodeToSubtreeAtom, treeAtom } from "../../TreeState/TreeState";
-import { useDragContext } from '../DragContext';
-import { setupDragImage, setupDragData, calculateDropPosition, getDraggedNodeId } from '../utils/DragUtils';
-import { validateDropCompatibility } from '../utils/NodeTypeUtils';
+import {useState} from 'react';
+import {useAtomValue, useSetAtom} from "jotai";
+import {moveNodeToSubtreeAtom, setNodePositionAtom, treeAtom} from "../../TreeState/TreeState";
+import {useDragContext} from '../DragContext';
+import {calculateDropPosition, getDraggedNodeId, setupDragData, setupDragImage} from '../utils/DragUtils';
+import {validateDropCompatibility} from '../utils/NodeTypeUtils';
 
 /**
  * Hook for handling drag operations in TreeView components
  */
 export const useTreeViewDrag = (nodeId: string, nodeTitle: string, parentId?: string) => {
     const [isDragging, setIsDragging] = useState(false);
-    const { setDraggedNodeId } = useDragContext();
+    const {setDraggedNodeId} = useDragContext();
 
     const handleDragStart = (e: React.DragEvent) => {
         setTimeout(() => { // wait for the node to change, otherwise will cause bug
@@ -56,7 +56,7 @@ export const useTreeViewDrop = (targetNodeId: string) => {
         }
 
         const dropPosition = calculateDropPosition(e, allowCenter);
-        
+
         // Validate drop compatibility for NavigatorLayer (when allowCenter is true)
         if (allowCenter) {
             const validation = await validateDropCompatibility(
@@ -65,7 +65,7 @@ export const useTreeViewDrop = (targetNodeId: string) => {
                 targetNodeId,
                 dropPosition
             );
-            
+
             if (validation.isValid) {
                 setDragOver(dropPosition);
             } else {
@@ -92,7 +92,7 @@ export const useTreeViewDrop = (targetNodeId: string) => {
         if (e.stopPropagation) {
             e.stopPropagation(); // Prevent event bubbling for NavigatorLayer
         }
-        
+
         const draggedNodeId = getDraggedNodeId(e);
         if (!draggedNodeId || draggedNodeId === targetNodeId) {
             setDragOver(null);
@@ -116,7 +116,7 @@ export const useTreeViewDrop = (targetNodeId: string) => {
                 if (dragOver === 'center') {
                     // Drop as child of target node
                     const isCrossSubtree = currentParentId !== targetNodeId;
-                    
+
                     if (isCrossSubtree) {
                         moveNodeToSubtree({
                             nodeId: draggedNodeId,
@@ -129,7 +129,7 @@ export const useTreeViewDrop = (targetNodeId: string) => {
                     // Drop as sibling (top or bottom)
                     const shift = dragOver === 'bottom' ? 1 : 0;
                     const isCrossSubtree = currentParentId !== targetParentId;
-                    
+
                     if (isCrossSubtree) {
                         moveNodeToSubtree({
                             nodeId: draggedNodeId,
@@ -165,15 +165,15 @@ export const useTreeViewDrop = (targetNodeId: string) => {
                 });
             }
 
-            console.log('Drop successful:', { 
-                draggedNodeId, 
-                targetNodeId, 
-                position: dragOver 
+            console.log('Drop successful:', {
+                draggedNodeId,
+                targetNodeId,
+                position: dragOver
             });
         } catch (error) {
             console.error('Error in drop operation:', error);
         }
-        
+
         setDragOver(null);
     };
 

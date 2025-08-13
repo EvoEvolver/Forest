@@ -3,15 +3,15 @@
  */
 
 import React from 'react';
-import { useAtomValue } from "jotai";
-import { selectedNodeAtom } from "../../TreeState/TreeState";
-import { NodeVM } from "@forest/schema";
+import {useAtomValue} from "jotai";
+import {selectedNodeAtom} from "../../TreeState/TreeState";
+import {NodeVM} from "@forest/schema";
 
 interface SelectedDotProps {
     node: NodeVM;
 }
 
-export const SelectedDot = ({ node }: SelectedDotProps) => {
+export const SelectedDot = ({node}: SelectedDotProps) => {
     let selectedNode = useAtomValue(selectedNodeAtom)
     if (!selectedNode)
         return null

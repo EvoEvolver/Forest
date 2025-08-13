@@ -34,7 +34,7 @@ export const createDragImage = (nodeTitle: string): HTMLElement => {
  */
 export const setupDragImage = (e: React.DragEvent, nodeTitle: string): void => {
     const dragImageEl = createDragImage(nodeTitle);
-    
+
     // Temporarily add to DOM, set as drag image, then remove
     document.body.appendChild(dragImageEl);
     e.dataTransfer.setDragImage(dragImageEl, -15, 14);
@@ -66,13 +66,13 @@ export const getDraggedNodeId = (e: React.DragEvent): string | null => {
  * Calculates drop position based on mouse position within target element
  */
 export const calculateDropPosition = (
-    e: React.DragEvent, 
+    e: React.DragEvent,
     allowCenter: boolean = false
 ): 'top' | 'bottom' | 'center' => {
     const rect = e.currentTarget.getBoundingClientRect();
     const y = e.clientY - rect.top;
     const height = rect.height;
-    
+
     if (allowCenter) {
         if (y < height / 3) {
             return 'top';

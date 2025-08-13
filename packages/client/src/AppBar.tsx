@@ -1,4 +1,4 @@
-import {Avatar, Button, Paper, Stack, ToggleButton, ToggleButtonGroup, useMediaQuery} from "@mui/material";
+import {Avatar, Button, Stack, ToggleButton, ToggleButtonGroup, useMediaQuery} from "@mui/material";
 import {useTheme} from '@mui/system';
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import ArticleIcon from "@mui/icons-material/Article";

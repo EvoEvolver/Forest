@@ -3,25 +3,25 @@
  */
 
 import React, {useEffect, useRef, useState} from 'react';
-import { useAtomValue, useSetAtom } from "jotai";
-import { selectedNodeAtom, setNodePositionAtom, treeAtom } from "../../TreeState/TreeState";
-import { NodeVM } from "@forest/schema";
-import { NodeTitle } from "../NodeTitle";
-import { NodeButtons } from "../NodeButtons";
-import { HoverSidePanel } from "../HoverSidePanel";
-import { HoverPlusButton } from "../HoverPlusButton";
-import { thisNodeContext } from '../NodeContext';
-import { useDragContext } from '../DragContext';
-import { setupDragImage, setupDragData, calculateDropPosition } from '../utils/DragUtils';
-import { DragButton } from './DragButton';
-import { SelectedDot } from './SelectedDot';
+import {useAtomValue, useSetAtom} from "jotai";
+import {selectedNodeAtom, setNodePositionAtom, treeAtom} from "../../TreeState/TreeState";
+import {NodeVM} from "@forest/schema";
+import {NodeTitle} from "../NodeTitle";
+import {NodeButtons} from "../NodeButtons";
+import {HoverSidePanel} from "../HoverSidePanel";
+import {HoverPlusButton} from "../HoverPlusButton";
+import {thisNodeContext} from '../NodeContext';
+import {useDragContext} from '../DragContext';
+import {calculateDropPosition, setupDragData, setupDragImage} from '../utils/DragUtils';
+import {DragButton} from './DragButton';
+import {SelectedDot} from './SelectedDot';
 import {useTheme} from "@mui/system";
 
 interface MiddleContentsProps {
     node: NodeVM;
 }
 
-export const MiddleContents = ({ node }: MiddleContentsProps) => {
+export const MiddleContents = ({node}: MiddleContentsProps) => {
     let setSelectedNode = useSetAtom(selectedNodeAtom)
     const [isHovered, setIsHovered] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
@@ -31,7 +31,7 @@ export const MiddleContents = ({ node }: MiddleContentsProps) => {
     const theme = useTheme();
 
     const nodeTitle = useAtomValue(node.title);
-    const { setDraggedNodeId } = useDragContext();
+    const {setDraggedNodeId} = useDragContext();
 
     const parentId = node.parent;
     let parentNode;
@@ -95,7 +95,7 @@ export const MiddleContents = ({ node }: MiddleContentsProps) => {
         }, 50)
         setDraggedNodeId(node.id);
         setupDragData(e, node.id, node.parent || '');
-        
+
         // Create drag image
         setupDragImage(e, nodeTitle);
     };
@@ -151,8 +151,8 @@ export const MiddleContents = ({ node }: MiddleContentsProps) => {
             transition: 'opacity 0.2s ease',
         }}
         onMouseEnter={() => {
-                setIsHovered(true)
-            }
+            setIsHovered(true)
+        }
         }
         onMouseLeave={() => {
             setIsHovered(false);
@@ -176,7 +176,8 @@ export const MiddleContents = ({ node }: MiddleContentsProps) => {
         <NodeButtons node={node}/>
         <HoverSidePanel node={node} isVisible={isHovered} isDragging={isDragging}/>
         <SelectedDot node={node}/>
-        <DragButton node={node} isVisible={isHovered} handleDragStart={handleDragStart} isDragging={isDragging} handleDragEnd={handleDragEnd}/>
+        <DragButton node={node} isVisible={isHovered} handleDragStart={handleDragStart} isDragging={isDragging}
+                    handleDragEnd={handleDragEnd}/>
 
         {/* Hover Plus Buttons for Adding Siblings */}
         {parentNode && (

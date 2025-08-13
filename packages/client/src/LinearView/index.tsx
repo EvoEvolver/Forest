@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {atom, useAtomValue, useSetAtom} from "jotai";
 import {jumpToNodeAtom, scrollToNodeAtom, treeAtom} from "../TreeState/TreeState";
 import {Box, Paper, Skeleton} from '@mui/material';
@@ -22,7 +22,7 @@ const linearNodeListAtom = atom((get) => {
     // do a depth-first traversal to get all node in a linear list
     const traverse = (node: NodeM, level: number = 0): Array<{ node: NodeM, level: number }> => {
         // if node is not EditorNodeType or archived, return empty array
-        if (node.data()["archived"] === true){
+        if (node.data()["archived"] === true) {
             return [];
         }
         if (node.nodeTypeName() !== "EditorNodeType") {
@@ -54,7 +54,7 @@ const ButtonsSection = ({getHtml, rootNode, nodes}: {
 }
 
 // Memoized node component with lazy HTML generation
-const NodeRenderer = ({ node, level }: { node: NodeM, level: number })=> {
+const NodeRenderer = ({node, level}: { node: NodeM, level: number }) => {
     const children = node.children().toJSON()
     const title = node.title()
     const [htmlContent, setHtmlContent] = useState<string | null>(null);
@@ -203,7 +203,7 @@ export default function LinearView() {
         }).filter(html => html.length > 0).join('\n\n');
     };
 
-    if (!nodes || nodes.length===0) return null;
+    if (!nodes || nodes.length === 0) return null;
 
     return <>
         <div style={{

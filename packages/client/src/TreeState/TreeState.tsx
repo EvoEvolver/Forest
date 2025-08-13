@@ -1,10 +1,9 @@
 import {atom, PrimitiveAtom} from 'jotai'
 import {YjsProviderAtom} from "./YjsConnection";
 import {RESET} from 'jotai/utils';
-import {v4 as uuidv4} from 'uuid';
 import {updateChildrenCountAtom} from "./childrenCount";
 import {treeId} from "../appState";
-import {NodeJson, NodeM, TreeM, TreeVM} from "@forest/schema"
+import {NodeM, TreeM, TreeVM} from "@forest/schema"
 import {wouldCreateCycle} from "../TreeView/utils/NodeTypeUtils";
 import {supportedNodeTypesVM} from "@forest/node-types/src/vmodel"
 
@@ -116,7 +115,7 @@ export const setNodePositionAtom = atom(null, (get, set, props: {
         yArrayChildren.delete(currentIdx, 1)
         yArrayChildren.insert(newPosition, [props.nodeId])
     })
-    
+
     set(updateChildrenCountAtom, {});
 })
 
@@ -193,14 +192,14 @@ export const moveNodeToSubtreeAtom = atom(null, (get, set, props: {
     oldParentChildren.doc.transact(() => {
         // 1. Remove from old parent
         oldParentChildren.delete(currentIdx, 1)
-        
+
         // 2. Update the node's parent reference
         nodeToMove.nodeM.ymap.set("parent", props.newParentId)
-        
+
         // 3. Insert into new parent at calculated position
         newParentChildren.insert(newPosition, [props.nodeId])
     })
-    
+
     set(updateChildrenCountAtom, {});
     console.log(`Moved node ${props.nodeId} from parent ${oldParentId} to parent ${props.newParentId} at position ${newPosition}`)
 })
@@ -230,13 +229,13 @@ export const markedNodesAtom = atom<Set<string>>(new Set())
 export const toggleMarkedNodeAtom = atom(null, (get, set, nodeId: string) => {
     const markedNodes = get(markedNodesAtom)
     const newMarkedNodes = new Set(markedNodes)
-    
+
     if (newMarkedNodes.has(nodeId)) {
         newMarkedNodes.delete(nodeId)
     } else {
         newMarkedNodes.add(nodeId)
     }
-    
+
     set(markedNodesAtom, newMarkedNodes)
 })
 
