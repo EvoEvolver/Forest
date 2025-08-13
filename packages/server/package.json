@@ -38,8 +38,7 @@
     "y-mongodb-provider": "^0.2.1",
     "y-protocols": "^1.0.6",
     "yjs": "13.6.27",
-    "uuid": "^11.1.0",
-    "@forest/node-types": "workspace:*"
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
@@ -50,9 +49,6 @@
     "@types/ws": "^8.18.1",
     "esbuild": "^0.24.0",
     "nodemon": "^3.1.7",
-    "ts-node": "^10.9.2",
-    "@babel/core": "^7.28.0",
-    "@babel/preset-react": "^7.27.1",
-    "@babel/register": "^7.27.1"
+    "ts-node": "^10.9.2"
   }
 }

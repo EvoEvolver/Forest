@@ -11,17 +11,8 @@ import debounce from 'lodash.debounce'
 
 import {callbackHandler, isCallbackSet} from './callback'
 import {MongodbPersistence} from "y-mongodb-provider";
-
 import {Redis} from "ioredis";
-
-import * as path from 'path'
-// Read dotenv variables
-import * as dotenv from 'dotenv'
 import {getMongoClient} from "../mongoConnection";
-
-dotenv.config({
-    path: path.resolve(__dirname, '.env'),
-})
 
 
 const CALLBACK_DEBOUNCE_WAIT = parseInt(process.env.CALLBACK_DEBOUNCE_WAIT || '2000')

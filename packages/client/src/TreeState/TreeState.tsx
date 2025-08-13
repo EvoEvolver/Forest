@@ -215,16 +215,7 @@ export const addNewNodeAtom = atom(null, async (get, set, props: {
     if (!currTree)
         return
     const treeM = currTree.treeM
-
-    const newNodeJson: NodeJson = {
-        id: uuidv4(),
-        title: "",
-        parent: props.parentId,
-        children: [],
-        data: {},
-        nodeTypeName: props.nodeTypeName
-    }
-    const newNodeM = NodeM.fromNodeJson(newNodeJson, treeM)
+    const newNodeM = NodeM.newNode("", props.parentId, props.nodeTypeName, treeM)
     treeM.insertNode(newNodeM, props.parentId, props.positionId)
 
     set(updateChildrenCountAtom, {});

@@ -1,10 +1,5 @@
 import {MongoClient} from 'mongodb';
-import * as dotenv from "dotenv";
-import path from "path";
 
-dotenv.config({
-    path: path.resolve(__dirname, '.env'),
-})
 let mongoUrl: string | null = process.env.Y_PERSISTENCE_MONGO_URL || null;
 
 let mongoClient: MongoClient | null = null;

@@ -1,10 +1,4 @@
 import { MongoClient } from 'mongodb';
-import * as dotenv from "dotenv";
-import path from "path";
-
-dotenv.config({
-    path: path.resolve(__dirname, '../../server/src/.env'),
-});
 
 const MONGO_URL = process.env.Y_PERSISTENCE_MONGO_URL || 'mongodb://localhost:27017';
 const DATABASE_NAME = process.env.DATABASE_NAME || 'test_db';

@@ -2,6 +2,10 @@ import {Router} from 'express';
 import {AuthenticatedRequest, authenticateToken, requireCreateTreePermission} from '../middleware/auth';
 import {TreeService} from '../services/treeService';
 import {TreeJson} from '@forest/schema';
+// Get the Y.js document and convert to TreeJson
+import {TreeM} from '@forest/schema'
+import {getYDoc} from "../y-websocket/utils.ts";
+
 
 export function createTreeRouter(treeService: TreeService): Router {
     const router = Router();
@@ -84,10 +88,6 @@ export function createTreeRouter(treeService: TreeService): Router {
                 res.status(403).json({error: 'Access denied'});
                 return;
             }
-
-            // Get the Y.js document and convert to TreeJson
-            const {getYDoc} = require('../y-websocket/utils');
-            const {TreeM} = require('@forest/schema');
 
             const ydoc = getYDoc(treeId);
             const treeM = new TreeM(ydoc);

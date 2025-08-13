@@ -3,7 +3,6 @@ import {applyUpdate, encodeStateAsUpdate} from 'yjs';
 import {getYDoc} from '../y-websocket/utils';
 import {TreeJson, TreeM} from '@forest/schema';
 import {TreeMetadataManager} from './treeMetadata';
-import {supportedNodeTypesM} from "@forest/node-types/src/model"
 
 export class TreeService {
     constructor(private treeMetadataManager: TreeMetadataManager) {
@@ -102,7 +101,7 @@ async function createNewTree(treeJson: TreeJson): Promise<TreeM> {
     const treeId = crypto.randomUUID();
     const doc = getYDoc(treeId)
     // @ts-ignore
-    const tree = new TreeM(doc, supportedNodeTypesM)
-    await tree.patchFromTreeJson(treeJson, treeId)
+    const tree = new TreeM(doc)
+    tree.patchFromTreeJson(treeJson, treeId)
     return tree
 }
