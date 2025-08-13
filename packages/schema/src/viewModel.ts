@@ -1,8 +1,6 @@
 import * as Y from 'yjs'
 import {Map as YMap} from 'yjs'
-import {PrimitiveAtom} from "jotai";
-import {atom} from "jotai/index";
-import {getYjsBindedAtom, nodeMToNodeVMAtom} from "./node";
+import {atom, PrimitiveAtom} from "jotai";
 import {NodeM, TreeM, TreeMetadata} from "./model";
 import {NodeTypeVM} from "./nodeTypeVM.ts";
 import {NodeTypeM} from "./nodeTypeM.ts";
@@ -98,7 +96,7 @@ export class TreeVM {
 
     commitViewToRender() {
         this.viewCommitNumber = this.viewCommitNumber + 1
-        console.log("commit number: ", this.viewCommitNumber)
+        //console.log("commit number: ", this.viewCommitNumber)
         this.set(this.viewCommitNumberAtom, this.viewCommitNumber)
     }
 
@@ -127,7 +125,8 @@ export class NodeVM {
     // normal data that does not require collaboration
     data: any
     // yjs data. The most collaborative one
-    ydata?: Y.Map<string>
+    ydataAtom: PrimitiveAtom<any>
+    ydata: Y.Map<string>
     // data for UI. Will not be synced and saved
     vdata: any
     nodeTypeName: string
@@ -143,7 +142,7 @@ export class NodeVM {
     static async create(nodeM: NodeM, treeVM: TreeVM) {
         const nodeVM = new NodeVM(treeVM)
         const yjsMapNode = nodeM.ymap;
-        const childrenAtom = getYjsBindedAtom(yjsMapNode, "children");
+        const childrenAtom = getYjsJsonAtom(yjsMapNode, "children");
         const titleAtom = atom(nodeM.title());
         nodeVM.id = nodeM.id
         nodeVM.title = titleAtom;
@@ -151,10 +150,10 @@ export class NodeVM {
         nodeVM.children = childrenAtom;
         nodeVM.data = nodeM.data()
         nodeVM.ydata = nodeM.ydata()
-        nodeVM.vdata = {}
+        nodeVM.ydataAtom = atom(nodeM.ydata());
 
+        nodeVM.vdata = {}
         nodeVM.nodeTypeName = nodeM.nodeTypeName()
-        nodeVM.nodeType = null; // TODO: init the nodeType
         nodeVM.nodeM = nodeM
 
         if (yjsMapNode.has("tabs"))
@@ -180,15 +179,91 @@ export class NodeVM {
                 this.nodeM.ymap.set("nodeTypeName", this.nodeTypeName)
             }
         }
-        return getNodeType(this.nodeTypeName, supportedNodesTypes)
+        return supportedNodesTypes(this.nodeTypeName)
     }
 
     commitDataChange() {
         this.nodeM.ymap.set("data", this.data)
     }
-
 }
 
-export function getNodeType(nodeTypeName: string, supportedNodesTypes: SupportedNodeTypesVM): typeof NodeTypeVM {
-    return supportedNodesTypes(nodeTypeName)
+function getYmapShallowJson(yMap: YMap<any>): Map<string, any> {
+    const jsonMap = new Map<string, any>();
+    yMap.forEach((value, key) => {
+        jsonMap.set(key, value);
+    });
+    return jsonMap;
+}
+
+function getYdataAtom(node: NodeVM) {
+    if (!node.ydata) {
+        console.warn(`Node ${node.id} does not have ydata, returning empty atom.`);
+        return atom({});
+    }
+    const ydataAtom = atom(getYmapShallowJson(node.ydata));
+    ydataAtom.onMount = (set) => {
+        const observeFunc = (ymapEvent) => {
+            set(getYmapShallowJson(node.ydata))
+        }
+        node.ydata.observe(observeFunc)
+        set(getYmapShallowJson(node.ydata))
+        return () => {
+            node.ydata.unobserve(observeFunc)
+        }
+    }
+    return ydataAtom
+}
+
+function getYjsJsonAtom(yjsMapNode: YMap<any>, key: string): PrimitiveAtom<any> {
+    const yjsValue = yjsMapNode.get(key)
+    // check if yjsValue has a toJSON method, if not, return a simple atom
+    let yjsAtom: PrimitiveAtom<any>;
+    if (typeof yjsValue.toJSON === 'function') {
+        yjsAtom = atom(yjsValue.toJSON())
+    } else {
+        console.warn(`Yjs value for key "${key}" does not have a toJSON method, using a simple atom instead.`);
+    }
+    yjsAtom.onMount = (set) => {
+        const observeFunc = (ymapEvent) => {
+            set(yjsValue.toJSON())
+        }
+        yjsValue.observe(observeFunc)
+        set(yjsValue.toJSON())
+        return () => {
+            yjsValue.unobserve(observeFunc)
+        }
+    }
+    return yjsAtom
+}
+
+async function nodeMToNodeVMAtom(nodeM: NodeM, treeVM: TreeVM): Promise<PrimitiveAtom<NodeVM>> {
+    const node: NodeVM = await NodeVM.create(nodeM, treeVM)
+    const nodeAtom: PrimitiveAtom<NodeVM> = atom(node)
+
+    nodeAtom.onMount = (set) => {
+        const observeFunc = (ymapEvent) => {
+            {
+                ymapEvent.changes.keys.forEach((change, key) => {
+                    console.log(key, change, "change in ydata: ", nodeM.ymap.get("ydata"))
+                    if (change.action !== 'update') {
+                        throw Error(`Property "${key}" was ${change.action}, which is not supported.`)
+                    }
+                })
+            }
+            NodeVM.create(nodeM, treeVM).then(newNode => {
+                set(newNode)
+                console.log("new node set", newNode)
+            })
+        }
+        nodeM.ymap.observe(observeFunc)
+        nodeM.ymap.get("ydata").observe(observeFunc)
+        NodeVM.create(nodeM, treeVM).then(newNode => {
+            set(newNode)
+        })
+        return () => {
+            nodeM.ymap.unobserve(observeFunc)
+            nodeM.ymap.get("ydata").unobserve(observeFunc)
+        }
+    }
+    return nodeAtom
 }
