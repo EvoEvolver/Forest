@@ -90,7 +90,7 @@ export class TreeM {
         const childrenNodes: NodeM[] = []
         childrenIds.forEach((childId) => {
             const childNode = this.getNode(childId)
-            if (childNode) {
+            if (childNode && childNode.data()["archived"]!== true) {
                 childrenNodes.push(childNode)
             }
         })
