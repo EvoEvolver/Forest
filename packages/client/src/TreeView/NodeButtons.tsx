@@ -1,6 +1,6 @@
-import {useAtomValue, useSetAtom} from "jotai";
-import {addNewNodeAtom, scrollToNodeAtom, setToNodeChildrenAtom, setToNodeParentAtom} from "../TreeState/TreeState";
-import {useTheme} from "@mui/system";
+import {atom, useAtomValue, useSetAtom} from "jotai";
+import {addNewNodeAtom, jumpToNodeAtom, scrollToNodeAtom, treeAtom} from "../TreeState/TreeState";
+import {palette, useTheme} from "@mui/system";
 import {
     Button,
     Dialog,
@@ -8,13 +8,12 @@ import {
     DialogContent,
     DialogContentText,
     DialogTitle,
+    Divider,
     IconButton,
-    Tooltip
+    Tooltip, Typography
 } from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import AddIcon from "@mui/icons-material/Add";
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useMemo, useState} from "react";
 import {NodeVM} from "@forest/schema";
 
 interface childTypesForDisplay {
@@ -23,12 +22,24 @@ interface childTypesForDisplay {
 }
 
 export const NodeButtons = (props: { node: NodeVM }) => {
-
-    const setToNodeChildren = useSetAtom(setToNodeChildrenAtom)
-    const setToNodeParent = useSetAtom(setToNodeParentAtom)
+    const jumpToNode = useSetAtom(jumpToNodeAtom)
     const scrollToNode = useSetAtom(scrollToNodeAtom)
     const addNewNode = useSetAtom(addNewNodeAtom)
-    const nodeChildren = useAtomValue(props.node.children)
+    const nodeChildrenIds = useAtomValue(props.node.children)
+    const tree = useAtomValue(treeAtom)
+    const nodeChildrenIdTitleAtom = useMemo(() => {
+        return atom(get => {
+            return nodeChildrenIds.map(childId => {
+                return {
+                    "id": childId,
+                    "title": get(get(tree.nodeDict[childId]).title)
+                }
+            });
+        })
+    }, [nodeChildrenIds, tree.nodeDict]);
+    const nodeChildrenIdTitle = useAtomValue(nodeChildrenIdTitleAtom);
+
+
     const theme = useTheme()
     const node = props.node;
 
@@ -52,16 +63,11 @@ export const NodeButtons = (props: { node: NodeVM }) => {
         fetchTypes();
     }, [availableTypeNames, node.treeVM]);
 
-    const onLeftBtn = () => {
-        setToNodeParent(node.id)
+    const handleChildClick = (childId: string) => {
+        jumpToNode(childId);
         if (scrollToNode) {
-            setTimeout(() => {
-                scrollToNode(node.parent)
-            }, 100)
+            scrollToNode(childId);
         }
-    }
-    const onRightBtn = () => {
-        setToNodeChildren(node.id)
     }
 
     const handleAddChild = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -92,99 +98,91 @@ export const NodeButtons = (props: { node: NodeVM }) => {
         handleClose();
     };
 
-    return <div
-        style={{
-            height: '2rem',
-            paddingLeft: '10px',
-            paddingRight: '10px',
-            position: 'relative'
-        }}
-    >
-        {node.parent && <Button
-            size="small"
-            variant="contained"
-            onClick={() => onLeftBtn()}
+    return <>
+        <Divider><Typography variant={"body2"} color={theme.palette.text.secondary}>Children</Typography></Divider>
+        <div
             style={{
-                //align left
-                position: 'absolute',
-                left: '0',
-                width: "40%",
-                color: 'white',
-                backgroundColor: theme.palette.primary.main
+                minHeight: '2rem',
+                paddingLeft: '10px',
+                paddingRight: '10px',
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '8px',
+                alignItems: 'center'
             }}
-        ><ArrowBackIcon></ArrowBackIcon>
-        </Button>}
-        {nodeChildren.length > 0 ? (
-            <Button
-                size="small"
-                variant="contained"
-                onClick={() => onRightBtn()}
-                style={{
-                    // align right
-                    position: 'absolute',
-                    right: '0',
-                    width: "40%",
-                    color: 'white',
-                    backgroundColor: theme.palette.primary.main
-                }}
-            >
-                <ArrowForwardIcon></ArrowForwardIcon> <span>({node.data['children_count']} more)</span>
-            </Button>
-        ) : (
-            node.nodeType.allowAddingChildren && (
-                <Tooltip title="Add Child" placement="top">
-                    <IconButton
+        >
+
+            {nodeChildrenIdTitle.length > 0 ? (
+                nodeChildrenIdTitle.map(({id, title}) => (
+                    <Button
+                        key={id}
                         size="small"
-                        onClick={handleAddChild}
-                        sx={{
-                            position: 'absolute',
-                            right: '0',
-                            backgroundColor: theme.palette.background.paper,
-                            border: `1px solid ${theme.palette.divider}`,
-                            borderRadius: '50%',
-                            width: '32px',
-                            height: '32px',
-                            color: theme.palette.primary.main,
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                            '&:hover': {
-                                backgroundColor: theme.palette.primary.light + '20',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                            }
+                        variant="outlined"
+                        onClick={() => handleChildClick(id)}
+                        style={{
+                            fontSize: '0.75rem',
+                            textTransform: 'none',
+                            minWidth: 'auto',
+                            padding: '4px 8px'
                         }}
                     >
-                        <AddIcon fontSize="small"/>
-                    </IconButton>
-                </Tooltip>
-            )
-        )}
-
-        {/* Dialog for choosing child type */}
-        <Dialog
-            open={dialogOpen}
-            onClose={handleClose}
-        >
-            <DialogTitle>Choose Child Type</DialogTitle>
-            <DialogContent>
-                <DialogContentText>
-                    Select the type of child node to add:
-                </DialogContentText>
-                {availableTypesForDisplay.map((type) => (
-                    <Button
-                        key={type.name}
-                        fullWidth
-                        variant="outlined"
-                        onClick={() => handleAdd(type.name)}
-                        sx={{mb: 1, justifyContent: 'flex-start'}}
-                    >
-                        {type.displayName}
+                        {title || 'Untitled'}
                     </Button>
-                ))}
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={handleClose} color="primary">
-                    Cancel
-                </Button>
-            </DialogActions>
-        </Dialog>
-    </div>
+                ))
+            ) : (
+                node.nodeType.allowAddingChildren && (
+                    <Tooltip title="Add Child" placement="top">
+                        <IconButton
+                            size="small"
+                            onClick={handleAddChild}
+                            sx={{
+                                backgroundColor: theme.palette.background.paper,
+                                border: `1px solid ${theme.palette.divider}`,
+                                borderRadius: '50%',
+                                width: '32px',
+                                height: '32px',
+                                color: theme.palette.primary.main,
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                                '&:hover': {
+                                    backgroundColor: theme.palette.primary.light + '20',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                }
+                            }}
+                        >
+                            <AddIcon fontSize="small"/>
+                        </IconButton>
+                    </Tooltip>
+                )
+            )}
+
+            {/* Dialog for choosing child type */}
+            <Dialog
+                open={dialogOpen}
+                onClose={handleClose}
+            >
+                <DialogTitle>Choose Child Type</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Select the type of child node to add:
+                    </DialogContentText>
+                    {availableTypesForDisplay.map((type) => (
+                        <Button
+                            key={type.name}
+                            fullWidth
+                            variant="outlined"
+                            onClick={() => handleAdd(type.name)}
+                            sx={{mb: 1, justifyContent: 'flex-start'}}
+                        >
+                            {type.displayName}
+                        </Button>
+                    ))}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleClose} color="primary">
+                        Cancel
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        </div>
+    </>
 }
