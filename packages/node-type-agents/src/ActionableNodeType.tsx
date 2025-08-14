@@ -6,6 +6,7 @@ import {NodeTypeM} from "@forest/schema/src/nodeTypeM";
 export interface ActionParameter {
     "type": string
     "description": string
+    "required"?: boolean
 }
 
 export interface Action {
