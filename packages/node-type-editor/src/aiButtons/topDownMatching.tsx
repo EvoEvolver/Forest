@@ -19,10 +19,12 @@ export const TopDownMatchingButton: React.FC<{ node: NodeVM }> = ({node}) => {
         const [currentChildIndex, setCurrentChildIndex] = React.useState(-1);
         const [updatedChildren, setUpdatedChildren] = React.useState<TitleAndContent[]>([]);
         const [originalChildren, setOriginalChildren] = React.useState<TitleAndContent[]>([]);
+        const [processingStatus, setProcessingStatus] = React.useState<string>('');
         const authToken = useAtomValue(authTokenAtom)
 
         const handleClick = async () => {
             setLoading(true);
+            setProcessingStatus('');
             try {
                 const treeM = node.nodeM.treeM;
                 const childrenNodes = treeM.getChildren(node.nodeM).filter((n) => n.nodeTypeName() === "EditorNodeType" && n.data()["archived"] !== true);
@@ -31,7 +33,7 @@ export const TopDownMatchingButton: React.FC<{ node: NodeVM }> = ({node}) => {
                     content: EditorNodeTypeM.getEditorContent(child)
                 }));
                 
-                const titleAndContents = await getTopDownMatchingChildren(node.nodeM, authToken);
+                const titleAndContents = await getTopDownMatchingChildren(node.nodeM, authToken, setProcessingStatus);
                 
                 if (titleAndContents.length === 0) {
                     alert("No updates needed. Children are already consistent with the parent.");
@@ -43,6 +45,7 @@ export const TopDownMatchingButton: React.FC<{ node: NodeVM }> = ({node}) => {
                 setCurrentChildIndex(0);
             } finally {
                 setLoading(false);
+                setProcessingStatus('');
             }
         };
 
@@ -108,7 +111,7 @@ export const TopDownMatchingButton: React.FC<{ node: NodeVM }> = ({node}) => {
                                 Match Children to Parent
                             </Typography>
                             <Typography variant="body2" color="textSecondary">
-                                Update children to match latest parent version
+                                {processingStatus || "Update children to match latest parent version"}
                             </Typography>
                         </div>
                         {loading && <CircularProgress size={20}/>}
@@ -142,32 +145,22 @@ interface TitleAndContent {
     content: string;
 }
 
-async function getTopDownMatchingChildren(node: NodeM, authToken: string): Promise<TitleAndContent[]> {
-    const treeM = node.treeM;
-    const parentContent = EditorNodeTypeM.getEditorContent(node);
-    const childrenNodes = treeM.getChildren(node).filter((n) => n.nodeTypeName() === "EditorNodeType" && n.data()["archived"] !== true);
-    
-    const childrenContent = childrenNodes.map(child => ({
-        title: child.title(),
-        content: EditorNodeTypeM.getEditorContent(child)
-    }));
-
+async function processChildWithLLM(parentContent: string, child: TitleAndContent, authToken: string): Promise<TitleAndContent | null> {
     const prompt = `
-You are a professional editor. Your task is to update children nodes ONLY when there are factual differences with their parent node.
+You are a professional editor. Your task is to update this child node ONLY if there are factual differences with its parent node.
 
-IMPORTANT: Be conservative. DO NOT make unnecessary changes. Only modify children when there are actual factual inconsistencies or outdated information compared to the parent.
+IMPORTANT: Be conservative. DO NOT make unnecessary changes. Only modify the child when there are actual factual inconsistencies or outdated information compared to the parent.
+The parent node has other children to cover the missing information.
 
 <parent_content>
 ${parentContent}
 </parent_content>
 
-<current_children>
-${childrenContent.map(child => `<child title="${child.title}">
+<current_child title="${child.title}">
 ${child.content}
-</child>`).join('\n\n')}
-</current_children>
+</current_child>
 
-Please analyze the parent content and current children, then ONLY suggest updates when:
+Please analyze the parent content and current child, then ONLY suggest updates when:
 - There are factual inconsistencies between parent and child
 - Information in the child is outdated compared to the parent
 - Critical information from the parent is missing in the child
@@ -179,15 +172,18 @@ DO NOT change:
 - Formatting preferences
 - Minor wording differences that don't affect meaning
 
-<output_format>
-If NO changes are needed for a children, return an empty string "" as its content
+DO NOT REMOVE:
+- Any information from the child if it's not mentioned in the parent
+- Any existing formatting in the child
 
-If changes are needed, return a JSON array of JSON objects with the following format.
-Only include children that have actual factual differences requiring updates.
-[
-    {"title": <The existing child title>, "content": <Updated HTML content for the child node>},
-    ...
-]
+<output_format>
+The output should be a JSON object with the following format:
+{
+    "overlap": "<Analysis of what are the overlapped facts between the parent and child>",
+    "differences": "<Analysis of what are the differences between the parent and child on the overlapped information>",
+    "revise_needed": <true or false indicating whether the child has difference on the overlapped information>,
+    "revised_content": "<Revised HTML content for the child node, if the children differs from the parent on the overlapped information>"
+}
 </output_format>
 `;
 
@@ -198,35 +194,62 @@ Only include children that have actual factual differences requiring updates.
     });
 
     return await pRetry(async () => {
-        const response = await fetchChatResponse([message.toJson() as any], "gpt-4.1", authToken);
-
-        try {
-            if (response.trim() === '""' || response.trim() === '') {
-                return [];
-            }
-
-            const titleAndContents = JSON.parse(response);
-
-            const filteredContents = titleAndContents.filter(child => child.content && child.content.trim() !== "");
-            
-            for (const child of filteredContents) {
-                const isValid = EditorNodeTypeM.validateEditorContent(child.content);
-                if (!isValid) {
-                    throw new Error(`Child content validation failed for title: ${child.title}`);
-                }
-            }
-
-            return filteredContents;
-        } catch (error) {
-            if (error instanceof SyntaxError) {
-                throw new Error("Failed to parse LLM response as JSON");
-            }
-            throw error;
+        const responseRaw = await fetchChatResponse([message.toJson() as any], "o3", authToken);
+        const response = JSON.parse(responseRaw)
+        const reviseNeeded = response['revise_needed'];
+        if (!reviseNeeded) {
+            return null; // No revision needed
         }
+        const revisedContent = response['revised_content'];
+
+        if (revisedContent.trim() === '""' || revisedContent.trim() === '') {
+            return null;
+        }
+
+        const content = revisedContent.trim();
+        const isValid = EditorNodeTypeM.validateEditorContent(content);
+        if (!isValid) {
+            throw new Error(`Child content validation failed for title: ${child.title}`);
+        }
+
+        return {
+            title: child.title,
+            content: content
+        };
     }, {
         retries: 3,
         onFailedAttempt: (error) => {
             console.warn(`Validation failed on attempt ${error.attemptNumber}:`, error.message);
         }
     });
+}
+
+async function getTopDownMatchingChildren(node: NodeM, authToken: string, setProcessingStatus: (status: string) => void): Promise<TitleAndContent[]> {
+    const treeM = node.treeM;
+    const parentContent = EditorNodeTypeM.getEditorContent(node);
+    const childrenNodes = treeM.getChildren(node).filter((n) => n.nodeTypeName() === "EditorNodeType" && n.data()["archived"] !== true);
+    
+    const childrenContent = childrenNodes.map(child => ({
+        title: child.title(),
+        content: EditorNodeTypeM.getEditorContent(child)
+    }));
+
+    setProcessingStatus(`Processing ${childrenContent.length} children in parallel...`);
+
+    // Process all children in parallel
+    const childPromises = childrenContent.map(async (child) => {
+        try {
+            return await processChildWithLLM(parentContent, child, authToken);
+        } catch (error) {
+            console.warn(`Failed to process child ${child.title}:`, error);
+            return null;
+        }
+    });
+
+    const results = await Promise.all(childPromises);
+    
+    // Filter out null results (children that didn't need updates or failed)
+    const updatedChildren = results.filter((child): child is TitleAndContent => child !== null);
+
+    return updatedChildren;
 }

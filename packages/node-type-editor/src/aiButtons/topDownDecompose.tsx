@@ -129,8 +129,8 @@ Generate a list of titles for new children nodes that completely cover the origi
 ${parentContent}
 </original_content>
 
-Please distribute the parent content into multiple new children nodes, each with a unique title.
-If there is any existing sectioning logic in the original content, please respect them.
+Please distribute the parent content into multiple new children nodes, each with a title.
+If there is any existing sectioning logic in the original content, please respect them. For example, if there are sublists or bold headings, use them as sectioning to create new children nodes.
 The titles should be concise and descriptive.
 You should add at most 5 new children nodes. Therefore, you should first analyze where the break the original content.
 <output_format>
@@ -151,7 +151,7 @@ You should not put any HTML elements not appearing in the original content.
     });
 
     return await pRetry(async () => {
-        const response = await fetchChatResponse([message.toJson() as any], "gpt-4.1", authToken);
+        const response = await fetchChatResponse([message.toJson() as any], "gpt-5", authToken);
 
         try {
             // The response is expected to be a JSON string array

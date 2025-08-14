@@ -10,6 +10,8 @@ import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import Chip from "@mui/material/Chip";
+import Box from "@mui/material/Box";
 import {NodeM, NodeVM} from "@forest/schema";
 import {EditorNodeTypeM} from "..";
 import {stageThisVersion} from "@forest/schema/src/stageService";
@@ -23,6 +25,7 @@ import Typography from "@mui/material/Typography";
 import EditIcon from '@mui/icons-material/Edit';
 import {ModifyConfirmation} from "./ModifyConfirmation";
 import pRetry from 'p-retry';
+import {markedNodesAtom} from "@forest/client/src/TreeState/TreeState";
 
 export const ModifyButton: React.FC<{ node: NodeVM }> = ({node}) => {
     const [loading, setLoading] = React.useState(false);
@@ -31,38 +34,63 @@ export const ModifyButton: React.FC<{ node: NodeVM }> = ({node}) => {
     const [originalContent, setOriginalContent] = React.useState<string | null>(null);
     const [revisedContent, setRevisedContent] = React.useState<string | null>(null);
     const [reviewDialogOpen, setReviewDialogOpen] = React.useState(false);
+    const [recentPrompts, setRecentPrompts] = React.useState<string[]>([]);
+    const markedNodes = useAtomValue(markedNodesAtom)
 
     const defaultTemplate = `You are a professional editor. 
 The user wants to modify the following content based on their specific request. 
 
 The content to edit is children section of the parent section below.
-<parent_content>
 \${parentContent}
-</parent_content>
+
+\${markedNodeContent}
 
 The content to edit is
-<original_content>
 \${originalContent}
-</original_content>
 
 The request is
-<user_request>
 \${userPrompt}
-</user_request>
 
-Please modify the <original_content> according to <user_request>. Use the <parent_content> for additional context when making modifications. Maintain the overall structure and formatting style unless the user specifically asks to change it.
+Please modify the <originalContent> according to <userPrompt>. Use the <parentContent> for additional context when making modifications. Maintain the overall structure and formatting style unless the user specifically asks to change it.
 
-<output_format>
+<outputFormat>
 You should only return the HTML content of the modified text without any additional text or formatting.
 Preserve any existing HTML tags and structure unless a modification is specifically requested.
 If there are any annotations in the original text, you should keep them unless the user asks to remove them.
-</output_format>`;
+</outputFormat>`;
 
     const [customTemplate, setCustomTemplate] = React.useState<string>(
         localStorage.getItem('modifyButtonTemplate') || defaultTemplate
     );
     const [accordionExpanded, setAccordionExpanded] = React.useState(false);
     const authToken = useAtomValue(authTokenAtom);
+
+    // Load recent prompts from localStorage on component mount
+    React.useEffect(() => {
+        const savedPrompts = localStorage.getItem('modifyButtonRecentPrompts'+ node.id);
+        if (savedPrompts) {
+            setRecentPrompts(JSON.parse(savedPrompts));
+        }
+    }, []);
+
+    // Helper function to save recent prompts to localStorage
+    const saveRecentPrompts = (prompts: string[]) => {
+        localStorage.setItem('modifyButtonRecentPrompts'+ node.id, JSON.stringify(prompts));
+        setRecentPrompts(prompts);
+    };
+
+    // Helper function to add a new prompt to recent prompts
+    const addToRecentPrompts = (newPrompt: string) => {
+        if (!newPrompt.trim()) return;
+        
+        const updatedPrompts = [newPrompt, ...recentPrompts.filter(p => p !== newPrompt)].slice(0, 5);
+        saveRecentPrompts(updatedPrompts);
+    };
+
+    // Helper function to handle chip click (adopt prompt)
+    const handleChipClick = (selectedPrompt: string) => {
+        setPrompt(selectedPrompt);
+    };
 
     const handleClick = () => {
         setDialogOpen(true);
@@ -88,10 +116,14 @@ If there are any annotations in the original text, you should keep them unless t
     const handleModify = async () => {
         if (!prompt.trim()) return;
 
+        // Add prompt to recent prompts
+        addToRecentPrompts(prompt);
+
         setLoading(true);
         try {
             const original = EditorNodeTypeM.getEditorContent(node.nodeM);
-            const revised = await getModifiedContent(node.nodeM, prompt, authToken, customTemplate);
+
+            const revised = await getModifiedContent(node.nodeM, prompt, authToken, Array.from(markedNodes), customTemplate);
 
             setOriginalContent(original);
             setRevisedContent(revised);
@@ -169,6 +201,31 @@ If there are any annotations in the original text, you should keep them unless t
                         sx={{mb: 2}}
                     />
 
+                    {recentPrompts.length > 0 && (
+                        <Box sx={{ mb: 2 }}>
+                            <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
+                                Recent prompts:
+                            </Typography>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                {recentPrompts.map((recentPrompt, index) => (
+                                    <Chip
+                                        key={index}
+                                        label={recentPrompt.length > 50 ? recentPrompt.substring(0, 50) + "..." : recentPrompt}
+                                        onClick={() => handleChipClick(recentPrompt)}
+                                        variant="outlined"
+                                        size="small"
+                                        sx={{ 
+                                            cursor: 'pointer',
+                                            '&:hover': {
+                                                backgroundColor: 'rgba(25, 118, 210, 0.08)'
+                                            }
+                                        }}
+                                    />
+                                ))}
+                            </Box>
+                        </Box>
+                    )}
+
                     <Accordion
                         expanded={accordionExpanded}
                         onChange={() => setAccordionExpanded(!accordionExpanded)}
@@ -241,19 +298,28 @@ If there are any annotations in the original text, you should keep them unless t
     );
 };
 
-async function getModifiedContent(node: NodeM, userPrompt: string, authToken: string, customTemplate?: string): Promise<string> {
+async function getModifiedContent(node: NodeM, userPrompt: string, authToken: string, markedNodeIds: string[], customTemplate?: string): Promise<string> {
     const treeM = node.treeM;
     const originalContent = EditorNodeTypeM.getEditorContent(node);
 
     const parent = treeM.getParent(node);
     const parentContent = parent && parent.nodeTypeName() === "EditorNodeType"
-        ? EditorNodeTypeM.getEditorContent(parent)
-        : "No parent node available.";
+        ? "<parentContent>\n" + EditorNodeTypeM.getEditorContent(parent) + "\n</parentContent>"
+        : "";
+
+    let markedNodeContent = ""
+    let markedNodes = markedNodeIds.map(id=>treeM.getNode(id)).filter(n=>n && n.nodeTypeName() === "EditorNodeType") as NodeM[]
+    if (markedNodes.length > 0) {
+        markedNodeContent = "<markedNodes>\n" + markedNodes.map(child => "Title:" + child.title() + "\n" + EditorNodeTypeM.getEditorContent(child)).join("\n-----\n") + "\n</markedNodes>";
+    }
 
     const prompt = customTemplate
-        .replace(/\${originalContent}/g, originalContent)
-        .replace(/\${userPrompt}/g, userPrompt)
-        .replace(/\${parentContent}/g, parentContent);
+        .replace(/\${originalContent}/g, "<originalContent>\n" + originalContent + "\n</originalContent>")
+        .replace(/\${userPrompt}/g, "<userPrompt>\n" + userPrompt + "\n</userPrompt>")
+        .replace(/\${parentContent}/g, parentContent)
+        .replace(/\${markedNodeContent}/g, markedNodeContent);
+
+    console.log("Generated prompt for modification:", prompt);
 
     const message = new NormalMessage(
         {
@@ -264,7 +330,7 @@ async function getModifiedContent(node: NodeM, userPrompt: string, authToken: st
     );
 
     return await pRetry(async () => {
-        const response = await fetchChatResponse([message.toJson() as any], "gpt-4.1", authToken);
+        const response = await fetchChatResponse([message.toJson() as any], "gpt-5", authToken);
         const isValid = EditorNodeTypeM.validateEditorContent(response);
         if (!isValid) {
             throw new Error('Editor content validation failed');
