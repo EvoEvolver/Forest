@@ -24,12 +24,26 @@ export class SearchService {
         // Access the underlying TreeM to get node data directly
         const treeM = tree.treeM;
         const nodeDict = treeM.nodeDict;
-        
+
+        const aliveNodes = []
+        const rootNode = treeM.getRoot()
+        // dfs search from the root
+        const getSubTreeNodes = (nodeM: NodeM) => {
+            if (nodeM.data()["archived"]=== true) {
+                return; // Skip archived nodes
+            }
+            aliveNodes.push(nodeM);
+            const children = treeM.getChildren(nodeM);
+            for (const child of children) {
+                getSubTreeNodes(child);
+            }
+        }
+        if (rootNode) {
+            getSubTreeNodes(rootNode);
+        }
         // Iterate through all nodes in the TreeM
-        nodeDict.forEach((nodeYMap, nodeId) => {
+        aliveNodes.forEach((nodeM) => {
             try {
-                // Create NodeM from the YMap data
-                const nodeM = new NodeM(nodeYMap, nodeId, treeM);
                 const nodeTypeClass = supportedNodeTypesM(nodeM.ymap.get("nodeTypeName"));
                 
                 if (!nodeTypeClass) {
@@ -66,14 +80,14 @@ export class SearchService {
                     }
                     
                     results.push({
-                        nodeId: nodeId,
+                        nodeId: nodeM.id,
                         title: title || "Untitled",
                         content: this.getContentPreview(content, searchQuery),
                         matchScore
                     });
                 }
             } catch (error) {
-                console.warn(`Error processing node ${nodeId}:`, error);
+                console.warn(`Error processing node ${nodeM.id}:`, error);
             }
         });
         
