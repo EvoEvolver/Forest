@@ -1,0 +1,264 @@
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import {
+    Modal,
+    Box,
+    TextField,
+    List,
+    ListItem,
+    ListItemText,
+    Typography,
+    Backdrop,
+    Paper
+} from '@mui/material';
+import { useAtomValue, useSetAtom } from 'jotai';
+import { treeAtom, selectedNodeAtom, jumpToNodeAtom, scrollToNodeAtom } from '../TreeState/TreeState';
+import { SearchService, SearchResult } from '../services/searchService';
+import SearchIcon from '@mui/icons-material/Search';
+
+interface SearchModalProps {
+    open: boolean;
+    onClose: () => void;
+}
+
+export default function SearchModal({ open, onClose }: SearchModalProps) {
+    const [query, setQuery] = useState('');
+    const [selectedIndex, setSelectedIndex] = useState(0);
+    const inputRef = useRef<HTMLInputElement>(null);
+    const listRef = useRef<HTMLUListElement>(null);
+    
+    const tree = useAtomValue(treeAtom);
+    const jumpToNode = useSetAtom(jumpToNodeAtom);
+    const scrollToNode = useSetAtom(scrollToNodeAtom);
+    
+    // Perform search
+    const searchResults = useMemo(() => {
+        if (!tree || !query.trim()) {
+            return [];
+        }
+        return SearchService.searchTree(tree, query);
+    }, [tree, query]);
+    
+    // Reset when modal opens/closes
+    useEffect(() => {
+        if (open) {
+            setQuery('');
+            setSelectedIndex(0);
+            // Focus the input after a short delay to ensure modal is fully rendered
+            setTimeout(() => {
+                inputRef.current?.focus();
+            }, 100);
+        }
+    }, [open]);
+    
+    // Reset selected index when results change
+    useEffect(() => {
+        setSelectedIndex(0);
+    }, [searchResults]);
+    
+    // Handle keyboard navigation
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (!open) return;
+            
+            switch (event.key) {
+                case 'ArrowDown':
+                    event.preventDefault();
+                    setSelectedIndex(prev => 
+                        prev < searchResults.length - 1 ? prev + 1 : prev
+                    );
+                    break;
+                case 'ArrowUp':
+                    event.preventDefault();
+                    setSelectedIndex(prev => prev > 0 ? prev - 1 : prev);
+                    break;
+                case 'Enter':
+                    event.preventDefault();
+                    if (searchResults.length > 0 && selectedIndex < searchResults.length) {
+                        handleSelectResult(searchResults[selectedIndex]);
+                    }
+                    break;
+                case 'Escape':
+                    event.preventDefault();
+                    onClose();
+                    break;
+            }
+        };
+        
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [open, searchResults, selectedIndex, onClose]);
+    
+    // Scroll selected item into view
+    useEffect(() => {
+        if (listRef.current && selectedIndex >= 0) {
+            const selectedElement = listRef.current.children[selectedIndex] as HTMLElement;
+            if (selectedElement) {
+                selectedElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest'
+                });
+            }
+        }
+    }, [selectedIndex]);
+    
+    const handleSelectResult = (result: SearchResult) => {
+        jumpToNode(result.nodeId);
+        setTimeout(() => {
+            scrollToNode(result.nodeId);
+        }, 100);
+        onClose();
+    };
+    
+    const highlightMatch = (text: string, query: string) => {
+        if (!query) return text;
+        
+        const parts = text.split(new RegExp(`(${query})`, 'gi'));
+        return parts.map((part, index) => 
+            part.toLowerCase() === query.toLowerCase() ? 
+                <span key={index} style={{ backgroundColor: '#ffeb3b', fontWeight: 'bold' }}>
+                    {part}
+                </span> : part
+        );
+    };
+    
+    return (
+        <Modal
+            open={open}
+            onClose={onClose}
+            closeAfterTransition
+            BackdropComponent={Backdrop}
+            BackdropProps={{
+                timeout: 200,
+                sx: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    backdropFilter: 'blur(4px)'
+                }
+            }}
+        >
+            <Box
+                sx={{
+                    position: 'absolute',
+                    top: '20%',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: { xs: '90%', sm: '600px' },
+                    maxWidth: '90vw',
+                    bgcolor: 'background.paper',
+                    borderRadius: 3,
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                    overflow: 'hidden',
+                    outline: 'none'
+                }}
+            >
+                {/* Search Input */}
+                <Box
+                    sx={{
+                        p: 3,
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2
+                    }}
+                >
+                    <SearchIcon sx={{ color: 'text.secondary' }} />
+                    <TextField
+                        ref={inputRef}
+                        fullWidth
+                        placeholder="Search nodes..."
+                        variant="standard"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        InputProps={{
+                            disableUnderline: true,
+                            sx: {
+                                fontSize: '1.2rem',
+                                '& input': {
+                                    padding: 0
+                                }
+                            }
+                        }}
+                    />
+                </Box>
+                
+                {/* Search Results */}
+                {query.trim() && (
+                    <Box
+                        sx={{
+                            maxHeight: '400px',
+                            overflow: 'auto'
+                        }}
+                    >
+                        {searchResults.length === 0 ? (
+                            <Box sx={{ p: 3, textAlign: 'center' }}>
+                                <Typography color="text.secondary">
+                                    No results found for "{query}"
+                                </Typography>
+                            </Box>
+                        ) : (
+                            <List ref={listRef} sx={{ p: 0 }}>
+                                {searchResults.map((result, index) => (
+                                    <ListItem
+                                        key={result.nodeId}
+                                        sx={{
+                                            cursor: 'pointer',
+                                            backgroundColor: index === selectedIndex ? 
+                                                'action.hover' : 'transparent',
+                                            '&:hover': {
+                                                backgroundColor: 'action.hover'
+                                            },
+                                            borderLeft: index === selectedIndex ? 
+                                                '3px solid' : '3px solid transparent',
+                                            borderLeftColor: 'primary.main'
+                                        }}
+                                        onClick={() => handleSelectResult(result)}
+                                    >
+                                        <ListItemText
+                                            primary={
+                                                <Typography
+                                                    sx={{
+                                                        fontWeight: index === selectedIndex ? 600 : 400,
+                                                        mb: 0.5
+                                                    }}
+                                                >
+                                                    {highlightMatch(result.title, query)}
+                                                </Typography>
+                                            }
+                                            secondary={
+                                                result.content && (
+                                                    <Typography
+                                                        variant="body2"
+                                                        color="text.secondary"
+                                                        sx={{
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            whiteSpace: 'nowrap'
+                                                        }}
+                                                    >
+                                                        {highlightMatch(result.content, query)}
+                                                    </Typography>
+                                                )
+                                            }
+                                        />
+                                    </ListItem>
+                                ))}
+                            </List>
+                        )}
+                    </Box>
+                )}
+                
+                {/* Instructions */}
+                {!query.trim() && (
+                    <Box sx={{ p: 3, textAlign: 'center' }}>
+                        <Typography color="text.secondary" variant="body2">
+                            Start typing to search through your nodes...
+                        </Typography>
+                        <Typography color="text.secondary" variant="caption" sx={{ mt: 1, display: 'block' }}>
+                            Use ↑↓ to navigate, Enter to select, Esc to close
+                        </Typography>
+                    </Box>
+                )}
+            </Box>
+        </Modal>
+    );
+}
