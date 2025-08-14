@@ -237,7 +237,7 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                                         p: 0,
                                         flexGrow: 1,
                                         overflow: 'auto',
-                                        maxHeight: 'calc(4 * 48px)', // Show 4 items max (reduced from 64px to 48px)
+                                        height: '100%' 
                                     }}
                                 >
                                     {searchResults.map((result, index) => (
