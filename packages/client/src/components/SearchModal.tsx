@@ -237,7 +237,7 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                                         p: 0,
                                         flexGrow: 1,
                                         overflow: 'auto',
-                                        maxHeight: 'calc(4 * 64px)', // Show 4 items max
+                                        maxHeight: 'calc(4 * 48px)', // Show 4 items max (reduced from 64px to 48px)
                                     }}
                                 >
                                     {searchResults.map((result, index) => (
@@ -253,7 +253,8 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                                                 borderLeft: index === selectedIndex ? 
                                                     '3px solid' : '3px solid transparent',
                                                 borderLeftColor: 'primary.main',
-                                                minHeight: '64px'
+                                                minHeight: '48px',
+                                                py: 1
                                             }}
                                             onClick={() => handleSelectResult(result)}
                                             onMouseEnter={() => setSelectedIndex(index)}
@@ -261,8 +262,10 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                                             <ListItemText
                                                 primary={
                                                     <Typography
+                                                        variant="body2"
                                                         sx={{
-                                                            fontWeight: index === selectedIndex ? 600 : 400
+                                                            fontWeight: index === selectedIndex ? 600 : 400,
+                                                            fontSize: '0.875rem'
                                                         }}
                                                     >
                                                         {highlightMatch(result.title, query)}

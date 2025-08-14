@@ -177,12 +177,15 @@ function NodePreviewContent({ nodeId }: { nodeId: string }) {
                 sx={{ 
                     p: 2,
                     height: '100%',
-                    overflow: 'auto',
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
                     // Scale down content to fit in preview
                     '& > *': {
                         transform: 'scale(0.8)',
                         transformOrigin: 'top left',
                         width: '125%', // Compensate for scale
+                        maxWidth: '125%',
+                        boxSizing: 'border-box'
                     }
                 }}
             >
