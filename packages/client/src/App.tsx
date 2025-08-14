@@ -14,6 +14,7 @@ import {treeAtom} from "./TreeState/TreeState";
 import {LoadingSuspense} from "./LoadingSuspense";
 import {useTheme} from "@mui/system";
 import SearchModal from "./components/SearchModal";
+import {searchModalOpenAtom} from "./atoms/searchModalAtoms";
 
 const UserPanelModal = lazy(() => import("@forest/user-panel/src/UserPanelModal").then(module => ({default: module.UserPanelModal})));
 
@@ -25,7 +26,7 @@ export default function App() {
     const supabaseClient = useAtomValue(supabaseClientAtom)
     const [currentPage, setCurrentPage] = useAtom(currentPageAtom);
     const [userPanelModalOpen, setUserPanelModalOpen] = useAtom(userPanelModalOpenAtom);
-    const [searchModalOpen, setSearchModalOpen] = useState(false);
+    const [searchModalOpen, setSearchModalOpen] = useAtom(searchModalOpenAtom);
     const setupYDoc = useSetAtom(setupYDocAtom);
     const theme = useTheme();
 

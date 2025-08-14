@@ -1,14 +1,16 @@
 import React from 'react';
 import {Box, Breadcrumbs, IconButton, Link, Typography} from '@mui/material';
 import {useAtomValue, useSetAtom} from 'jotai';
-import {ArrowBack as ArrowBackIcon} from '@mui/icons-material';
+import {ArrowBack as ArrowBackIcon, Search as SearchIcon} from '@mui/icons-material';
 import {breadcrumbPathAtom} from '../atoms/BreadcrumbAtoms';
 import {jumpToNodeAtom, scrollToNodeAtom} from '../../TreeState/TreeState';
+import {searchModalOpenAtom} from '../../atoms/searchModalAtoms';
 
 export const Breadcrumb: React.FC = () => {
     const breadcrumbPath = useAtomValue(breadcrumbPathAtom);
     const jumpToNode = useSetAtom(jumpToNodeAtom);
     const scrollToNode = useSetAtom(scrollToNodeAtom);
+    const setSearchModalOpen = useSetAtom(searchModalOpenAtom);
 
     const handleBreadcrumbClick = (event: React.MouseEvent<HTMLAnchorElement>, nodeId: string) => {
         event.preventDefault();
@@ -30,13 +32,17 @@ export const Breadcrumb: React.FC = () => {
         }
     };
 
+    const handleSearchClick = () => {
+        setSearchModalOpen(true);
+    };
+
     // Don't render if no path or only root
     if (!breadcrumbPath || breadcrumbPath.length === 0) {
         return null;
     }
 
     return (
-        <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1}}>
+        <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, width: '100%'}}>
             {/* Back button - only show if not at root */}
             {breadcrumbPath.length > 1 && (
                 <IconButton
@@ -126,6 +132,23 @@ export const Breadcrumb: React.FC = () => {
                     {breadcrumbPath[breadcrumbPath.length - 1].title}
                 </Typography>
             </Breadcrumbs>
+
+            {/* Search button */}
+            <IconButton
+                onClick={handleSearchClick}
+                size="small"
+                sx={{
+                    color: 'text.secondary',
+                    marginLeft: 'auto', // Push to the right
+                    '&:hover': {
+                        color: 'primary.main',
+                        backgroundColor: 'action.hover',
+                    }
+                }}
+                title="Search nodes (Ctrl+K)"
+            >
+                <SearchIcon fontSize="small"/>
+            </IconButton>
         </Box>
     );
 };
