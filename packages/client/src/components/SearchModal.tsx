@@ -14,6 +14,7 @@ import { useAtomValue, useSetAtom } from 'jotai';
 import { treeAtom, selectedNodeAtom, jumpToNodeAtom, scrollToNodeAtom } from '../TreeState/TreeState';
 import { SearchService, SearchResult } from '../services/searchService';
 import SearchIcon from '@mui/icons-material/Search';
+import NodePreview from './NodePreview';
 
 interface SearchModalProps {
     open: boolean;
@@ -161,16 +162,20 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
             <Box
                 sx={{
                     position: 'absolute',
-                    top: '20%',
+                    top: '10%',
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    width: { xs: '90%', sm: '600px' },
+                    width: { xs: '90%', sm: '800px' },
+                    height: { xs: '80%', sm: '70vh' },
                     maxWidth: '90vw',
+                    maxHeight: '80vh',
                     bgcolor: 'background.paper',
                     borderRadius: 3,
                     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
                     overflow: 'hidden',
-                    outline: 'none'
+                    outline: 'none',
+                    display: 'flex',
+                    flexDirection: 'column'
                 }}
             >
                 {/* Search Input */}
@@ -181,7 +186,8 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                         borderColor: 'divider',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 2
+                        gap: 2,
+                        flexShrink: 0
                     }}
                 >
                     <SearchIcon sx={{ color: 'text.secondary' }} />
@@ -204,59 +210,87 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                     />
                 </Box>
                 
-                {/* Search Results */}
-                {query.trim() && (
-                    <Box
-                        sx={{
-                            maxHeight: '400px',
-                            overflow: 'auto'
-                        }}
-                    >
-                        {searchResults.length === 0 ? (
-                            <Box sx={{ p: 3, textAlign: 'center' }}>
-                                <Typography color="text.secondary">
-                                    No results found for "{query}"
-                                </Typography>
-                            </Box>
-                        ) : (
-                            <List ref={listRef} sx={{ p: 0 }}>
-                                {searchResults.map((result, index) => (
-                                    <ListItem
-                                        key={result.nodeId}
-                                        sx={{
-                                            cursor: 'pointer',
-                                            backgroundColor: index === selectedIndex ? 
-                                                'action.hover' : 'transparent',
-                                            '&:hover': {
-                                                backgroundColor: 'action.hover'
-                                            },
-                                            borderLeft: index === selectedIndex ? 
-                                                '3px solid' : '3px solid transparent',
-                                            borderLeftColor: 'primary.main'
-                                        }}
-                                        onClick={() => handleSelectResult(result)}
-                                    >
-                                        <ListItemText
-                                            primary={
-                                                <Typography
-                                                    sx={{
-                                                        fontWeight: index === selectedIndex ? 600 : 400
-                                                    }}
-                                                >
-                                                    {highlightMatch(result.title, query)}
-                                                </Typography>
-                                            }
-                                        />
-                                    </ListItem>
-                                ))}
-                            </List>
-                        )}
+                {/* Main Content Area */}
+                {query.trim() ? (
+                    <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden' }}>
+                        {/* Results Panel */}
+                        <Box 
+                            sx={{ 
+                                width: '350px',
+                                borderRight: '1px solid',
+                                borderColor: 'divider',
+                                display: 'flex',
+                                flexDirection: 'column'
+                            }}
+                        >
+                            {searchResults.length === 0 ? (
+                                <Box sx={{ p: 3, textAlign: 'center' }}>
+                                    <Typography color="text.secondary">
+                                        No results found for "{query}"
+                                    </Typography>
+                                </Box>
+                            ) : (
+                                <List 
+                                    ref={listRef} 
+                                    sx={{ 
+                                        p: 0,
+                                        flexGrow: 1,
+                                        overflow: 'auto',
+                                        maxHeight: 'calc(4 * 64px)', // Show 4 items max
+                                    }}
+                                >
+                                    {searchResults.map((result, index) => (
+                                        <ListItem
+                                            key={result.nodeId}
+                                            sx={{
+                                                cursor: 'pointer',
+                                                backgroundColor: index === selectedIndex ? 
+                                                    'action.hover' : 'transparent',
+                                                '&:hover': {
+                                                    backgroundColor: 'action.hover'
+                                                },
+                                                borderLeft: index === selectedIndex ? 
+                                                    '3px solid' : '3px solid transparent',
+                                                borderLeftColor: 'primary.main',
+                                                minHeight: '64px'
+                                            }}
+                                            onClick={() => handleSelectResult(result)}
+                                            onMouseEnter={() => setSelectedIndex(index)}
+                                        >
+                                            <ListItemText
+                                                primary={
+                                                    <Typography
+                                                        sx={{
+                                                            fontWeight: index === selectedIndex ? 600 : 400
+                                                        }}
+                                                    >
+                                                        {highlightMatch(result.title, query)}
+                                                    </Typography>
+                                                }
+                                            />
+                                        </ListItem>
+                                    ))}
+                                </List>
+                            )}
+                        </Box>
+                        
+                        {/* Preview Panel */}
+                        <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
+                            <NodePreview 
+                                key={searchResults.length > 0 && selectedIndex < searchResults.length 
+                                    ? searchResults[selectedIndex].nodeId 
+                                    : 'no-selection'
+                                }
+                                nodeId={searchResults.length > 0 && selectedIndex < searchResults.length 
+                                    ? searchResults[selectedIndex].nodeId 
+                                    : null
+                                } 
+                            />
+                        </Box>
                     </Box>
-                )}
-                
-                {/* Instructions */}
-                {!query.trim() && (
-                    <Box sx={{ p: 3, textAlign: 'center' }}>
+                ) : (
+                    /* Instructions */
+                    <Box sx={{ p: 3, textAlign: 'center', flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
                         <Typography color="text.secondary" variant="body2">
                             Start typing to search through your nodes...
                         </Typography>
