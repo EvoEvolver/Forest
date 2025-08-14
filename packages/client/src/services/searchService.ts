@@ -36,9 +36,14 @@ export class SearchService {
                     return; // Skip this node
                 }
 
-                // Get content using renderPrompt
-                const content = nodeTypeClass.renderPrompt(nodeM);
+                // Get content using renderPrompt and custom extractors
+                let content = nodeTypeClass.renderPrompt(nodeM);
                 const title = nodeM.ymap.get("title") || "";
+                
+                // If renderPrompt returns empty, try to extract content based on node type
+                if (!content || content.trim() === "") {
+                    content = this.extractNodeContent(nodeM, nodeM.ymap.get("nodeTypeName"));
+                }
                 
                 // Check if query matches title or content
                 const titleMatch = title.toLowerCase().includes(searchQuery);
@@ -79,6 +84,89 @@ export class SearchService {
             }
             return a.title.localeCompare(b.title);
         });
+    }
+    
+    /**
+     * Extract content from node based on its type when renderPrompt returns empty
+     */
+    private static extractNodeContent(nodeM: NodeM, nodeTypeName: string): string {
+        try {
+            switch (nodeTypeName) {
+                case "EditorNodeType":
+                    return this.extractEditorContent(nodeM);
+                case "CustomNodeType":
+                    return this.extractCustomNodeContent(nodeM);
+                case "EmbeddedNodeType":
+                    return this.extractEmbeddedContent(nodeM);
+                default:
+                    return "";
+            }
+        } catch (error) {
+            console.warn(`Error extracting content for node type ${nodeTypeName}:`, error);
+            return "";
+        }
+    }
+    
+    /**
+     * Extract content from EditorNodeType (HTML content)
+     */
+    private static extractEditorContent(nodeM: NodeM): string {
+        try {
+            const ydata = nodeM.ydata();
+            if (ydata && ydata.has("ydatapaperEditor")) {
+                // This is a simplified extraction - ideally we'd use the editor's getHTML method
+                // but that requires creating an editor instance which is complex in this context
+                const xmlFragment = ydata.get("ydatapaperEditor");
+                if (xmlFragment && typeof xmlFragment.toString === 'function') {
+                    // Extract text from XML fragment - this is a simplified approach
+                    const htmlContent = xmlFragment.toString();
+                    // Strip HTML tags for search (basic approach)
+                    return htmlContent.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+                }
+            }
+            return "";
+        } catch (error) {
+            return "";
+        }
+    }
+    
+    /**
+     * Extract content from CustomNodeType (tabs content)
+     */
+    private static extractCustomNodeContent(nodeM: NodeM): string {
+        try {
+            const tabs = nodeM.ymap.get("tabs");
+            if (tabs && typeof tabs === 'object') {
+                let content = "";
+                // Extract text from all tabs
+                for (const [key, value] of Object.entries(tabs)) {
+                    if (typeof value === 'string') {
+                        // Strip HTML tags if present
+                        const textContent = value.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+                        content += `${key}: ${textContent} `;
+                    }
+                }
+                return content.trim();
+            }
+            return "";
+        } catch (error) {
+            return "";
+        }
+    }
+    
+    /**
+     * Extract content from EmbeddedNodeType
+     */
+    private static extractEmbeddedContent(nodeM: NodeM): string {
+        try {
+            const data = nodeM.data();
+            if (data && data.embedUrl) {
+                return `Embedded content from: ${data.embedUrl}`;
+            }
+            return "Embedded content (no URL set)";
+        } catch (error) {
+            return "";
+        }
     }
     
     /**

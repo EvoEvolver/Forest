@@ -217,27 +217,11 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                                             primary={
                                                 <Typography
                                                     sx={{
-                                                        fontWeight: index === selectedIndex ? 600 : 400,
-                                                        mb: 0.5
+                                                        fontWeight: index === selectedIndex ? 600 : 400
                                                     }}
                                                 >
                                                     {highlightMatch(result.title, query)}
                                                 </Typography>
-                                            }
-                                            secondary={
-                                                result.content && (
-                                                    <Typography
-                                                        variant="body2"
-                                                        color="text.secondary"
-                                                        sx={{
-                                                            overflow: 'hidden',
-                                                            textOverflow: 'ellipsis',
-                                                            whiteSpace: 'nowrap'
-                                                        }}
-                                                    >
-                                                        {highlightMatch(result.content, query)}
-                                                    </Typography>
-                                                )
                                             }
                                         />
                                     </ListItem>
