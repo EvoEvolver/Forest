@@ -67,15 +67,16 @@ export default function App() {
     // Add keyboard shortcut for search
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
-            // Command+Shift+F on Mac, Ctrl+Shift+F on Windows/Linux
-            if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 'F') {
+            // Listen for both Ctrl+Shift+F and Command+Shift+F
+            if (event.shiftKey && event.key === 'F' && (event.ctrlKey || event.metaKey)) {
                 event.preventDefault();
+                event.stopPropagation();
                 setSearchModalOpen(true);
             }
         };
 
-        document.addEventListener('keydown', handleKeyDown);
-        return () => document.removeEventListener('keydown', handleKeyDown);
+        document.addEventListener('keydown', handleKeyDown, true); // Use capture phase
+        return () => document.removeEventListener('keydown', handleKeyDown, true);
     }, []);
 
     return (

@@ -38,15 +38,36 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
         return SearchService.searchTree(tree, query);
     }, [tree, query]);
     
-    // Reset when modal opens/closes
+    // Reset when modal opens/closes and handle auto-focus
     useEffect(() => {
         if (open) {
             setQuery('');
             setSelectedIndex(0);
-            // Focus the input after a short delay to ensure modal is fully rendered
-            setTimeout(() => {
-                inputRef.current?.focus();
-            }, 100);
+            
+            // Multiple attempts to focus for better reliability
+            const focusInput = () => {
+                if (inputRef.current) {
+                    inputRef.current.focus();
+                    // Select text if the method exists (not all input elements have it)
+                    if (typeof inputRef.current.select === 'function') {
+                        inputRef.current.select();
+                    }
+                }
+            };
+            
+            // Immediate focus
+            focusInput();
+            
+            // Backup focus after small delay
+            const focusTimeout = setTimeout(focusInput, 50);
+            
+            // Another backup after modal transition
+            const finalFocusTimeout = setTimeout(focusInput, 200);
+            
+            return () => {
+                clearTimeout(focusTimeout);
+                clearTimeout(finalFocusTimeout);
+            };
         }
     }, [open]);
     
@@ -109,6 +130,8 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
         onClose();
     };
     
+    // Remove the handleModalEntered function since onTransitionEntered is not valid
+    
     const highlightMatch = (text: string, query: string) => {
         if (!query) return text;
         
@@ -163,7 +186,7 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                 >
                     <SearchIcon sx={{ color: 'text.secondary' }} />
                     <TextField
-                        ref={inputRef}
+                        inputRef={inputRef}
                         fullWidth
                         placeholder="Search nodes..."
                         variant="standard"
