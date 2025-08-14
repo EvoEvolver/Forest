@@ -13,7 +13,7 @@ export const canDropAsChild = async (
     targetNodeTypeName: string
 ): Promise<boolean> => {
     try {
-        const targetNodeType = treeM.supportedNodesTypes(targetNodeTypeName);
+        const targetNodeType = treeM.supportedNodeTypesM(targetNodeTypeName);
         const allowedChildTypes = targetNodeType.allowedChildrenTypes;
         return allowedChildTypes.includes(draggedNodeTypeName);
     } catch (error) {
@@ -32,7 +32,7 @@ export const canDropAsSibling = async (
     parentNodeTypeName: string
 ): Promise<boolean> => {
     try {
-        const parentNodeType = treeM.supportedNodesTypes(parentNodeTypeName);
+        const parentNodeType = treeM.supportedNodeTypesM(parentNodeTypeName);
         const allowedChildTypes = parentNodeType.allowedChildrenTypes;
         return allowedChildTypes.includes(draggedNodeTypeName);
     } catch (error) {
@@ -152,7 +152,7 @@ export const getAllowedChildTypes = async (
     nodeTypeName: string
 ): Promise<string[]> => {
     try {
-        const nodeType = treeM.supportedNodesTypes(nodeTypeName);
+        const nodeType = treeM.supportedNodeTypesM(nodeTypeName);
         return nodeType.allowedChildrenTypes;
     } catch (error) {
         console.warn('Error getting allowed child types:', error);
