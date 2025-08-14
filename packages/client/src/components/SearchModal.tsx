@@ -216,11 +216,12 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                         {/* Results Panel */}
                         <Box 
                             sx={{ 
-                                width: '350px',
+                                width: '35%',
                                 borderRight: '1px solid',
                                 borderColor: 'divider',
                                 display: 'flex',
-                                flexDirection: 'column'
+                                flexDirection: 'column',
+                                flexShrink: 0
                             }}
                         >
                             {searchResults.length === 0 ? (
@@ -275,7 +276,7 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                         </Box>
                         
                         {/* Preview Panel */}
-                        <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
+                        <Box sx={{ width: '65%', overflow: 'hidden', flexShrink: 0 }}>
                             <NodePreview 
                                 key={searchResults.length > 0 && selectedIndex < searchResults.length 
                                     ? searchResults[selectedIndex].nodeId 
