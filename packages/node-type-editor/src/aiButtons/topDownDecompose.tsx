@@ -14,7 +14,7 @@ import AutoAwesomeMotionIcon from '@mui/icons-material/AutoAwesomeMotion';
 import {SelectionConfirmation} from "./SelectionConfirmation";
 import pRetry from 'p-retry';
 
-export const TopDownButton: React.FC<{ node: NodeVM }> = ({node}) => {
+export const TopDownDecomposeButton: React.FC<{ node: NodeVM }> = ({node}) => {
         const [loading, setLoading] = React.useState(false);
         const [dialogOpen, setDialogOpen] = React.useState(false);
         const [newChildren, setNewChildren] = React.useState<string[]>([]);
@@ -121,7 +121,8 @@ interface TitleAndContent {
 async function getTopDownNewChildren(node: NodeM, authToken: string): Promise<TitleAndContent[]> {
     const treeM = node.treeM;
     const parentContent = EditorNodeTypeM.getEditorContent(node);
-    const prompt = `You are a professional editor. Your task is to break a long content into multiple children nodes.
+    const prompt = `
+You are a professional editor. Your task is to break a long content into multiple children nodes.
 Generate a list of titles for new children nodes that completely cover the original content.
 
 <original_content>
@@ -129,6 +130,7 @@ ${parentContent}
 </original_content>
 
 Please distribute the parent content into multiple new children nodes, each with a unique title.
+If there is any existing sectioning logic in the original content, please respect them.
 The titles should be concise and descriptive.
 You should add at most 5 new children nodes. Therefore, you should first analyze where the break the original content.
 <output_format>
