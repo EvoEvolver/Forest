@@ -89,14 +89,56 @@ function EmbeddedTool1Component({ node }: { node: NodeVM }) {
     }, [node.ydata, node.nodeM]);
 
     const extractUrlFromIframe = (input: string): string => {
-        // Check if input looks like an iframe tag
-        if (input.trim().toLowerCase().startsWith('<iframe') && input.includes('src=')) {
-            const srcMatch = input.match(/src=["']([^"']+)["']/i);
-            if (srcMatch) {
-                return srcMatch[1];
+        const trimmedInput = input.trim();
+        
+        // Check if input looks like HTML (contains < and >)
+        if (trimmedInput.includes('<') && trimmedInput.includes('>')) {
+            try {
+                // Use DOMParser to parse the HTML
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(trimmedInput, 'text/html');
+                
+                // Look for iframe elements
+                const iframes = doc.querySelectorAll('iframe');
+                console.log(iframes[0]);
+                if (iframes.length > 0) {
+                    const src = iframes[0].getAttribute('src');
+                    console.log(src);
+                    if (src) {
+                        return src;
+                    }
+                }
+                
+                // If no iframe found, check for other embeddable elements
+                const embeddableElements = doc.querySelectorAll('embed, object, video');
+                for (const element of embeddableElements) {
+                    const src = element.getAttribute('src') || element.getAttribute('data');
+                    if (src) {
+                        return src;
+                    }
+                }
+                
+                // Check for error in parsing
+                const parserError = doc.querySelector('parsererror');
+                if (parserError) {
+                    console.warn('HTML parsing failed, falling back to regex');
+                    // Fallback to regex for malformed HTML
+                    const srcMatch = trimmedInput.match(/src\s*=\s*["']([^"']+)["']/i);
+                    if (srcMatch) {
+                        return srcMatch[1];
+                    }
+                }
+            } catch (error) {
+                console.warn('DOMParser failed, falling back to regex:', error);
+                // Fallback to regex if DOMParser fails
+                const srcMatch = trimmedInput.match(/src\s*=\s*["']([^"']+)["']/i);
+                if (srcMatch) {
+                    return srcMatch[1];
+                }
             }
         }
-        return input.trim();
+        
+        return trimmedInput;
     };
 
     const validateUrl = (inputUrl: string): boolean => {
@@ -111,50 +153,6 @@ function EmbeddedTool1Component({ node }: { node: NodeVM }) {
     const processEmbedUrl = (inputUrl: string): string => {
         // First extract URL from iframe if needed
         const extractedUrl = extractUrlFromIframe(inputUrl);
-        // Handle Google Docs/Slides/Sheets embed conversion
-        if (extractedUrl.includes('docs.google.com')) {
-            // Check if it's already an embed URL (contains 'embed' or 'pubembed')
-            if (extractedUrl.includes('/embed') || extractedUrl.includes('pubembed')) {
-                // Already an embed URL, return as is
-                return extractedUrl;
-            }
-            
-            if (extractedUrl.includes('/presentation/')) {
-                // Convert Google Slides view URL to embed URL
-                const match = extractedUrl.match(/\/presentation\/d\/([a-zA-Z0-9-_]+)/);
-                if (match) {
-                    return `https://docs.google.com/presentation/d/${match[1]}/embed?start=false&loop=false&delayms=3000`;
-                }
-            } else if (extractedUrl.includes('/document/')) {
-                // Convert Google Docs view URL to embed URL
-                const match = extractedUrl.match(/\/document\/d\/([a-zA-Z0-9-_]+)/);
-                if (match) {
-                    return `https://docs.google.com/document/d/${match[1]}/embed`;
-                }
-            } else if (extractedUrl.includes('/spreadsheets/')) {
-                // Convert Google Sheets view URL to embed URL
-                const match = extractedUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-                if (match) {
-                    return `https://docs.google.com/spreadsheets/d/${match[1]}/embed`;
-                }
-            }
-        }
-        
-        // Handle YouTube URLs
-        if (extractedUrl.includes('youtube.com/watch') || extractedUrl.includes('youtu.be/')) {
-            let videoId = '';
-            if (extractedUrl.includes('youtube.com/watch')) {
-                const match = extractedUrl.match(/[?&]v=([^&]+)/);
-                videoId = match ? match[1] : '';
-            } else if (extractedUrl.includes('youtu.be/')) {
-                const match = extractedUrl.match(/youtu\.be\/([^?]+)/);
-                videoId = match ? match[1] : '';
-            }
-            if (videoId) {
-                return `https://www.youtube.com/embed/${videoId}`;
-            }
-        }
-        
         return extractedUrl;
     };
 
@@ -162,7 +160,7 @@ function EmbeddedTool1Component({ node }: { node: NodeVM }) {
         setError('');
         
         if (!url.trim()) {
-            setError('Please enter a URL or iframe code');
+            setError('Please enter a URL or HTML embed code');
             return;
         }
 
@@ -170,7 +168,7 @@ function EmbeddedTool1Component({ node }: { node: NodeVM }) {
         const extractedUrl = extractUrlFromIframe(url.trim());
         
         if (!validateUrl(extractedUrl)) {
-            setError('Please enter a valid URL or iframe code');
+            setError('Please enter a valid URL or HTML embed code');
             return;
         }
 
@@ -205,8 +203,8 @@ function EmbeddedTool1Component({ node }: { node: NodeVM }) {
             <Box sx={{ mb: 2 }}>
                 <TextField
                     fullWidth
-                    label="Embed URL or iframe Code"
-                    placeholder="URL: https://docs.google.com/presentation/d/... or full iframe: <iframe src=...></iframe>"
+                    label="Embed URL or HTML Code"
+                    placeholder="URL: https://docs.google.com/presentation/d/... or full HTML: <iframe src=...></iframe>"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
                     multiline
@@ -240,7 +238,7 @@ function EmbeddedTool1Component({ node }: { node: NodeVM }) {
                 <br />
                 • YouTube videos (watch or embed URLs)
                 <br />
-                • Complete iframe code (will extract src URL)
+                • Complete HTML embed code (iframe, embed, object, video tags)
                 <br />
                 • Any iframe-embeddable content
             </Typography>
