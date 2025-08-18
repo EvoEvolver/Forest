@@ -10,7 +10,7 @@ interface ReaderNodeData {
 }
 
 export class ReaderNodeTypeVM extends NodeTypeVM {
-    render(node: NodeVM): React.ReactNode {
+    static render(node: NodeVM): React.ReactNode {
         const data: ReaderNodeData = node.data
         const htmlContent = data.htmlContent
         return <>
@@ -18,12 +18,12 @@ export class ReaderNodeTypeVM extends NodeTypeVM {
         </>
     }
 
-    renderTool1(node: NodeVM): React.ReactNode {
+    static renderTool1(node: NodeVM): React.ReactNode {
         return <>
         </>
     }
 
-    renderTool2(node: NodeVM): React.ReactNode {
+    static renderTool2(node: NodeVM): React.ReactNode {
         const data: ReaderNodeData = node.data
         const htmlOriginalContent = data.htmlOriginalContent
         if (!htmlOriginalContent) {
