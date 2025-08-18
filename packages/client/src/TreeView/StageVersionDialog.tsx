@@ -64,7 +64,7 @@ export const StageVersionDialog = ({open, onClose, node}: StageVersionDialogProp
             setPreviewNodeVM(null);
 
             // Create NodeM from snapshot data (now it's a plain object)
-            const nodeM = NodeM.fromSnapshot(snapshot.data);
+            const nodeM = NodeM.fromSnapshot(snapshot.data, tree.treeM);
 
             // Create NodeVM from NodeM
             const nodeVM = await NodeVM.create(nodeM, tree);

@@ -259,7 +259,7 @@ export class NodeM {
         return btoa(String.fromCharCode(...stateVector))
     }
 
-    static fromSnapshot(stateVector: string): NodeM {
+    static fromSnapshot(stateVector: string, treeM: TreeM): NodeM {
         const snapdoc = new YDoc()
         // Convert base64 string back to Uint8Array
         const binaryString = atob(stateVector)
@@ -271,6 +271,6 @@ export class NodeM {
         const nodeYmap = snapdoc.getMap("node")
         const tempId = uuidv4()
         nodeYmap.set("id", tempId)
-        return new NodeM(nodeYmap, tempId, null)
+        return new NodeM(nodeYmap, tempId, treeM)
     }
 }
