@@ -12,7 +12,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import IconButton from '@mui/material/IconButton';
 import {BugReport as BugReportIcon, Close as CloseIcon, ContentCopy as ContentCopyIcon} from '@mui/icons-material';
-import {Alert, Avatar, Box, Button, Chip, Divider, Snackbar, Stack} from "@mui/material";
+import {Alert, Avatar, Box, Button, Chip, Divider, Pagination, Snackbar, Stack} from "@mui/material";
 import {useAtom} from "jotai";
 import {userAtom} from "@forest/user-system/src/authStates";
 
@@ -153,6 +153,8 @@ export function TreeMembersList({treeId}: { treeId: string }) {
     const [members, setMembers] = useState<MemberWithUsername[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentUser] = useAtom(userAtom);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize] = useState(5);
 
     useEffect(() => {
         fetch(`${API_BASE}/api/tree-permission/tree/${treeId}`, {
@@ -190,6 +192,16 @@ export function TreeMembersList({treeId}: { treeId: string }) {
 
     if (loading) return <CircularProgress/>;
 
+    // Calculate pagination
+    const totalPages = Math.ceil(members.length / pageSize);
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginatedMembers = members.slice(startIndex, endIndex);
+
+    const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+        setCurrentPage(value);
+    };
+
     return (
         <Box sx={{mt: 3}}>
             <Typography
@@ -204,7 +216,7 @@ export function TreeMembersList({treeId}: { treeId: string }) {
                 Members
             </Typography>
             <List sx={{pt: 0}}>
-                {members.map((member) => (
+                {paginatedMembers.map((member) => (
                     <ListItem
                         key={member.userId}
                         sx={{
@@ -258,6 +270,22 @@ export function TreeMembersList({treeId}: { treeId: string }) {
                     </ListItem>
                 ))}
             </List>
+            {totalPages > 1 && (
+                <Box sx={{display: 'flex', justifyContent: 'center', mt: 2}}>
+                    <Pagination
+                        count={totalPages}
+                        page={currentPage}
+                        onChange={handlePageChange}
+                        color="primary"
+                        size="small"
+                        sx={{
+                            '& .MuiPaginationItem-root': {
+                                fontSize: '0.875rem'
+                            }
+                        }}
+                    />
+                </Box>
+            )}
         </Box>
     );
 }
