@@ -131,15 +131,15 @@ const CollectionSelectorTool: React.FC<{ node: NodeVM }> = ({node}) => {
 };
 
 export class MongoDataGridNodeTypeVM extends NodeTypeVM {
-    render(node: NodeVM): React.ReactNode {
+    static render(node: NodeVM): React.ReactNode {
         return <MongoDataGridRenderer node={node}/>;
     }
 
-    renderTool1(node: NodeVM): React.ReactNode {
+    static renderTool1(node: NodeVM): React.ReactNode {
         return <CollectionSelectorTool node={node}/>;
     }
 
-    renderTool2(node: NodeVM): React.ReactNode {
+    static renderTool2(node: NodeVM): React.ReactNode {
         return null;
     }
 }
