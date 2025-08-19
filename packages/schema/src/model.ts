@@ -145,9 +145,6 @@ export class TreeM {
         })
     }
 
-    deleteNode(nodeId: string) {
-        this.nodeDict.delete(nodeId)
-    }
 
     // Get all descendant nodes of a given node (recursive subtree traversal)
     getAllDescendantNodes(nodeM: NodeM): NodeM[] {

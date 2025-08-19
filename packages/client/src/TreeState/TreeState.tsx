@@ -49,6 +49,7 @@ export const deleteNodeAtom = atom(null, (get, set, props: { nodeId: string }) =
     // @ts-ignore
     set(nodeToRemoveAtom, RESET)
     currTree.deleteNode(props.nodeId)
+    currTree.treeM.nodeDict.delete(props.nodeId)
 
     if (get(selectedNodeIdAtom) === props.nodeId) {
         // if the deleted node was selected, set the selectedNodeId to the parent
