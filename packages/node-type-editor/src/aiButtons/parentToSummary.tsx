@@ -127,7 +127,9 @@ ${currentContent}
 </current_content>
 
 Please write a paragraph for the parent content. The paragraph should:
+- If the current content is not empty and is relavent to the parent content, rewrite with similar style and include the current content.
 - Never add new content not present in the parent content. Just rephrase the existing content.
+- You have to mention all the information in the parent content.
 - Be written in a clear, professional style
 
 <output_format>
