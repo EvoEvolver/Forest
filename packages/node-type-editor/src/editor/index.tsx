@@ -28,6 +28,8 @@ import {BookmarkNode} from "./Extensions/bookmark-node";
 import {NodeVM} from "@forest/schema";
 import {contentEditableContext} from "@forest/schema/src/viewContext";
 import {Editor} from "@tiptap/core";
+import {makeOnSlashActivated, SlashCommandExtension} from "./Extensions/slash-command";
+import {IframeExtension} from "./Extensions/iframe";
 
 interface TiptapEditorProps {
     node: NodeVM,
@@ -51,6 +53,8 @@ export function makeExtensions(yXML, provider, onCommentActivated, onLinkActivat
     });
     const onLinkActivatedHandler = onLinkActivated || ((href, editor, options) => {
     });
+    const onSlashActivatedHandler = makeOnSlashActivated(setHoverElements || (() => {
+    }));
     return [
         Document,
         Paragraph,
@@ -70,6 +74,10 @@ export function makeExtensions(yXML, provider, onCommentActivated, onLinkActivat
             HTMLAttributes: {},
             onLinkActivated: onLinkActivatedHandler,
         }),
+        SlashCommandExtension.configure({
+            onSlashActivated: onSlashActivatedHandler,
+        }),
+        IframeExtension,
         BookmarkNode,
         ...(setHoverElements ? [UniversalPasteHandler.configure({
             onBookmarkCreated: (url, metadata) => {
@@ -102,7 +110,6 @@ export function makeEditor(yXML, provider, contentEditable, onCommentActivated, 
 
     return editor
 }
-
 
 
 const EditorImpl = ({yXML, provider, dataLabel, node}) => {
@@ -140,18 +147,18 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
     };
 
     const handleClickBold = () => {
-        const { state } = editor;
-        const { from, to } = state.selection;
-        
+        const {state} = editor;
+        const {from, to} = state.selection;
+
         // Apply bold to the selected text
         editor?.chain().focus().toggleBold().run();
-        
+
         // Clear stored marks immediately after applying bold
         setTimeout(() => {
             // Clear stored marks to prevent bold from extending to new content
             const transaction = editor.state.tr.setStoredMarks([]);
             editor.view.dispatch(transaction);
-            
+
             // Position cursor at the end of the selection
             editor?.commands.setTextSelection(to);
         }, 0);
@@ -164,14 +171,14 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
     return (
         <div className="column-half">
             <EditorContent editor={editor} className="main-group"/>
-            <BubbleMenu 
-                editor={editor} 
+            <BubbleMenu
+                editor={editor}
                 tippyOptions={{duration: 100}}
-                shouldShow={({ editor, view, state, oldState, from, to }) => {
+                shouldShow={({editor, view, state, oldState, from, to}) => {
                     // Don't show bubble menu when selecting image upload nodes
-                    const { selection } = state;
-                    const { $from, $to } = selection;
-                    
+                    const {selection} = state;
+                    const {$from, $to} = selection;
+
                     // Check if selection contains any image upload nodes
                     let hasImageUpload = false;
                     state.doc.nodesBetween(from, to, (node) => {
@@ -180,29 +187,29 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
                             return false; // Stop traversal
                         }
                     });
-                    
+
                     // Don't show if selection contains image upload nodes
                     if (hasImageUpload) {
                         return false;
                     }
-                    
+
                     // Show bubble menu for text selections and regular content
                     return !selection.empty;
                 }}
             >
-                <Paper elevation={3} sx={{ backgroundColor: 'white', padding: 0.5, display: 'flex', gap: 0.5 }}>
+                <Paper elevation={3} sx={{backgroundColor: 'white', padding: 0.5, display: 'flex', gap: 0.5}}>
                     <IconButton
                         size="small"
                         onClick={handleClickBold}
-                        sx={{ color: 'black' }}
+                        sx={{color: 'black'}}
                     >
-                        <FormatBoldIcon />
+                        <FormatBoldIcon/>
                     </IconButton>
-                    <IconButton size="small" onClick={handleClickComment} sx={{ color: 'black' }}>
-                        <CommentIcon />
+                    <IconButton size="small" onClick={handleClickComment} sx={{color: 'black'}}>
+                        <CommentIcon/>
                     </IconButton>
-                    <IconButton size="small" onClick={handleClickLink} sx={{ color: 'black' }}>
-                        <LinkIcon />
+                    <IconButton size="small" onClick={handleClickLink} sx={{color: 'black'}}>
+                        <LinkIcon/>
                     </IconButton>
                 </Paper>
             </BubbleMenu>
