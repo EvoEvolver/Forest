@@ -21,7 +21,7 @@ interface SettingsDialogProps {
     onClose: () => void;
 }
 
-const frontendUrl = `${window.location.protocol}//${location.hostname}:${window.location.port}`
+const frontendUrl = httpUrl
 
 const SettingsDialog: React.FC<SettingsDialogProps> = ({open, onClose}) => {
     const [showCopiedAlert, setShowCopiedAlert] = useState(false);
