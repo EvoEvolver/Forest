@@ -202,7 +202,6 @@ export const SlashCommandMenu: React.FC<{ editor: any, slashPos: number }> = ({e
             minWidth: 200,
             maxHeight: 300,
             overflow: 'auto',
-            backgroundColor: 'white',
             boxShadow: 3
         }}>
             <List dense>

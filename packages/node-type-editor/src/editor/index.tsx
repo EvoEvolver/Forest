@@ -30,6 +30,7 @@ import {contentEditableContext} from "@forest/schema/src/viewContext";
 import {Editor} from "@tiptap/core";
 import {makeOnSlashActivated, SlashCommandExtension} from "./Extensions/slash-command";
 import {IframeExtension} from "./Extensions/iframe";
+import {TableKit} from '@tiptap/extension-table'
 
 interface TiptapEditorProps {
     node: NodeVM,
@@ -65,6 +66,9 @@ export function makeExtensions(yXML, provider, onCommentActivated, onLinkActivat
         Image,
         ImageUploadExtension,
         Bold.configure({}),
+        TableKit.configure({
+            table: { resizable: true },
+        }),
         MathExtension.configure({evaluation: false}),
         CommentExtension.configure({
             HTMLAttributes: {class: "comment"},
@@ -170,7 +174,7 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
     // @ts-ignore
     return (
         <div className="column-half">
-            <EditorContent editor={editor} className="main-group"/>
+            <EditorContent editor={editor}/>
             <BubbleMenu
                 editor={editor}
                 tippyOptions={{duration: 100}}
