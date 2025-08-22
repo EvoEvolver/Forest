@@ -16,6 +16,7 @@ declare module "@tiptap/core" {
              * Unset a link mark
              */
             unsetLink: () => ReturnType;
+            displayLink: ({href}: { href: string }, options) => ReturnType;
         };
     }
 }
@@ -23,7 +24,6 @@ declare module "@tiptap/core" {
 // 2. Define the options for the extension
 interface LinkOptions {
     HTMLAttributes: Record<string, any>;
-    onLinkActivated: (href: string | null, editor: any, options: any) => void;
 }
 
 
@@ -41,9 +41,7 @@ export const LinkExtension = Mark.create<LinkOptions>({
                 target: '_blank',
                 rel: 'noopener noreferrer nofollow',
                 class: 'editor-link', // Add a class for styling
-            },
-            onLinkActivated: () => {
-            },
+            }
         };
     },
 
@@ -84,6 +82,95 @@ export const LinkExtension = Mark.create<LinkOptions>({
     // 7. Add commands to set and unset the link
     addCommands() {
         return {
+            displayLink: (props, options) => ({commands}) => {
+                const setHoverElements = this.editor.options?.setHoverElements;
+                if(!setHoverElements){
+                    return
+                }
+                const _options = options || {};
+                const {href} = props;
+                // If href is null, it means no link is active, so we clear the hover elements
+                if (!href) {
+                    setHoverElements(prev => {
+                        return prev.filter(el => el.source !== "link")
+                    })
+                    return;
+                }
+
+                // Find the DOM element corresponding to the active link
+                // We look at the element at the cursor's current position
+                const {from, to} = this.editor.state.selection;
+
+                // Try to find the link element at the current selection
+                let el = null;
+
+                // First, try to find the element at the cursor position
+                const domNode = this.editor.view.domAtPos(from).node;
+                let candidateEl = domNode.nodeType === Node.TEXT_NODE ? domNode.parentElement : domNode as HTMLElement;
+
+                // Check if we found the right anchor tag
+                if (candidateEl && candidateEl.tagName === 'A' && candidateEl.getAttribute('href') === href) {
+                    el = candidateEl;
+                } else {
+                    // If not found, search within the selection range for any anchor tag
+                    // This handles cases where we just created a new link
+                    for (let pos = from; pos <= to; pos++) {
+                        try {
+                            const nodeAtPos = this.editor.view.domAtPos(pos).node;
+                            const elementAtPos = nodeAtPos.nodeType === Node.TEXT_NODE ? nodeAtPos.parentElement : nodeAtPos as HTMLElement;
+
+                            if (elementAtPos && elementAtPos.tagName === 'A') {
+                                el = elementAtPos;
+                                break;
+                            }
+
+                            // Also check parent elements
+                            let parent = elementAtPos?.parentElement;
+                            while (parent && parent !== this.editor.view.dom) {
+                                if (parent.tagName === 'A') {
+                                    el = parent;
+                                    break;
+                                }
+                                parent = parent.parentElement;
+                            }
+
+                            if (el) break;
+                        } catch (e) {
+                            // Continue searching if position is invalid
+                        }
+                    }
+
+                    // Final fallback: query the DOM
+                    if (!el) {
+                        const foundEl = this.editor.view.dom.querySelector(`a[href="${href}"]`);
+                        if (foundEl) {
+                            el = foundEl;
+                        }
+                    }
+                }
+
+                if (!el) {
+                    setHoverElements(prev => {
+                        return prev.filter(el => el.source !== "link")
+                    })
+                    return;
+                }
+
+                // Create the hover element object to be rendered
+                const hoverElement = {
+                    source: 'link',
+                    el: el,
+                    render: (el, editor) => (
+                        <LinkHover
+                            key={href} // Use href as a key for React
+                            hoveredEl={el}
+                            editor={editor}
+                            options={{..._options}}
+                        />
+                    )
+                };
+                setHoverElements([hoverElement]);
+            },
             setLink: (props) => ({commands}) => {
                 if (!props.href) {
                     return false;
@@ -108,13 +195,13 @@ export const LinkExtension = Mark.create<LinkOptions>({
         // If no link mark at current position, check surrounding marks
         if (!activeLinkMark) {
             let surroundingMarks = [];
-            
+
             // Check node before cursor
             const nodeBefore = $from.nodeBefore;
             if (nodeBefore) {
                 surroundingMarks = surroundingMarks.concat(nodeBefore.marks);
             }
-            
+
             // Check node after cursor
             const nodeAfter = $from.nodeAfter;
             if (nodeAfter) {
@@ -127,7 +214,7 @@ export const LinkExtension = Mark.create<LinkOptions>({
 
         // Find the active link's href
         const activeUrl = activeLinkMark?.attrs.href || null;
-        this.options.onLinkActivated(activeUrl, this.editor, null);
+        this.editor.commands.displayLink({href: activeUrl},  {inputOn: false})
     },
 });
 
@@ -210,84 +297,6 @@ export const LinkHover = ({hoveredEl, editor, options}) => {
  */
 export function makeOnLinkActivated(setHoverElements) {
     return (href, editor, options) => {
-        const _options = options || {};
 
-        // If href is null, it means no link is active, so we clear the hover elements
-        if (!href) {
-            setHoverElements(prev => {return prev.filter(el => el.source !== "link")})
-            return;
-        }
-
-        // Find the DOM element corresponding to the active link
-        // We look at the element at the cursor's current position
-        const {from, to} = editor.state.selection;
-        
-        // Try to find the link element at the current selection
-        let el = null;
-        
-        // First, try to find the element at the cursor position
-        const domNode = editor.view.domAtPos(from).node;
-        let candidateEl = domNode.nodeType === Node.TEXT_NODE ? domNode.parentElement : domNode as HTMLElement;
-        
-        // Check if we found the right anchor tag
-        if (candidateEl && candidateEl.tagName === 'A' && candidateEl.getAttribute('href') === href) {
-            el = candidateEl;
-        } else {
-            // If not found, search within the selection range for any anchor tag
-            // This handles cases where we just created a new link
-            for (let pos = from; pos <= to; pos++) {
-                try {
-                    const nodeAtPos = editor.view.domAtPos(pos).node;
-                    const elementAtPos = nodeAtPos.nodeType === Node.TEXT_NODE ? nodeAtPos.parentElement : nodeAtPos as HTMLElement;
-                    
-                    if (elementAtPos && elementAtPos.tagName === 'A') {
-                        el = elementAtPos;
-                        break;
-                    }
-                    
-                    // Also check parent elements
-                    let parent = elementAtPos?.parentElement;
-                    while (parent && parent !== editor.view.dom) {
-                        if (parent.tagName === 'A') {
-                            el = parent;
-                            break;
-                        }
-                        parent = parent.parentElement;
-                    }
-                    
-                    if (el) break;
-                } catch (e) {
-                    // Continue searching if position is invalid
-                }
-            }
-            
-            // Final fallback: query the DOM
-            if (!el) {
-                const foundEl = editor.view.dom.querySelector(`a[href="${href}"]`);
-                if (foundEl) {
-                    el = foundEl;
-                }
-            }
-        }
-        
-        if (!el) {
-            setHoverElements(prev => {return prev.filter(el => el.source !== "link")})
-            return;
-        }
-
-        // Create the hover element object to be rendered
-        const hoverElement = {
-            source: 'link',
-            el: el,
-            render: (el, editor) => (
-                <LinkHover
-                    key={href} // Use href as a key for React
-                    hoveredEl={el}
-                    editor={editor}
-                    options={{..._options}}
-                />
-            )
-        };
-        setHoverElements([hoverElement]);
     };
 }

@@ -7,7 +7,6 @@ import { BookmarkAttributes } from './bookmark-node';
 
 interface UniversalPasteHandlerOptions {
     onBookmarkCreated?: (url: string, metadata: any) => void;
-    setHoverElements?: (elements: any[]) => void;
     uploadImage?: (file: File, callback: (attrs: any) => void) => void;
 }
 
@@ -24,7 +23,6 @@ export const UniversalPasteHandler = Extension.create<UniversalPasteHandlerOptio
     addOptions() {
         return {
             onBookmarkCreated: () => {},
-            setHoverElements: () => {},
             uploadImage: () => {},
         };
     },
@@ -217,7 +215,7 @@ export const UniversalPasteHandler = Extension.create<UniversalPasteHandlerOptio
                 };
                 
                 // Add to existing hover system
-                const setHoverElements = this.options.setHoverElements;
+                const setHoverElements = this.editor.options.setHoverElements;
                 console.log('🔗 setHoverElements function:', setHoverElements);
                 if (setHoverElements) {
                     console.log('🔗 Setting hover elements');
@@ -237,7 +235,7 @@ export const UniversalPasteHandler = Extension.create<UniversalPasteHandlerOptio
                 this.storage.selectedIndex = 0;
                 
                 // Clear hover elements
-                const setHoverElements = this.options.setHoverElements;
+                const setHoverElements = this.editor.options.setHoverElements;
                 if (setHoverElements) {
                     setHoverElements([]);
                 }

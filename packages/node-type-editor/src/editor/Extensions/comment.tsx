@@ -12,6 +12,7 @@ declare module "@tiptap/core" {
         comment: {
             setComment: (commentId: string, comment: string) => ReturnType;
             unsetComment: (commentId: string) => ReturnType;
+            displayComment: (commentId: string, options: any) => ReturnType;
         };
     }
 }
@@ -24,7 +25,7 @@ interface MarkWithRange {
 
 interface CommentOptions {
     HTMLAttributes: Record<string, any>;
-    onCommentActivated: (commentId: string, editor, options: any) => void;
+    setHoverElements: (el: any) => void;
 }
 
 
@@ -34,7 +35,7 @@ export const CommentExtension = Mark.create<CommentOptions>({
     addOptions() {
         return {
             HTMLAttributes: {},
-            onCommentActivated: () => {
+            setHoverElements: (el: any) => {
             },
         };
     },
@@ -86,7 +87,7 @@ export const CommentExtension = Mark.create<CommentOptions>({
         const marks = $from.marks();
 
         if (!marks.length) {
-            this.options.onCommentActivated(null, this.editor, null);
+            this.editor?.commands.displayComment(null);
             return;
         }
 
@@ -96,11 +97,40 @@ export const CommentExtension = Mark.create<CommentOptions>({
 
         const activeCommentId = activeCommentMark?.attrs.commentId || null;
 
-        this.options.onCommentActivated(activeCommentId, this.editor, null);
+        //this.options.onCommentActivated(activeCommentId, this.editor, null);
+        this.editor?.commands.displayComment(activeCommentId, {inputOn: false});
     },
 
     addCommands() {
         return {
+            displayComment: (commentId: string, options) => ({commands}) =>{
+                const setHoverElements = this.editor.options?.setHoverElements;
+                if(!setHoverElements){
+                    return
+                }
+                let _options = options || {};
+                if (!commentId) {
+                    setHoverElements(prev => {
+                        // Filter out the comment hover elements
+                        return prev.filter(el => el.source !== "comment");
+                    })
+                    return;
+                }
+                const el = this.editor.view.dom.querySelector(`[data-comment-id="${commentId}"]`);
+                const hoverElement = {
+                    source: "comment",
+                    el: el,
+                    render: (el, editor) => (
+                        <CommentHover
+                            key={commentId} // Add this
+                            hoveredEl={el}
+                            editor={editor}
+                            options={{..._options}}
+                        />
+                    )
+                }
+                setHoverElements([hoverElement]);
+            },
             setComment:
                 (commentId, comment) =>
                     ({commands}) => {
@@ -195,7 +225,7 @@ export const CommentHover = ({hoveredEl, editor, options}) => {
     const handleCommentUpdate = () => {
         editor.commands.updateComment(commentId, editedComment);
         setIsEditing(false);
-        
+
         // Clear stored marks after updating comment to prevent extension
         setTimeout(() => {
             // Clear any stored marks to prevent comment from extending to new content
@@ -207,7 +237,7 @@ export const CommentHover = ({hoveredEl, editor, options}) => {
     const removeHover = () => {
         const commentExtension = editor.extensionManager.extensions.find(ext => ext.name === 'comment');
         setIsEditing(false);
-        commentExtension.options.onCommentActivated(null, editor, null);
+        editor.commands.displayComment(null)
     }
 
     const handleCommentRemove = () => {
@@ -260,6 +290,8 @@ export const CommentHover = ({hoveredEl, editor, options}) => {
         </Card>
     );
 };
+
+
 
 export function makeOnCommentActivated(setHoverElements) {
     return (commentId, editor, options) => {

@@ -13,7 +13,7 @@ import BulletList from '@tiptap/extension-bullet-list'
 import OrderedList from '@tiptap/extension-ordered-list'
 import ListItem from '@tiptap/extension-list-item'
 import Image from '@tiptap/extension-image'
-import {CommentExtension, makeOnCommentActivated} from './Extensions/comment'
+import {CommentExtension} from './Extensions/comment'
 import {MathExtension} from '@aarkue/tiptap-math-extension'
 import Bold from '@tiptap/extension-bold'
 import {IconButton, Paper} from "@mui/material";
@@ -21,14 +21,14 @@ import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import CommentIcon from '@mui/icons-material/Comment';
 import LinkIcon from '@mui/icons-material/Link';
 import {usePopper} from "react-popper";
-import {LinkExtension, makeOnLinkActivated} from "./Extensions/link";
+import {LinkExtension} from "./Extensions/link";
 import {ImageUploadExtension, uploadImage} from "./Extensions/image-upload";
 import {UniversalPasteHandler} from "./Extensions/universal-paste-handler";
 import {BookmarkNode} from "./Extensions/bookmark-node";
 import {NodeVM} from "@forest/schema";
 import {contentEditableContext} from "@forest/schema/src/viewContext";
 import {Editor} from "@tiptap/core";
-import {makeOnSlashActivated, SlashCommandExtension} from "./Extensions/slash-command";
+import {SlashCommandExtension} from "./Extensions/slash-command";
 import {IframeExtension} from "./Extensions/iframe";
 import {TableKit} from '@tiptap/extension-table'
 
@@ -49,13 +49,7 @@ const TiptapEditor = (props: TiptapEditorProps) => {
 
 export default TiptapEditor;
 
-export function makeExtensions(yXML, provider, onCommentActivated, onLinkActivated, setHoverElements) {
-    const onCommentActivatedHandler = onCommentActivated || ((id, editor, options) => {
-    });
-    const onLinkActivatedHandler = onLinkActivated || ((href, editor, options) => {
-    });
-    const onSlashActivatedHandler = makeOnSlashActivated(setHoverElements || (() => {
-    }));
+export function makeExtensions(yXML, provider) {
     return [
         Document,
         Paragraph,
@@ -67,37 +61,32 @@ export function makeExtensions(yXML, provider, onCommentActivated, onLinkActivat
         ImageUploadExtension,
         Bold.configure({}),
         TableKit.configure({
-            table: { resizable: true },
+            table: {resizable: true},
         }),
         MathExtension.configure({evaluation: false}),
         CommentExtension.configure({
             HTMLAttributes: {class: "comment"},
-            onCommentActivated: onCommentActivatedHandler,
         }),
         LinkExtension.configure({
             HTMLAttributes: {},
-            onLinkActivated: onLinkActivatedHandler,
         }),
-        SlashCommandExtension.configure({
-            onSlashActivated: onSlashActivatedHandler,
-        }),
+        SlashCommandExtension.configure({}),
         IframeExtension,
         BookmarkNode,
-        ...(setHoverElements ? [UniversalPasteHandler.configure({
+        UniversalPasteHandler.configure({
             onBookmarkCreated: (url, metadata) => {
                 console.log('Bookmark created:', url, metadata);
             },
-            setHoverElements: setHoverElements,
             uploadImage: uploadImage
-        })] : []),
+        }),
         ...(yXML ? [Collaboration.extend().configure({fragment: yXML})] : []),
         ...(provider ? [CollaborationCursor.extend().configure({provider})] : []),
     ];
 }
 
-export function makeEditor(yXML, provider, contentEditable, onCommentActivated, onLinkActivated, setHoverElements): Editor {
+export function makeSimpleEditor(yXML): Editor {
 
-    const extensions = makeExtensions(yXML, provider, onCommentActivated, onLinkActivated, setHoverElements);
+    const extensions = makeExtensions(yXML, null);
     if (yXML) {
         //console.log(yXML)
     }
@@ -109,21 +98,25 @@ export function makeEditor(yXML, provider, contentEditable, onCommentActivated, 
             disableCollaboration();
         },
         extensions: extensions,
-        editable: contentEditable !== false
+        editable: false
     });
 
     return editor
 }
 
+declare module '@tiptap/core' {
+    interface EditorOptions {
+        setHoverElements?: (hoverElements: any[] | ((prev: any) => {})) => void;
+    }
+}
 
 const EditorImpl = ({yXML, provider, dataLabel, node}) => {
     const [hoverElements, setHoverElements] = useState([]);
     const contentEditable = useContext(contentEditableContext);
-    const onCommentActivated = makeOnCommentActivated(setHoverElements);
-    const onLinkActivated = makeOnLinkActivated(setHoverElements);
 
+    const extensions = makeExtensions(yXML, provider);
     const editor = useEditor({
-        extensions: makeExtensions(yXML, provider, onCommentActivated, onLinkActivated, setHoverElements),
+        extensions: extensions,
         editable: contentEditable !== false,
         onCreate: ({editor}) => {
             node.vdata["tiptap_editor_" + dataLabel] = editor;
@@ -136,18 +129,19 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
             console.error("Content error in Tiptap editor:", disableCollaboration);
             disableCollaboration();
         },
+        setHoverElements: setHoverElements
     });
 
     const handleClickComment = () => {
         const id = `comment-${Date.now()}`;
         editor?.commands.setComment(id, "");
-        onCommentActivated(id, editor, {"inputOn": true});
+        editor?.commands.displayComment(id, {"inputOn": true});
     };
 
     const handleClickLink = () => {
-        const href = " ";
+        const href = "http://";
         editor?.commands.setLink({href});
-        onLinkActivated(href, editor, {"inputOn": true});
+        editor?.commands.displayLink({href}, {"inputOn": true});
     };
 
     const handleClickBold = () => {

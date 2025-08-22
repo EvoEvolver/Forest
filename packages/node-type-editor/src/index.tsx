@@ -1,6 +1,6 @@
 import {NodeM, NodeVM} from "@forest/schema"
 import React from "react";
-import TiptapEditor, {makeEditor} from "./editor";
+import TiptapEditor, {makeSimpleEditor} from "./editor";
 import {Map as YMap, XmlFragment} from "yjs";
 import {BottomUpButton} from "./aiButtons/buttomUp";
 import {TopDownDecomposeButton} from "./aiButtons/topDownDecompose";
@@ -29,14 +29,14 @@ export class EditorNodeTypeM extends NodeTypeM {
     }
 
     static getEditorContent(node: NodeM): string {
-        const editor = makeEditor(EditorNodeTypeM.getYxml(node), null, true, null, null, null);
+        const editor = makeSimpleEditor(EditorNodeTypeM.getYxml(node));
         const htmlContent = editor.getHTML();
         editor.destroy()
         return htmlContent;
     }
 
     static setEditorContent(node: NodeM, htmlContent: string) {
-        const editor = makeEditor(EditorNodeTypeM.getYxml(node), null, true, null, null, null);
+        const editor = makeSimpleEditor(EditorNodeTypeM.getYxml(node));
         try {
             editor.commands.setContent(htmlContent);
         } catch (e) {
@@ -48,7 +48,7 @@ export class EditorNodeTypeM extends NodeTypeM {
     }
 
     static validateEditorContent(htmlContent: string) {
-        const editor = makeEditor(null, null, true, null, null, null);
+        const editor = makeSimpleEditor(null);
         try {
             editor.commands.setContent(htmlContent);
         } catch (e) {
