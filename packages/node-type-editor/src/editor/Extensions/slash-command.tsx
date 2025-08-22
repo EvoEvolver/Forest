@@ -69,7 +69,7 @@ export const SlashCommandExtension = Extension.create<SlashCommandOptions>({
                 }
             },
             insertSlashCommand: () => ({commands}) => {
-                return commands.insertContent('\\')
+                return commands.insertContent('/')
             },
         }
     },
@@ -87,7 +87,7 @@ export const SlashCommandExtension = Extension.create<SlashCommandOptions>({
 
                         // Check if we're immediately after a backslash (menu might be active)
                         const textAt = doc.textBetween(from - 1, from, '\n')
-                        const isAfterSlash = textAt === '\\'
+                        const isAfterSlash = textAt === '/'
 
                         // Check if menu is actually visible by looking for the menu element in DOM
                         const menuElement = document.querySelector('[data-slash-menu="true"]')
@@ -109,7 +109,7 @@ export const SlashCommandExtension = Extension.create<SlashCommandOptions>({
                         }
 
                         // Check if user typed backslash
-                        if (event.key === '\\') {
+                        if (event.key === '/') {
                             console.log("Slash command activated at position:", from)
                             // Let the backslash be inserted first
                             setTimeout(() => {
@@ -149,7 +149,7 @@ export const SlashCommandExtension = Extension.create<SlashCommandOptions>({
         const textAt = doc.textBetween(from - 1, from, '\n')
 
         // If we're not immediately after a backslash, hide the menu
-        if (textAt !== '\\') {
+        if (textAt !== '/') {
             this.editor.commands.displaySlashCommand(null)
             return
         }
