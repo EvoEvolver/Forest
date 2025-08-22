@@ -42,7 +42,7 @@ const TreeViewContent = () => {
                     padding: '8px 16px',
                     boxShadow: theme => theme.shadows[3],
                     border: theme => `1px solid ${theme.palette.divider}`,
-                    maxWidth: !mobileMode ? '60vw' : '90vw',
+                    maxWidth: !mobileMode ? '50vw' : '90vw',
                     width: 'auto',
                 }}
             >
@@ -56,7 +56,7 @@ const TreeViewContent = () => {
                     left: 10,
                     top: 70,
                     bottom: 10,
-                    width: "20vw",
+                    width: "23vw",
                     zIndex: 100
                 }}>
                     <ColumnLeft/>
@@ -70,7 +70,7 @@ const TreeViewContent = () => {
                     right: 20,
                     top: 70,
                     bottom: 10,
-                    width: "20vw",
+                    width: "23vw",
                     zIndex: 100
                 }}>
                     <ColumnRight/>

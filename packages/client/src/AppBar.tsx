@@ -1,4 +1,4 @@
-import {Avatar, Button, Stack, ToggleButton, ToggleButtonGroup, useMediaQuery} from "@mui/material";
+import {Avatar, Button, Paper, Stack, ToggleButton, ToggleButtonGroup, useMediaQuery} from "@mui/material";
 import {useTheme} from '@mui/system';
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import ArticleIcon from "@mui/icons-material/Article";
@@ -24,15 +24,15 @@ export const AppBarLeft = ({setCurrentPage, currentPage}) => {
     };
 
     return (
-        <Stack sx={{
+        <Paper elevation={1} sx={{
             p: 1,
+            m: 1,
             borderRadius: 2,
-            margin: '8px 10px',
-            width: "20vw",
             display: 'flex',
             justifyContent: 'center',
+            backgroundImage: "none", // removes the overlay gradient,
             backgroundColor: theme.palette.background.paper,
-            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            width:"23vw"
         }}>
             <ToggleButtonGroup
                 value={currentPage}
@@ -40,6 +40,7 @@ export const AppBarLeft = ({setCurrentPage, currentPage}) => {
                 onChange={handlePageChange}
                 aria-label="page selection"
                 size="small"
+                fullWidth
                 sx={{
                     '& .MuiToggleButton-root': {
                         border: 'none',
@@ -77,7 +78,7 @@ export const AppBarLeft = ({setCurrentPage, currentPage}) => {
                     {!isNarrow && "Flow"}
                 </ToggleButton>
             </ToggleButtonGroup>
-        </Stack>
+        </Paper>
     );
 };
 

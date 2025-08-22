@@ -39,7 +39,7 @@ export function ColumnRight() {
             borderRadius: 2,
             display: 'flex',
             justifyContent: 'center',
-            backgroundImage: "none", // removes the overlay gradient,
+            backgroundImage: "none",
             backgroundColor: theme.palette.background.paper
         }}>
             <ToggleButtonGroup
