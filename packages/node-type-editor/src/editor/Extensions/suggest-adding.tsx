@@ -44,8 +44,7 @@ export const SuggestAddingExtension = Mark.create<SuggestAddingOptions>({
     addOptions() {
         return {
             HTMLAttributes: {
-                class: 'editor-suggest-adding',
-                style: 'background-color: #c8e6c9; padding: 1px 2px; border-radius: 2px;',
+                class: 'suggest-adding'
             },
         };
     },

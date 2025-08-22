@@ -1,7 +1,7 @@
 import {Extension} from '@tiptap/core'
 import {Plugin, PluginKey} from '@tiptap/pm/state'
-import React, {useCallback, useEffect, useRef, useState} from 'react'
-import {Card, List, ListItem, ListItemIcon, ListItemText} from '@mui/material'
+import React, {useCallback, useEffect, useState} from 'react'
+import {SuggestionMenu, SuggestionOption} from '../../components/SuggestionMenu'
 import ImageIcon from '@mui/icons-material/Image'
 import WebIcon from '@mui/icons-material/Web'
 
@@ -9,12 +9,13 @@ declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         slashCommand: {
             insertSlashCommand: () => ReturnType
+            displaySlashCommand: (slashPos: number | null, options?: any) => ReturnType
         }
     }
 }
 
 interface SlashCommandOptions {
-    onSlashActivated: (slashPos: number | null, editor: any) => void
+    setHoverElements: (el: any) => void
 }
 
 export const SlashCommandExtension = Extension.create<SlashCommandOptions>({
@@ -22,13 +23,51 @@ export const SlashCommandExtension = Extension.create<SlashCommandOptions>({
 
     addOptions() {
         return {
-            onSlashActivated: () => {
+            setHoverElements: (el: any) => {
             },
         }
     },
 
     addCommands() {
         return {
+            displaySlashCommand: (slashPos: number | null, options) => ({commands}) => {
+                const setHoverElements = this.editor.options?.setHoverElements
+                if (!setHoverElements) {
+                    return
+                }
+                let _options = options || {}
+                if (!slashPos) {
+                    setHoverElements(prev => {
+                        return prev.filter(el => el.source !== "slash-command")
+                    })
+                    return
+                }
+                
+                try {
+                    const domPos = this.editor.view.domAtPos(slashPos)
+                    let targetElement = domPos.node
+
+                    if (targetElement.nodeType === Node.TEXT_NODE) {
+                        targetElement = targetElement.parentElement
+                    }
+
+                    const hoverElement = {
+                        source: "slash-command",
+                        el: targetElement,
+                        render: (el, editor) => (
+                            <SlashCommandMenu
+                                key="slash-command-menu"
+                                editor={editor}
+                                slashPos={slashPos}
+                            />
+                        )
+                    }
+
+                    setHoverElements([hoverElement])
+                } catch (error) {
+                    console.warn('Could not position slash command menu:', error)
+                }
+            },
             insertSlashCommand: () => ({commands}) => {
                 return commands.insertContent('\\')
             },
@@ -86,11 +125,11 @@ export const SlashCommandExtension = Extension.create<SlashCommandOptions>({
                                 const noTextAfter = afterSlash === '' || /^\s/.test(afterSlash)
 
                                 if (isValidPosition && noTextAfter) {
-                                    extension.options.onSlashActivated(from, extension.editor)
+                                    extension.editor.commands.displaySlashCommand(from)
                                 }
                             }, 0)
                         } else if (event.key === 'Escape' && isAfterSlash && isMenuVisible) {
-                            extension.options.onSlashActivated(null, extension.editor)
+                            extension.editor.commands.displaySlashCommand(null)
                             return true
                         }
 
@@ -111,7 +150,7 @@ export const SlashCommandExtension = Extension.create<SlashCommandOptions>({
 
         // If we're not immediately after a backslash, hide the menu
         if (textAt !== '\\') {
-            this.options.onSlashActivated(null, this.editor)
+            this.editor.commands.displaySlashCommand(null)
             return
         }
 
@@ -120,62 +159,54 @@ export const SlashCommandExtension = Extension.create<SlashCommandOptions>({
         const isValidPosition = beforeSlash === '' || /\s$/.test(beforeSlash)
 
         if (!isValidPosition) {
-            this.options.onSlashActivated(null, this.editor)
+            this.editor.commands.displaySlashCommand(null)
         }
     },
 })
 
 export const SlashCommandMenu: React.FC<{ editor: any, slashPos: number }> = ({editor, slashPos}) => {
     const [selectedIndex, setSelectedIndex] = useState(0)
-    const menuRef = useRef<HTMLDivElement>(null)
 
     const closeMenu = useCallback(() => {
-        // Find the extension and call its onSlashActivated callback to close the menu
-        const extensions = editor.extensionManager?.extensions || []
-        const slashExtension = extensions.find((ext: any) => ext.name === 'slashCommand')
-        if (slashExtension?.options?.onSlashActivated) {
-            slashExtension.options.onSlashActivated(null, editor)
-        }
+        editor.commands.displaySlashCommand(null)
     }, [editor])
 
-    const commands = [
+    const commands: SuggestionOption[] = [
         {
-            title: 'Image',
+            id: 'image',
+            label: 'Image',
             description: 'Upload an image',
-            icon: <ImageIcon/>,
-            action: () => {
-                // Remove the backslash
-                editor.chain().focus().deleteRange({from: slashPos, to: slashPos + 1}).run()
-
-                // Insert image upload node
-                editor.chain().focus().insertImageUpload({
-                    src: null,
-                    alt: '',
-                    uploading: false
-                }).run()
-
-                // Close the menu
-                closeMenu()
-            }
+            icon: <ImageIcon fontSize="small"/>
         },
         {
-            title: 'Embed',
+            id: 'embed',
+            label: 'Embed',
             description: 'Embed a webpage',
-            icon: <WebIcon/>,
-            action: () => {
-                // Remove the backslash
-                editor.chain().focus().deleteRange({from: slashPos, to: slashPos + 1}).run()
-
-                // Insert iframe node
-                editor.chain().focus().insertIframe({
-                    src: null
-                }).run()
-
-                // Close the menu
-                closeMenu()
-            }
+            icon: <WebIcon fontSize="small"/>
         }
     ]
+
+    const handleSelect = useCallback((option: SuggestionOption) => {
+        // Remove the backslash
+        editor.chain().focus().deleteRange({from: slashPos, to: slashPos + 1}).run()
+
+        if (option.id === 'image') {
+            // Insert image upload node
+            editor.chain().focus().insertImageUpload({
+                src: null,
+                alt: '',
+                uploading: false
+            }).run()
+        } else if (option.id === 'embed') {
+            // Insert iframe node
+            editor.chain().focus().insertIframe({
+                src: null
+            }).run()
+        }
+
+        // Close the menu
+        closeMenu()
+    }, [editor, slashPos, closeMenu])
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -189,78 +220,23 @@ export const SlashCommandMenu: React.FC<{ editor: any, slashPos: number }> = ({e
                 setSelectedIndex(prev => (prev - 1 + commands.length) % commands.length)
             } else if (event.key === 'Enter') {
                 event.preventDefault()
-                commands[selectedIndex].action()
+                handleSelect(commands[selectedIndex])
             }
         }
 
         document.addEventListener('keydown', handleKeyDown)
         return () => document.removeEventListener('keydown', handleKeyDown)
-    }, [selectedIndex, commands, editor, slashPos])
+    }, [selectedIndex, commands, handleSelect])
 
     return (
-        <Card ref={menuRef} data-slash-menu="true" sx={{
-            minWidth: 200,
-            maxHeight: 300,
-            overflow: 'auto',
-            boxShadow: 3
-        }}>
-            <List dense>
-                {commands.map((command, index) => (
-                    <ListItem
-                        key={command.title}
-                        onClick={command.action}
-                        sx={{
-                            cursor: 'pointer',
-                            backgroundColor: index === selectedIndex ? 'action.hover' : 'transparent'
-                        }}
-                    >
-                        <ListItemIcon>
-                            {command.icon}
-                        </ListItemIcon>
-                        <ListItemText
-                            primary={command.title}
-                            secondary={command.description}
-                        />
-                    </ListItem>
-                ))}
-            </List>
-        </Card>
+        <div data-slash-menu="true">
+            <SuggestionMenu
+                options={commands}
+                selectedIndex={selectedIndex}
+                onSelect={handleSelect}
+                visible={true}
+            />
+        </div>
     )
 }
 
-export const makeOnSlashActivated = (setHoverElements: Function) => {
-    return (slashPos: number | null, editor: any) => {
-        if (slashPos === null) {
-            // Clear slash command menu
-            setHoverElements((prev: any[]) => prev.filter((el: any) => el.source !== 'slash-command'))
-            return
-        }
-
-        // Find the DOM position for the slash
-        try {
-            const domPos = editor.view.domAtPos(slashPos)
-            let targetElement = domPos.node
-
-            if (targetElement.nodeType === Node.TEXT_NODE) {
-                targetElement = targetElement.parentElement
-            }
-
-            const hoverElement = {
-                source: 'slash-command',
-                el: targetElement,
-                render: () => (
-                    <SlashCommandMenu
-                        key="slash-command-menu"
-                        editor={editor}
-                        slashPos={slashPos}
-                    />
-                )
-            }
-
-            setHoverElements([hoverElement])
-
-        } catch (error) {
-            console.warn('Could not position slash command menu:', error)
-        }
-    }
-}

@@ -44,8 +44,7 @@ export const SuggestDeleteExtension = Mark.create<SuggestDeleteOptions>({
     addOptions() {
         return {
             HTMLAttributes: {
-                class: 'editor-suggest-delete',
-                style: 'background-color: #ffcdd2; text-decoration: line-through; padding: 1px 2px; border-radius: 2px;',
+                class: 'suggest-delete'
             },
         };
     },
