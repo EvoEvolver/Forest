@@ -88,7 +88,7 @@ export function ColumnRight() {
             </ToggleButtonGroup>
         </Paper>
 
-        {activeTab === 'tools' && (
+        {activeTab === 'tools' && !node.nodeTypeVM.oneTool && (
             <thisNodeContext.Provider value={node}>
                 <Box sx={{flex: 1, minHeight: 0}}>
                     <NodeContentFrame>
@@ -98,6 +98,15 @@ export function ColumnRight() {
                 <Box sx={{flex: 1, minHeight: 0}}>
                     <NodeContentFrame>
                         {node.nodeTypeVM.renderTool2(node)}
+                    </NodeContentFrame>
+                </Box>
+            </thisNodeContext.Provider>
+        )}
+        {activeTab === 'tools' && node.nodeTypeVM.oneTool && (
+            <thisNodeContext.Provider value={node}>
+                <Box sx={{flex: 1, minHeight: 0}}>
+                    <NodeContentFrame>
+                        {node.nodeTypeVM.renderTool(node)}
                     </NodeContentFrame>
                 </Box>
             </thisNodeContext.Provider>

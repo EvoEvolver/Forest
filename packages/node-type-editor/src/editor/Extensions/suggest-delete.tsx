@@ -1,5 +1,5 @@
-import {Mark, mergeAttributes} from "@tiptap/core";
-import React, {useEffect, useState} from "react";
+import {Mark} from "@tiptap/core";
+import React from "react";
 import {Card, IconButton} from "@mui/material";
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
@@ -23,7 +23,7 @@ declare module "@tiptap/core" {
             /**
              * Display suggest-delete hover menu
              */
-            displaySuggestDelete: ({id}: { id: string }, options: any) => ReturnType;
+            displaySuggestDelete: (options?: any) => ReturnType;
         };
     }
 }
@@ -43,41 +43,29 @@ export const SuggestDeleteExtension = Mark.create<SuggestDeleteOptions>({
 
     addOptions() {
         return {
-            HTMLAttributes: {
-                class: 'suggest-delete'
-            },
+            HTMLAttributes: {},
         };
     },
 
-    // 4. Add attributes to the mark
+    // 4. Add attributes to the mark (none needed for position-based approach)
     addAttributes() {
-        return {
-            id: {
-                default: null,
-            },
-        };
+        return {};
     },
 
     // 5. Define how the mark is parsed from HTML
     parseHTML() {
         return [
             {
-                tag: "span[data-suggest-delete]",
-                getAttrs: (el) => {
-                    const id = (el as HTMLSpanElement).getAttribute("data-suggest-delete");
-                    return id ? {id} : false;
-                }
+                tag: "del",
             },
         ];
     },
 
     // 6. Define how the mark is rendered to HTML
-    renderHTML({HTMLAttributes}) {
+    renderHTML() {
         return [
-            "span",
-            mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
-                "data-suggest-delete": HTMLAttributes.id || "true"
-            }),
+            "del",
+            {},
             0,
         ];
     },
@@ -85,23 +73,49 @@ export const SuggestDeleteExtension = Mark.create<SuggestDeleteOptions>({
     // 7. Add commands to set, unset, and accept the suggest-delete mark
     addCommands() {
         return {
-            displaySuggestDelete: (props, options) => ({commands}) => {
+            displaySuggestDelete: (options) => ({commands}) => {
                 const setHoverElements = (this.editor as any).options?.setHoverElements;
                 if (!setHoverElements) {
                     return true;
                 }
                 const _options = options || {};
-                const {id} = props;
-                // If id is null, it means no suggest-delete is active, so we clear the hover elements
-                if (!id) {
+
+                // Find the DOM element corresponding to the suggest-delete mark at current position
+                const {from, to} = this.editor.state.selection;
+                const {$from} = this.editor.state.selection;
+                const suggestDeleteMark = this.editor.schema.marks['suggest-delete'];
+                const marks = $from.marks();
+
+                // Check if there's a suggest-delete mark at current position
+                let hasSuggestDeleteMark = marks.find((mark: any) => mark.type === suggestDeleteMark);
+
+                // If no suggest-delete mark at current position, check surrounding marks
+                if (!hasSuggestDeleteMark) {
+                    let surroundingMarks = [];
+
+                    // Check node before cursor
+                    const nodeBefore = $from.nodeBefore;
+                    if (nodeBefore) {
+                        surroundingMarks = surroundingMarks.concat(nodeBefore.marks);
+                    }
+
+                    // Check node after cursor
+                    const nodeAfter = $from.nodeAfter;
+                    if (nodeAfter) {
+                        surroundingMarks = surroundingMarks.concat(nodeAfter.marks);
+                    }
+
+                    // Look for suggest-delete mark in surrounding marks
+                    hasSuggestDeleteMark = surroundingMarks.find((mark: any) => mark.type === suggestDeleteMark);
+                }
+
+                // If no suggest-delete mark is active, clear hover elements
+                if (!hasSuggestDeleteMark) {
                     setHoverElements((prev: any) => {
                         return prev.filter((el: any) => el.source !== "suggest-delete");
                     });
                     return true;
                 }
-
-                // Find the DOM element corresponding to the active suggest-delete mark
-                const {from, to} = this.editor.state.selection;
 
                 // Try to find the suggest-delete element at the current selection
                 let el = null;
@@ -110,17 +124,17 @@ export const SuggestDeleteExtension = Mark.create<SuggestDeleteOptions>({
                 const domNode = this.editor.view.domAtPos(from).node;
                 let candidateEl = domNode.nodeType === Node.TEXT_NODE ? domNode.parentElement : domNode as HTMLElement;
 
-                // Check if we found the right span tag with suggest-delete attribute
-                if (candidateEl && candidateEl.tagName === 'SPAN' && candidateEl.hasAttribute('data-suggest-delete')) {
+                // Check if we found the right del tag
+                if (candidateEl && candidateEl.tagName === 'DEL') {
                     el = candidateEl;
                 } else {
-                    // If not found, search within the selection range for any suggest-delete span tag
+                    // If not found, search within the selection range for any suggest-delete del tag
                     for (let pos = from; pos <= to; pos++) {
                         try {
                             const nodeAtPos = this.editor.view.domAtPos(pos).node;
                             const elementAtPos = nodeAtPos.nodeType === Node.TEXT_NODE ? nodeAtPos.parentElement : nodeAtPos as HTMLElement;
 
-                            if (elementAtPos && elementAtPos.tagName === 'SPAN' && elementAtPos.hasAttribute('data-suggest-delete')) {
+                            if (elementAtPos && elementAtPos.tagName === 'DEL') {
                                 el = elementAtPos;
                                 break;
                             }
@@ -128,7 +142,7 @@ export const SuggestDeleteExtension = Mark.create<SuggestDeleteOptions>({
                             // Also check parent elements
                             let parent = elementAtPos?.parentElement;
                             while (parent && parent !== this.editor.view.dom) {
-                                if (parent.tagName === 'SPAN' && parent.hasAttribute('data-suggest-delete')) {
+                                if (parent.tagName === 'DEL') {
                                     el = parent;
                                     break;
                                 }
@@ -143,7 +157,7 @@ export const SuggestDeleteExtension = Mark.create<SuggestDeleteOptions>({
 
                     // Final fallback: query the DOM
                     if (!el) {
-                        const foundEl = this.editor.view.dom.querySelector('span[data-suggest-delete]');
+                        const foundEl = this.editor.view.dom.querySelector('del');
                         if (foundEl) {
                             el = foundEl;
                         }
@@ -169,54 +183,27 @@ export const SuggestDeleteExtension = Mark.create<SuggestDeleteOptions>({
                         />
                     )
                 };
-                setHoverElements([hoverElement]);
+                setHoverElements((prev: any) => {
+                    const filtered = prev.filter((el: any) => el.source !== "suggest-delete");
+                    return [...filtered, hoverElement];
+                });
                 return true;
             },
             setSuggestDelete: () => ({commands}) => {
-                const id = `suggest-delete-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-                return commands.setMark(this.name, {id});
+                return commands.setMark(this.name);
             },
             unsetSuggestDelete: () => ({commands}) => {
                 return commands.unsetMark(this.name);
             },
-            acceptSuggestDelete: () => ({commands}) => {
-                return commands.extendMarkRange(this.name).deleteSelection();
+            acceptSuggestDelete: () => ({commands, chain}) => {
+                return chain().extendMarkRange(this.name).deleteSelection().run();
             },
         };
     },
 
     // 8. Track selection updates to show/hide the hover menu
     onSelectionUpdate() {
-        const {$from} = this.editor.state.selection;
-        const suggestDeleteMark = this.editor.schema.marks['suggest-delete'];
-        const marks = $from.marks();
-
-        // First check marks at current position
-        let activeSuggestDeleteMark = marks.find((mark: any) => mark.type === suggestDeleteMark);
-
-        // If no suggest-delete mark at current position, check surrounding marks
-        if (!activeSuggestDeleteMark) {
-            let surroundingMarks = [];
-            
-            // Check node before cursor
-            const nodeBefore = $from.nodeBefore;
-            if (nodeBefore) {
-                surroundingMarks = surroundingMarks.concat(nodeBefore.marks);
-            }
-            
-            // Check node after cursor
-            const nodeAfter = $from.nodeAfter;
-            if (nodeAfter) {
-                surroundingMarks = surroundingMarks.concat(nodeAfter.marks);
-            }
-
-            // Look for suggest-delete mark in surrounding marks
-            activeSuggestDeleteMark = surroundingMarks.find((mark: any) => mark.type === suggestDeleteMark);
-        }
-
-        // Find the active suggest-delete mark's id
-        const activeId = activeSuggestDeleteMark?.attrs.id || null;
-        this.editor.commands.displaySuggestDelete({id: activeId}, {inputOn: false});
+        this.editor.commands.displaySuggestDelete({inputOn: false});
     },
 });
 
@@ -236,17 +223,17 @@ export const SuggestDeleteHover = ({hoveredEl, editor, options}) => {
 
     return (
         <Card sx={{width: 'fit-content', p: 0.5, display: 'flex', alignItems: 'center', gap: 0.5}}>
-            <IconButton 
-                size="small" 
-                onClick={handleAccept} 
+            <IconButton
+                size="small"
+                onClick={handleAccept}
                 title="Accept deletion"
                 sx={{color: 'success.main'}}
             >
                 <CheckIcon fontSize="inherit"/>
             </IconButton>
-            <IconButton 
-                size="small" 
-                onClick={handleReject} 
+            <IconButton
+                size="small"
+                onClick={handleReject}
                 title="Reject deletion"
                 sx={{color: 'error.main'}}
             >

@@ -74,15 +74,13 @@ export class EditorNodeTypeM extends NodeTypeM {
 
 export class EditorNodeTypeVM extends NodeTypeVM {
 
+    static oneTool = true
+
     static render(node: NodeVM): React.ReactNode {
         return <EditorMainView node={node}/>
     }
 
-    static renderTool1(node: NodeVM): React.ReactNode {
-        return null
-    }
-
-    static renderTool2(node: NodeVM): React.ReactNode {
+    static renderTool(node: NodeVM): React.ReactNode {
         return <EditorTools node={node}/>
     }
 }

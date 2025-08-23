@@ -31,6 +31,9 @@ import {Editor} from "@tiptap/core";
 import {SlashCommandExtension} from "./Extensions/slash-command";
 import {IframeExtension} from "./Extensions/iframe";
 import {TableKit} from '@tiptap/extension-table'
+import {SuggestDeleteExtension} from "./Extensions/suggest-delete";
+import {SuggestInsertExtension} from "./Extensions/suggest-insert";
+
 
 interface TiptapEditorProps {
     node: NodeVM,
@@ -59,6 +62,8 @@ export function makeExtensions(yXML, provider) {
         ListItem,
         Image,
         ImageUploadExtension,
+        SuggestDeleteExtension,
+        SuggestInsertExtension,
         Bold.configure({}),
         TableKit.configure({
             table: {resizable: true},

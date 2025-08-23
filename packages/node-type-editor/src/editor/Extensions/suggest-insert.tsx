@@ -1,40 +1,40 @@
 import React from "react";
-import {Mark, mergeAttributes} from "@tiptap/core";
+import {Mark} from "@tiptap/core";
 import {Card, IconButton} from "@mui/material";
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 
-// 1. Declare the commands for the SuggestAdding extension
+// 1. Declare the commands for the SuggestInsert extension
 declare module "@tiptap/core" {
     interface Commands<ReturnType> {
-        suggestAdding: {
+        suggestInsert: {
             /**
              * Set a suggest-adding mark
              */
-            setSuggestAdding: () => ReturnType;
+            setSuggestInsert: () => ReturnType;
             /**
              * Unset a suggest-adding mark
              */
-            unsetSuggestAdding: () => ReturnType;
+            unsetSuggestInsert: () => ReturnType;
             /**
              * Accept a suggest-adding mark
              */
-            acceptSuggestAdding: () => ReturnType;
+            acceptSuggestInsert: () => ReturnType;
             /**
              * Display suggest-adding hover menu
              */
-            displaySuggestAdding: ({id}: { id: string }, options) => ReturnType;
+            displaySuggestInsert: (options?: any) => ReturnType;
         };
     }
 }
 
 // 2. Define the options for the extension
-interface SuggestAddingOptions {
+interface SuggestInsertOptions {
     HTMLAttributes: Record<string, any>;
 }
 
-// 3. Create the SuggestAdding Extension
-export const SuggestAddingExtension = Mark.create<SuggestAddingOptions>({
+// 3. Create the SuggestInsert Extension
+export const SuggestInsertExtension = Mark.create<SuggestInsertOptions>({
     name: "suggest-adding",
 
     // A suggest-adding mark can coexist with other marks
@@ -43,41 +43,29 @@ export const SuggestAddingExtension = Mark.create<SuggestAddingOptions>({
 
     addOptions() {
         return {
-            HTMLAttributes: {
-                class: 'suggest-adding'
-            },
+            HTMLAttributes: {},
         };
     },
 
-    // 4. Add attributes to the mark
+    // 4. Add attributes to the mark (none needed for position-based approach)
     addAttributes() {
-        return {
-            id: {
-                default: null,
-            },
-        };
+        return {};
     },
 
     // 5. Define how the mark is parsed from HTML
     parseHTML() {
         return [
             {
-                tag: "span[data-suggest-adding]",
-                getAttrs: (el) => {
-                    const id = (el as HTMLSpanElement).getAttribute("data-suggest-adding");
-                    return id ? {id} : false;
-                }
+                tag: "ins",
             },
         ];
     },
 
     // 6. Define how the mark is rendered to HTML
-    renderHTML({HTMLAttributes}) {
+    renderHTML() {
         return [
-            "span",
-            mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
-                "data-suggest-adding": HTMLAttributes.id || "true"
-            }),
+            "ins",
+            {},
             0,
         ];
     },
@@ -85,23 +73,49 @@ export const SuggestAddingExtension = Mark.create<SuggestAddingOptions>({
     // 7. Add commands to set, unset, and accept the suggest-adding mark
     addCommands() {
         return {
-            displaySuggestAdding: (props, options) => ({commands}) => {
+            displaySuggestInsert: (options) => ({commands}) => {
                 const setHoverElements = (this.editor as any).options?.setHoverElements;
                 if (!setHoverElements) {
                     return true;
                 }
                 const _options = options || {};
-                const {id} = props;
-                // If id is null, it means no suggest-adding is active, so we clear the hover elements
-                if (!id) {
+
+                // Find the DOM element corresponding to the suggest-adding mark at current position
+                const {from, to} = this.editor.state.selection;
+                const {$from} = this.editor.state.selection;
+                const suggestInsertMark = this.editor.schema.marks['suggest-adding'];
+                const marks = $from.marks();
+
+                // Check if there's a suggest-adding mark at current position
+                let hasSuggestInsertMark = marks.find((mark: any) => mark.type === suggestInsertMark);
+
+                // If no suggest-adding mark at current position, check surrounding marks
+                if (!hasSuggestInsertMark) {
+                    let surroundingMarks = [];
+
+                    // Check node before cursor
+                    const nodeBefore = $from.nodeBefore;
+                    if (nodeBefore) {
+                        surroundingMarks = surroundingMarks.concat(nodeBefore.marks);
+                    }
+
+                    // Check node after cursor
+                    const nodeAfter = $from.nodeAfter;
+                    if (nodeAfter) {
+                        surroundingMarks = surroundingMarks.concat(nodeAfter.marks);
+                    }
+
+                    // Look for suggest-adding mark in surrounding marks
+                    hasSuggestInsertMark = surroundingMarks.find((mark: any) => mark.type === suggestInsertMark);
+                }
+
+                // If no suggest-adding mark is active, clear hover elements
+                if (!hasSuggestInsertMark) {
                     setHoverElements((prev: any) => {
                         return prev.filter((el: any) => el.source !== "suggest-adding");
                     });
                     return true;
                 }
-
-                // Find the DOM element corresponding to the active suggest-adding mark
-                const {from, to} = this.editor.state.selection;
 
                 // Try to find the suggest-adding element at the current selection
                 let el = null;
@@ -110,17 +124,17 @@ export const SuggestAddingExtension = Mark.create<SuggestAddingOptions>({
                 const domNode = this.editor.view.domAtPos(from).node;
                 let candidateEl = domNode.nodeType === Node.TEXT_NODE ? domNode.parentElement : domNode as HTMLElement;
 
-                // Check if we found the right span tag with suggest-adding attribute
-                if (candidateEl && candidateEl.tagName === 'SPAN' && candidateEl.hasAttribute('data-suggest-adding')) {
+                // Check if we found the right ins tag
+                if (candidateEl && candidateEl.tagName === 'INS') {
                     el = candidateEl;
                 } else {
-                    // If not found, search within the selection range for any suggest-adding span tag
+                    // If not found, search within the selection range for any suggest-adding ins tag
                     for (let pos = from; pos <= to; pos++) {
                         try {
                             const nodeAtPos = this.editor.view.domAtPos(pos).node;
                             const elementAtPos = nodeAtPos.nodeType === Node.TEXT_NODE ? nodeAtPos.parentElement : nodeAtPos as HTMLElement;
 
-                            if (elementAtPos && elementAtPos.tagName === 'SPAN' && elementAtPos.hasAttribute('data-suggest-adding')) {
+                            if (elementAtPos && elementAtPos.tagName === 'INS') {
                                 el = elementAtPos;
                                 break;
                             }
@@ -128,7 +142,7 @@ export const SuggestAddingExtension = Mark.create<SuggestAddingOptions>({
                             // Also check parent elements
                             let parent = elementAtPos?.parentElement;
                             while (parent && parent !== this.editor.view.dom) {
-                                if (parent.tagName === 'SPAN' && parent.hasAttribute('data-suggest-adding')) {
+                                if (parent.tagName === 'INS') {
                                     el = parent;
                                     break;
                                 }
@@ -143,7 +157,7 @@ export const SuggestAddingExtension = Mark.create<SuggestAddingOptions>({
 
                     // Final fallback: query the DOM
                     if (!el) {
-                        const foundEl = this.editor.view.dom.querySelector('span[data-suggest-adding]');
+                        const foundEl = this.editor.view.dom.querySelector('ins');
                         if (foundEl) {
                             el = foundEl;
                         }
@@ -162,24 +176,26 @@ export const SuggestAddingExtension = Mark.create<SuggestAddingOptions>({
                     source: 'suggest-adding',
                     el: el,
                     render: (el: any, editor: any) => (
-                        <SuggestAddingHover
+                        <SuggestInsertHover
                             hoveredEl={el}
                             editor={editor}
                             options={{..._options}}
                         />
                     )
                 };
-                setHoverElements([hoverElement]);
+                setHoverElements((prev: any) => {
+                    const filtered = prev.filter((el: any) => el.source !== "suggest-adding");
+                    return [...filtered, hoverElement];
+                });
                 return true;
             },
-            setSuggestAdding: () => ({commands}) => {
-                const id = `suggest-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-                return commands.setMark(this.name, {id});
+            setSuggestInsert: () => ({commands}) => {
+                return commands.setMark(this.name);
             },
-            unsetSuggestAdding: () => ({commands}) => {
+            unsetSuggestInsert: () => ({commands}) => {
                 return commands.unsetMark(this.name);
             },
-            acceptSuggestAdding: () => ({commands}) => {
+            acceptSuggestInsert: () => ({commands}) => {
                 return commands.unsetMark(this.name);
             },
         };
@@ -187,46 +203,17 @@ export const SuggestAddingExtension = Mark.create<SuggestAddingOptions>({
 
     // 8. Track selection updates to show/hide the hover menu
     onSelectionUpdate() {
-        const {$from} = this.editor.state.selection;
-        const suggestAddingMark = this.editor.schema.marks['suggest-adding'];
-        const marks = $from.marks();
-
-        // First check marks at current position
-        let activeSuggestAddingMark = marks.find((mark: any) => mark.type === suggestAddingMark);
-
-        // If no suggest-adding mark at current position, check surrounding marks
-        if (!activeSuggestAddingMark) {
-            let surroundingMarks = [];
-            
-            // Check node before cursor
-            const nodeBefore = $from.nodeBefore;
-            if (nodeBefore) {
-                surroundingMarks = surroundingMarks.concat(nodeBefore.marks);
-            }
-            
-            // Check node after cursor
-            const nodeAfter = $from.nodeAfter;
-            if (nodeAfter) {
-                surroundingMarks = surroundingMarks.concat(nodeAfter.marks);
-            }
-
-            // Look for suggest-adding mark in surrounding marks
-            activeSuggestAddingMark = surroundingMarks.find((mark: any) => mark.type === suggestAddingMark);
-        }
-
-        // Find the active suggest-adding mark's id
-        const activeId = activeSuggestAddingMark?.attrs.id || null;
-        this.editor.commands.displaySuggestAdding({id: activeId}, {inputOn: false});
+        this.editor.commands.displaySuggestInsert({inputOn: false});
     },
 });
 
 /**
- * React component for the SuggestAdding hover/bubble menu.
+ * React component for the SuggestInsert hover/bubble menu.
  */
-export const SuggestAddingHover = ({hoveredEl, editor, options}) => {
+export const SuggestInsertHover = ({hoveredEl, editor, options}) => {
     // Handler to accept the suggestion (remove the mark)
     const handleAccept = () => {
-        editor.chain().focus().extendMarkRange('suggest-adding').acceptSuggestAdding().run();
+        editor.chain().focus().extendMarkRange('suggest-adding').acceptSuggestInsert().run();
     };
 
     // Handler to reject the suggestion (remove the text and mark)
@@ -236,17 +223,17 @@ export const SuggestAddingHover = ({hoveredEl, editor, options}) => {
 
     return (
         <Card sx={{width: 'fit-content', p: 0.5, display: 'flex', alignItems: 'center', gap: 0.5}}>
-            <IconButton 
-                size="small" 
-                onClick={handleAccept} 
+            <IconButton
+                size="small"
+                onClick={handleAccept}
                 title="Accept suggestion"
                 sx={{color: 'success.main'}}
             >
                 <CheckIcon fontSize="inherit"/>
             </IconButton>
-            <IconButton 
-                size="small" 
-                onClick={handleReject} 
+            <IconButton
+                size="small"
+                onClick={handleReject}
                 title="Reject suggestion"
                 sx={{color: 'error.main'}}
             >
