@@ -15,6 +15,8 @@ const WORKER_URL = import.meta.env.VITE_WORKER_URL;
 export const WritingAssistant: React.FC = ({selectedNode}: { selectedNode: NodeVM }) => {
     const [messages, setMessages] = useState<BaseMessage[]>([]);
     const [disabled, setDisabled] = useState(false);
+    const [includeChildren, setIncludeChildren] = useState(false);
+    const [includeSiblings, setIncludeSiblings] = useState(false);
     const node = selectedNode;
     const authToken = useAtomValue(authTokenAtom);
     const markedNodes = useAtomValue(markedNodesAtom);
@@ -25,32 +27,70 @@ export const WritingAssistant: React.FC = ({selectedNode}: { selectedNode: NodeV
 
         const parent = treeM.getParent(nodeM);
         const parentContent = parent && parent.nodeTypeName() === "EditorNodeType"
-            ? "<parentContent>\n" + EditorNodeTypeM.getEditorContent(parent) + "\n</parentContent>"
+            ? `<parentContent id="${parent.id}">\n` + EditorNodeTypeM.getEditorContent(parent) + "\n</parentContent>"
             : "";
 
         let markedNodeContent = ""
         let markedNodesList = Array.from(markedNodes).map(id => treeM.getNode(id)).filter(n => n && n.nodeTypeName() === "EditorNodeType") as NodeM[]
         if (markedNodesList.length > 0) {
-            markedNodeContent = "<markedNodes>\n" + markedNodesList.map(child => "Title:" + child.title() + "\n" + EditorNodeTypeM.getEditorContent(child)).join("\n-----\n") + "\n</markedNodes>";
+            markedNodeContent = "<markedNodes>\n" + markedNodesList.map(child => `Title:${child.title()} (ID: ${child.id})\n` + EditorNodeTypeM.getEditorContent(child)).join("\n-----\n") + "\n</markedNodes>";
+        }
+
+        let childrenContent = "";
+        let childrenList: NodeM[] = [];
+        if (includeChildren) {
+            childrenList = treeM.getChildren(nodeM).filter((n: NodeM) => n && n.nodeTypeName() === "EditorNodeType") as NodeM[];
+            if (childrenList.length > 0) {
+                childrenContent = "<childrenNodes>\n" + childrenList.map(child => `Title:${child.title()} (ID: ${child.id})\n` + EditorNodeTypeM.getEditorContent(child)).join("\n-----\n") + "\n</childrenNodes>";
+            }
+        }
+
+        let siblingsContent = "";
+        let siblingsList: NodeM[] = [];
+        if (includeSiblings && parent) {
+            siblingsList = treeM.getChildren(parent).filter((n: NodeM) => n && n.nodeTypeName() === "EditorNodeType" && n.id !== nodeM.id) as NodeM[];
+            if (siblingsList.length > 0) {
+                siblingsContent = "<siblingNodes>\n" + siblingsList.map(sibling => `Title:${sibling.title()} (ID: ${sibling.id})\n` + EditorNodeTypeM.getEditorContent(sibling)).join("\n-----\n") + "\n</siblingNodes>";
+            }
         }
 
         return {
             originalContent,
             parentContent,
-            markedNodeContent
+            markedNodeContent,
+            childrenContent,
+            siblingsContent,
+            parent,
+            markedNodesList,
+            childrenList,
+            siblingsList
         };
     };
 
     const getSystemMessage = (nodeM: NodeM): SystemMessage => {
-        const {originalContent, parentContent, markedNodeContent} = getContextualContent(nodeM);
+        const {originalContent, parentContent, markedNodeContent, childrenContent, siblingsContent, parent, markedNodesList, childrenList, siblingsList} = getContextualContent(nodeM);
+
+        // Build available node IDs for new-version tags
+        let availableNodeIds = `- Current node (${nodeM.title()}): ${nodeM.id}`;
+        if (parent && parent.nodeTypeName() === "EditorNodeType") {
+            availableNodeIds += `\n- Parent node (${parent.title()}): ${parent.id}`;
+        }
+        if (markedNodesList.length > 0) {
+            availableNodeIds += `\n- Marked nodes:\n${markedNodesList.map(n => `  - ${n.title()}: ${n.id}`).join('\n')}`;
+        }
+        if (childrenList.length > 0) {
+            availableNodeIds += `\n- Children nodes:\n${childrenList.map(n => `  - ${n.title()}: ${n.id}`).join('\n')}`;
+        }
+        if (siblingsList.length > 0) {
+            availableNodeIds += `\n- Sibling nodes:\n${siblingsList.map(n => `  - ${n.title()}: ${n.id}`).join('\n')}`;
+        }
 
         const systemMessage = new SystemMessage(`
-You are a professional writing assistant AI agent.
-Your title as an agent is: Writing Assistant for ${nodeM.title()}
+You are a professional writing assistant AI agent that helps user write on a tree structure documents, where each node is a unit of content.
 
 Your context is the following:
 <context>
-Current content you are helping with:
+Currently, the user select node (ID: ${nodeM.id}):
 <currentContent>
 ${originalContent}
 </currentContent>
@@ -58,26 +98,27 @@ ${originalContent}
 ${parentContent}
 
 ${markedNodeContent}
+
+${childrenContent}
+
+${siblingsContent}
 </context>
 
-You are required to help the user with writing tasks including:
+You are here to help the user with writing tasks including:
 - Improving and refining existing content
 - Providing writing suggestions and feedback
 - Helping with grammar, style, and structure
 - Generating new content based on user requests
 - Answering questions about the current content
 
-When you provide a new or improved version of content, wrap it in <new-version id="${nodeM.id}"> tags with the current node ID. The content inside <new-version> tags should be HTML.
+When you provide a new or improved version of content, wrap it in <new-version id="NODE_ID"> tags with the appropriate node ID. The content inside <new-version> tags should be HTML.
 
-Your response must adopt the following JSON format:
-You must only output JSON
+Available node IDs you can create new versions for:
+${availableNodeIds}
 
-<answer_user>
-{
- "type": "answer_user",
- "message": the message to the user (can include <new-version id="NODE_ID">new content</new-version> tags)
-}
-</answer_user>
+You can create new versions for any of these nodes - the current node, parent node, marked nodes, children nodes, or sibling nodes. This allows you to suggest improvements to related content beyond just the current node.
+
+Respond naturally and conversationally. You can include regular text explanations along with any new content versions. Focus on being helpful and collaborative in your writing assistance.
 `);
         return systemMessage;
     };
@@ -101,39 +142,17 @@ You must only output JSON
         let response = await fetchChatResponse(messagesToSubmit as any, "gpt-4.1", authToken);
         console.log("response", response);
 
-        try {
-            response = response.substring(response.indexOf('{'), response.lastIndexOf('}') + 1);
-        } catch (e) {
-            // ignore if no json
-        }
-
-        // Try to parse the response as JSON
-        let parsedResponse: any;
-        try {
-            parsedResponse = JSON.parse(response);
-        } catch {
-            parsedResponse = {type: "answer_user", message: response};
-        }
-        console.log("parsedResponse", parsedResponse);
-
-        if (parsedResponse.type === "answer_user") {
-            return {
-                message: parsedResponse.message,
-                hasNewVersion: parsedResponse.message.includes('<new-version')
-            };
-        } else {
-            return {
-                message: response,
-                hasNewVersion: false
-            }; // fallback to raw response
-        }
+        return {
+            message: response,
+            hasNewVersion: response.includes('<new-version')
+        };
     };
 
     const parseNewVersionTags = (message: string) => {
         const newVersionRegex = /<new-version\s+id="([^"]+)">([^<]*(?:<(?!\/new-version>)[^<]*)*)<\/new-version>/gi;
         const segments = [];
         let lastIndex = 0;
-        let match;
+        let match: RegExpExecArray | null;
 
         // Reset regex for global matching
         newVersionRegex.lastIndex = 0;
@@ -243,6 +262,24 @@ You must only output JSON
 
     return (
         <>
+            <div style={{ padding: '8px', borderBottom: '1px solid #e0e0e0', backgroundColor: '#f5f5f5', display: 'flex', gap: '16px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
+                    <input
+                        type="checkbox"
+                        checked={includeChildren}
+                        onChange={(e) => setIncludeChildren(e.target.checked)}
+                    />
+                    Include children nodes in context
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
+                    <input
+                        type="checkbox"
+                        checked={includeSiblings}
+                        onChange={(e) => setIncludeSiblings(e.target.checked)}
+                    />
+                    Include sibling nodes in context
+                </label>
+            </div>
             <ChatViewImpl
                 sendMessage={sendMessage}
                 messages={messages}

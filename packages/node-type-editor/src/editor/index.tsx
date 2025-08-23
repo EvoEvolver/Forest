@@ -36,7 +36,8 @@ import {SuggestDeleteExtension} from "./Extensions/suggest-delete";
 import {SuggestInsertExtension} from "./Extensions/suggest-insert";
 import {RevisionExtension} from "./Extensions/revision";
 import {NodeDiffExtension} from "./Extensions/node-diff";
-
+import HardBreak from '@tiptap/extension-hard-break'
+import Italic from '@tiptap/extension-italic'
 
 interface TiptapEditorProps {
     node: NodeVM,
@@ -64,12 +65,14 @@ export function makeExtensions(yXML, provider) {
         OrderedList,
         ListItem,
         Image,
+        HardBreak,
         ImageUploadExtension,
         SuggestDeleteExtension,
         SuggestInsertExtension,
         NodeDiffExtension,
         RevisionExtension,
         Bold.configure({}),
+        Italic.configure({}),
         TableKit.configure({
             table: {resizable: true},
         }),

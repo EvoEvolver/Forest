@@ -58,7 +58,7 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewI
         <Box
             sx={{
                 margin: "0 auto",
-                padding: 2,
+                padding: 0,
                 display: "flex",
                 flexDirection: "column",
                 height: "95%",
