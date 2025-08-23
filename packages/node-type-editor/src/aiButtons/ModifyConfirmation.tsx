@@ -8,6 +8,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import {EditorContent, useEditor} from '@tiptap/react';
 import {makeExtensions} from "../editor";
 import HtmlDiff from 'htmldiff-js';
+import {makeHtmlDiff} from "./helper";
 
 
 interface ComparisonContent {
@@ -48,7 +49,7 @@ export const ModifyConfirmation: React.FC<ModifyConfirmationProps> = ({
 
     const diffHtml = useMemo(() => {
         if (!comparisonContent) return '';
-        return HtmlDiff.execute(comparisonContent.original.content, comparisonContent.modified.content);
+        return makeHtmlDiff(comparisonContent.original.content, comparisonContent.modified.content);
     }, [comparisonContent]);
 
     useEffect(() => {
@@ -86,8 +87,7 @@ export const ModifyConfirmation: React.FC<ModifyConfirmationProps> = ({
                         border: '1px solid #ccc',
                         padding: '10px',
                         borderRadius: '4px'
-                    }}
-                         className="diff-content">
+                    }}>
                         <h3>Changes Preview (Editable)</h3>
                         {editor ? (
                             <EditorContent editor={editor} key={editor?.storage?.html || 'editor'}/>

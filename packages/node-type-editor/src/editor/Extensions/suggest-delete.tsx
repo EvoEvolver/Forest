@@ -227,7 +227,6 @@ export const SuggestDeleteHover = ({hoveredEl, editor, options}) => {
                 size="small"
                 onClick={handleAccept}
                 title="Accept deletion"
-                sx={{color: 'success.main'}}
             >
                 <CheckIcon fontSize="inherit"/>
             </IconButton>
@@ -235,7 +234,6 @@ export const SuggestDeleteHover = ({hoveredEl, editor, options}) => {
                 size="small"
                 onClick={handleReject}
                 title="Reject deletion"
-                sx={{color: 'error.main'}}
             >
                 <CloseIcon fontSize="inherit"/>
             </IconButton>

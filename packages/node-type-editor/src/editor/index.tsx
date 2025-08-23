@@ -20,6 +20,7 @@ import {IconButton, Paper} from "@mui/material";
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import CommentIcon from '@mui/icons-material/Comment';
 import LinkIcon from '@mui/icons-material/Link';
+import CheckIcon from '@mui/icons-material/Check';
 import {usePopper} from "react-popper";
 import {LinkExtension} from "./Extensions/link";
 import {ImageUploadExtension, uploadImage} from "./Extensions/image-upload";
@@ -33,6 +34,7 @@ import {IframeExtension} from "./Extensions/iframe";
 import {TableKit} from '@tiptap/extension-table'
 import {SuggestDeleteExtension} from "./Extensions/suggest-delete";
 import {SuggestInsertExtension} from "./Extensions/suggest-insert";
+import {RevisionExtension} from "./Extensions/revision";
 
 
 interface TiptapEditorProps {
@@ -64,6 +66,7 @@ export function makeExtensions(yXML, provider) {
         ImageUploadExtension,
         SuggestDeleteExtension,
         SuggestInsertExtension,
+        RevisionExtension,
         Bold.configure({}),
         TableKit.configure({
             table: {resizable: true},
@@ -117,6 +120,7 @@ declare module '@tiptap/core' {
 
 const EditorImpl = ({yXML, provider, dataLabel, node}) => {
     const [hoverElements, setHoverElements] = useState([]);
+    const [hasChangesInSelection, setHasChangesInSelection] = useState(false);
     const contentEditable = useContext(contentEditableContext);
 
     const extensions = makeExtensions(yXML, provider);
@@ -134,7 +138,37 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
             console.error("Content error in Tiptap editor:", disableCollaboration);
             disableCollaboration();
         },
-        setHoverElements: setHoverElements
+        setHoverElements: setHoverElements,
+        onSelectionUpdate: ({editor}) => {
+            // Check if selection has any suggest marks
+            const { state } = editor;
+            const { from, to } = state.selection;
+            let hasChanges = false;
+            
+            // Simple approach: check if any text nodes in selection have suggest marks
+            state.doc.nodesBetween(from, to, (node, pos) => {
+                if (node.isText) {
+                    // Check if this text node has suggest marks
+                    const hasMarks = node.marks.some(mark => 
+                        mark.type.name === 'suggest-delete' || mark.type.name === 'suggest-adding'
+                    );
+                    
+                    if (hasMarks) {
+                        // Check if the selection actually overlaps with this node
+                        const nodeStart = pos;
+                        const nodeEnd = pos + node.nodeSize;
+                        const selectionOverlaps = !(to <= nodeStart || from >= nodeEnd);
+                        
+                        if (selectionOverlaps) {
+                            hasChanges = true;
+                            return false; // Stop traversal
+                        }
+                    }
+                }
+            });
+            
+            setHasChangesInSelection(hasChanges);
+        }
     });
 
     const handleClickComment = () => {
@@ -165,6 +199,50 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
             // Position cursor at the end of the selection
             editor?.commands.setTextSelection(to);
         }, 0);
+    };
+
+    const handleAcceptAllChanges = () => {
+        const { state } = editor;
+        const { from, to } = state.selection;
+        let tr = state.tr;
+
+        // Collect ranges to process from right to left to avoid position shifts
+        const ranges = [];
+        state.doc.nodesBetween(from, to, (node, pos) => {
+            if (node.isText && node.marks) {
+                const nodeStart = Math.max(from, pos);
+                const nodeEnd = Math.min(to, pos + node.nodeSize);
+                
+                node.marks.forEach((mark) => {
+                    if (mark.type.name === 'suggest-delete' || mark.type.name === 'suggest-adding') {
+                        ranges.push({
+                            start: nodeStart,
+                            end: nodeEnd,
+                            mark: mark,
+                            isDelete: mark.type.name === 'suggest-delete'
+                        });
+                    }
+                });
+            }
+        });
+
+        // Process ranges from right to left to avoid position shifts when deleting
+        ranges.sort((a, b) => b.start - a.start);
+        
+        ranges.forEach(({ start, end, mark, isDelete }) => {
+            if (isDelete) {
+                // Accept deletion: remove both the mark and the content
+                tr = tr.removeMark(start, end, mark);
+                tr = tr.delete(start, end);
+            } else {
+                // Accept insertion: remove the mark, keep the content
+                tr = tr.removeMark(start, end, mark);
+            }
+        });
+
+        if (tr.docChanged) {
+            editor.view.dispatch(tr);
+        }
     };
 
     if (!editor) {
@@ -214,6 +292,16 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
                     <IconButton size="small" onClick={handleClickLink} sx={{color: 'black'}}>
                         <LinkIcon/>
                     </IconButton>
+                    {hasChangesInSelection && (
+                        <IconButton 
+                            size="small" 
+                            onClick={handleAcceptAllChanges} 
+                            sx={{color: 'green'}}
+                            title="Accept all changes"
+                        >
+                            <CheckIcon/>
+                        </IconButton>
+                    )}
                 </Paper>
             </BubbleMenu>
             <HoverElements hoverElements={hoverElements} editor={editor}/>

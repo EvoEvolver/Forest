@@ -227,7 +227,6 @@ export const SuggestInsertHover = ({hoveredEl, editor, options}) => {
                 size="small"
                 onClick={handleAccept}
                 title="Accept suggestion"
-                sx={{color: 'success.main'}}
             >
                 <CheckIcon fontSize="inherit"/>
             </IconButton>
@@ -235,7 +234,6 @@ export const SuggestInsertHover = ({hoveredEl, editor, options}) => {
                 size="small"
                 onClick={handleReject}
                 title="Reject suggestion"
-                sx={{color: 'error.main'}}
             >
                 <CloseIcon fontSize="inherit"/>
             </IconButton>
