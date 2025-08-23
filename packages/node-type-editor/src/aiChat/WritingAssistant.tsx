@@ -18,8 +18,6 @@ const openai = createOpenAI({
 export const WritingAssistant: React.FC = ({selectedNode}: { selectedNode: NodeVM }) => {
     const [messages, setMessages] = useState<BaseMessage[]>([]);
     const [disabled, setDisabled] = useState(false);
-    const [includeChildren, setIncludeChildren] = useState(false);
-    const [includeSiblings, setIncludeSiblings] = useState(false);
     const node = selectedNode;
     const markedNodes = useAtomValue(markedNodesAtom);
 
@@ -38,21 +36,19 @@ export const WritingAssistant: React.FC = ({selectedNode}: { selectedNode: NodeV
             markedNodeContent = "<markedNodes>\n" + markedNodesList.map(child => `Title:${child.title()} (ID: ${child.id})\n` + EditorNodeTypeM.getEditorContent(child)).join("\n-----\n") + "\n</markedNodes>";
         }
 
-        let childrenContent = "";
+        let childrenInfo = "";
         let childrenList: NodeM[] = [];
-        if (includeChildren) {
-            childrenList = treeM.getChildren(nodeM).filter((n: NodeM) => n && n.nodeTypeName() === "EditorNodeType") as NodeM[];
-            if (childrenList.length > 0) {
-                childrenContent = "<childrenNodes>\n" + childrenList.map(child => `Title:${child.title()} (ID: ${child.id})\n` + EditorNodeTypeM.getEditorContent(child)).join("\n-----\n") + "\n</childrenNodes>";
-            }
+        childrenList = treeM.getChildren(nodeM).filter((n: NodeM) => n && n.nodeTypeName() === "EditorNodeType") as NodeM[];
+        if (childrenList.length > 0) {
+            childrenInfo = "<childrenNodes>\n" + childrenList.map(child => `Title: ${child.title()} (ID: ${child.id})`).join("\n") + "\n</childrenNodes>";
         }
 
-        let siblingsContent = "";
+        let siblingsInfo = "";
         let siblingsList: NodeM[] = [];
-        if (includeSiblings && parent) {
+        if (parent) {
             siblingsList = treeM.getChildren(parent).filter((n: NodeM) => n && n.nodeTypeName() === "EditorNodeType" && n.id !== nodeM.id) as NodeM[];
             if (siblingsList.length > 0) {
-                siblingsContent = "<siblingNodes>\n" + siblingsList.map(sibling => `Title:${sibling.title()} (ID: ${sibling.id})\n` + EditorNodeTypeM.getEditorContent(sibling)).join("\n-----\n") + "\n</siblingNodes>";
+                siblingsInfo = "<siblingNodes>\n" + siblingsList.map(sibling => `Title: ${sibling.title()} (ID: ${sibling.id})`).join("\n") + "\n</siblingNodes>";
             }
         }
 
@@ -60,8 +56,8 @@ export const WritingAssistant: React.FC = ({selectedNode}: { selectedNode: NodeV
             originalContent,
             parentContent,
             markedNodeContent,
-            childrenContent,
-            siblingsContent,
+            childrenInfo,
+            siblingsInfo,
             parent,
             markedNodesList,
             childrenList,
@@ -70,7 +66,7 @@ export const WritingAssistant: React.FC = ({selectedNode}: { selectedNode: NodeV
     };
 
     const getSystemMessage = (nodeM: NodeM): SystemMessage => {
-        const {originalContent, parentContent, markedNodeContent, childrenContent, siblingsContent, parent, markedNodesList, childrenList, siblingsList} = getContextualContent(nodeM);
+        const {originalContent, parentContent, markedNodeContent, childrenInfo, siblingsInfo, parent, markedNodesList, childrenList, siblingsList} = getContextualContent(nodeM);
 
         // Build available node IDs for new-version tags
         let availableNodeIds = `- Current node (${nodeM.title()}): ${nodeM.id}`;
@@ -101,9 +97,9 @@ ${parentContent}
 
 ${markedNodeContent}
 
-${childrenContent}
+${childrenInfo}
 
-${siblingsContent}
+${siblingsInfo}
 </context>
 
 You are here to help the user with writing tasks including:
@@ -113,7 +109,11 @@ You are here to help the user with writing tasks including:
 - Generating new content based on user requests
 - Answering questions about the current content
 
-When you want to provide a new or improved version of content, use the suggestNewVersion tool with the appropriate node ID and HTML content.
+You must 
+- If the user asks for summary, you must use tool showNodeContent to get the content of the node first, then provide summary based on the content.
+- If the user asks for writing something, by default, it means that you need to call suggestNewVersion tool to write the content for the current node. 
+- If the user specifies another node, you can also call suggestNewVersion tool to write for that node.
+
 You don't need to mention what new version you created in your text response, as the user will see the new version directly.
 
 Available node IDs you can create new versions for:
@@ -322,24 +322,6 @@ Respond naturally and conversationally. You can include regular text explanation
 
     return (
         <>
-            <div style={{ padding: '8px', borderBottom: '1px solid #e0e0e0', backgroundColor: '#f5f5f5', display: 'flex', gap: '16px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
-                    <input
-                        type="checkbox"
-                        checked={includeChildren}
-                        onChange={(e) => setIncludeChildren(e.target.checked)}
-                    />
-                    Include children nodes in context
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
-                    <input
-                        type="checkbox"
-                        checked={includeSiblings}
-                        onChange={(e) => setIncludeSiblings(e.target.checked)}
-                    />
-                    Include sibling nodes in context
-                </label>
-            </div>
             <ChatViewImpl
                 sendMessage={sendMessage}
                 messages={messages}
