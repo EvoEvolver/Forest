@@ -11,6 +11,7 @@ import {NodeTypeM} from "@forest/schema/src/nodeTypeM";
 import {NodeTypeVM} from "@forest/schema/src/nodeTypeVM";
 import {TopDownMatchingButton} from "./aiButtons/topDownMatching";
 import {WritingAssistant} from "./aiChat/WritingAssistant";
+import {Box} from "@mui/material";
 
 const EditorXmlFragment = "ydatapaperEditor"
 
@@ -97,11 +98,15 @@ function EditorMainView({node}: { node: NodeVM }) {
 function EditorTools({node}: { node: NodeVM }) {
     const children = useAtomValue(node.children)
     return <>
-        <WritingAssistant selectedNode={node}/>
-        <ModifyButton node={node}/>
-        {children.length === 0 && <ParentToSummaryButton node={node}/>}
-        {children.length === 0 && <TopDownDecomposeButton node={node}/>}
-        {children.length !== 0 && <BottomUpButton node={node}/>}
-        {children.length !== 0 && <TopDownMatchingButton node={node}/>}
+        <Box>
+            <WritingAssistant selectedNode={node}/>
+        </Box>
+        <Box>
+            <ModifyButton node={node}/>
+            {children.length === 0 && <ParentToSummaryButton node={node}/>}
+            {children.length === 0 && <TopDownDecomposeButton node={node}/>}
+            {children.length !== 0 && <BottomUpButton node={node}/>}
+            {children.length !== 0 && <TopDownMatchingButton node={node}/>}
+        </Box>
     </>
 }
