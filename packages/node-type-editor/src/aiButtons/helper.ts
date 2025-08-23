@@ -274,14 +274,32 @@ function lcsPairs(a: string[], b: string[]): Array<[number, number]> {
 }
 
 function wrapInserted(doc: Document, node: Node): Node {
-    const ins = doc.createElement("ins");
-    ins.appendChild(node.cloneNode(true));
-    return ins;
+    if (node.nodeType === Node.ELEMENT_NODE) {
+        // For element nodes, use div with insert class
+        const div = doc.createElement("div");
+        div.className = "insert";
+        div.appendChild(node.cloneNode(true));
+        return div;
+    } else {
+        // For text nodes, use ins tag
+        const ins = doc.createElement("ins");
+        ins.appendChild(node.cloneNode(true));
+        return ins;
+    }
 }
 function wrapDeleted(doc: Document, node: Node): Node {
-    const del = doc.createElement("del");
-    del.appendChild(node.cloneNode(true));
-    return del;
+    if (node.nodeType === Node.ELEMENT_NODE) {
+        // For element nodes, use div with delete class
+        const div = doc.createElement("div");
+        div.className = "delete";
+        div.appendChild(node.cloneNode(true));
+        return div;
+    } else {
+        // For text nodes, use del tag
+        const del = doc.createElement("del");
+        del.appendChild(node.cloneNode(true));
+        return del;
+    }
 }
 
 export function renderDiffInto(oldHTML: string, newHTML: string, target: Element) {

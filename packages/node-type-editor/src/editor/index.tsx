@@ -35,6 +35,7 @@ import {TableKit} from '@tiptap/extension-table'
 import {SuggestDeleteExtension} from "./Extensions/suggest-delete";
 import {SuggestInsertExtension} from "./Extensions/suggest-insert";
 import {RevisionExtension} from "./Extensions/revision";
+import {NodeDiffExtension} from "./Extensions/node-diff";
 
 
 interface TiptapEditorProps {
@@ -66,6 +67,7 @@ export function makeExtensions(yXML, provider) {
         ImageUploadExtension,
         SuggestDeleteExtension,
         SuggestInsertExtension,
+        NodeDiffExtension,
         RevisionExtension,
         Bold.configure({}),
         TableKit.configure({
@@ -140,13 +142,21 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
         },
         setHoverElements: setHoverElements,
         onSelectionUpdate: ({editor}) => {
-            // Check if selection has any suggest marks
+            // Check if selection has any suggest marks or node-level diffs
             const { state } = editor;
             const { from, to } = state.selection;
+            const nodeDiffType = state.schema.nodes['node-diff'];
             let hasChanges = false;
             
-            // Simple approach: check if any text nodes in selection have suggest marks
+            // Check for both text-level suggest marks and node-level diffs
             state.doc.nodesBetween(from, to, (node, pos) => {
+                // Check for node-level diffs
+                if (node.type === nodeDiffType && node.attrs.diffType) {
+                    hasChanges = true;
+                    return false; // Stop traversal
+                }
+                
+                // Check for text-level suggest marks
                 if (node.isText) {
                     // Check if this text node has suggest marks
                     const hasMarks = node.marks.some(mark => 
@@ -205,10 +215,45 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
         const { state } = editor;
         const { from, to } = state.selection;
         let tr = state.tr;
+        const nodeDiffType = state.schema.nodes['node-diff'];
 
-        // Collect ranges to process from right to left to avoid position shifts
-        const ranges = [];
+        // First, collect and process node-level diffs in selection
+        const nodeDiffs = [];
         state.doc.nodesBetween(from, to, (node, pos) => {
+            if (node.type === nodeDiffType && node.attrs.diffType) {
+                nodeDiffs.push({
+                    pos: pos,
+                    node: node,
+                    diffType: node.attrs.diffType
+                });
+            }
+        });
+
+        // Process node diffs from right to left to maintain positions
+        nodeDiffs.sort((a, b) => b.pos - a.pos).forEach(({ pos, node, diffType }) => {
+            if (diffType === 'delete') {
+                // For delete nodes, remove the entire node
+                const nodeEnd = pos + node.nodeSize;
+                tr = tr.delete(pos, nodeEnd);
+            } else if (diffType === 'insert') {
+                // For insert nodes, unwrap (remove the diff wrapper but keep content)
+                const nodeStart = pos + 1; // Inside the wrapper
+                const nodeEnd = pos + node.nodeSize - 1; // Before the wrapper end
+                
+                if (nodeEnd > nodeStart) {
+                    const content = tr.doc.slice(nodeStart, nodeEnd);
+                    tr = tr.delete(pos, pos + node.nodeSize);
+                    tr = tr.insert(pos, content.content);
+                } else {
+                    // Empty node, just delete it
+                    tr = tr.delete(pos, pos + node.nodeSize);
+                }
+            }
+        });
+
+        // Then, collect text-level mark ranges to process from right to left to avoid position shifts
+        const ranges = [];
+        tr.doc.nodesBetween(from, to, (node, pos) => {
             if (node.isText && node.marks) {
                 const nodeStart = Math.max(from, pos);
                 const nodeEnd = Math.min(to, pos + node.nodeSize);
@@ -226,7 +271,7 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
             }
         });
 
-        // Process ranges from right to left to avoid position shifts when deleting
+        // Process text-level ranges from right to left to avoid position shifts when deleting
         ranges.sort((a, b) => b.start - a.start);
         
         ranges.forEach(({ start, end, mark, isDelete }) => {

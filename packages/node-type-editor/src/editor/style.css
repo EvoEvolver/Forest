@@ -226,6 +226,20 @@ body {
     border-radius: 2px;
 }
 
+.insert {
+    background-color: #d4edda;
+    color: #155724;
+    text-decoration: none;
+    border-radius: 2px;
+}
+
+.delete {
+    background-color: #f8d7da;
+    color: #721c24;
+    text-decoration: line-through;
+    border-radius: 2px;
+}
+
 .tiptap del {
     background-color: #f8d7da;
     color: #721c24;
