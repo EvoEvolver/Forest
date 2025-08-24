@@ -90,12 +90,12 @@ export function ColumnRight() {
 
         {activeTab === 'tools' && !node.nodeTypeVM.oneTool && (
             <thisNodeContext.Provider value={node}>
-                <Box sx={{flex: 1, minHeight: 0}}>
+                <Box>
                     <NodeContentFrame>
                         {node.nodeTypeVM.renderTool1(node)}
                     </NodeContentFrame>
                 </Box>
-                <Box sx={{flex: 1, minHeight: 0}}>
+                <Box>
                     <NodeContentFrame>
                         {node.nodeTypeVM.renderTool2(node)}
                     </NodeContentFrame>
@@ -104,11 +104,9 @@ export function ColumnRight() {
         )}
         {activeTab === 'tools' && node.nodeTypeVM.oneTool && (
             <thisNodeContext.Provider value={node}>
-                <Box sx={{flex: 1, minHeight: 0}}>
-                    <NodeContentFrame>
+                <Paper elevation={1} sx={{flex: 1, overflow: 'hidden', borderRadius: '10px', p: 1}}>
                         {node.nodeTypeVM.renderTool(node)}
-                    </NodeContentFrame>
-                </Box>
+                </Paper>
             </thisNodeContext.Provider>
         )}
         {activeTab === 'issues' && (

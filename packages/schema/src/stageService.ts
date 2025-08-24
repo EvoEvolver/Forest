@@ -1,12 +1,12 @@
-import {NodeVM} from "./viewModel.ts";
+import {NodeM} from "./model.ts";
 import {httpUrl} from "./config.ts";
 
-export const stageThisVersion = async (node: NodeVM, tag: string) => {
+export const stageThisVersion = async (node: NodeM, tag: string) => {
     try {
         // Create a simple serializable object from the node data
-        const nodeData = node.nodeM.getSnapshot()
+        const nodeData = node.getSnapshot()
         const requestBody = {
-            treeId: node.treeVM.treeM.id(),
+            treeId: node.treeM.id(),
             nodeId: node.id,
             authorId: "admin",
             tag: tag,
@@ -30,7 +30,7 @@ export const stageThisVersion = async (node: NodeVM, tag: string) => {
         console.log('Snapshot saved successfully');
 
     } catch (error) {
-        console.error('Failed to save snapshot:', error);
+        console.warn('Failed to save snapshot:', error);
         // You might want to show an error notification to the user here
     }
 };

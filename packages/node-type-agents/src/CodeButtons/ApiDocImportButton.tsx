@@ -45,7 +45,7 @@ export const ApiDocImportButton: React.FC<{ node: NodeVM }> = ({node}) => {
             const openApiSpec = await importApiDocumentation(apiDocumentation, authToken);
 
             // Stage current version before modification
-            await stageThisVersion(node, "Before API documentation import");
+            await stageThisVersion(node.nodeM, "Before API documentation import");
 
             // Update the OpenAPI spec using proper NodeM method
             AgentToolNodeTypeM.updateApiSpec(node.nodeM, openApiSpec);

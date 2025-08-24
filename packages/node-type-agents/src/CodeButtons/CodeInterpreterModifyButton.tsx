@@ -48,7 +48,7 @@ export const CodeInterpreterGenerateButton: React.FC<{ node: NodeVM }> = ({node}
             const result = await generateDescriptionAndParameters(code, authToken);
 
             // Stage current version before modification
-            await stageThisVersion(node, "Before AI description/parameters generation");
+            await stageThisVersion(node.nodeM, "Before AI description/parameters generation");
 
             // Update the description
             const descriptionYText = node.ydata.get(CodeInterpreterDescriptionText) as Y.Text;
@@ -179,7 +179,7 @@ Just return the raw Python code.
             const modifiedCode = await getModifiedCode(originalCode, prompt, description, parameters, authToken, customTemplate);
 
             // Stage current version before modification
-            await stageThisVersion(node, "Before AI code modification");
+            await stageThisVersion(node.nodeM, "Before AI code modification");
 
             // Update the code
             const yText = node.ydata.get(CodeInterpreterCodeText) as Y.Text;

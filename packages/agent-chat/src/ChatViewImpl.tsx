@@ -22,8 +22,7 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewI
     const [message, setMessage] = useState("");
     const endRef = useRef(null);
     const scrollContainerRef = useRef(null);
-
-    useEffect(() => {
+    const scrollToBottom = () => {
         if (scrollContainerRef.current && endRef.current) {
             const container = scrollContainerRef.current;
             const lastMessage = endRef.current.previousElementSibling;
@@ -39,7 +38,7 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewI
                 });
             }
         }
-    }, [messages]);
+    }
 
     useEffect(() => {
         return () => {
@@ -51,6 +50,7 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewI
         if (message.trim()) {
             sendMessage(message);
             setMessage("");
+            setTimeout(() => {scrollToBottom()}, 10);
         }
     };
 

@@ -98,14 +98,14 @@ function EditorMainView({node}: { node: NodeVM }) {
 function EditorTools({node}: { node: NodeVM }) {
     const children = useAtomValue(node.children)
     return <>
-        <Box>
+        <Box sx={{height: "80%"}}>
             <WritingAssistant selectedNode={node}/>
         </Box>
         <Box>
             {false && <ModifyButton node={node}/>}
-            {false && children.length === 0 && <ParentToSummaryButton node={node}/>}
-            {false && children.length === 0 && <TopDownDecomposeButton node={node}/>}
-            {children.length !== 0 && <BottomUpButton node={node}/>}
+            {children.length === 0 && <ParentToSummaryButton node={node}/>}
+            {children.length === 0 && <TopDownDecomposeButton node={node}/>}
+            {false && children.length !== 0 && <BottomUpButton node={node}/>}
             {children.length !== 0 && <TopDownMatchingButton node={node}/>}
         </Box>
     </>

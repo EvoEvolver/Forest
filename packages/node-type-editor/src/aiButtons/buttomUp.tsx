@@ -43,7 +43,7 @@ export const BottomUpButton: React.FC<{ node: NodeVM }> = ({node}) => {
     };
 
     const handleAccept = async (modifiedContent: string) => {
-        await stageThisVersion(node, "Before bottom-up editing");
+        await stageThisVersion(node.nodeM, "Before bottom-up editing");
         try {
             EditorNodeTypeM.setEditorContent(node.nodeM, modifiedContent)
         }catch (e) {

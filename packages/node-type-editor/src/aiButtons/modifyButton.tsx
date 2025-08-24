@@ -143,7 +143,7 @@ If there are any annotations in the original text, you should keep them unless t
 
     const handleAccept = async (modifiedContent: string) => {
         try {
-            await stageThisVersion(node, "Before LLM modification");
+            await stageThisVersion(node.nodeM, "Before LLM modification");
             try {
                 EditorNodeTypeM.setEditorContent(node.nodeM, modifiedContent);
             } catch (e) {

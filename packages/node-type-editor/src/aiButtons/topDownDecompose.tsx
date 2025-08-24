@@ -45,7 +45,7 @@ export const TopDownDecomposeButton: React.FC<{ node: NodeVM }> = ({node}) => {
         };
 
         const handleAccept = async (modifiedItems: { id: string; title: string; content: string }[]) => {
-            await stageThisVersion(node, "Before top-down child generation");
+            await stageThisVersion(node.nodeM, "Before top-down child generation");
             const itemsToCreate = modifiedItems.filter(item => selectedTitles[item.id]);
             if (itemsToCreate.length > 0) {
                 const treeM = node.nodeM.treeM;

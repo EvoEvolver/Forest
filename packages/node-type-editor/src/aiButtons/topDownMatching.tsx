@@ -56,7 +56,7 @@ export const TopDownMatchingButton: React.FC<{ node: NodeVM }> = ({node}) => {
         };
 
         const handleAccept = async (modifiedContent: string) => {
-            await stageThisVersion(node, "Before top-down matching update");
+            await stageThisVersion(node.nodeM, "Before top-down matching update");
             
             if (currentChildIndex >= 0 && currentChildIndex < updatedChildren.length) {
                 const currentChild = updatedChildren[currentChildIndex];

@@ -1,13 +1,13 @@
 import * as React from "react";
-import {useEffect, useMemo} from "react";
+import {useEffect, useMemo, useState} from "react";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
+import {Switch, FormControlLabel} from "@mui/material";
 import {EditorContent, useEditor} from '@tiptap/react';
 import {makeExtensions} from "../editor";
-import HtmlDiff from 'htmldiff-js';
 import {makeHtmlDiff} from "./helper";
 
 
@@ -37,6 +37,8 @@ export const ModifyConfirmation: React.FC<ModifyConfirmationProps> = ({
                                                                           dialogTitle,
                                                                           comparisonContent
                                                                       }) => {
+    const [showDiff, setShowDiff] = useState(false);
+    
     const editor = useEditor({
         extensions: makeExtensions(null, null),
         editable: true,
@@ -49,22 +51,49 @@ export const ModifyConfirmation: React.FC<ModifyConfirmationProps> = ({
 
     const diffHtml = useMemo(() => {
         if (!comparisonContent) return '';
-        return makeHtmlDiff(comparisonContent.original.content, comparisonContent.modified.content);
+        const diff = makeHtmlDiff(comparisonContent.original.content, comparisonContent.modified.content);
+
+        // Check if diffHtml is surrounded by <p> tags, if not, add them
+        const trimmedDiff = diff.trim();
+        if (!trimmedDiff.startsWith('<p>') || !trimmedDiff.endsWith('</p>')) {
+            return `<p>${trimmedDiff}</p>`;
+        }
+
+        return diff;
     }, [comparisonContent]);
 
     useEffect(() => {
         if (editor && comparisonContent && open) {
             const currentContent = editor.getHTML();
-            if (currentContent !== diffHtml) {
-                editor.commands.setContent(diffHtml);
+            if (currentContent !== comparisonContent.modified.content) {
+                try {
+                    editor.commands.setContent(comparisonContent.modified.content);
+                } catch (error) {
+                    console.warn('Failed to set editor content, setting as escaped HTML:', error);
+                    const escapedContent = comparisonContent.modified.content
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#39;');
+                    editor.commands.setContent(`<p>${escapedContent}</p>`);
+                }
             }
         }
-    }, [editor, comparisonContent, open, diffHtml]);
+    }, [editor, comparisonContent, open]);
 
     return (
         <>
             <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-                <DialogTitle>{dialogTitle}</DialogTitle>
+                <DialogTitle>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                        <span>{dialogTitle}</span>
+                        <FormControlLabel
+                            control={<Switch checked={showDiff} onChange={(e) => setShowDiff(e.target.checked)} />}
+                            label="Show Diff"
+                        />
+                    </div>
+                </DialogTitle>
                 <DialogContent sx={{display: 'flex', flexDirection: 'row', gap: '20px'}}>
                     <div style={{
                         flex: 1,
@@ -89,10 +118,15 @@ export const ModifyConfirmation: React.FC<ModifyConfirmationProps> = ({
                         borderRadius: '4px'
                     }}>
                         <h3>Changes Preview (Editable)</h3>
-                        {editor ? (
-                            <EditorContent editor={editor} key={editor?.storage?.html || 'editor'}/>
+                        {showDiff ? (
+                            <span
+                                dangerouslySetInnerHTML={{__html: diffHtml}}
+                                style={{
+                                    lineHeight: 1.6
+                                }}
+                            />
                         ) : (
-                            <div dangerouslySetInnerHTML={{__html: diffHtml}}/>
+                            <EditorContent editor={editor} key={editor?.storage?.html || 'editor'}/>
                         )}
                     </div>
                 </DialogContent>

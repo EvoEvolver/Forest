@@ -74,7 +74,10 @@ export function makeExtensions(yXML, provider) {
         Bold.configure({}),
         Italic.configure({}),
         TableKit.configure({
-            table: {resizable: true},
+            table: {resizable: false},
+            tableCell: {},
+            tableHeader: {},
+            tableRow: {}
         }),
         MathExtension.configure({evaluation: false}),
         CommentExtension.configure({
@@ -147,22 +150,28 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
         onSelectionUpdate: ({editor}) => {
             // Check if selection has any suggest marks or node-level diffs
             const { state } = editor;
+            if (!state || !state.selection || !state.doc) {
+                return;
+            }
             const { from, to } = state.selection;
             const nodeDiffType = state.schema.nodes['node-diff'];
             let hasChanges = false;
             
             // Check for both text-level suggest marks and node-level diffs
             state.doc.nodesBetween(from, to, (node, pos) => {
+                // Early return if node is null/undefined
+                if (!node) return;
+                
                 // Check for node-level diffs
-                if (node.type === nodeDiffType && node.attrs.diffType) {
+                if (node.type === nodeDiffType && node.attrs && node.attrs.diffType) {
                     hasChanges = true;
                     return false; // Stop traversal
                 }
                 
                 // Check for text-level suggest marks
-                if (node.isText) {
+                if (node.isText && typeof node.nodeSize !== 'undefined') {
                     // Check if this text node has suggest marks
-                    const hasMarks = node.marks.some(mark => 
+                    const hasMarks = node.marks && node.marks.some(mark => 
                         mark.type.name === 'suggest-delete' || mark.type.name === 'suggest-adding'
                     );
                     
@@ -215,6 +224,9 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
     };
 
     const handleAcceptAllChanges = () => {
+        if (!editor || !editor.state || !editor.state.selection || !editor.state.doc) {
+            return;
+        }
         const { state } = editor;
         const { from, to } = state.selection;
         let tr = state.tr;
@@ -222,34 +234,51 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
 
         // First, collect and process node-level diffs in selection
         const nodeDiffs = [];
-        state.doc.nodesBetween(from, to, (node, pos) => {
-            if (node.type === nodeDiffType && node.attrs.diffType) {
-                nodeDiffs.push({
-                    pos: pos,
-                    node: node,
-                    diffType: node.attrs.diffType
-                });
-            }
-        });
+        try {
+            state.doc.nodesBetween(from, to, (node, pos) => {
+                // Early return if node is null/undefined
+                if (!node) return;
+                
+                try {
+                    if (node.type === nodeDiffType && node.attrs && node.attrs.diffType && typeof node.nodeSize !== 'undefined') {
+                        nodeDiffs.push({
+                            pos: pos,
+                            node: node,
+                            diffType: node.attrs.diffType,
+                            nodeSize: node.nodeSize // Store nodeSize to avoid accessing potentially invalid node later
+                        });
+                    }
+                } catch (e) {
+                    console.warn('Error processing node in nodesBetween:', e, node);
+                }
+            });
+        } catch (e) {
+            console.error('Error in nodesBetween for node diffs:', e);
+            return;
+        }
 
         // Process node diffs from right to left to maintain positions
-        nodeDiffs.sort((a, b) => b.pos - a.pos).forEach(({ pos, node, diffType }) => {
+        nodeDiffs.sort((a, b) => b.pos - a.pos).forEach(({ pos, nodeSize, diffType }) => {
+            if (typeof nodeSize === 'undefined') {
+                return; // Skip if nodeSize is invalid
+            }
+            
             if (diffType === 'delete') {
                 // For delete nodes, remove the entire node
-                const nodeEnd = pos + node.nodeSize;
+                const nodeEnd = pos + nodeSize;
                 tr = tr.delete(pos, nodeEnd);
             } else if (diffType === 'insert') {
                 // For insert nodes, unwrap (remove the diff wrapper but keep content)
                 const nodeStart = pos + 1; // Inside the wrapper
-                const nodeEnd = pos + node.nodeSize - 1; // Before the wrapper end
+                const nodeEnd = pos + nodeSize - 1; // Before the wrapper end
                 
                 if (nodeEnd > nodeStart) {
                     const content = tr.doc.slice(nodeStart, nodeEnd);
-                    tr = tr.delete(pos, pos + node.nodeSize);
+                    tr = tr.delete(pos, pos + nodeSize);
                     tr = tr.insert(pos, content.content);
                 } else {
                     // Empty node, just delete it
-                    tr = tr.delete(pos, pos + node.nodeSize);
+                    tr = tr.delete(pos, pos + nodeSize);
                 }
             }
         });
@@ -257,7 +286,10 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
         // Then, collect text-level mark ranges to process from right to left to avoid position shifts
         const ranges = [];
         tr.doc.nodesBetween(from, to, (node, pos) => {
-            if (node.isText && node.marks) {
+            // Early return if node is null/undefined
+            if (!node) return;
+            
+            if (node.isText && node.marks && typeof node.nodeSize !== 'undefined') {
                 const nodeStart = Math.max(from, pos);
                 const nodeEnd = Math.min(to, pos + node.nodeSize);
                 
@@ -311,7 +343,10 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
                     // Check if selection contains any image upload nodes
                     let hasImageUpload = false;
                     state.doc.nodesBetween(from, to, (node) => {
-                        if (node.type.name === 'imageUpload') {
+                        // Early return if node is null/undefined
+                        if (!node) return;
+                        
+                        if (node.type && node.type.name === 'imageUpload') {
                             hasImageUpload = true;
                             return false; // Stop traversal
                         }

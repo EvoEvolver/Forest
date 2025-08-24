@@ -79,7 +79,7 @@ export const StageVersionDialog = ({open, onClose, node}: StageVersionDialogProp
 
 
     const handleSubmit = async () => {
-        await stageThisVersion(node, tagName.trim()).then(fetchExistingSnapshots)
+        await stageThisVersion(node.nodeM, tagName.trim()).then(fetchExistingSnapshots)
     };
 
     const handleClose = () => {

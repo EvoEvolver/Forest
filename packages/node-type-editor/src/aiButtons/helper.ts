@@ -21,6 +21,9 @@ export function makeHtmlDiff(oldHTML: string, newHTML: string): string {
     const diffed = diffElement(outDoc, oldRoot, newRoot);
     while (diffed.firstChild) resultFrag.appendChild(diffed.firstChild);
     outContainer.appendChild(resultFrag);
+    console.log("Original old:", oldHTML);
+    console.log("Original new:", newHTML);
+    console.log("Diff result:", outContainer.innerHTML);
     return outContainer.innerHTML;
 }
 

@@ -129,7 +129,9 @@ export class MarkdownMessage extends BaseMessage {
     }
 
     render(): React.ReactNode {
-        const converter = new showdown.Converter();
+        const converter = new showdown.Converter({
+            tables: true
+        });
         const html = converter.makeHtml(this.content);
         return (
             <Box sx={{display: 'flex', marginBottom: 2}}>
@@ -196,6 +198,33 @@ export class SystemMessage extends BaseMessage {
 
     render(): React.ReactNode {
         return undefined;
+    }
+}
+
+export class InfoMessage extends BaseMessage {
+    constructor(content: string) {
+        super({content, author: "", role: "assistant",});
+    }
+
+    toJson(): object {
+        return null
+    }
+
+    render(): React.ReactNode {
+        return (
+            <Box sx={{display: 'flex', marginBottom: 0}}>
+                <Box sx={{padding: 0}}>
+                    <Typography variant="body2" sx={{color: 'text.secondary'}}>
+                        {this.content.split('\n').map((line, index) => (
+                            <React.Fragment key={index}>
+                                {line}
+                                <br/>
+                            </React.Fragment>
+                        ))}
+                    </Typography>
+                </Box>
+            </Box>
+        );
     }
 }
 
