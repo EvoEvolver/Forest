@@ -142,7 +142,7 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDrag
                     gap: '4px',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                     border: `1px solid ${theme.palette.divider}`,
-                    zIndex: 9999,
+                    zIndex: 1000,
                     minWidth: '48px'
                 }}
             >

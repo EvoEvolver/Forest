@@ -156,6 +156,27 @@ body {
     vertical-align: baseline;
 }
 
+
+.export-header {
+    width: 100%;
+    height: auto;
+    vertical-align: baseline;
+    display: inline-block;
+    border-radius: 4px;
+    border-color: #0d0d0d;
+    background: #f1f3f4;
+}
+
+.export {
+    width: 100%;
+    height: auto;
+    vertical-align: baseline;
+    display: inline-block;
+    border-radius: 4px;
+    border-color: #0d0d0d;
+    background: #f1f3f4;
+}
+
 /* Ensure cursor is visible around images */
 .ProseMirror .ProseMirror-selectednode {
     outline: 2px solid #68CEF8;

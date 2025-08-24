@@ -29,9 +29,7 @@ const linearNodeListAtom = atom((get) => {
             return [];
         }
         const children = treeM.getChildren(node)
-        if (children.length === 0) {
-            return [{node, level}];
-        }
+        // Always include the current node in the list
         return [{node, level}, ...children.flatMap(child => traverse(child, level + 1))]
     };
     const linearNodes = traverse(rootNode);
@@ -53,8 +51,28 @@ const ButtonsSection = ({getHtml, rootNode, nodes}: {
     );
 }
 
+// Helper function to extract export content from HTML
+const extractExportContent = (htmlContent: string): string => {
+    const exportMatch = htmlContent.match(/<div[^>]*class="export"[^>]*>([\s\S]*?)<\/div>/gi);
+    if (exportMatch) {
+        return exportMatch.join('\n');
+    }
+    return '';
+};
+
+// Helper function to check if content has export divs
+const hasExportContent = (htmlContent: string): boolean => {
+    return /<div[^>]*class="export"[^>]*>[\s\S]*?<\/div>/i.test(htmlContent);
+};
+
+// Helper function to check if a node is terminal (has no children)
+const isTerminalNode = (node: NodeM, treeM: any): boolean => {
+    const children = treeM.getChildren(node);
+    return children.length === 0;
+};
+
 // Memoized node component with lazy HTML generation
-const NodeRenderer = ({node, level}: { node: NodeM, level: number }) => {
+const NodeRenderer = ({node, level, treeM}: { node: NodeM, level: number, treeM: any }) => {
     const children = node.children().toJSON()
     const title = node.title()
     const [htmlContent, setHtmlContent] = useState<string | null>(null);
@@ -65,6 +83,8 @@ const NodeRenderer = ({node, level}: { node: NodeM, level: number }) => {
     const setCurrentPage = useSetAtom(currentPageAtom);
     const jumpToNode = useSetAtom(jumpToNodeAtom);
     const scrollToNode = useSetAtom(scrollToNodeAtom);
+    
+    const isTerminal = isTerminalNode(node, treeM);
 
     const goToNodeInTreeView = () => {
         setCurrentPage("tree");
@@ -97,16 +117,28 @@ const NodeRenderer = ({node, level}: { node: NodeM, level: number }) => {
 
     // Generate HTML content asynchronously when visible
     useEffect(() => {
-        if (isVisible && !htmlContent && children && children.length === 0) {
+        if (isVisible && !htmlContent) {
             // Use setTimeout to make HTML generation non-blocking
             const timer = setTimeout(() => {
-                const content = EditorNodeTypeM.getEditorContent(node);
-                setHtmlContent(content);
+                const fullContent = EditorNodeTypeM.getEditorContent(node);
+                
+                if (isTerminal) {
+                    // Terminal node: if has export, show only export; otherwise show everything
+                    if (hasExportContent(fullContent)) {
+                        setHtmlContent(extractExportContent(fullContent));
+                    } else {
+                        setHtmlContent(fullContent);
+                    }
+                } else {
+                    // Non-terminal node: show only export content if it exists
+                    const exportContent = extractExportContent(fullContent);
+                    setHtmlContent(exportContent || ''); // Empty string if no export content
+                }
             }, 0);
 
             return () => clearTimeout(timer);
         }
-    }, [isVisible, htmlContent, children, node]);
+    }, [isVisible, htmlContent, node, isTerminal]);
 
     if (!children) {
         return <></>;
@@ -138,48 +170,47 @@ const NodeRenderer = ({node, level}: { node: NodeM, level: number }) => {
         }
     };
 
-    if (children.length > 0) {
-        return (
-            <div ref={nodeRef} key={node.id}>
-                {renderTitle()}
-            </div>
-        );
-    }
+    // Don't render anything if it's a non-terminal node with no export content
+    const shouldRenderContent = isTerminal || (htmlContent && htmlContent.trim().length > 0);
 
     return (
-        <div ref={nodeRef}>
+        <div ref={nodeRef} key={node.id}>
             {renderTitle()}
-            {isVisible ? (
-                htmlContent ? (
-                    <Box
-                        sx={{
-                            color: theme.palette.text.primary,
-                            '& *': {
-                                color: `${theme.palette.text.primary} !important`,
-                                backgroundColor: 'transparent !important'
-                            },
-                            '& p, & div, & span, & h1, & h2, & h3, & h4, & h5, & h6': {
-                                color: `${theme.palette.text.primary} !important`
-                            },
-                            '& a': {
-                                color: `${theme.palette.primary.main} !important`
-                            },
-                            '& code': {
-                                backgroundColor: `${theme.palette.action.hover} !important`,
-                                color: `${theme.palette.text.primary} !important`
-                            },
-                            '& pre': {
-                                backgroundColor: `${theme.palette.action.hover} !important`,
-                                color: `${theme.palette.text.primary} !important`
-                            }
-                        }}
-                        dangerouslySetInnerHTML={{__html: htmlContent}}
-                    />
-                ) : (
-                    <Skeleton variant="text" width="100%" height={60}/>
-                )
-            ) : (
-                <Skeleton variant="text" width="100%" height={60}/>
+            {shouldRenderContent && (
+                <>
+                    {isVisible ? (
+                        htmlContent && htmlContent.trim() ? (
+                            <Box
+                                sx={{
+                                    color: theme.palette.text.primary,
+                                    '& *': {
+                                        color: `${theme.palette.text.primary} !important`,
+                                        backgroundColor: 'transparent !important'
+                                    },
+                                    '& p, & div, & span, & h1, & h2, & h3, & h4, & h5, & h6': {
+                                        color: `${theme.palette.text.primary} !important`
+                                    },
+                                    '& a': {
+                                        color: `${theme.palette.primary.main} !important`
+                                    },
+                                    '& code': {
+                                        backgroundColor: `${theme.palette.action.hover} !important`,
+                                        color: `${theme.palette.text.primary} !important`
+                                    },
+                                    '& pre': {
+                                        backgroundColor: `${theme.palette.action.hover} !important`,
+                                        color: `${theme.palette.text.primary} !important`
+                                    }
+                                }}
+                                dangerouslySetInnerHTML={{__html: htmlContent}}
+                            />
+                        ) : (
+                            isTerminal && <Skeleton variant="text" width="100%" height={60}/>
+                        )
+                    ) : (
+                        isTerminal && <Skeleton variant="text" width="100%" height={60}/>
+                    )}
+                </>
             )}
         </div>
     );
@@ -188,14 +219,28 @@ const NodeRenderer = ({node, level}: { node: NodeM, level: number }) => {
 export default function LinearView() {
     const nodes: { node: NodeM; level: number; }[] = useAtomValue(linearNodeListAtom);
     const theme = useTheme();
+    const currTree = useAtomValue(treeAtom);
+    const treeM = currTree?.treeM;
 
     const getHtml = () => {
-        if (!nodes) return '';
+        if (!nodes || !treeM) return '';
 
-        return nodes.map(({node, level}) => {
+        return nodes.map(({node}) => {
             try {
-                const content = EditorNodeTypeM.getEditorContent(node);
-                return content;
+                const fullContent = EditorNodeTypeM.getEditorContent(node);
+                const isTerminal = isTerminalNode(node, treeM);
+                
+                if (isTerminal) {
+                    // Terminal node: if has export, show only export; otherwise show everything
+                    if (hasExportContent(fullContent)) {
+                        return extractExportContent(fullContent);
+                    } else {
+                        return fullContent;
+                    }
+                } else {
+                    // Non-terminal node: show only export content if it exists
+                    return extractExportContent(fullContent);
+                }
             } catch (error) {
                 console.warn('Error generating HTML for node:', error);
                 return '';
@@ -227,8 +272,8 @@ export default function LinearView() {
                 }}
             >
                 <ButtonsSection getHtml={getHtml} rootNode={nodes[0].node} nodes={nodes}/>
-                {nodes.map(({node, level}) => (
-                    <NodeRenderer key={node.id} node={node} level={level}/>
+                {treeM && nodes.map(({node, level}) => (
+                    <NodeRenderer key={node.id} node={node} level={level} treeM={treeM}/>
                 ))}
             </Paper>
         </div>

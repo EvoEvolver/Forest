@@ -87,7 +87,7 @@ export const HoverPlusButton = ({node, parentNode, isVisible, position}: HoverPl
                     left: '50%',
                     transform: 'translateX(-50%)',
                     [position]: '-16px',
-                    zIndex: 9998,
+                    zIndex: 1000,
                     display: 'flex',
                     justifyContent: 'center',
                     alignItems: 'center',

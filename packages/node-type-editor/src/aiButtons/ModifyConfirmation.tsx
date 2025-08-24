@@ -1,11 +1,11 @@
 import * as React from "react";
-import {useEffect, useMemo, useState} from "react";
+import {useEffect, useState} from "react";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import {Switch, FormControlLabel} from "@mui/material";
+import {FormControlLabel, Switch} from "@mui/material";
 import {EditorContent, useEditor} from '@tiptap/react';
 import {makeExtensions} from "../editor";
 import {makeHtmlDiff} from "./helper";
@@ -30,6 +30,21 @@ interface ModifyConfirmationProps {
     comparisonContent: ComparisonContent;
 }
 
+
+const getDiffHtml = (comparisonContent) => {
+    let diffHtml
+    if (!comparisonContent) return '';
+    diffHtml = makeHtmlDiff(comparisonContent.original.content, comparisonContent.modified.content);
+
+    // Check if diffHtml is surrounded by <p> tags, if not, add them
+    const trimmedDiff = diffHtml.trim();
+    if (!trimmedDiff.startsWith('<p>') || !trimmedDiff.endsWith('</p>')) {
+        diffHtml = `<p>${trimmedDiff}</p>`;
+    }
+
+    return diffHtml;
+}
+
 export const ModifyConfirmation: React.FC<ModifyConfirmationProps> = ({
                                                                           open,
                                                                           onClose,
@@ -38,7 +53,7 @@ export const ModifyConfirmation: React.FC<ModifyConfirmationProps> = ({
                                                                           comparisonContent
                                                                       }) => {
     const [showDiff, setShowDiff] = useState(false);
-    
+
     const editor = useEditor({
         extensions: makeExtensions(null, null),
         editable: true,
@@ -49,18 +64,6 @@ export const ModifyConfirmation: React.FC<ModifyConfirmationProps> = ({
         },
     });
 
-    const diffHtml = useMemo(() => {
-        if (!comparisonContent) return '';
-        const diff = makeHtmlDiff(comparisonContent.original.content, comparisonContent.modified.content);
-
-        // Check if diffHtml is surrounded by <p> tags, if not, add them
-        const trimmedDiff = diff.trim();
-        if (!trimmedDiff.startsWith('<p>') || !trimmedDiff.endsWith('</p>')) {
-            return `<p>${trimmedDiff}</p>`;
-        }
-
-        return diff;
-    }, [comparisonContent]);
 
     useEffect(() => {
         if (editor && comparisonContent && open) {
@@ -89,7 +92,7 @@ export const ModifyConfirmation: React.FC<ModifyConfirmationProps> = ({
                     <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                         <span>{dialogTitle}</span>
                         <FormControlLabel
-                            control={<Switch checked={showDiff} onChange={(e) => setShowDiff(e.target.checked)} />}
+                            control={<Switch checked={showDiff} onChange={(e) => setShowDiff(e.target.checked)}/>}
                             label="Show Diff"
                         />
                     </div>
@@ -120,7 +123,7 @@ export const ModifyConfirmation: React.FC<ModifyConfirmationProps> = ({
                         <h3>Changes Preview (Editable)</h3>
                         {showDiff ? (
                             <span
-                                dangerouslySetInnerHTML={{__html: diffHtml}}
+                                dangerouslySetInnerHTML={{__html: getDiffHtml(comparisonContent)}}
                                 style={{
                                     lineHeight: 1.6
                                 }}

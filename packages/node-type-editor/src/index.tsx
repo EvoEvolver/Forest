@@ -4,16 +4,16 @@ import TiptapEditor, {makeSimpleEditor} from "./editor";
 import {Map as YMap, XmlFragment} from "yjs";
 import {BottomUpButton} from "./aiButtons/buttomUp";
 import {TopDownDecomposeButton} from "./aiButtons/topDownDecompose";
-import {ParentToSummaryButton} from "./aiButtons/parentToSummary";
-import {ModifyButton} from "./aiButtons/modifyButton";
 import {useAtomValue} from "jotai";
 import {NodeTypeM} from "@forest/schema/src/nodeTypeM";
 import {NodeTypeVM} from "@forest/schema/src/nodeTypeVM";
 import {TopDownMatchingButton} from "./aiButtons/topDownMatching";
 import {WritingAssistant} from "./aiChat/WritingAssistant";
 import {Box} from "@mui/material";
+import {InsertExportButton} from "./aiButtons/insertExport";
 
 const EditorXmlFragment = "ydatapaperEditor"
+const ExportToLinearXml = "exportToLinearXml"
 
 export class EditorNodeTypeM extends NodeTypeM {
     static displayName = "Editor"
@@ -79,21 +79,17 @@ export class EditorNodeTypeVM extends NodeTypeVM {
     static oneTool = true
 
     static render(node: NodeVM): React.ReactNode {
-        return <EditorMainView node={node}/>
+        const yXML = EditorNodeTypeM.getYxml(node.nodeM)
+        return <>
+            <TiptapEditor yXML={yXML} node={node}/>
+            {node.ydata.has(ExportToLinearXml) && <TiptapEditor yXML={node.ydata.get(ExportToLinearXml)} node={node}/>}
+        </>
     }
 
     static renderTool(node: NodeVM): React.ReactNode {
         return <EditorTools node={node}/>
     }
 }
-
-function EditorMainView({node}: { node: NodeVM }) {
-    const yXML = EditorNodeTypeM.getYxml(node.nodeM)
-    return <>
-        <TiptapEditor yXML={yXML} node={node}/>
-    </>
-}
-
 
 function EditorTools({node}: { node: NodeVM }) {
     const children = useAtomValue(node.children)
@@ -102,8 +98,7 @@ function EditorTools({node}: { node: NodeVM }) {
             <WritingAssistant selectedNode={node}/>
         </Box>
         <Box>
-            {false && <ModifyButton node={node}/>}
-            {children.length === 0 && <ParentToSummaryButton node={node}/>}
+            {<InsertExportButton node={node}/>}
             {children.length === 0 && <TopDownDecomposeButton node={node}/>}
             {children.length !== 0 && <BottomUpButton node={node}/>}
             {children.length !== 0 && <TopDownMatchingButton node={node}/>}

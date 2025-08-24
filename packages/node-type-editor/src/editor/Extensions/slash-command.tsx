@@ -4,6 +4,7 @@ import React, {useCallback, useEffect, useState} from 'react'
 import {SuggestionMenu, SuggestionOption} from '../../components/SuggestionMenu'
 import ImageIcon from '@mui/icons-material/Image'
 import WebIcon from '@mui/icons-material/Web'
+import FileDownloadIcon from '@mui/icons-material/FileDownload'
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
@@ -183,6 +184,12 @@ export const SlashCommandMenu: React.FC<{ editor: any, slashPos: number }> = ({e
             label: 'Embed',
             description: 'Embed a webpage',
             icon: <WebIcon fontSize="small"/>
+        },
+        {
+            id: 'export',
+            label: 'Export',
+            description: 'Create an export container',
+            icon: <FileDownloadIcon fontSize="small"/>
         }
     ]
 
@@ -202,6 +209,9 @@ export const SlashCommandMenu: React.FC<{ editor: any, slashPos: number }> = ({e
             editor.chain().focus().insertIframe({
                 src: null
             }).run()
+        } else if (option.id === 'export') {
+            // Insert export node
+            editor.chain().focus().insertExport({}).run()
         }
 
         // Close the menu

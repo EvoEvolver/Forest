@@ -31,6 +31,7 @@ import {contentEditableContext} from "@forest/schema/src/viewContext";
 import {Editor} from "@tiptap/core";
 import {SlashCommandExtension} from "./Extensions/slash-command";
 import {IframeExtension} from "./Extensions/iframe";
+import {ExportExtension} from "./Extensions/export";
 import {TableKit} from '@tiptap/extension-table'
 import {SuggestDeleteExtension} from "./Extensions/suggest-delete";
 import {SuggestInsertExtension} from "./Extensions/suggest-insert";
@@ -88,6 +89,7 @@ export function makeExtensions(yXML, provider) {
         }),
         SlashCommandExtension.configure({}),
         IframeExtension,
+        ExportExtension,
         BookmarkNode,
         UniversalPasteHandler.configure({
             onBookmarkCreated: (url, metadata) => {
