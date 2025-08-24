@@ -53,7 +53,8 @@ export const MiddleContents = ({node}: MiddleContentsProps) => {
                     const elementCenter = rect.top + rect.height / 2;
                     const tolerance = 50;
                     if (Math.abs(elementCenter - viewportCenter) < tolerance) {
-                        setSelectedNode(node.id);
+                        // disable auto set selected node
+                        //setSelectedNode(node.id);
                     }
                 }
             },

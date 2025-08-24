@@ -108,13 +108,10 @@ export const TopDownMatchingButton: React.FC<{ node: NodeVM }> = ({node}) => {
                         <SyncIcon color="primary"/>
                         <div>
                             <Typography variant="body1" component="div">
-                                Match Children to Parent
+                                Check children consistency
                             </Typography>
-                            <Typography variant="body2" color="textSecondary">
-                                {processingStatus || "Update children to match latest parent version"}
-                            </Typography>
+                            {loading && <CircularProgress size={20}/>}
                         </div>
-                        {loading && <CircularProgress size={20}/>}
                     </CardContent>
                 </Card>
 {currentChildIndex >= 0 && currentChildIndex < updatedChildren.length && (

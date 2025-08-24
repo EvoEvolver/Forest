@@ -74,9 +74,6 @@ export const BottomUpButton: React.FC<{ node: NodeVM }> = ({node}) => {
                         <Typography variant="body1" component="div">
                             Summerize from children
                         </Typography>
-                        <Typography variant="body2" color="textSecondary">
-                            Update key points based on children contents
-                        </Typography>
                     </div>
                     {loading && <CircularProgress size={20}/>}
                 </CardContent>

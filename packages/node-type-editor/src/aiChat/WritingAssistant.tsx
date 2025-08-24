@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useState, useEffect} from "react";
 import {NodeM, NodeVM} from "@forest/schema";
 import {
     BaseMessage,
@@ -252,6 +252,10 @@ export function WritingAssistant({selectedNode}: { selectedNode: NodeVM }) {
     const [disabled, setDisabled] = useState(false);
     const node = selectedNode;
     const markedNodes = useAtomValue(markedNodesAtom);
+
+    useEffect(() => {
+        setMessages([]);
+    }, [selectedNode.nodeM.id]);
 
     const formatMessagesForAI = (userMessage: string, systemMessage: SystemMessage) => {
         const aiMessages = messages.map(m => ({

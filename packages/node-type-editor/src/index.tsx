@@ -105,7 +105,7 @@ function EditorTools({node}: { node: NodeVM }) {
             {false && <ModifyButton node={node}/>}
             {children.length === 0 && <ParentToSummaryButton node={node}/>}
             {children.length === 0 && <TopDownDecomposeButton node={node}/>}
-            {false && children.length !== 0 && <BottomUpButton node={node}/>}
+            {children.length !== 0 && <BottomUpButton node={node}/>}
             {children.length !== 0 && <TopDownMatchingButton node={node}/>}
         </Box>
     </>

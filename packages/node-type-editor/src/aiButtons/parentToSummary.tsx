@@ -76,10 +76,7 @@ export const ParentToSummaryButton: React.FC<{ node: NodeVM }> = ({node}) => {
                     <DownloadIcon color="primary"/>
                     <div>
                         <Typography variant="body1" component="div">
-                            Write paragraph from Parent
-                        </Typography>
-                        <Typography variant="body2" color="textSecondary">
-                            Transform key points into paragraph
+                            Write paragraph from parent
                         </Typography>
                     </div>
                     {loading && <CircularProgress size={20}/>}

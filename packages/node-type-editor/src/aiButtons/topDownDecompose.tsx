@@ -86,10 +86,7 @@ export const TopDownDecomposeButton: React.FC<{ node: NodeVM }> = ({node}) => {
                         <AutoAwesomeMotionIcon color="primary"/>
                         <div>
                             <Typography variant="body1" component="div">
-                                Split into Children
-                            </Typography>
-                            <Typography variant="body2" color="textSecondary">
-                                Break large node into smaller nodes
+                                Add children
                             </Typography>
                         </div>
                         {loading && <CircularProgress size={20}/>}
