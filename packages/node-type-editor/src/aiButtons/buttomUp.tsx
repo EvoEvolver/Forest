@@ -13,6 +13,7 @@ import Typography from "@mui/material/Typography";
 import SummarizeIcon from '@mui/icons-material/Summarize';
 import {ModifyConfirmation} from "./ModifyConfirmation";
 import pRetry from 'p-retry';
+import {extractExportContent, removeExportContent} from "../editor/Extensions/exportHelpers";
 
 
 export const BottomUpButton: React.FC<{ node: NodeVM }> = ({node}) => {
@@ -20,15 +21,19 @@ export const BottomUpButton: React.FC<{ node: NodeVM }> = ({node}) => {
     const [dialogOpen, setDialogOpen] = React.useState(false);
     const [originalContent, setOriginalContent] = React.useState<string | null>(null);
     const [revisedContent, setRevisedContent] = React.useState<string | null>(null);
+    const [exportContent, setExportContent] = React.useState<string>('');
     const authToken = useAtomValue(authTokenAtom)
 
     const handleClick = async () => {
         setLoading(true);
         try {
-            const original = EditorNodeTypeM.getEditorContent(node.nodeM);
+            const fullContent = EditorNodeTypeM.getEditorContent(node.nodeM);
+            const original = removeExportContent(fullContent);
+            const exports = extractExportContent(fullContent);
             const revised = await getBottomUpRevisedContent(node.nodeM, authToken);
 
             setOriginalContent(original);
+            setExportContent(exports);
             setRevisedContent(revised);
             setDialogOpen(true);
         } finally {
@@ -40,12 +45,18 @@ export const BottomUpButton: React.FC<{ node: NodeVM }> = ({node}) => {
         setDialogOpen(false);
         setOriginalContent(null);
         setRevisedContent(null);
+        setExportContent('');
     };
 
     const handleAccept = async (modifiedContent: string) => {
         await stageThisVersion(node.nodeM, "Before bottom-up editing");
         try {
-            EditorNodeTypeM.setEditorContent(node.nodeM, modifiedContent)
+            // Combine the modified content with the preserved export content
+            const finalContent = exportContent 
+                ? modifiedContent + `<div class="export">${exportContent}</div>`
+                : modifiedContent;
+            
+            EditorNodeTypeM.setEditorContent(node.nodeM, finalContent);
         }catch (e) {
             alert(e)
         }
@@ -103,11 +114,11 @@ async function getBottomUpRevisedContent(node: NodeM, authToken): Promise<string
     const treeM = node.treeM;
     const children = treeM.getChildren(node).filter((n) => n.nodeTypeName() === "EditorNodeType" && n.data()["archived"] !== true);
     const childrenContent = children.map(child => "# " + child.title() + "\n" + EditorNodeTypeM.getEditorContent(child)).join("\n");
-    const orginalContent = EditorNodeTypeM.getEditorContent(node);
+    const originalContent = removeExportContent(EditorNodeTypeM.getEditorContent(node));
     const prompt = `You are a professional editor. The given original text is a summary of some children contents. 
 Your task is to revise the original context to make it serve as a better summary of the children contents.
 <original_content>
-${orginalContent}
+${originalContent}
 </original_content>
 <children_contents>
 ${childrenContent}
@@ -127,7 +138,7 @@ If there are any annotations in the original text, you should keep them as they 
             role: "user"
         }
     )
-    
+
     return await pRetry(async () => {
         const response = await fetchChatResponse([message.toJson() as any], "gpt-4.1", authToken);
         const isValid = EditorNodeTypeM.validateEditorContent(response);

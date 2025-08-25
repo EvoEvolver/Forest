@@ -7,6 +7,7 @@ import {useAtomValue} from "jotai";
 import {authTokenAtom} from "@forest/user-system/src/authStates";
 import {fetchChatResponse} from "@forest/agent-chat/src/llm";
 import {NormalMessage} from "@forest/agent-chat/src/MessageTypes";
+import {getEditorContentExceptExports} from "../editor/Extensions/exportHelpers";
 import {Card} from "@mui/material";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
@@ -86,7 +87,7 @@ export const TopDownDecomposeButton: React.FC<{ node: NodeVM }> = ({node}) => {
                         <AutoAwesomeMotionIcon color="primary"/>
                         <div>
                             <Typography variant="body1" component="div">
-                                Split into subsections
+                                Split into sections
                             </Typography>
                         </div>
                         {loading && <CircularProgress size={20}/>}
@@ -116,7 +117,7 @@ interface TitleAndContent {
 }
 
 async function getTopDownNewChildren(node: NodeM, authToken: string): Promise<TitleAndContent[]> {
-    const parentContent = EditorNodeTypeM.getEditorContent(node);
+    const parentContent = getEditorContentExceptExports(node);
     const prompt = `
 You are a professional editor. Your task is to break a long content into multiple children nodes.
 Generate a list of titles for new children nodes that completely cover the original content.

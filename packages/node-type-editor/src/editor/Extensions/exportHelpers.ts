@@ -11,6 +11,15 @@ export function getEditorContentExceptExports(currentNode: NodeM): string {
     return contentWithoutExports.trim()
 }
 
+export function removeExportContent(content: string): string {
+    return content.replace(/<div[^>]*class="export"[^>]*>[\s\S]*?<\/div>/gi, '').trim();
+}
+
+export function extractExportContent(content: string): string {
+    const match = content.match(/<div[^>]*class="export"[^>]*>([\s\S]*?)<\/div>/i);
+    return match ? match[1].trim() : "";
+}
+
 export async function generateExportSummary(allContent: string, currentContent: string, authToken: string, userPrompt?: string): Promise<string> {
     const prompt = `
 You are a professional writer. Your task is to write well-written paragraph(s) based on the raw content provided.
