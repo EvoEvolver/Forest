@@ -8,6 +8,7 @@ import {currentPageAtom} from "../appState";
 import {useTheme} from '@mui/system';
 import ReferenceGenButton from './ReferenceGenButton';
 import ReferenceIndexButton from './ReferenceIndexButton';
+import {extractExportContent} from '@forest/node-type-editor/src/editor/Extensions/exportHelpers';
 
 
 const linearNodeListAtom = atom((get) => {
@@ -51,18 +52,10 @@ const ButtonsSection = ({getHtml, rootNode, nodes}: {
     );
 }
 
-// Helper function to extract export content from HTML
-const extractExportContent = (htmlContent: string): string => {
-    const exportMatch = htmlContent.match(/<div[^>]*class="export"[^>]*>([\s\S]*?)<\/div>/gi);
-    if (exportMatch) {
-        return exportMatch.join('\n');
-    }
-    return '';
-};
 
 // Helper function to check if content has export divs
 const hasExportContent = (htmlContent: string): boolean => {
-    return /<div[^>]*class="export"[^>]*>[\s\S]*?<\/div>/i.test(htmlContent);
+    return extractExportContent(htmlContent).trim().length > 0;
 };
 
 // Helper function to check if a node is terminal (has no children)
@@ -83,7 +76,7 @@ const NodeRenderer = ({node, level, treeM}: { node: NodeM, level: number, treeM:
     const setCurrentPage = useSetAtom(currentPageAtom);
     const jumpToNode = useSetAtom(jumpToNodeAtom);
     const scrollToNode = useSetAtom(scrollToNodeAtom);
-    
+
     const isTerminal = isTerminalNode(node, treeM);
 
     const goToNodeInTreeView = () => {
@@ -121,7 +114,7 @@ const NodeRenderer = ({node, level, treeM}: { node: NodeM, level: number, treeM:
             // Use setTimeout to make HTML generation non-blocking
             const timer = setTimeout(() => {
                 const fullContent = EditorNodeTypeM.getEditorContent(node);
-                
+
                 if (isTerminal) {
                     // Terminal node: if has export, show only export; otherwise show everything
                     if (hasExportContent(fullContent)) {
@@ -229,7 +222,7 @@ export default function LinearView() {
             try {
                 const fullContent = EditorNodeTypeM.getEditorContent(node);
                 const isTerminal = isTerminalNode(node, treeM);
-                
+
                 if (isTerminal) {
                     // Terminal node: if has export, show only export; otherwise show everything
                     if (hasExportContent(fullContent)) {

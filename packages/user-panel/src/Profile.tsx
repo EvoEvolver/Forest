@@ -32,11 +32,21 @@ export const Profile: React.FC = () => {
     const [saveError, setSaveError] = useState<string | null>(null);
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [currentMode, setCurrentMode] = useAtom(themeModeAtom);
+    const [apiKey, setApiKey] = useState('');
+    const [isEditingApiKey, setIsEditingApiKey] = useState(false);
+    const [tempApiKey, setTempApiKey] = useState('');
+    const [apiKeyError, setApiKeyError] = useState<string | null>(null);
+    const [apiKeySuccess, setApiKeySuccess] = useState(false);
 
     useEffect(() => {
         if (user?.name) {
             setDisplayName(user.name);
             setTempDisplayName(user.name);
+        }
+        const savedApiKey = localStorage.getItem('openaiApiKey');
+        if (savedApiKey) {
+            setApiKey(savedApiKey);
+            setTempApiKey(savedApiKey);
         }
     }, [user]);
 
@@ -75,6 +85,42 @@ export const Profile: React.FC = () => {
             setTimeout(() => setSaveSuccess(false), 3000);
         } catch (error) {
             setSaveError('Failed to update display name');
+        }
+    };
+
+    const handleEditApiKey = () => {
+        setIsEditingApiKey(true);
+        setTempApiKey(apiKey);
+        setApiKeyError(null);
+        setApiKeySuccess(false);
+    };
+
+    const handleCancelApiKeyEdit = () => {
+        setIsEditingApiKey(false);
+        setTempApiKey(apiKey);
+        setApiKeyError(null);
+        setApiKeySuccess(false);
+    };
+
+    const handleSaveApiKey = async () => {
+        if (!tempApiKey.trim()) {
+            setApiKeyError('API key cannot be empty');
+            return;
+        }
+
+        if (!tempApiKey.startsWith('sk-')) {
+            setApiKeyError('Invalid OpenAI API key format');
+            return;
+        }
+
+        try {
+            localStorage.setItem('openaiApiKey', tempApiKey);
+            setApiKey(tempApiKey);
+            setIsEditingApiKey(false);
+            setApiKeySuccess(true);
+            setTimeout(() => setApiKeySuccess(false), 3000);
+        } catch (error) {
+            setApiKeyError('Failed to save API key');
         }
     };
 
@@ -267,6 +313,61 @@ export const Profile: React.FC = () => {
                                 <Typography variant="body1">
                                     {user?.app_metadata?.provider || 'Standard'}
                                 </Typography>
+                            </Box>
+
+                            <Box>
+                                <Typography variant="body2" color="text.secondary">
+                                    OpenAI API Key
+                                </Typography>
+                                {isEditingApiKey ? (
+                                    <Box sx={{display: 'flex', alignItems: 'center', gap: 1, mt: 1}}>
+                                        <TextField
+                                            size="small"
+                                            type="password"
+                                            value={tempApiKey}
+                                            onChange={(e) => setTempApiKey(e.target.value)}
+                                            error={!!apiKeyError}
+                                            helperText={apiKeyError}
+                                            placeholder="sk-..."
+                                            sx={{flex: 1}}
+                                        />
+                                        <Button
+                                            size="small"
+                                            variant="contained"
+                                            startIcon={<SaveIcon/>}
+                                            onClick={handleSaveApiKey}
+                                        >
+                                            Save
+                                        </Button>
+                                        <Button
+                                            size="small"
+                                            variant="outlined"
+                                            startIcon={<CancelIcon/>}
+                                            onClick={handleCancelApiKeyEdit}
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </Box>
+                                ) : (
+                                    <Box sx={{display: 'flex', alignItems: 'center', gap: 1, mt: 1}}>
+                                        <Typography variant="body1" sx={{fontFamily: 'monospace', fontSize: '0.875rem'}}>
+                                            {apiKey ? '••••••••••••••••' + apiKey.slice(-4) : 'Not configured'}
+                                        </Typography>
+                                        <Button
+                                            size="small"
+                                            startIcon={<EditIcon/>}
+                                            onClick={handleEditApiKey}
+                                        >
+                                            {apiKey ? 'Edit' : 'Add'}
+                                        </Button>
+                                    </Box>
+                                )}
+                                
+                                {apiKeySuccess && (
+                                    <Alert severity="success" sx={{mt: 1}}>
+                                        OpenAI API key saved successfully!
+                                    </Alert>
+                                )}
                             </Box>
                         </Box>
                     </Box>

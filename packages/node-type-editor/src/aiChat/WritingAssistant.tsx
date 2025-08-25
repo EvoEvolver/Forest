@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from "react";
+import React, {useEffect, useState} from "react";
 import {NodeM, NodeVM} from "@forest/schema";
 import {
     BaseMessage,
@@ -12,10 +12,10 @@ import {useAtomValue} from "jotai";
 import {markedNodesAtom} from "@forest/client/src/TreeState/TreeState";
 import {EditorNodeTypeM} from "..";
 import {WritingMessage} from "./WritingMessage";
-import {createOpenAI} from "@ai-sdk/openai";
 import {generateText, stepCountIs} from "ai";
 import {z} from "zod";
 import {sanitizeHtmlForEditor} from "./helper";
+import {getOpenAIInstance} from "@forest/agent-chat/src/llm";
 
 interface ContextualContent {
     originalContent: string;
@@ -35,11 +35,6 @@ interface AIResponse {
     steps: any[];
 }
 
-const API_KEY = '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';
-
-const openai = createOpenAI({
-    apiKey: API_KEY
-});
 
 const getAvailableNodeIds = (contextualContent: ContextualContent, currentNodeId: string): string[] => {
     const {parent, markedNodesList, childrenList, siblingsList} = contextualContent;
@@ -281,7 +276,7 @@ export function WritingAssistant({selectedNode}: { selectedNode: NodeVM }) {
         const nodeM = node.nodeM;
         const systemMessage = getSystemMessage(nodeM, markedNodes);
         const messagesWithSystem = formatMessagesForAI(userMessage, systemMessage);
-
+        const openaiModel = getOpenAIInstance()
         try {
             const result = await generateText({
                 model: openai('gpt-4.1'),

@@ -24,6 +24,7 @@ import DialogActions from "@mui/material/DialogActions";
 import TextField from "@mui/material/TextField";
 import SyncIcon from '@mui/icons-material/Sync';
 import {handleUpdateExport, updateExportContent} from './exportHelpers';
+import {EditorNodeTypeM} from "../..";
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         export: {
@@ -92,7 +93,9 @@ const ExportNodeView = ({deleteNode}: any) => {
 
     const handleAccept = async (modifiedContent: string) => {
         try {
-            await updateExportContent(node, modifiedContent);
+            const allContent = node.nodeM ? 
+                EditorNodeTypeM.getEditorContent(node.nodeM).replace(/<div[^>]*class="export"[^>]*>[\s\S]*?<\/div>/gi, '').trim() : '';
+            await updateExportContent(node, modifiedContent, allContent);
         } catch (e) {
             alert(e);
         }

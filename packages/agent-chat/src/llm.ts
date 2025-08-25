@@ -1,4 +1,18 @@
 import {httpUrl} from "@forest/schema/src/config";
+import {createOpenAI} from "@ai-sdk/openai";
+
+export function getOpenAIInstance() {
+    const API_KEY = localStorage.getItem('openaiApiKey');
+    if (!API_KEY) {
+        alert("OpenAI API key not found. Please configure your API key in the profile settings.");
+        throw new Error('OpenAI API key not found. Please configure your API key in the profile settings.');
+    }
+    const openai = createOpenAI({
+        apiKey: API_KEY
+    });
+    return openai;
+}
+
 
 export async function fetchChatResponse(messages: { role: string, content: string }[],
                                         modelName,
@@ -13,8 +27,7 @@ export async function fetchChatResponse(messages: { role: string, content: strin
                     role: msg.role,
                     content: msg.content
                 }
-            }
-            else {
+            } else {
                 return null
             }
         }

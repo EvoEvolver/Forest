@@ -14,6 +14,8 @@
     "@forest/user-system": "workspace:*",
     "@forest/client": "workspace:*",
     "@mui/lab": "7.0.0-beta.14",
-    "showdown": "^2.1.0"
+    "showdown": "^2.1.0",
+    "ai": "^5.0.22",
+    "@ai-sdk/openai": "^2.0.19"
   }
 }

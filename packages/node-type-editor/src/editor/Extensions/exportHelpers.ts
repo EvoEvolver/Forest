@@ -3,21 +3,65 @@ import {stageThisVersion} from "@forest/schema/src/stageService";
 import {NodeM, NodeVM} from "@forest/schema";
 import {NormalMessage} from "@forest/agent-chat/src/MessageTypes";
 import {fetchChatResponse} from "@forest/agent-chat/src/llm";
+async function calculateSHA1(input) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(input);
+
+    const hashBuffer = await crypto.subtle.digest('SHA-1', data);  // returns a promise
+    const hashArray = Array.from(new Uint8Array(hashBuffer));        // convert buffer to byte array
+    const hashHex = hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('');  // convert bytes to hex
+    return hashHex;
+}
+
+async function generateContentHash(content: string): Promise<string> {
+    return (await calculateSHA1(content)).slice(0, 4);
+}
+
+function createDOMFromHTML(content: string): Document {
+    const parser = new DOMParser();
+    return parser.parseFromString(`<div>${content}</div>`, 'text/html');
+}
 
 export function getEditorContentExceptExports(currentNode: NodeM): string {
     const content = EditorNodeTypeM.getEditorContent(currentNode);
-    // Remove export div content using regex
-    const contentWithoutExports = content.replace(/<div[^>]*class="export"[^>]*>[\s\S]*?<\/div>/gi, '');
-    return contentWithoutExports.trim()
+    const document = createDOMFromHTML(content);
+    const wrapper = document.body.firstElementChild as HTMLElement;
+
+    // Remove all export divs
+    const exportDivs = wrapper.querySelectorAll('div.export');
+    exportDivs.forEach(div => div.remove());
+
+    return wrapper.innerHTML.trim();
 }
 
 export function removeExportContent(content: string): string {
-    return content.replace(/<div[^>]*class="export"[^>]*>[\s\S]*?<\/div>/gi, '').trim();
+    const document = createDOMFromHTML(content);
+    const wrapper = document.body.firstElementChild as HTMLElement;
+
+    // Remove all export divs
+    const exportDivs = wrapper.querySelectorAll('div.export');
+    exportDivs.forEach(div => div.remove());
+
+    return wrapper.innerHTML.trim();
 }
 
 export function extractExportContent(content: string): string {
-    const match = content.match(/<div[^>]*class="export"[^>]*>([\s\S]*?)<\/div>/i);
-    return match ? match[1].trim() : "";
+    const document = createDOMFromHTML(content);
+    const wrapper = document.body.firstElementChild as HTMLElement;
+
+    // Find the first export div
+    const exportDiv = wrapper.querySelector('div.export');
+    return exportDiv ? exportDiv.innerHTML.trim() : "";
+}
+
+export function extractExportContentAndHash(content: string): [string, string] {
+    const document = createDOMFromHTML(content);
+    const wrapper = document.body.firstElementChild as HTMLElement;
+
+    // Find the first export div
+    const exportDiv = wrapper.querySelector('div.export');
+    const hash = exportDiv?.getAttribute('hash') || '';
+    return [exportDiv ? exportDiv.innerHTML.trim() : "", hash]
 }
 
 export async function generateExportSummary(allContent: string, currentContent: string, authToken: string, userPrompt?: string): Promise<string> {
@@ -57,18 +101,23 @@ You should keep the links in the original content and put them in a proper place
     return await fetchChatResponse([message.toJson() as any], "gpt-4.1", authToken);
 }
 
-export async function updateExportContent(node: NodeVM, summary: string): Promise<void> {
+export async function updateExportContent(node: NodeVM, summary: string, sourceContent: string): Promise<void> {
     await stageThisVersion(node.nodeM, "Before export update");
 
     const currentContent = EditorNodeTypeM.getEditorContent(node.nodeM);
+    const contentHash = await generateContentHash(sourceContent);
 
-    // Update only the export div content, keeping the rest of the node content
-    const updatedContent = currentContent.replace(
-        /<div([^>]*class="export"[^>]*)>([\s\S]*?)<\/div>/i,
-        `<div$1>${summary}</div>`
-    );
+    const document = createDOMFromHTML(currentContent);
+    const wrapper = document.body.firstElementChild as HTMLElement;
 
-    EditorNodeTypeM.setEditorContent(node.nodeM, updatedContent);
+    // Find the first export div and update it
+    const exportDiv = wrapper.querySelector('div.export');
+    if (exportDiv) {
+        exportDiv.setAttribute('hash', contentHash);
+        exportDiv.innerHTML = summary;
+
+        EditorNodeTypeM.setEditorContent(node.nodeM, wrapper.innerHTML);
+    }
 }
 
 export interface UpdateExportOptions {
@@ -88,8 +137,7 @@ export async function handleUpdateExport(
         const currentContent = EditorNodeTypeM.getEditorContent(node.nodeM);
 
         // Extract current export div content
-        const exportMatch = currentContent.match(/<div[^>]*class="export"[^>]*>([\s\S]*?)<\/div>/i);
-        const existingExportContent = exportMatch ? exportMatch[1].trim() : "";
+        const existingExportContent = extractExportContent(currentContent);
 
         const summary = await generateExportSummary(allContent, existingExportContent, authToken, options.userPrompt);
 
@@ -99,11 +147,11 @@ export async function handleUpdateExport(
                 options.onShowConfirmation(existingExportContent, summary);
             } else {
                 // Fallback: update directly if no confirmation handler provided
-                await updateExportContent(node, summary);
+                await updateExportContent(node, summary, allContent);
             }
         } else {
             // No existing content, update directly
-            await updateExportContent(node, summary);
+            await updateExportContent(node, summary, allContent);
         }
     } catch (e) {
         if (options.onError) {
