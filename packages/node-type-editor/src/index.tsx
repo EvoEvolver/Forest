@@ -13,7 +13,6 @@ import {Box} from "@mui/material";
 import {InsertExportButton} from "./aiButtons/insertExport";
 
 const EditorXmlFragment = "ydatapaperEditor"
-const ExportToLinearXml = "exportToLinearXml"
 
 export class EditorNodeTypeM extends NodeTypeM {
     static displayName = "Editor"
@@ -82,7 +81,6 @@ export class EditorNodeTypeVM extends NodeTypeVM {
         const yXML = EditorNodeTypeM.getYxml(node.nodeM)
         return <>
             <TiptapEditor yXML={yXML} node={node}/>
-            {node.ydata.has(ExportToLinearXml) && <TiptapEditor yXML={node.ydata.get(ExportToLinearXml)} node={node}/>}
         </>
     }
 

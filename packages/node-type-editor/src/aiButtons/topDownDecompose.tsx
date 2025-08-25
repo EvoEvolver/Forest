@@ -116,7 +116,6 @@ interface TitleAndContent {
 }
 
 async function getTopDownNewChildren(node: NodeM, authToken: string): Promise<TitleAndContent[]> {
-    const treeM = node.treeM;
     const parentContent = EditorNodeTypeM.getEditorContent(node);
     const prompt = `
 You are a professional editor. Your task is to break a long content into multiple children nodes.
