@@ -17,6 +17,10 @@
     outline: none !important;
 }
 
+.ProseMirror-trailingBreak{
+    display: none;
+}
+
 /* Remove border from the editor content wrapper */
 .ProseMirror {
     border: none !important;
@@ -45,7 +49,7 @@
     margin: 1.25rem 1rem 1.25rem 0.4rem;
 }
 
-.tiptap ul li p, .tiptap ol li p {
+.tiptap ul li, .tiptap ol li {
     margin-top: 0.25em;
     margin-bottom: 0.25em;
 }
@@ -110,7 +114,8 @@
 
 .tiptap p {
     word-break: normal;
-    padding: 3px;
+    padding: 0;
+    margin: 0;
 }
 
 .tiptap .collaboration-cursor__caret {

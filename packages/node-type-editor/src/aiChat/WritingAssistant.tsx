@@ -154,10 +154,12 @@ Logic of tree structure:
 - The parent node should be a summary of its children nodes by default.
 - The children nodes should be more detailed and specific than the parent node.
 - Bullet points are preferred for any nodes unless the user specifies otherwise.
+- The <div> with class "export" is a special container that contains the content generated from other content in that node. It should be considered as a part of the node.
 
 You must 
 - You must use tool readNodeContent to get the content of a node first before writing about them.
-- If the user asks for writing something, by default, it means that you need to call suggestNewVersion tool to write the content for the current node. 
+- If the user asks for writing something, by default, it means that you need to call suggestNewVersion tool to write the content for the current node.
+- Don't drop the links in the content
 - If the user specifies another node, you can also call suggestNewVersion tool to write for that node.
 - You don't need to mention what new version you created in your text response, as the user will see the new version directly.
 
@@ -279,7 +281,7 @@ export function WritingAssistant({selectedNode}: { selectedNode: NodeVM }) {
         const openaiModel = getOpenAIInstance()
         try {
             const result = await generateText({
-                model: openai('gpt-4.1'),
+                model: openaiModel('gpt-4.1'),
                 messages: messagesWithSystem,
                 tools: {
                     suggestNewVersion: createSuggestNewVersionTool(nodeM, markedNodes, setMessages),

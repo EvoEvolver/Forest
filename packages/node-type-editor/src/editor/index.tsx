@@ -66,7 +66,9 @@ export function makeExtensions(yXML, provider) {
         OrderedList,
         ListItem,
         Image,
-        HardBreak,
+        HardBreak.configure({
+            keepMarks: false,
+        }),
         ImageUploadExtension,
         SuggestDeleteExtension,
         SuggestInsertExtension,
@@ -137,12 +139,6 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
     const editor = useEditor({
         extensions: extensions,
         editable: contentEditable !== false,
-        onCreate: ({editor}) => {
-            node.vdata["tiptap_editor_" + dataLabel] = editor;
-        },
-        onDestroy: () => {
-            delete node.vdata["tiptap_editor_" + dataLabel];
-        },
         enableContentCheck: true,
         onContentError: ({disableCollaboration}) => {
             console.error("Content error in Tiptap editor:", disableCollaboration);

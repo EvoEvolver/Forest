@@ -2,7 +2,7 @@ import {BaseMessage, BaseMessageProps} from "@forest/agent-chat/src/MessageTypes
 import React from "react";
 import {stageThisVersion} from "@forest/schema/src/stageService";
 import {EditorNodeTypeM} from "../index";
-import {Box, Typography} from "@mui/material";
+import {Box} from "@mui/material";
 import {ModifyConfirmation} from "../aiButtons/ModifyConfirmation";
 
 export interface WritingMessageProps extends BaseMessageProps {

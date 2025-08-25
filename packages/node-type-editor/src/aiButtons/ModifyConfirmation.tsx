@@ -32,17 +32,8 @@ interface ModifyConfirmationProps {
 
 
 const getDiffHtml = (comparisonContent) => {
-    let diffHtml
     if (!comparisonContent) return '';
-    diffHtml = makeHtmlDiff(comparisonContent.original.content, comparisonContent.modified.content);
-
-    // Check if diffHtml is surrounded by <p> tags, if not, add them
-    const trimmedDiff = diffHtml.trim();
-    if (!trimmedDiff.startsWith('<p>') || !trimmedDiff.endsWith('</p>')) {
-        diffHtml = `<p>${trimmedDiff}</p>`;
-    }
-
-    return diffHtml;
+    return makeHtmlDiff(comparisonContent.original.content, comparisonContent.modified.content);
 }
 
 export const ModifyConfirmation: React.FC<ModifyConfirmationProps> = ({
@@ -70,7 +61,8 @@ export const ModifyConfirmation: React.FC<ModifyConfirmationProps> = ({
             const currentContent = editor.getHTML();
             if (currentContent !== comparisonContent.modified.content) {
                 try {
-                    editor.commands.setContent(comparisonContent.modified.content);
+                    console.log('Setting editor content to modified content.', comparisonContent.modified.content);
+                    editor.commands.setContent(comparisonContent.modified.content.trim());
                 } catch (error) {
                     console.warn('Failed to set editor content, setting as escaped HTML:', error);
                     const escapedContent = comparisonContent.modified.content
