@@ -245,7 +245,7 @@ body {
 }
 
 
-.tiptap ins {
+ins {
     background-color: #d4edda;
     color: #155724;
     text-decoration: none;
@@ -266,7 +266,7 @@ body {
     border-radius: 2px;
 }
 
-.tiptap del {
+del {
     background-color: #f8d7da;
     color: #721c24;
     text-decoration: line-through;

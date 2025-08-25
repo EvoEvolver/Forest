@@ -31,9 +31,10 @@ interface ModifyConfirmationProps {
 }
 
 
-const getDiffHtml = (comparisonContent) => {
+const getDiffHtml = (comparisonContent: ComparisonContent | null, currentContent: string) => {
     if (!comparisonContent) return '';
-    return makeHtmlDiff(comparisonContent.original.content, comparisonContent.modified.content);
+    const modifiedContent = currentContent || comparisonContent.modified.content;
+    return makeHtmlDiff(comparisonContent.original.content, modifiedContent);
 }
 
 export const ModifyConfirmation: React.FC<ModifyConfirmationProps> = ({
@@ -43,7 +44,8 @@ export const ModifyConfirmation: React.FC<ModifyConfirmationProps> = ({
                                                                           dialogTitle,
                                                                           comparisonContent
                                                                       }) => {
-    const [showDiff, setShowDiff] = useState(false);
+    const [showEdit, setShowEdit] = useState(false);
+    const [currentContent, setCurrentContent] = useState('');
 
     const editor = useEditor({
         extensions: makeExtensions(null, null),
@@ -53,16 +55,20 @@ export const ModifyConfirmation: React.FC<ModifyConfirmationProps> = ({
             console.error("Content error in ModifyConfirmation editor:", disableCollaboration);
             disableCollaboration();
         },
+        onUpdate: ({editor}) => {
+            setCurrentContent(editor.getHTML());
+        },
     });
 
 
     useEffect(() => {
         if (editor && comparisonContent && open) {
-            const currentContent = editor.getHTML();
-            if (currentContent !== comparisonContent.modified.content) {
+            const editorContent = editor.getHTML();
+            if (editorContent !== comparisonContent.modified.content) {
                 try {
                     console.log('Setting editor content to modified content.', comparisonContent.modified.content);
                     editor.commands.setContent(comparisonContent.modified.content.trim());
+                    setCurrentContent(comparisonContent.modified.content.trim());
                 } catch (error) {
                     console.warn('Failed to set editor content, setting as escaped HTML:', error);
                     const escapedContent = comparisonContent.modified.content
@@ -71,7 +77,9 @@ export const ModifyConfirmation: React.FC<ModifyConfirmationProps> = ({
                         .replace(/>/g, '&gt;')
                         .replace(/"/g, '&quot;')
                         .replace(/'/g, '&#39;');
-                    editor.commands.setContent(`<p>${escapedContent}</p>`);
+                    const fallbackContent = `<p>${escapedContent}</p>`;
+                    editor.commands.setContent(fallbackContent);
+                    setCurrentContent(fallbackContent);
                 }
             }
         }
@@ -84,44 +92,47 @@ export const ModifyConfirmation: React.FC<ModifyConfirmationProps> = ({
                     <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                         <span>{dialogTitle}</span>
                         <FormControlLabel
-                            control={<Switch checked={showDiff} onChange={(e) => setShowDiff(e.target.checked)}/>}
-                            label="Show Diff"
+                            control={<Switch checked={showEdit} onChange={(e) => setShowEdit(e.target.checked)}/>}
+                            label="Edit Mode"
                         />
                     </div>
                 </DialogTitle>
                 <DialogContent sx={{display: 'flex', flexDirection: 'row', gap: '20px'}}>
                     <div style={{
-                        flex: 1,
+                        width: '50%',
                         overflow: 'auto',
                         border: '1px solid #ccc',
                         padding: '10px',
-                        borderRadius: '4px'
+                        borderRadius: '4px',
+                        boxSizing: 'border-box'
                     }}>
                         <h3>{comparisonContent.original.title}</h3>
                         <div
                             dangerouslySetInnerHTML={{__html: comparisonContent.original.content}}
                             style={{
-                                lineHeight: 1.6
+                                lineHeight: 1.6,
+                                width: '100%'
                             }}
                         />
                     </div>
                     <div style={{
-                        flex: 1,
+                        width: '50%',
                         overflow: 'auto',
                         border: '1px solid #ccc',
                         padding: '10px',
-                        borderRadius: '4px'
+                        borderRadius: '4px',
+                        boxSizing: 'border-box'
                     }}>
-                        <h3>Changes Preview (Editable)</h3>
-                        {showDiff ? (
+                        <h3>Changes Preview</h3>
+                        {showEdit ? (
+                            <EditorContent editor={editor} key={editor?.storage?.html || 'editor'}/>
+                        ) : (
                             <span
-                                dangerouslySetInnerHTML={{__html: getDiffHtml(comparisonContent)}}
+                                dangerouslySetInnerHTML={{__html: getDiffHtml(comparisonContent, currentContent)}}
                                 style={{
                                     lineHeight: 1.6
                                 }}
                             />
-                        ) : (
-                            <EditorContent editor={editor} key={editor?.storage?.html || 'editor'}/>
                         )}
                     </div>
                 </DialogContent>

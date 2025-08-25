@@ -4,6 +4,7 @@ import {stageThisVersion} from "@forest/schema/src/stageService";
 import {EditorNodeTypeM} from "../index";
 import {Box} from "@mui/material";
 import {ModifyConfirmation} from "../aiButtons/ModifyConfirmation";
+import {NodeM} from "@forest/schema";
 
 export interface WritingMessageProps extends BaseMessageProps {
     nodeId: string;
@@ -47,6 +48,16 @@ const WritingMessageComponent: React.FC<WritingMessageProps> = ({
         }
     };
 
+    const getNodeTitle = () => {
+        try {
+            const nodeM: NodeM = treeM.getNode(nodeId);
+            return nodeM ? nodeM.title() || "Untitled" : "Node not found";
+        } catch (error) {
+            console.error("Error getting node title:", error);
+            return "Error loading title";
+        }
+    };
+
     return (
         <>
             {content && (
@@ -72,39 +83,50 @@ const WritingMessageComponent: React.FC<WritingMessageProps> = ({
             {newContent && (
                 <Box sx={{
                     marginTop: 2,
-                    padding: 2,
-                    backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                    borderRadius: 1,
-                    border: '1px solid rgba(25, 118, 210, 0.23)',
-                    cursor: 'pointer',
-                    maxHeight: '300px',
-                    overflow: 'auto',
-                    '&:hover': {
-                        backgroundColor: 'rgba(25, 118, 210, 0.12)',
-                        transform: 'translateY(-1px)',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                    },
-                    transition: 'all 0.2s ease-in-out'
-                }}
-                     onClick={handleClick}
-                >
+                }}>
                     <Box sx={{
-                        '& img': {
-                            maxWidth: '100%',
-                            height: 'auto',
-                            borderRadius: 1,
-                            display: 'block',
-                            margin: '8px 0'
-                        },
-                        '& p': {
-                            margin: '8px 0',
-                            lineHeight: 1.5
-                        },
-                        '& h1, & h2, & h3, & h4, & h5, & h6': {
-                            margin: '16px 0 8px 0'
-                        }
+                        marginBottom: 1,
+                        fontSize: '0.875rem',
+                        fontWeight: 600,
+                        color: 'rgba(25, 118, 210, 1)',
                     }}>
-                        <span dangerouslySetInnerHTML={{__html: newContent}}/>
+                        Modify: {getNodeTitle()}
+                    </Box>
+                    <Box sx={{
+                        padding: 2,
+                        backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                        borderRadius: 1,
+                        border: '1px solid rgba(25, 118, 210, 0.23)',
+                        cursor: 'pointer',
+                        maxHeight: '300px',
+                        overflow: 'hidden',
+                        '&:hover': {
+                            backgroundColor: 'rgba(25, 118, 210, 0.12)',
+                            transform: 'translateY(-1px)',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                        },
+                        transition: 'all 0.2s ease-in-out'
+                    }}
+                         onClick={handleClick}
+                    >
+                        <Box sx={{
+                            '& img': {
+                                maxWidth: '100%',
+                                height: 'auto',
+                                borderRadius: 1,
+                                display: 'block',
+                                margin: '8px 0'
+                            },
+                            '& p': {
+                                margin: '8px 0',
+                                lineHeight: 1.5
+                            },
+                            '& h1, & h2, & h3, & h4, & h5, & h6': {
+                                margin: '16px 0 8px 0'
+                            }
+                        }}>
+                            <span dangerouslySetInnerHTML={{__html: newContent}}/>
+                        </Box>
                     </Box>
                 </Box>
             )}
