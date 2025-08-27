@@ -3,6 +3,7 @@ import { Button } from '@mui/material';
 import { Article as ArticleIcon } from '@mui/icons-material';
 import { NodeM } from '@forest/schema';
 import LatexRenderer from './LatexRenderer';
+import TemplateSelector from './TemplateSelector';
 
 interface LatexButtonProps {
   getHtml: () => string;
@@ -10,14 +11,24 @@ interface LatexButtonProps {
 }
 
 const LatexButton: React.FC<LatexButtonProps> = ({ getHtml, nodes }) => {
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [showLatexRenderer, setShowLatexRenderer] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
 
   const handleClick = () => {
+    setShowTemplateSelector(true);
+  };
+
+  const handleTemplateSelected = (templateName: string) => {
+    setSelectedTemplate(templateName);
+    setShowTemplateSelector(false);
     setShowLatexRenderer(true);
   };
 
   const handleClose = () => {
+    setShowTemplateSelector(false);
     setShowLatexRenderer(false);
+    setSelectedTemplate('');
   };
 
   return (
@@ -31,10 +42,18 @@ const LatexButton: React.FC<LatexButtonProps> = ({ getHtml, nodes }) => {
         Generate LaTeX
       </Button>
       
-      {showLatexRenderer && (
+      {showTemplateSelector && (
+        <TemplateSelector
+          onClose={handleClose}
+          onTemplateSelected={handleTemplateSelected}
+        />
+      )}
+      
+      {showLatexRenderer && selectedTemplate && (
         <LatexRenderer
           content={getHtml()}
           nodes={nodes}
+          selectedTemplate={selectedTemplate}
           onClose={handleClose}
         />
       )}

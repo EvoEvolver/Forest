@@ -10,6 +10,7 @@ interface LatexRendererProps {
   content: string;
   onClose: () => void;
   nodes: { node: NodeM; level: number; }[];
+  selectedTemplate: string;
 }
 
 interface TemplateField {
@@ -22,10 +23,9 @@ interface Template {
   fields: TemplateField[];
 }
 
-const LatexRenderer: React.FC<LatexRendererProps> = ({ content, onClose, nodes }) => {
+const LatexRenderer: React.FC<LatexRendererProps> = ({ content, onClose, nodes, selectedTemplate }) => {
   const [latexContent, setLatexContent] = useState<string>('');
   const [templates, setTemplates] = useState<Template[]>([]);
-  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
@@ -54,9 +54,6 @@ const LatexRenderer: React.FC<LatexRendererProps> = ({ content, onClose, nodes }
       
       if (data.success) {
         setTemplates(data.templates);
-        if (data.templates.length > 0) {
-          setSelectedTemplate(data.templates[0].name);
-        }
       } else {
         setError('Failed to load templates');
       }
@@ -531,29 +528,6 @@ const LatexRenderer: React.FC<LatexRendererProps> = ({ content, onClose, nodes }
             {step === 'fields' ? 'Configure Template Fields' : 'Document Preview'}
           </Typography>
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-            {step === 'fields' && templates.length > 1 && (
-              <FormControl size="small" sx={{ minWidth: 120 }}>
-                <InputLabel>Template</InputLabel>
-                <Select
-                  value={selectedTemplate}
-                  label="Template"
-                  onChange={(e) => setSelectedTemplate(e.target.value)}
-                  MenuProps={{
-                    PaperProps: {
-                      style: {
-                        zIndex: 1400, // Higher than modal
-                      },
-                    },
-                  }}
-                >
-                  {templates.map((template) => (
-                    <MenuItem key={template.name} value={template.name}>
-                      {template.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
             {step === 'preview' && latexContent && (
               <>
                 <Button onClick={copyToClipboard} size="small" variant="contained">
