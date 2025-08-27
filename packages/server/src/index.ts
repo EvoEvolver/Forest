@@ -38,6 +38,7 @@ import mcpProxyRouter from "./routes/mcpProxyRouter";
 import a2aProxyRouter from "./routes/a2aProxyRouter";
 import {imageRoutes} from './routes/imageRoutes';
 import {initializeMinioService} from './services/minioService';
+import { html2latexRoutes } from "./routes/html2latexRoutes";
 
 // Initialize services and connections
 setMongoConnection();
@@ -78,6 +79,7 @@ function main(): void {
     app.use('/api/api-proxy', apiProxyRouter)
     app.use('/api/mcp-proxy', mcpProxyRouter);
     app.use('/api/a2a-proxy', a2aProxyRouter);
+    app.use('/api/html2latex', html2latexRoutes);
     app.use('/api/images', imageRoutes);
     app.use('/api/metadata', metadataRoutes);
     app.use('/api/datanode', createMongoCollectionRouter());

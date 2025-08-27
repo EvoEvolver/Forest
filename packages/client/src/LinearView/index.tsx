@@ -8,6 +8,7 @@ import {currentPageAtom} from "../appState";
 import {useTheme} from '@mui/system';
 import ReferenceGenButton from './ReferenceGenButton';
 import ReferenceIndexButton from './ReferenceIndexButton';
+import LatexButton from './LatexButton';
 
 
 const linearNodeListAtom = atom((get) => {
@@ -49,6 +50,7 @@ const ButtonsSection = ({getHtml, rootNode, nodes}: {
         <Box sx={{display: 'flex', gap: 1, mb: 2}}>
             <ReferenceGenButton getHtml={getHtml} rootNode={rootNode}/>
             <ReferenceIndexButton nodes={nodes}/>
+            <LatexButton getHtml={getHtml} nodes={nodes}/>
         </Box>
     );
 }
