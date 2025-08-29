@@ -143,37 +143,3 @@ function formatMLA(item: any, originalUrl: string): string {
     return citation;
 }
 
-export async function generateCitationsFromHTML(html: string): Promise<Array<{ title: string, citation: string }>> {
-    // Parse HTML to find all <a> tags
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    const links = doc.querySelectorAll('a[href]');
-    const results: Array<{ title: string, citation: string }> = [];
-
-    // Process each link
-    for (const link of links) {
-        const href = link.getAttribute('href').trim();
-        const title = link.innerHTML.trim();
-
-        if (!href || !title) continue;
-
-        try {
-            // Skip non-http(s) URLs
-            if (!href.startsWith('http://') && !href.startsWith('https://')) {
-                continue;
-            }
-
-            const citation = await generateMLACitation(href);
-            results.push({title, citation});
-        } catch (error) {
-            console.warn(`Failed to generate citation for ${href}:`, error);
-            // Add entry with error message
-            results.push({
-                title,
-                citation: `Error generating citation for: ${href}`
-            });
-        }
-    }
-
-    return results;
-}
