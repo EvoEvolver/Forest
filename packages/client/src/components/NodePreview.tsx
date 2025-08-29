@@ -3,9 +3,13 @@ import { Box, Typography, CircularProgress } from '@mui/material';
 import { useAtomValue } from 'jotai';
 import { treeAtom } from '../TreeState/TreeState';
 import { supportedNodeTypesVM } from '@forest/node-types/src/vmodel';
+import { supportedNodeTypesM } from '@forest/node-types/src/model';
+import { Highlight } from './Highlight';
+
 
 interface NodePreviewProps {
     nodeId: string | null;
+    searchQuery?: string;
 }
 
 interface NodePreviewErrorProps {
@@ -59,7 +63,7 @@ function NodePreviewError({ error, nodeId }: NodePreviewErrorProps) {
     );
 }
 
-function NodePreviewContent({ nodeId }: { nodeId: string }) {
+function NodePreviewContent({ nodeId, searchQuery }: { nodeId: string; searchQuery?: string }) {
     const tree = useAtomValue(treeAtom);
     
     if (!tree || !nodeId) {
@@ -189,7 +193,7 @@ function NodePreviewContent({ nodeId }: { nodeId: string }) {
                     }
                 }}
             >
-                {/* Node title */}
+                {/* Node title with highlighting */}
                 <Typography 
                     variant="subtitle2" 
                     gutterBottom 
@@ -202,12 +206,24 @@ function NodePreviewContent({ nodeId }: { nodeId: string }) {
                         mb: 2
                     }}
                 >
-                    {nodeVM.nodeM?.ymap?.get("title") || "Untitled"} ({nodeId.slice(0, 8)})
+                    {searchQuery ? (
+                        <Highlight keyword={searchQuery}>
+                            {nodeVM.nodeM?.ymap?.get("title") || "Untitled"} ({nodeId.slice(0, 8)})
+                        </Highlight>
+                    ) : (
+                        `${nodeVM.nodeM?.ymap?.get("title") || "Untitled"} (${nodeId.slice(0, 8)})`
+                    )}
                 </Typography>
                 
-                {/* Rendered node content */}
+                {/* Rendered node content with highlighting */}
                 <NodeRenderErrorBoundary>
-                    {renderedNode}
+                    {searchQuery ? (
+                        <Highlight keyword={searchQuery}>
+                            {renderedNode}
+                        </Highlight>
+                    ) : (
+                        renderedNode
+                    )}
                 </NodeRenderErrorBoundary>
             </Box>
         );
@@ -248,7 +264,7 @@ class NodePreviewErrorBoundaryWrapper extends React.Component<
     }
 }
 
-export default function NodePreview({ nodeId }: NodePreviewProps) {
+export default function NodePreview({ nodeId, searchQuery }: NodePreviewProps) {
     if (!nodeId) {
         return (
             <Box 
@@ -274,7 +290,7 @@ export default function NodePreview({ nodeId }: NodePreviewProps) {
                     <CircularProgress size={24} />
                 </Box>
             }>
-                <NodePreviewContent key={nodeId} nodeId={nodeId} />
+                <NodePreviewContent key={nodeId} nodeId={nodeId} searchQuery={searchQuery} />
             </Suspense>
         </NodePreviewErrorBoundaryWrapper>
     );

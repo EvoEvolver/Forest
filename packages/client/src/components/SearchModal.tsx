@@ -288,7 +288,8 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
                                 nodeId={searchResults.length > 0 && selectedIndex < searchResults.length 
                                     ? searchResults[selectedIndex].nodeId 
                                     : null
-                                } 
+                                }
+                                searchQuery={query.trim() || undefined}
                             />
                         </Box>
                     </Box>
