@@ -29,8 +29,17 @@ export class A2ANodeTypeM extends ActionableNodeType {
         if (!yText) {
             return null;
         }
-        const url = yText.toString().trim();
-        return url || null;
+        let url = yText.toString().trim();
+        if (!url) {
+            return null;
+        }
+        
+        // Normalize URL by ensuring it ends with a slash
+        if (!url.endsWith('/')) {
+            url += '/';
+        }
+        
+        return url;
     }
 
     static getRawA2AConnection(node: NodeM): A2AConnection | null {
@@ -93,8 +102,14 @@ export class A2ANodeTypeM extends ActionableNodeType {
         // @ts-ignore
         const yText: Y.Text = node.ydata().get(A2AAgentUrlText) as Y.Text;
         if (yText) {
+            // Normalize URL before saving
+            let normalizedUrl = url.trim();
+            if (normalizedUrl && !normalizedUrl.endsWith('/')) {
+                normalizedUrl += '/';
+            }
+            
             yText.delete(0, yText.length);
-            yText.insert(0, url);
+            yText.insert(0, normalizedUrl);
         }
     }
 

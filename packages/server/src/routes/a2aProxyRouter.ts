@@ -144,27 +144,48 @@ function validateAgentUrl(agentUrl: string): { valid: boolean; error?: string } 
     }
 }
 
+// Helper function to normalize agent URL
+function normalizeAgentUrl(agentUrl: string): string {
+    try {
+        let normalizedUrl = agentUrl.trim();
+        
+        // Ensure URL ends with slash for consistent handling
+        if (!normalizedUrl.endsWith('/')) {
+            normalizedUrl += '/';
+        }
+        
+        // Validate the URL format
+        const url = new URL(normalizedUrl);
+        return normalizedUrl;
+    } catch (error) {
+        // If URL parsing fails, return original URL and let validation handle it
+        return agentUrl;
+    }
+}
+
 // Helper function to get or create A2A client with enhanced debugging
 function getA2AClient(agentUrl: string, authToken?: string): A2AClient {
-    const connectionKey = `${agentUrl}:${authToken || 'no-auth'}`;
+    // Normalize URL before using it
+    const normalizedAgentUrl = normalizeAgentUrl(agentUrl);
+    const connectionKey = `${normalizedAgentUrl}:${authToken || 'no-auth'}`;
     let connection = clientConnections.get(connectionKey);
 
     if (!connection) {
         if (DEBUG) {
-            console.log(`🔌 Creating new A2A client for: ${agentUrl}`);
+            console.log(`🔌 Creating new A2A client for: ${agentUrl} (normalized: ${normalizedAgentUrl})`);
             console.log(`🔌 Node.js version: ${process.version}`);
             console.log(`🔌 Environment: ${process.env.NODE_ENV}`);
         }
 
-        const client = new A2AClient(agentUrl);
+        const client = new A2AClient(normalizedAgentUrl);
         
         if (DEBUG) {
-            console.log(`🔌 A2A client created with baseUrl: ${agentUrl}`);
+            console.log(`🔌 A2A client created with baseUrl: ${normalizedAgentUrl}`);
         }
         
         connection = {
             client,
-            agentUrl,
+            agentUrl: normalizedAgentUrl,
             connectedAt: new Date(),
             lastUsed: new Date()
         };
@@ -187,16 +208,59 @@ a2aProxyRouter.post('/get-agent-card', async (req: Request, res: Response): Prom
         return;
     }
 
+    // Normalize the agent URL for consistent handling
+    const normalizedAgentUrl = normalizeAgentUrl(agentUrl);
+
     try {
         if (DEBUG) {
-            console.log(`🎫 Fetching agent card from: ${agentUrl}`);
+            console.log(`🎫 Fetching agent card from: ${agentUrl} (normalized: ${normalizedAgentUrl})`);
+            console.log(`🎫 Expected endpoint: ${normalizedAgentUrl}.well-known/agent-card.json`);
         }
 
-        const client = getA2AClient(agentUrl, authToken);
-        const agentCard = await client.getAgentCard();
+        const client = getA2AClient(normalizedAgentUrl, authToken);
+        
+        // Add more detailed debugging for the SDK call
+        console.log(`🔍 [DEBUG] About to call client.getAgentCard() for: ${normalizedAgentUrl}`);
+        
+        const agentCard = await client.getAgentCard().catch(async (sdkError) => {
+            console.error(`❌ [DEBUG] A2A SDK getAgentCard failed:`, sdkError);
+            console.error(`❌ [DEBUG] SDK Error details:`, {
+                message: sdkError.message,
+                stack: sdkError.stack,
+                name: sdkError.name,
+                cause: sdkError.cause
+            });
+            
+            // Try manual fetch as fallback to understand what's happening
+            const manualUrl = `${normalizedAgentUrl}.well-known/agent-card.json`;
+            console.log(`🔄 [DEBUG] Attempting manual fetch from: ${manualUrl}`);
+            
+            try {
+                const manualResponse = await fetch(manualUrl);
+                console.log(`🔄 [DEBUG] Manual fetch response:`, {
+                    status: manualResponse.status,
+                    statusText: manualResponse.statusText,
+                    headers: Object.fromEntries(manualResponse.headers.entries()),
+                    url: manualResponse.url
+                });
+                
+                if (manualResponse.ok) {
+                    const manualData = await manualResponse.json();
+                    console.log(`✅ [DEBUG] Manual fetch successful, got data:`, manualData);
+                    return manualData;
+                } else {
+                    const errorText = await manualResponse.text();
+                    console.log(`❌ [DEBUG] Manual fetch failed with response:`, errorText);
+                }
+            } catch (manualError) {
+                console.error(`❌ [DEBUG] Manual fetch also failed:`, manualError);
+            }
+            
+            throw sdkError;
+        });
 
         // Cache the agent card in the connection
-        const connectionKey = `${agentUrl}:${authToken || 'no-auth'}`;
+        const connectionKey = `${normalizedAgentUrl}:${authToken || 'no-auth'}`;
         const connection = clientConnections.get(connectionKey);
         if (connection) {
             connection.agentCard = agentCard;
@@ -244,7 +308,10 @@ a2aProxyRouter.post('/send-message', async (req: Request, res: Response): Promis
 
         const client = getA2AClient(agentUrl, authToken);
 
-        // First, get agent card to check capabilities
+        // Normalize the agent URL for consistent handling
+        const normalizedAgentUrl = normalizeAgentUrl(agentUrl);
+        
+        // First, get agent card to check capabilities with fallback
         let agentCard: AgentCard | undefined;
         try {
             agentCard = await client.getAgentCard();
@@ -252,10 +319,32 @@ a2aProxyRouter.post('/send-message', async (req: Request, res: Response): Promis
                 console.log(`🎫 Agent card retrieved successfully, capabilities:`, JSON.stringify(agentCard?.capabilities));
             }
         } catch (cardError) {
-            console.warn(`⚠️ Could not fetch agent card, proceeding without capability check: ${cardError.message}`);
-            // If we can't even fetch the agent card, the agent might be unreachable
-            if (cardError.message?.includes('ECONNREFUSED') || cardError.message?.includes('fetch failed')) {
-                throw new Error(`Cannot reach A2A agent at ${agentUrl}. Please verify the agent is running and accessible.`);
+            console.warn(`⚠️ A2A SDK failed to fetch agent card, attempting manual fetch: ${cardError.message}`);
+            
+            // Try manual fetch as fallback (same logic as in get-agent-card route)
+            const manualUrl = `${normalizedAgentUrl}.well-known/agent-card.json`;
+            try {
+                const manualResponse = await fetch(manualUrl);
+                if (manualResponse.ok) {
+                    agentCard = await manualResponse.json();
+                    if (DEBUG) {
+                        console.log(`✅ Manual agent card fetch successful, capabilities:`, JSON.stringify(agentCard?.capabilities));
+                    }
+                } else {
+                    console.warn(`⚠️ Manual agent card fetch also failed: ${manualResponse.status} ${manualResponse.statusText}`);
+                    // If we can't even fetch the agent card manually, the agent might be unreachable
+                    if (manualResponse.status === 404) {
+                        console.warn(`⚠️ Agent card not found, proceeding without capability check`);
+                    } else {
+                        throw new Error(`Cannot reach A2A agent at ${normalizedAgentUrl}. Please verify the agent is running and accessible.`);
+                    }
+                }
+            } catch (manualError) {
+                console.error(`❌ Manual agent card fetch failed:`, manualError);
+                // If we can't even fetch the agent card, the agent might be unreachable
+                if (manualError.message?.includes('ECONNREFUSED') || manualError.message?.includes('fetch failed')) {
+                    throw new Error(`Cannot reach A2A agent at ${normalizedAgentUrl}. Please verify the agent is running and accessible.`);
+                }
             }
         }
 
@@ -408,7 +497,10 @@ a2aProxyRouter.post('/send-message-stream', async (req: Request, res: Response):
 
         const client = getA2AClient(agentUrl, authToken);
 
-        // Check if agent supports streaming before attempting
+        // Normalize the agent URL for consistent handling
+        const normalizedAgentUrl = normalizeAgentUrl(agentUrl);
+
+        // Check if agent supports streaming before attempting with fallback
         let agentCard: AgentCard | undefined;
         try {
             agentCard = await client.getAgentCard();
@@ -419,7 +511,29 @@ a2aProxyRouter.post('/send-message-stream', async (req: Request, res: Response):
                 return;
             }
         } catch (cardError) {
-            console.warn(`⚠️ Could not fetch agent card for streaming check: ${cardError.message}`);
+            console.warn(`⚠️ A2A SDK failed to fetch agent card for streaming check, attempting manual fetch: ${cardError.message}`);
+            
+            // Try manual fetch as fallback
+            const manualUrl = `${normalizedAgentUrl}.well-known/agent-card.json`;
+            try {
+                const manualResponse = await fetch(manualUrl);
+                if (manualResponse.ok) {
+                    agentCard = await manualResponse.json();
+                    if (agentCard?.capabilities?.streaming === false) {
+                        res.status(400).json({
+                            error: 'Agent does not support streaming (AgentCard.capabilities.streaming is false). Use /send-message endpoint instead.'
+                        });
+                        return;
+                    }
+                    if (DEBUG) {
+                        console.log(`✅ Manual agent card fetch for streaming check successful`);
+                    }
+                } else {
+                    console.warn(`⚠️ Manual agent card fetch for streaming check failed: ${manualResponse.status} ${manualResponse.statusText}`);
+                }
+            } catch (manualError) {
+                console.error(`❌ Manual agent card fetch for streaming check failed:`, manualError);
+            }
         }
 
         const params: MessageSendParams = {
@@ -529,11 +643,25 @@ a2aProxyRouter.post('/health', async (req: Request, res: Response): Promise<void
 
     try {
         const client = getA2AClient(agentUrl, authToken);
-        const agentCard = await client.getAgentCard();
+        const normalizedAgentUrl = normalizeAgentUrl(agentUrl);
+        
+        let agentCard: AgentCard | undefined;
+        try {
+            agentCard = await client.getAgentCard();
+        } catch (sdkError) {
+            // Try manual fetch as fallback
+            const manualUrl = `${normalizedAgentUrl}.well-known/agent-card.json`;
+            const manualResponse = await fetch(manualUrl);
+            if (manualResponse.ok) {
+                agentCard = await manualResponse.json();
+            } else {
+                throw sdkError; // If manual fetch also fails, throw original SDK error
+            }
+        }
 
         res.json({
             healthy: true,
-            agentUrl,
+            agentUrl: normalizedAgentUrl,
             agentName: agentCard.name,
             agentVersion: agentCard.version,
             protocolVersion: (agentCard as any).protocolVersion,
