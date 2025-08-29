@@ -5,7 +5,8 @@ import {YjsProviderAtom} from "@forest/client/src/TreeState/YjsConnection";
 import {XmlFragment} from 'yjs';
 import Collaboration from '@tiptap/extension-collaboration'
 import {CollaborationCursor} from './Extensions/collaboration-cursor'
-import {BubbleMenu, EditorContent, useEditor} from '@tiptap/react'
+import {EditorContent, useEditor} from '@tiptap/react'
+import { BubbleMenu } from '@tiptap/react/menus'
 import Document from '@tiptap/extension-document'
 import Paragraph from '@tiptap/extension-paragraph'
 import Text from '@tiptap/extension-text'
@@ -332,7 +333,6 @@ const EditorImpl = ({yXML, provider, dataLabel, node}) => {
             <EditorContent editor={editor}/>
             <BubbleMenu
                 editor={editor}
-                tippyOptions={{duration: 100}}
                 shouldShow={({editor, view, state, oldState, from, to}) => {
                     // Don't show bubble menu when selecting image upload nodes
                     const {selection} = state;
