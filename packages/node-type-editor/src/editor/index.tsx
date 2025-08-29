@@ -40,6 +40,8 @@ import {RevisionExtension} from "./Extensions/revision";
 import {NodeDiffExtension} from "./Extensions/node-diff";
 import HardBreak from '@tiptap/extension-hard-break'
 import Italic from '@tiptap/extension-italic'
+import { Placeholder } from '@tiptap/extensions'
+
 
 interface TiptapEditorProps {
     node: NodeVM,
@@ -82,6 +84,9 @@ export function makeExtensions(yXML, provider) {
             tableCell: {},
             tableHeader: {},
             tableRow: {}
+        }),
+        Placeholder.configure({
+            placeholder: 'Press "/" for commands',
         }),
         MathExtension.configure({evaluation: false}),
         CommentExtension.configure({
