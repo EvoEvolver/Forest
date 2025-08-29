@@ -251,14 +251,17 @@ export const CommentHover = ({hoveredEl, editor, options}) => {
     }, [hoveredEl]);
 
     return (
-        <Card sx={{width: 'fit-content', p: 0.5}} style={{padding: "0"}}>
+        <Card sx={{p: 0.5, maxWidth: "300px", minHeight: 'fit-content'}} style={{padding: "0"}}>
             {isEditing ? (
                 <TextField
                     size="small"
+                    multiline
+                    minRows={1}
+                    maxRows={4}
                     value={editedComment}
                     onChange={(e) => setEditedComment(e.target.value)}
                     onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
+                        if (e.key === 'Enter' && !e.shiftKey) {
                             handleCommentUpdate();
                             setIsEditing(false);
                             e.preventDefault();
@@ -269,7 +272,7 @@ export const CommentHover = ({hoveredEl, editor, options}) => {
                 />
             ) : (
                 <><span
-                    style={{paddingLeft: '8px', display: 'inline-block'}}
+                    style={{paddingLeft: '8px', display: 'inline-block', whiteSpace: 'pre-wrap', wordBreak: 'break-word'}}
                 >
                     {editedComment}
                 </span>
