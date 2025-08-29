@@ -42,14 +42,13 @@ const linearNodeListAtom = atom((get) => {
 
 
 // Memoized buttons component to prevent re-renders when linearNodeListAtom updates
-const ButtonsSection = ({getHtml, rootNode, nodes}: {
-    getHtml: () => string,
+const ButtonsSection = ({rootNode, nodes}: {
     rootNode: NodeM,
     nodes: { node: NodeM; level: number; }[]
 }) => {
     return (
         <Box sx={{display: 'flex', gap: 1, mb: 2}}>
-            <ReferenceGenButton getHtml={getHtml} rootNode={rootNode}/>
+            <ReferenceGenButton rootNode={rootNode} nodes={nodes}/>
             <ReferenceIndexButton nodes={nodes}/>
         </Box>
     );
@@ -332,31 +331,6 @@ export default function LinearView() {
     const currTree = useAtomValue(treeAtom);
     const treeM = currTree?.treeM;
 
-    const getHtml = () => {
-        if (!nodes || !treeM) return '';
-
-        return nodes.map(({node}) => {
-            try {
-                const fullContent = EditorNodeTypeM.getEditorContent(node);
-                const isTerminal = isTerminalNode(node, treeM);
-
-                if (isTerminal) {
-                    // Terminal node: if has export, show only export; otherwise show everything
-                    if (hasExportContent(fullContent)) {
-                        return extractExportContent(fullContent);
-                    } else {
-                        return fullContent;
-                    }
-                } else {
-                    // Non-terminal node: show only export content if it exists
-                    return extractExportContent(fullContent);
-                }
-            } catch (error) {
-                console.warn('Error generating HTML for node:', error);
-                return '';
-            }
-        }).filter(html => html.length > 0).join('\n\n');
-    };
 
     if (!nodes || nodes.length === 0) return null;
 
@@ -381,7 +355,7 @@ export default function LinearView() {
                     color: theme.palette.text.primary
                 }}
             >
-                <ButtonsSection getHtml={getHtml} rootNode={nodes[0].node} nodes={nodes}/>
+                <ButtonsSection rootNode={nodes[0].node} nodes={nodes}/>
                 {treeM && nodes.map(({node, level}) => (
                     <NodeRenderer key={node.id} node={node} level={level} treeM={treeM}/>
                 ))}

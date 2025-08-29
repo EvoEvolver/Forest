@@ -9,19 +9,95 @@ import {
     DialogTitle,
     Typography
 } from '@mui/material';
-import {generateCitationsFromHTML} from './generateReferences';
 import {NodeM} from "@forest/schema";
 import {EditorNodeTypeM} from '@forest/node-type-editor/src';
+import {generateMLACitation} from "./generateReferences";
+import {extractExportContent} from '@forest/node-type-editor/src/editor/Extensions/exportHelpers';
 
 interface ReferenceGenButtonProps {
-    getHtml: () => string;
-    rootNode: NodeM
+    rootNode: NodeM;
+    nodes: { node: NodeM; level: number; }[];
 }
 
-export default function ReferenceGenButton({getHtml, rootNode}: ReferenceGenButtonProps) {
+export async function generateCitationsFromHTML(html: string): Promise<Array<{ title: string, citation: string }>> {
+    // Parse HTML to find all <a> tags
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const links = doc.querySelectorAll('a[href]');
+    const results: Array<{ title: string, citation: string }> = [];
+
+    // Process each link
+    for (const link of links) {
+        const href = link.getAttribute('href').trim();
+        const title = link.innerHTML.trim();
+
+        if (!href || !title) continue;
+
+        try {
+            // Skip non-http(s) URLs
+            if (!href.startsWith('http://') && !href.startsWith('https://')) {
+                continue;
+            }
+
+            const citation = await generateMLACitation(href);
+            results.push({title, citation});
+        } catch (error) {
+            console.warn(`Failed to generate citation for ${href}:`, error);
+            // Add entry with error message
+            results.push({
+                title,
+                citation: `Error generating citation for: ${href}`
+            });
+        }
+    }
+
+    return results;
+}
+
+// Helper function to check if content has export divs
+const hasExportContent = (htmlContent: string): boolean => {
+    return extractExportContent(htmlContent).trim().length > 0;
+};
+
+// Helper function to check if a node is terminal (has no children)
+const isTerminalNode = (node: NodeM, treeM: any): boolean => {
+    const children = treeM.getChildren(node);
+    return children.length === 0;
+};
+
+export default function ReferenceGenButton({rootNode, nodes}: ReferenceGenButtonProps) {
     const [open, setOpen] = useState(false);
     const [citations, setCitations] = useState<Array<{ title: string, citation: string }>>([]);
     const [loading, setLoading] = useState(false);
+
+    const getHtml = () => {
+        if (!nodes) return '';
+        
+        const treeM = rootNode.treeM;
+        if (!treeM) return '';
+
+        return nodes.map(({node}) => {
+            try {
+                const fullContent = EditorNodeTypeM.getEditorContent(node);
+                const isTerminal = isTerminalNode(node, treeM);
+
+                if (isTerminal) {
+                    // Terminal node: if has export, show only export; otherwise show everything
+                    if (hasExportContent(fullContent)) {
+                        return extractExportContent(fullContent);
+                    } else {
+                        return fullContent;
+                    }
+                } else {
+                    // Non-terminal node: show only export content if it exists
+                    return extractExportContent(fullContent);
+                }
+            } catch (error) {
+                console.warn('Error generating HTML for node:', error);
+                return '';
+            }
+        }).filter(html => html.length > 0).join('\n\n');
+    };
 
     const handleGenerateCitations = async () => {
         setOpen(true);
