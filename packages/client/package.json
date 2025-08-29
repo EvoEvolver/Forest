@@ -7,6 +7,9 @@
     "build": "vite build"
   },
   "dependencies": {
+    "@citation-js/core": "^0.7.18",
+    "@citation-js/plugin-bibtex": "^0.7.18",
+    "@citation-js/plugin-csl": "^0.7.18",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@forest/agent-chat": "workspace:*",
@@ -15,8 +18,8 @@
     "@forest/node-components": "workspace:*",
     "@forest/node-type-agents": "workspace:*",
     "@forest/node-type-editor": "workspace:*",
-    "@forest/node-type-reader": "workspace:*",
     "@forest/node-type-embedded": "workspace:*",
+    "@forest/node-type-reader": "workspace:*",
     "@forest/node-types": "workspace:*",
     "@forest/schema": "workspace:*",
     "@forest/user-panel": "workspace:*",
