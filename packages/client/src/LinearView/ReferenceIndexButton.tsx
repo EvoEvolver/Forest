@@ -16,8 +16,7 @@ import {
 } from '@mui/material';
 import {NodeM} from "@forest/schema";
 import {EditorNodeTypeM} from '@forest/node-type-editor/src';
-import {useAtomValue} from "jotai";
-import {treeAtom} from "../TreeState/TreeState";
+import {extractExportContent} from '@forest/node-type-editor/src/editor/Extensions/exportHelpers';
 
 interface ReferenceIndexButtonProps {
     nodes: Array<{ node: NodeM, level: number }>
@@ -27,6 +26,7 @@ interface ContentChange {
     node: NodeM;
     originalContent: string;
     newContent: string;
+    fullNewContent?: string; // Store the full content to apply
     nodeTitle: string;
 }
 
@@ -38,7 +38,6 @@ export default function ReferenceIndexButton({nodes}: ReferenceIndexButtonProps)
     const [currentChange, setCurrentChange] = useState<ContentChange | null>(null);
     const [pendingChanges, setPendingChanges] = useState<ContentChange[]>([]);
     const [currentChangeIndex, setCurrentChangeIndex] = useState(0);
-    const treeVM = useAtomValue(treeAtom)
 
     // Function to get cached citation data or fetch from server
     const getCitationData = async (url: string): Promise<any> => {
@@ -145,6 +144,18 @@ export default function ReferenceIndexButton({nodes}: ReferenceIndexButtonProps)
         return `${authorPart}::${titlePart}`.toLowerCase();
     };
 
+    // Helper function to check if content has export divs
+    const hasExportContent = (htmlContent: string): boolean => {
+        return extractExportContent(htmlContent).trim().length > 0;
+    };
+
+    // Helper function to check if a node is terminal (has no children)
+    const isTerminalNode = (node: NodeM): boolean => {
+        const children = node.children().toJSON();
+        const childrenValue = Array.isArray(children) ? children : [];
+        return childrenValue.length === 0;
+    };
+
     const processReferences = async () => {
         setLoading(true);
         try {
@@ -153,13 +164,25 @@ export default function ReferenceIndexButton({nodes}: ReferenceIndexButtonProps)
             const changes: ContentChange[] = [];
 
             for (const {node} of nodes) {
-                // Skip nodes with children (headers only)
-                const children = node.children().toJSON()
-                const childrenValue = Array.isArray(children) ? children : [];
-                if (childrenValue.length > 0) continue;
+                // Get current content - following same pattern as LinearView
+                const fullContent = EditorNodeTypeM.getEditorContent(node);
+                const isTerminal = isTerminalNode(node);
+                
+                let currentContent: string;
+                if (isTerminal) {
+                    // Terminal node: if has export, show only export; otherwise show everything
+                    if (hasExportContent(fullContent)) {
+                        currentContent = extractExportContent(fullContent);
+                    } else {
+                        currentContent = fullContent;
+                    }
+                } else {
+                    // Non-terminal node: show only export content if it exists
+                    currentContent = extractExportContent(fullContent);
+                }
 
-                // Get current content
-                const currentContent = EditorNodeTypeM.getEditorContent(node);
+                // Skip if no content to process
+                if (!currentContent || currentContent.trim().length === 0) continue;
 
                 // Parse and replace links
                 const parser = new DOMParser();
@@ -224,14 +247,34 @@ export default function ReferenceIndexButton({nodes}: ReferenceIndexButtonProps)
 
                 // Store changes for confirmation only if content actually changed
                 if (hasChanges) {
-                    const newContent = doc.body.innerHTML;
+                    const modifiedContent = doc.body.innerHTML;
+                    
+                    // Reconstruct the full content with the modified export section
+                    let newFullContent: string;
+                    if (isTerminal) {
+                        if (hasExportContent(fullContent)) {
+                            // Terminal node with export: replace only the export content in the full content
+                            const exportRegex = /<div[^>]*class="[^"]*export[^"]*"[^>]*>[\s\S]*?<\/div>/g;
+                            const wrappedModifiedContent = `<div class="export">${modifiedContent}</div>`;
+                            newFullContent = fullContent.replace(exportRegex, wrappedModifiedContent);
+                        } else {
+                            // Terminal node without export: replace entire content
+                            newFullContent = modifiedContent;
+                        }
+                    } else {
+                        // Non-terminal node: replace only the export content within the full content
+                        const exportRegex = /<div[^>]*class="[^"]*export[^"]*"[^>]*>[\s\S]*?<\/div>/g;
+                        const wrappedModifiedContent = `<div class="export">${modifiedContent}</div>`;
+                        newFullContent = fullContent.replace(exportRegex, wrappedModifiedContent);
+                    }
 
                     // Only add to changes if the content is actually different
-                    if (newContent.trim() !== currentContent.trim()) {
+                    if (newFullContent.trim() !== fullContent.trim()) {
                         changes.push({
                             node,
-                            originalContent: currentContent,
-                            newContent,
+                            originalContent: currentContent, // Show the relevant part in UI
+                            newContent: modifiedContent, // Show the relevant modified part in UI
+                            fullNewContent: newFullContent, // Store the full content to apply
                             nodeTitle: node.title()
                         });
                     }
@@ -260,7 +303,9 @@ export default function ReferenceIndexButton({nodes}: ReferenceIndexButtonProps)
     const applyCurrentChange = () => {
         try {
             if (currentChange) {
-                EditorNodeTypeM.setEditorContent(currentChange.node, currentChange.newContent);
+                // Use fullNewContent if available (for proper export handling), otherwise use newContent
+                const contentToApply = currentChange.fullNewContent || currentChange.newContent;
+                EditorNodeTypeM.setEditorContent(currentChange.node, contentToApply);
             }
 
             // Move to next change or close if done
