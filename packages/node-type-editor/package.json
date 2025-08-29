@@ -28,6 +28,7 @@
     "@tiptap/extension-paragraph": "^3.3.0",
     "@tiptap/extension-table": "^3.3.0",
     "@tiptap/extension-text": "^3.3.0",
+    "@tiptap/extensions": "^3.3.0",
     "@tiptap/pm": "^3.3.0",
     "@tiptap/react": "^3.3.0",
     "ai": "^5.0.22",
