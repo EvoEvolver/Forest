@@ -1,3 +1,7 @@
+import { Cite } from '@citation-js/core';
+import '@citation-js/plugin-bibtex';
+import '@citation-js/plugin-csl';
+
 const CACHE_KEY_PREFIX = 'zotero_response_';
 const CACHE_EXPIRY_HOURS = 2400; // 100 days
 
@@ -41,21 +45,37 @@ function setCachedResponse(url: string, responseData: any): void {
     }
 }
 
-export async function generateMLACitation(url: string): Promise<string> {
-    // Check cache first
-    const cachedResponse = getCachedResponse(url);
-    if (cachedResponse) {
-        const item = cachedResponse[0];
-        return formatMLA(item, url);
-    }
-
+export async function generateAPACitation(url: string): Promise<string> {
     try {
+        // Check if URL has bib parameter
+        const urlObj = new URL(url);
+        const bibParam = urlObj.searchParams.get('bib');
+        
+        if (bibParam) {
+            // Use BibTeX from parameter
+            const decodedBibTeX = decodeURIComponent(bibParam);
+            return await generateAPAFromBibTeX(decodedBibTeX, url);
+        }
+
+        // Convert arxiv.org/pdf links to arxiv.org/abs for better citation data
+        let processedUrl = url;
+        if (url.includes('arxiv.org/pdf/')) {
+            processedUrl = url.replace('arxiv.org/pdf/', 'arxiv.org/abs/').replace('.pdf', '');
+        }
+
+        // Check cache first for regular URLs (use processed URL for cache key)
+        const cachedResponse = getCachedResponse(processedUrl);
+        if (cachedResponse) {
+            const item = cachedResponse[0];
+            return formatAPA(item, url);
+        }
+
         const response = await fetch('https://zotero-matter.up.railway.app/web', {
             method: 'POST',
             headers: {
                 'Content-Type': 'text/plain'
             },
-            body: url
+            body: processedUrl
         });
 
         if (!response.ok) {
@@ -68,18 +88,42 @@ export async function generateMLACitation(url: string): Promise<string> {
             throw new Error('No citation data found');
         }
 
-        // Cache the raw server response
-        setCachedResponse(url, data);
+        // Cache the raw server response (use processed URL for cache key)
+        setCachedResponse(processedUrl, data);
 
         const item = data[0];
-        return formatMLA(item, url);
+        return formatAPA(item, url);
     } catch (error) {
-        console.error('Error generating MLA citation:', error);
+        console.error('Error generating APA citation:', error);
         throw error;
     }
 }
 
-function formatMLA(item: any, originalUrl: string): string {
+async function generateAPAFromBibTeX(bibtex: string, originalUrl: string): Promise<string> {
+    try {
+        // Parse BibTeX using citation.js
+        const cite = new Cite(bibtex);
+        
+        // Get the formatted APA citation
+        const apaCitation = cite.format('bibliography', {
+            format: 'text',
+            template: 'apa',
+            lang: 'en-US'
+        });
+
+        // Remove any trailing periods and newlines, then add a single period
+        const cleanedCitation = apaCitation.trim().replace(/\.$/, '') + '.';
+        
+        console.log('Generated APA citation from BibTeX:', cleanedCitation);
+        return cleanedCitation;
+        
+    } catch (error) {
+        console.error('Error parsing BibTeX:', error);
+        throw new Error(`Failed to parse BibTeX: ${error.message}`);
+    }
+}
+
+function formatAPA(item: any, originalUrl: string): string {
     const {creators = [], title = '', date = '', itemType = '', url = '', repository = '', DOI = ''} = item;
 
     // Format authors
@@ -136,7 +180,7 @@ function formatMLA(item: any, originalUrl: string): string {
 
     const citation = parts.join(' ') + '.';
 
-    console.log('Generated MLA citation:', citation);
+    console.log('Generated APA citation:', citation);
     if (linkUrl) {
         return `${citation}`;
     }
