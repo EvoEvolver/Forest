@@ -13,7 +13,7 @@ export interface WritingMessageProps extends BaseMessageProps {
 }
 
 const WritingMessageComponent: React.FC<WritingMessageProps> = ({
-                                                                    content, author, role, nodeId, newContent, treeM
+                                                                    content, nodeId, newContent, treeM
                                                                 }) => {
     const [dialogOpen, setDialogOpen] = React.useState(false);
 
@@ -167,8 +167,6 @@ export class WritingMessage extends BaseMessage {
         return (
             <WritingMessageComponent
                 content={this.content}
-                author={this.author}
-                role={this.role}
                 nodeId={this.nodeId}
                 newContent={this.newContent}
                 treeM={this.treeM}
