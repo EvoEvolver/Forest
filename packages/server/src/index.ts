@@ -37,6 +37,7 @@ import apiProxyRouter from "./routes/apiProxyRouter.ts";
 import mcpProxyRouter from "./routes/mcpProxyRouter";
 import a2aProxyRouter from "./routes/a2aProxyRouter";
 import {imageRoutes} from './routes/imageRoutes';
+import {fileUploadRoutes} from './routes/fileUploadRoutes';
 import {initializeMinioService} from './services/minioService';
 
 // Initialize services and connections
@@ -79,6 +80,7 @@ function main(): void {
     app.use('/api/mcp-proxy', mcpProxyRouter);
     app.use('/api/a2a-proxy', a2aProxyRouter);
     app.use('/api/images', imageRoutes);
+    app.use('/api/files', fileUploadRoutes);
     app.use('/api/metadata', metadataRoutes);
     app.use('/api/datanode', createMongoCollectionRouter());
 
