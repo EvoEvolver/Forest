@@ -1,7 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {atom, useAtomValue, useSetAtom} from "jotai";
 import {jumpToNodeAtom, scrollToNodeAtom, treeAtom} from "../TreeState/TreeState";
-import {Box, Paper, Skeleton} from '@mui/material';
+import {Box, IconButton, Paper, Skeleton, Tooltip} from '@mui/material';
 import {NodeM} from '@forest/schema';
 import {EditorNodeTypeM} from '@forest/node-type-editor/src';
 import {currentPageAtom} from "../appState";
@@ -9,6 +9,9 @@ import {useTheme} from '@mui/system';
 import ReferenceGenButton from './ReferenceGenButton';
 import ReferenceIndexButton from './ReferenceIndexButton';
 import {extractExportContent} from '@forest/node-type-editor/src/editor/Extensions/exportHelpers';
+import CheckIcon from '@mui/icons-material/Check';
+import TiptapEditor from '@forest/node-type-editor/src/editor';
+import {LinearClickMenu} from "./linearClickMenu";
 
 
 const linearNodeListAtom = atom((get) => {
@@ -70,6 +73,9 @@ const NodeRenderer = ({node, level, treeM}: { node: NodeM, level: number, treeM:
     const title = node.title()
     const [htmlContent, setHtmlContent] = useState<string | null>(null);
     const [isVisible, setIsVisible] = useState(false);
+    const [isMenuVisible, setIsMenuVisible] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [clickPosition, setClickPosition] = useState<{ x: number, y: number } | null>(null);
     const nodeRef = useRef<HTMLDivElement>(null);
     const theme = useTheme();
 
@@ -78,6 +84,45 @@ const NodeRenderer = ({node, level, treeM}: { node: NodeM, level: number, treeM:
     const scrollToNode = useSetAtom(scrollToNodeAtom);
 
     const isTerminal = isTerminalNode(node, treeM);
+
+    const handleContentClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        
+        // Get click position relative to viewport
+        const clickX = e.clientX;
+        const clickY = e.clientY;
+        
+        setClickPosition({ x: clickX, y: clickY });
+        setIsMenuVisible(!isMenuVisible);
+    };
+
+    // Function to refresh HTML content from the node
+    const refreshHtmlContent = () => {
+        const fullContent = EditorNodeTypeM.getEditorContent(node);
+        
+        if (isTerminal) {
+            // Terminal node: if has export, show only export; otherwise show everything
+            if (hasExportContent(fullContent)) {
+                setHtmlContent(extractExportContent(fullContent));
+            } else {
+                setHtmlContent(fullContent);
+            }
+        } else {
+            // Non-terminal node: show only export content if it exists
+            const exportContent = extractExportContent(fullContent);
+            setHtmlContent(exportContent || ''); // Empty string if no export content
+        }
+    };
+
+    const handleToggleEdit = () => {
+        // If we're exiting edit mode, refresh the HTML content
+        if (isEditing) {
+            refreshHtmlContent();
+        }
+        
+        setIsEditing(!isEditing);
+        setIsMenuVisible(false); // Hide menu when toggling edit
+    };
 
     const goToNodeInTreeView = () => {
         setCurrentPage("tree");
@@ -107,6 +152,23 @@ const NodeRenderer = ({node, level, treeM}: { node: NodeM, level: number, treeM:
 
         return () => observer.disconnect();
     }, []);
+
+    // Click outside to close menu
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (nodeRef.current && !nodeRef.current.contains(event.target as Node)) {
+                setIsMenuVisible(false);
+            }
+        };
+
+        if (isMenuVisible) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isMenuVisible]);
 
     // Generate HTML content asynchronously when visible
     useEffect(() => {
@@ -167,44 +229,99 @@ const NodeRenderer = ({node, level, treeM}: { node: NodeM, level: number, treeM:
     const shouldRenderContent = isTerminal || (htmlContent && htmlContent.trim().length > 0);
 
     return (
-        <div ref={nodeRef} key={node.id}>
+        <div 
+            ref={nodeRef} 
+            key={node.id}
+            style={{position: 'relative'}}
+        >
             {renderTitle()}
             {shouldRenderContent && (
                 <>
                     {isVisible ? (
-                        htmlContent && htmlContent.trim() ? (
-                            <Box
-                                sx={{
-                                    color: theme.palette.text.primary,
-                                    '& *': {
-                                        color: `${theme.palette.text.primary} !important`,
-                                        backgroundColor: 'transparent !important'
-                                    },
-                                    '& p, & div, & span, & h1, & h2, & h3, & h4, & h5, & h6': {
-                                        color: `${theme.palette.text.primary} !important`
-                                    },
-                                    '& a': {
-                                        color: `${theme.palette.primary.main} !important`
-                                    },
-                                    '& code': {
-                                        backgroundColor: `${theme.palette.action.hover} !important`,
-                                        color: `${theme.palette.text.primary} !important`
-                                    },
-                                    '& pre': {
-                                        backgroundColor: `${theme.palette.action.hover} !important`,
-                                        color: `${theme.palette.text.primary} !important`
-                                    }
-                                }}
-                                dangerouslySetInnerHTML={{__html: htmlContent}}
-                            />
+                        isEditing ? (
+                            <Box sx={{ 
+                                minHeight: '100px', 
+                                border: `1px solid ${theme.palette.divider}`, 
+                                borderRadius: 1, 
+                                position: 'relative',
+                                backgroundColor: theme.palette.background.default
+                            }}>
+                                {/* Check button to exit edit mode */}
+                                <Box sx={{ 
+                                    position: 'absolute', 
+                                    top: 8, 
+                                    right: 8, 
+                                    zIndex: 10,
+                                    backgroundColor: theme.palette.background.paper,
+                                    borderRadius: '50%',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                }}>
+                                    <Tooltip title="Save and exit edit mode">
+                                        <IconButton
+                                            size="small"
+                                            onClick={handleToggleEdit}
+                                            sx={{
+                                                color: theme.palette.success.main,
+                                                '&:hover': {
+                                                    backgroundColor: theme.palette.success.light + '20'
+                                                }
+                                            }}
+                                        >
+                                            <CheckIcon fontSize="small"/>
+                                        </IconButton>
+                                    </Tooltip>
+                                </Box>
+                                <Box sx={{ p: 1 }}>
+                                    <TiptapEditor yXML={EditorNodeTypeM.getYxml(node)} node={null} />
+                                </Box>
+                            </Box>
                         ) : (
-                            isTerminal && <Skeleton variant="text" width="100%" height={60}/>
+                            htmlContent && htmlContent.trim() ? (
+                                <Box
+                                    onClick={handleContentClick}
+                                    sx={{
+                                        color: theme.palette.text.primary,
+                                        cursor: 'pointer',
+                                        '&:hover': {
+                                            backgroundColor: theme.palette.action.hover + '20'
+                                        },
+                                        '& *': {
+                                            color: `${theme.palette.text.primary} !important`,
+                                            backgroundColor: 'transparent !important'
+                                        },
+                                        '& p, & div, & span, & h1, & h2, & h3, & h4, & h5, & h6': {
+                                            color: `${theme.palette.text.primary} !important`
+                                        },
+                                        '& a': {
+                                            color: `${theme.palette.primary.main} !important`
+                                        },
+                                        '& code': {
+                                            backgroundColor: `${theme.palette.action.hover} !important`,
+                                            color: `${theme.palette.text.primary} !important`
+                                        },
+                                        '& pre': {
+                                            backgroundColor: `${theme.palette.action.hover} !important`,
+                                            color: `${theme.palette.text.primary} !important`
+                                        }
+                                    }}
+                                    dangerouslySetInnerHTML={{__html: htmlContent}}
+                                />
+                            ) : (
+                                isTerminal && <Skeleton variant="text" width="100%" height={60}/>
+                            )
                         )
                     ) : (
                         isTerminal && <Skeleton variant="text" width="100%" height={60}/>
                     )}
                 </>
             )}
+            <LinearClickMenu 
+                node={node} 
+                isVisible={isMenuVisible}
+                isEditing={isEditing}
+                onToggleEdit={handleToggleEdit}
+                position={clickPosition}
+            />
         </div>
     );
 }
