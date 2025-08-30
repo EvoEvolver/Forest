@@ -17,6 +17,7 @@ import {
 import {NodeM} from "@forest/schema";
 import {EditorNodeTypeM} from '@forest/node-type-editor/src';
 import {extractExportContent} from '@forest/node-type-editor/src/editor/Extensions/exportHelpers';
+import { getCitationBibtex, formatAPAfromBibtex } from './generateReferences';
 
 interface ReferenceIndexButtonProps {
     nodes: Array<{ node: NodeM, level: number }>
@@ -39,110 +40,6 @@ export default function ReferenceIndexButton({nodes}: ReferenceIndexButtonProps)
     const [pendingChanges, setPendingChanges] = useState<ContentChange[]>([]);
     const [currentChangeIndex, setCurrentChangeIndex] = useState(0);
 
-    // Function to get cached citation data or fetch from server
-    const getCitationData = async (url: string): Promise<any> => {
-        const CACHE_KEY_PREFIX = 'zotero_response_';
-        const CACHE_EXPIRY_HOURS = 2400;
-
-        // Check cache first
-        try {
-            const cacheKey = `${CACHE_KEY_PREFIX}${btoa(url)}`;
-            const cached = localStorage.getItem(cacheKey);
-
-            if (cached) {
-                const {responseData, timestamp} = JSON.parse(cached);
-                const now = Date.now();
-                const expiryTime = timestamp + (CACHE_EXPIRY_HOURS * 60 * 60 * 1000);
-
-                if (now <= expiryTime) {
-                    return responseData[0];
-                } else {
-                    localStorage.removeItem(cacheKey);
-                }
-            }
-        } catch (error) {
-            console.warn('Error reading from cache:', error);
-        }
-
-        // Fetch from server if not cached
-        try {
-            const response = await fetch('https://zotero-matter.up.railway.app/web', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'text/plain'
-                },
-                body: url
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-
-            if (!data || !Array.isArray(data) || data.length === 0) {
-                throw new Error('No citation data found');
-            }
-
-            // Cache the response
-            try {
-                const cacheKey = `${CACHE_KEY_PREFIX}${btoa(url)}`;
-                const cacheData = {
-                    responseData: data,
-                    timestamp: Date.now()
-                };
-                localStorage.setItem(cacheKey, JSON.stringify(cacheData));
-            } catch (error) {
-                console.warn('Error writing to cache:', error);
-            }
-
-            return data[0];
-        } catch (error) {
-            console.error('Error fetching citation data:', error);
-            return null;
-        }
-    };
-
-    // Format APA in-text citation
-    const formatAPAInText = (item: any): string => {
-        const {creators = [], date = '', title = ''} = item;
-
-        if (creators.length === 0) {
-            const year = date ? new Date(date).getFullYear() : 'n.d.';
-            const shortTitle = title.length > 20 ? title.substring(0, 20) + '...' : title;
-            return `${shortTitle}, ${year}`;
-        }
-
-        const year = date ? new Date(date).getFullYear() : 'n.d.';
-
-        if (creators.length === 1) {
-            const author = creators[0];
-            return `${author.lastName}, ${year}`;
-        } else if (creators.length === 2) {
-            const author1 = creators[0];
-            const author2 = creators[1];
-            return `${author1.lastName} & ${author2.lastName}, ${year}`;
-        } else {
-            const firstAuthor = creators[0];
-            return `${firstAuthor.lastName} et al., ${year}`;
-        }
-    };
-
-    // Create identity key for citation based on title and author
-    const getCitationIdentity = (item: any): string => {
-        const {creators = [], title = ''} = item;
-
-        // Use first author's last name + title as identity
-        let authorPart = '';
-        if (creators.length > 0) {
-            authorPart = creators[0].lastName || '';
-        }
-
-        // Clean and truncate title for identity
-        const titlePart = title.replace(/[^\w\s]/g, '').substring(0, 50);
-
-        return `${authorPart}::${titlePart}`.toLowerCase();
-    };
 
     // Helper function to check if content has export divs
     const hasExportContent = (htmlContent: string): boolean => {
@@ -196,9 +93,9 @@ export default function ReferenceIndexButton({nodes}: ReferenceIndexButtonProps)
                     if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
                         if (style === 'index') {
                             // Get citation data to determine identity
-                            const citationData = await getCitationData(href);
+                            const citationData = await getCitationBibtex(href);
                             if (citationData) {
-                                const identity = getCitationIdentity(citationData);
+                                const identity = formatAPAfromBibtex(citationData)
 
                                 // Check if we've seen this citation before
                                 if (citationMap.has(identity)) {
@@ -209,7 +106,7 @@ export default function ReferenceIndexButton({nodes}: ReferenceIndexButtonProps)
                                     // New citation, assign new index
                                     citationMap.set(identity, {
                                         index: linkIndex,
-                                        citation: formatAPAInText(citationData)
+                                        citation: identity
                                     });
                                     link.textContent = `${linkIndex}`;
                                     linkIndex++;
@@ -220,16 +117,16 @@ export default function ReferenceIndexButton({nodes}: ReferenceIndexButtonProps)
                                 linkIndex++;
                             }
                         } else if (style === 'apa') {
-                            const citationData = await getCitationData(href);
+                            const citationData = await getCitationBibtex(href);
                             if (citationData) {
-                                const identity = getCitationIdentity(citationData);
+                                const identity = formatAPAfromBibtex(citationData);
 
                                 // For APA, we can reuse the same formatted citation
                                 if (citationMap.has(identity)) {
                                     const existingCitation = citationMap.get(identity)!.citation;
                                     link.textContent = existingCitation;
                                 } else {
-                                    const formattedCitation = formatAPAInText(citationData);
+                                    const formattedCitation = identity
                                     citationMap.set(identity, {
                                         index: linkIndex,
                                         citation: formattedCitation

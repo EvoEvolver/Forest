@@ -1,6 +1,7 @@
-import { Cite } from '@citation-js/core';
+import {Cite} from '@citation-js/core';
 import '@citation-js/plugin-bibtex';
 import '@citation-js/plugin-csl';
+import {NodeM} from "@forest/schema";
 
 const CACHE_KEY_PREFIX = 'zotero_response_';
 const CACHE_EXPIRY_HOURS = 2400; // 100 days
@@ -45,16 +46,15 @@ function setCachedResponse(url: string, responseData: any): void {
     }
 }
 
-export async function generateAPACitation(url: string): Promise<string> {
+export async function getCitationBibtex(url: string): Promise<string> {
     try {
         // Check if URL has bib parameter
         const urlObj = new URL(url);
         const bibParam = urlObj.searchParams.get('bib');
-        
+
         if (bibParam) {
-            // Use BibTeX from parameter
-            const decodedBibTeX = decodeURIComponent(bibParam);
-            return await generateAPAFromBibTeX(decodedBibTeX, url);
+            // Return BibTeX from parameter
+            return decodeURIComponent(bibParam);
         }
 
         // Convert arxiv.org/pdf links to arxiv.org/abs for better citation data
@@ -67,7 +67,7 @@ export async function generateAPACitation(url: string): Promise<string> {
         const cachedResponse = getCachedResponse(processedUrl);
         if (cachedResponse) {
             const item = cachedResponse[0];
-            return formatAPA(item, url);
+            return convertItemToBibtex(item);
         }
 
         const response = await fetch('https://zotero-matter.up.railway.app/web', {
@@ -92,18 +92,90 @@ export async function generateAPACitation(url: string): Promise<string> {
         setCachedResponse(processedUrl, data);
 
         const item = data[0];
-        return formatAPA(item, url);
+        return convertItemToBibtex(item);
     } catch (error) {
-        console.error('Error generating APA citation:', error);
+        console.error('Error getting BibTeX citation:', error);
         throw error;
     }
 }
 
-async function generateAPAFromBibTeX(bibtex: string, originalUrl: string): Promise<string> {
+function convertItemToBibtex(item: any): string {
+    const {
+        creators = [],
+        title = '',
+        date = '',
+        itemType = '',
+        url = '',
+        repository = '',
+        DOI = '',
+        publicationTitle = '',
+        archiveID = ''
+    } = item;
+
+    // Generate a unique key for the BibTeX entry
+    const firstAuthorLastName = creators.length > 0 ? creators[0].lastName || 'Unknown' : 'Unknown';
+    const year = date ? new Date(date).getFullYear() : 'n.d.';
+    const key = `${firstAuthorLastName}${year}`;
+
+    // Determine BibTeX entry type
+    let entryType = 'misc';
+    if (itemType === 'journalArticle') {
+        entryType = 'article';
+    } else if (itemType === 'preprint') {
+        entryType = 'misc';
+    } else if (itemType === 'webpage') {
+        entryType = 'misc';
+    }
+
+    // Start building BibTeX entry
+    let bibtex = `@${entryType}{${key},\n`;
+
+    // Add title
+    if (title) {
+        bibtex += `  title={${title}},\n`;
+    }
+
+    // Add authors
+    if (creators.length > 0) {
+        const authorString = creators.map((creator: any) =>
+            `${creator.firstName || ''} ${creator.lastName || ''}`.trim()
+        ).join(' and ');
+        bibtex += `  author={${authorString}},\n`;
+    }
+
+    // Add year
+    if (date) {
+        bibtex += `  year={${year}},\n`;
+    }
+
+    // Add journal/publication info
+    if (itemType === 'journalArticle' && publicationTitle) {
+        bibtex += `  journal={${publicationTitle}},\n`;
+    } else if (itemType === 'preprint' && repository) {
+        bibtex += `  howpublished={${repository} preprint},\n`;
+        if (archiveID) {
+            bibtex += `  note={${archiveID}},\n`;
+        }
+    }
+
+    // Add DOI or URL
+    if (DOI) {
+        bibtex += `  doi={${DOI}},\n`;
+    } else if (url) {
+        bibtex += `  url={${url}},\n`;
+    }
+
+    // Close the entry
+    bibtex = bibtex.replace(/,\n$/, '\n') + '}';
+
+    return bibtex;
+}
+
+export function formatAPAfromBibtex(bibtex: string): string {
     try {
         // Parse BibTeX using citation.js
         const cite = new Cite(bibtex);
-        
+
         // Get the formatted APA citation
         const apaCitation = cite.format('bibliography', {
             format: 'text',
@@ -113,77 +185,100 @@ async function generateAPAFromBibTeX(bibtex: string, originalUrl: string): Promi
 
         // Remove any trailing periods and newlines, then add a single period
         const cleanedCitation = apaCitation.trim().replace(/\.$/, '') + '.';
-        
+
         console.log('Generated APA citation from BibTeX:', cleanedCitation);
         return cleanedCitation;
-        
+
     } catch (error) {
         console.error('Error parsing BibTeX:', error);
         throw new Error(`Failed to parse BibTeX: ${error.message}`);
     }
 }
 
-function formatAPA(item: any, originalUrl: string): string {
-    const {creators = [], title = '', date = '', itemType = '', url = '', repository = '', DOI = ''} = item;
+export async function generateAPACitation(url: string): Promise<string> {
+    try {
+        // Check if URL has bib parameter
+        const urlObj = new URL(url);
+        const bibParam = urlObj.searchParams.get('bib');
 
-    // Format authors
-    let authorString = '';
-    if (creators.length > 0) {
-        if (creators.length === 1) {
-            const author = creators[0];
-            authorString = `${author.lastName}, ${author.firstName}`;
-        } else if (creators.length <= 3) {
-            const formattedAuthors = creators.map((author: any, index: number) => {
-                if (index === 0) {
-                    return `${author.lastName}, ${author.firstName}`;
-                } else {
-                    return `${author.firstName} ${author.lastName}`;
-                }
-            });
-            authorString = formattedAuthors.join(', ');
-        } else {
-            const firstAuthor = creators[0];
-            authorString = `${firstAuthor.lastName}, ${firstAuthor.firstName}, et al.`;
+        if (bibParam) {
+            // Use BibTeX from parameter
+            const decodedBibTeX = decodeURIComponent(bibParam);
+            return formatAPAfromBibtex(decodedBibTeX);
         }
+
+        // Get BibTeX and format to APA
+        const bibtex = await getCitationBibtex(url);
+        return formatAPAfromBibtex(bibtex);
+    } catch (error) {
+        console.error('Error generating APA citation:', error);
+        throw error;
     }
-
-    // Format title with HTML
-    const formattedTitle = title ? `"${title}"` : '';
-
-    // Format publication info based on item type
-    let publicationInfo = '';
-    if (itemType === 'preprint' && repository) {
-        publicationInfo = `${repository} preprint`;
-        if (item.archiveID) {
-            publicationInfo += ` ${item.archiveID}`;
-        }
-    } else if (itemType === 'webpage') {
-        publicationInfo = 'Web';
-    } else if (itemType === 'journalArticle') {
-        publicationInfo = item.publicationTitle ? `${item.publicationTitle}` : '';
-    }
-
-    // Format date
-    const year = date ? new Date(date).getFullYear() : '';
-    const formattedDate = year ? `(${year})` : '';
-
-    // Use the best available URL (prefer DOI, then original URL, then item URL)
-    const linkUrl = DOI ? `https://doi.org/${DOI}` : (url || originalUrl);
-
-    // Assemble citation with clickable link
-    const parts = [
-        authorString,
-        formattedTitle,
-        publicationInfo,
-        formattedDate
-    ].filter(Boolean);
-
-    const citation = parts.join(' ') + '.';
-
-    console.log('Generated APA citation:', citation);
-    if (linkUrl) {
-        return `${citation}`;
-    }
-    return citation;
 }
 
+
+export interface CitationResult {
+    title: string;
+    citation: string;
+    hasError?: boolean;
+    originalLink?: string;
+    sourceNode?: NodeM;
+}
+
+export async function generateCitationsFromHTML(
+    html: string,
+    onProgress?: (current: number, total: number, errorCount: number) => void
+): Promise<CitationResult[]> {
+    // Parse HTML to find all <a> tags
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const links = doc.querySelectorAll('a[href]');
+    const results: CitationResult[] = [];
+    let errorCount = 0;
+    const maxErrors = 10;
+
+    // Process each link one by one
+    for (let i = 0; i < links.length; i++) {
+        // Stop if we've hit the error limit
+        if (errorCount >= maxErrors) {
+            console.warn(`Stopping citation generation after ${maxErrors} errors`);
+            break;
+        }
+
+        const link = links[i];
+        const href = link.getAttribute('href')?.trim();
+        const title = link.innerHTML.trim();
+
+        if (!href || !title) continue;
+
+        // Skip non-http(s) URLs
+        if (!href.startsWith('http://') && !href.startsWith('https://')) {
+            continue;
+        }
+
+        try {
+
+            const formattedCitation = await generateAPACitation(href);
+            results.push({title, citation: formattedCitation, hasError: false, originalLink: href});
+
+        } catch (error) {
+            errorCount++;
+            console.warn(`Failed to generate citation for ${href}:`, error);
+
+            // Add entry with error message and mark as error
+            results.push({
+                title,
+                citation: `Error generating citation for: ${href}`,
+                hasError: true,
+                originalLink: href
+            });
+        }
+
+        // Call progress callback if provided
+        if (onProgress) {
+            onProgress(i + 1, links.length, errorCount);
+        }
+    }
+
+    return results;
+}

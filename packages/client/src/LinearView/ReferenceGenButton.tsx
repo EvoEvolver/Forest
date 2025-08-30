@@ -14,9 +14,10 @@ import {
 import { Edit } from '@mui/icons-material';
 import {NodeM} from "@forest/schema";
 import {EditorNodeTypeM} from '@forest/node-type-editor/src';
-import {generateAPACitation} from "./generateReferences";
 import {extractExportContent} from '@forest/node-type-editor/src/editor/Extensions/exportHelpers';
 import FixCitationDialog from './FixCitationDialog';
+
+import {CitationResult, generateCitationsFromHTML} from "./generateReferences";
 
 interface ReferenceGenButtonProps {
     rootNode: NodeM;
@@ -24,61 +25,6 @@ interface ReferenceGenButtonProps {
 }
 
 
-export async function generateCitationsFromHTML(
-    html: string, 
-    onProgress?: (current: number, total: number, errorCount: number) => void
-): Promise<Array<{ title: string, citation: string, hasError?: boolean, originalLink?: string, sourceNode?: NodeM }>> {
-    // Parse HTML to find all <a> tags
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    const links = doc.querySelectorAll('a[href]');
-    const results: Array<{ title: string, citation: string, hasError?: boolean, originalLink?: string, sourceNode?: NodeM }> = [];
-    let errorCount = 0;
-    const maxErrors = 10;
-
-    // Process each link one by one
-    for (let i = 0; i < links.length; i++) {
-        // Stop if we've hit the error limit
-        if (errorCount >= maxErrors) {
-            console.warn(`Stopping citation generation after ${maxErrors} errors`);
-            break;
-        }
-
-        const link = links[i];
-        const href = link.getAttribute('href')?.trim();
-        const title = link.innerHTML.trim();
-
-        if (!href || !title) continue;
-
-        // Skip non-http(s) URLs
-        if (!href.startsWith('http://') && !href.startsWith('https://')) {
-            continue;
-        }
-
-        try {
-            const citation = await generateAPACitation(href);
-            results.push({title, citation, hasError: false, originalLink: href});
-        } catch (error) {
-            errorCount++;
-            console.warn(`Failed to generate citation for ${href}:`, error);
-            
-            // Add entry with error message and mark as error
-            results.push({
-                title,
-                citation: `Error generating citation for: ${href}`,
-                hasError: true,
-                originalLink: href
-            });
-        }
-
-        // Call progress callback if provided
-        if (onProgress) {
-            onProgress(i + 1, links.length, errorCount);
-        }
-    }
-
-    return results;
-}
 
 // Helper function to check if content has export divs
 const hasExportContent = (htmlContent: string): boolean => {
@@ -93,11 +39,11 @@ const isTerminalNode = (node: NodeM, treeM: any): boolean => {
 
 export default function ReferenceGenButton({rootNode, nodes}: ReferenceGenButtonProps) {
     const [open, setOpen] = useState(false);
-    const [citations, setCitations] = useState<Array<{ title: string, citation: string, hasError?: boolean, originalLink?: string, sourceNode?: NodeM }>>([]);
+    const [citations, setCitations] = useState<CitationResult[]>([]);
     const [loading, setLoading] = useState(false);
     const [progress, setProgress] = useState({ current: 0, total: 0, errorCount: 0, phase: '' });
     const [fixPanelOpen, setFixPanelOpen] = useState(false);
-    const [citationToFix, setCitationToFix] = useState<{ title: string, citation: string, hasError?: boolean, originalLink?: string, sourceNode?: NodeM } | null>(null);
+    const [citationToFix, setCitationToFix] = useState<CitationResult | null>(null);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
 
     const getHtml = async (
@@ -168,7 +114,7 @@ export default function ReferenceGenButton({rootNode, nodes}: ReferenceGenButton
             const treeM = rootNode.treeM;
             if (!treeM) return;
 
-            const allCitations: Array<{ title: string, citation: string, hasError?: boolean, originalLink?: string, sourceNode?: NodeM }> = [];
+            const allCitations: CitationResult[] = [];
             let processedNodes = 0;
             let errorCount = 0;
             const maxErrors = 10;
@@ -212,16 +158,14 @@ export default function ReferenceGenButton({rootNode, nodes}: ReferenceGenButton
                 setProgress({ current: processedNodes, total: nodes.length, errorCount, phase: 'citations' });
             }
 
-            // Deduplicate citations based on title and citation content
-            const uniqueCitations = new Map<string, { title: string, citation: string, hasError?: boolean, originalLink?: string, sourceNode?: NodeM }>();
+            // Deduplicate citations based on URL identity (same as ReferenceIndexButton)
+            const uniqueCitations = new Map<string, CitationResult>();
 
             for (const item of allCitations) {
-                // Create a key based on normalized title and citation content
-                const normalizedTitle = item.title.trim().toLowerCase();
-                const normalizedCitation = item.citation.replace(/<[^>]*>/g, '').trim().toLowerCase(); // Remove HTML tags
-                const key = `${normalizedTitle}::${normalizedCitation}`;
+                // Use the original URL as the primary key for deduplication
+                const key = item.originalLink || `${item.title}::${item.citation}`;
 
-                // Only add if we haven't seen this exact citation before
+                // Only add if we haven't seen this URL before
                 if (!uniqueCitations.has(key)) {
                     uniqueCitations.set(key, item);
                 }
@@ -260,7 +204,7 @@ export default function ReferenceGenButton({rootNode, nodes}: ReferenceGenButton
         setCitations([]);
     };
 
-    const handleCitationFixed = (fixedCitation: { title: string, citation: string, hasError?: boolean, originalLink?: string, sourceNode?: NodeM }) => {
+    const handleCitationFixed = (fixedCitation: CitationResult) => {
         setCitations(prevCitations => 
             prevCitations.map(citation => 
                 citation === citationToFix ? fixedCitation : citation
