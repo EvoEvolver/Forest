@@ -9,11 +9,14 @@ import {
     DialogTitle,
     FormControl,
     FormControlLabel,
+    IconButton,
     Radio,
     RadioGroup,
+    Snackbar,
     TextField,
     Typography
 } from '@mui/material';
+import { Edit } from '@mui/icons-material';
 import {NodeM} from "@forest/schema";
 import {EditorNodeTypeM} from '@forest/node-type-editor/src';
 import {generateAPACitation} from "./generateReferences";
@@ -28,12 +31,12 @@ interface ReferenceGenButtonProps {
 export async function generateCitationsFromHTML(
     html: string, 
     onProgress?: (current: number, total: number, errorCount: number) => void
-): Promise<Array<{ title: string, citation: string, hasError?: boolean, originalLink?: string }>> {
+): Promise<Array<{ title: string, citation: string, hasError?: boolean, originalLink?: string, sourceNode?: NodeM }>> {
     // Parse HTML to find all <a> tags
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
     const links = doc.querySelectorAll('a[href]');
-    const results: Array<{ title: string, citation: string, hasError?: boolean, originalLink?: string }> = [];
+    const results: Array<{ title: string, citation: string, hasError?: boolean, originalLink?: string, sourceNode?: NodeM }> = [];
     let errorCount = 0;
     const maxErrors = 10;
 
@@ -94,14 +97,15 @@ const isTerminalNode = (node: NodeM, treeM: any): boolean => {
 
 export default function ReferenceGenButton({rootNode, nodes}: ReferenceGenButtonProps) {
     const [open, setOpen] = useState(false);
-    const [citations, setCitations] = useState<Array<{ title: string, citation: string, hasError?: boolean, originalLink?: string }>>([]);
+    const [citations, setCitations] = useState<Array<{ title: string, citation: string, hasError?: boolean, originalLink?: string, sourceNode?: NodeM }>>([]);
     const [loading, setLoading] = useState(false);
     const [progress, setProgress] = useState({ current: 0, total: 0, errorCount: 0, phase: '' });
     const [fixPanelOpen, setFixPanelOpen] = useState(false);
-    const [citationToFix, setCitationToFix] = useState<{ title: string, citation: string, hasError?: boolean, originalLink?: string } | null>(null);
+    const [citationToFix, setCitationToFix] = useState<{ title: string, citation: string, hasError?: boolean, originalLink?: string, sourceNode?: NodeM } | null>(null);
     const [bibTeX, setBibTeX] = useState('');
     const [fixMethod, setFixMethod] = useState<'bibtex' | 'url'>('url');
     const [newUrl, setNewUrl] = useState('');
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
 
     const getHtml = async (
         onProgress?: (current: number, total: number, errorCount: number) => void
@@ -166,18 +170,59 @@ export default function ReferenceGenButton({rootNode, nodes}: ReferenceGenButton
         setProgress({ current: 0, total: 0, errorCount: 0, phase: '' });
 
         try {
-            const content = await getHtml((current, total, errorCount) => {
-                setProgress({ current: current, total: total, errorCount: errorCount, phase: 'nodes' });
-            });
+            if (!nodes) return;
             
-            const result = await generateCitationsFromHTML(content, (current, total, errorCount) => {
-                setProgress({ current, total, errorCount, phase: 'citations' });
-            });
+            const treeM = rootNode.treeM;
+            if (!treeM) return;
+
+            const allCitations: Array<{ title: string, citation: string, hasError?: boolean, originalLink?: string, sourceNode?: NodeM }> = [];
+            let processedNodes = 0;
+            let errorCount = 0;
+            const maxErrors = 10;
+
+            // Process each node individually to track source
+            for (const {node} of nodes) {
+                if (errorCount >= maxErrors) {
+                    console.warn(`Stopping citation generation after ${maxErrors} errors`);
+                    break;
+                }
+
+                try {
+                    const fullContent = EditorNodeTypeM.getEditorContent(node);
+                    const isTerminal = isTerminalNode(node, treeM);
+
+                    let htmlContent = '';
+                    if (isTerminal) {
+                        if (hasExportContent(fullContent)) {
+                            htmlContent = extractExportContent(fullContent);
+                        } else {
+                            htmlContent = fullContent;
+                        }
+                    } else {
+                        htmlContent = extractExportContent(fullContent);
+                    }
+
+                    if (htmlContent.length > 0) {
+                        const nodeCitations = await generateCitationsFromHTML(htmlContent);
+                        // Add source node to each citation
+                        nodeCitations.forEach(citation => {
+                            citation.sourceNode = node;
+                            allCitations.push(citation);
+                        });
+                    }
+                } catch (error) {
+                    errorCount++;
+                    console.warn('Error generating citations for node:', error);
+                }
+
+                processedNodes++;
+                setProgress({ current: processedNodes, total: nodes.length, errorCount, phase: 'citations' });
+            }
 
             // Deduplicate citations based on title and citation content
-            const uniqueCitations = new Map<string, { title: string, citation: string, hasError?: boolean, originalLink?: string }>();
+            const uniqueCitations = new Map<string, { title: string, citation: string, hasError?: boolean, originalLink?: string, sourceNode?: NodeM }>();
 
-            for (const item of result) {
+            for (const item of allCitations) {
                 // Create a key based on normalized title and citation content
                 const normalizedTitle = item.title.trim().toLowerCase();
                 const normalizedCitation = item.citation.replace(/<[^>]*>/g, '').trim().toLowerCase(); // Remove HTML tags
@@ -200,42 +245,20 @@ export default function ReferenceGenButton({rootNode, nodes}: ReferenceGenButton
         }
     };
 
-    const rootM = rootNode
-
-    const addToReferences = async () => {
+    const copyToClipboard = async () => {
         try {
-            const treeM = rootM.treeM;
+            // Generate text content for references
+            const citationsText = citations.map((item) =>
+                `${item.title}: ${item.citation.replace(/<[^>]*>/g, '')}`
+            ).join('\n\n');
 
-            // Check if "References" node already exists
-            let referenceNodeM = null;
-            const lastChildren = treeM.getChildren(rootM).slice(-1)[0];
-            if (lastChildren && lastChildren.title() === "References") {
-                referenceNodeM = lastChildren
-            }
-
-            // Create "References" node if it doesn't exist
-            if (!referenceNodeM) {
-                referenceNodeM = NodeM.newNode("References", rootNode.id, "EditorNodeType", treeM)
-                treeM.insertNode(referenceNodeM, rootNode.id, null);
-            }
-
-            // Generate HTML content for references using titles
-            const citationsHtml = citations.map((item) =>
-                `<p><strong>${item.title}</strong>: ${item.citation}</p>`
-            ).join('\n');
-
-            // Set the content
-            try {
-                EditorNodeTypeM.setEditorContent(referenceNodeM, citationsHtml);
-            } catch (e) {
-                alert(e)
-            }
-            // Close dialog
-            setOpen(false);
-            setCitations([]);
-
+            // Copy to clipboard
+            await navigator.clipboard.writeText(citationsText);
+            
+            // Show success snackbar
+            setSnackbarOpen(true);
         } catch (error) {
-            console.error('Error adding to references:', error);
+            console.error('Error copying to clipboard:', error);
         }
     };
 
@@ -266,37 +289,34 @@ export default function ReferenceGenButton({rootNode, nodes}: ReferenceGenButton
                 newLinkWithBib = newUrl.trim();
             }
 
-            // Replace the link in all node contents
-            const treeM = rootNode.treeM;
-            if (treeM) {
-                for (const {node} of nodes) {
-                    try {
-                        const currentContent = EditorNodeTypeM.getEditorContent(node);
+            // Replace the link only in the specific source node
+            if (citationToFix.sourceNode) {
+                try {
+                    const currentContent = EditorNodeTypeM.getEditorContent(citationToFix.sourceNode);
 
-                        // Parse HTML to find and replace the specific link
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(currentContent, 'text/html');
-                        const links = doc.querySelectorAll('a[href]');
-                        let contentChanged = false;
+                    // Parse HTML to find and replace the specific link
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(currentContent, 'text/html');
+                    const links = doc.querySelectorAll('a[href]');
+                    let contentChanged = false;
 
-                        for (const link of links) {
-                            const href = link.getAttribute('href');
-                            if (href && href === oldLink) {
-                                link.setAttribute('href', newLinkWithBib);
-                                contentChanged = true;
-                            }
+                    for (const link of links) {
+                        const href = link.getAttribute('href');
+                        if (href && href === oldLink) {
+                            link.setAttribute('href', newLinkWithBib);
+                            contentChanged = true;
                         }
-
-                        if (contentChanged) {
-                            const updatedContent = doc.body.innerHTML;
-                            console.log("oldLink", oldLink)
-                            console.log("newLinkWithBib", newLinkWithBib)
-                            console.log('Updated content:', updatedContent);
-                            EditorNodeTypeM.setEditorContent(node, updatedContent);
-                        }
-                    } catch (error) {
-                        console.warn(`Error updating content for node ${node.id}:`, error);
                     }
+
+                    if (contentChanged) {
+                        const updatedContent = doc.body.innerHTML;
+                        console.log("oldLink", oldLink)
+                        console.log("newLinkWithBib", newLinkWithBib)
+                        console.log('Updated content:', updatedContent);
+                        EditorNodeTypeM.setEditorContent(citationToFix.sourceNode, updatedContent);
+                    }
+                } catch (error) {
+                    console.warn(`Error updating content for node ${citationToFix.sourceNode.id}:`, error);
                 }
             }
 
@@ -416,33 +436,34 @@ export default function ReferenceGenButton({rootNode, nodes}: ReferenceGenButton
                                     borderColor: item.hasError ? 'error.main' : 'transparent'
                                 }}>
                                     {item.hasError && (
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                                            <Typography variant="body2" sx={{ 
-                                                color: 'error.main', 
-                                                fontWeight: 'bold',
-                                                display: 'flex',
-                                                alignItems: 'center'
-                                            }}>
-                                                ⚠️ Citation Error
-                                            </Typography>
-                                            <Button 
-                                                size="small" 
-                                                variant="outlined" 
-                                                color="error"
-                                                onClick={() => {
-                                                    setCitationToFix(item);
-                                                    setBibTeX('');
-                                                    setNewUrl('');
-                                                    setFixMethod('url');
-                                                    setFixPanelOpen(true);
-                                                }}
-                                            >
-                                                Fix
-                                            </Button>
-                                        </Box>
+                                        <Typography variant="body2" sx={{ 
+                                            color: 'error.main', 
+                                            fontWeight: 'bold',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            mb: 1
+                                        }}>
+                                            ⚠️ Citation Error
+                                        </Typography>
                                     )}
-                                    <Typography variant="body2"
-                                                dangerouslySetInnerHTML={{__html: "<span>" + item.title + ": </span>" + item.citation}}/>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
+                                        <Typography variant="body2" sx={{ flex: 1 }}
+                                                    dangerouslySetInnerHTML={{__html: "<span>" + item.title + ": </span>" + item.citation}}/>
+                                        <IconButton 
+                                            size="small" 
+                                            color={item.hasError ? "error" : "primary"}
+                                            sx={{ flexShrink: 0, mt: -0.5 }}
+                                            onClick={() => {
+                                                setCitationToFix(item);
+                                                setBibTeX('');
+                                                setNewUrl('');
+                                                setFixMethod('url');
+                                                setFixPanelOpen(true);
+                                            }}
+                                        >
+                                            <Edit />
+                                        </IconButton>
+                                    </Box>
                                 </Box>
                             ))}
                         </Box>
@@ -455,8 +476,8 @@ export default function ReferenceGenButton({rootNode, nodes}: ReferenceGenButton
                 <DialogActions>
                     <Button onClick={handleClose}>Close</Button>
                     {citations.length > 0 && (
-                        <Button onClick={addToReferences} variant="contained">
-                            Add to References
+                        <Button onClick={copyToClipboard} variant="contained">
+                            Add to Clipboard
                         </Button>
                     )}
                 </DialogActions>
@@ -479,8 +500,8 @@ export default function ReferenceGenButton({rootNode, nodes}: ReferenceGenButton
                             <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
                                 <strong>Problematic Link:</strong> <a href={citationToFix.originalLink} target="_blank" rel="noopener noreferrer" style={{color: 'inherit'}}>{citationToFix.originalLink}</a>
                             </Typography>
-                            <Typography variant="body2" sx={{ mb: 3, color: 'error.main' }}>
-                                <strong>Error:</strong> {citationToFix.citation}
+                            <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
+                                {citationToFix.citation}
                             </Typography>
                             
                             <Typography variant="h6" sx={{ mb: 2 }}>
@@ -571,6 +592,14 @@ export default function ReferenceGenButton({rootNode, nodes}: ReferenceGenButton
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Success Snackbar */}
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={3000}
+                onClose={() => setSnackbarOpen(false)}
+                message="Citations copied to clipboard!"
+            />
         </>
     );
 }
