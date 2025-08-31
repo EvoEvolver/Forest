@@ -29,7 +29,7 @@ const WritingMessageComponent: React.FC<WritingMessageProps> = ({
         try {
             const nodeM = treeM.getNode(nodeId);
             if (nodeM) {
-                await stageThisVersion(nodeM.nodeVM, "Before AI writing assistant modification");
+                await stageThisVersion(nodeM, "Before AI writing assistant modification");
                 EditorNodeTypeM.setEditorContent(nodeM, modifiedContent);
             }
             handleClose();
