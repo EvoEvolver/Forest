@@ -54,7 +54,7 @@ export const handlePrint = (nodes: { node: NodeM; level: number; }[], title: str
     const printStyles = `
         <style>
             @media print {
-                body { margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; line-height: 1.4; font-size: 12px; }
+                body { margin: 0; padding: 20px; font-family: 'Times New Roman', Times, serif; line-height: 1.6; font-size: 11pt; }
                 * { color: black !important; background: white !important; }
                 h1, h2, h3, h4, h5, h6 { color: black !important; margin: 1.2em 0 0.4em 0; page-break-after: avoid; }
                 h1 { font-size: 1.5em; }
