@@ -8,6 +8,7 @@ import {IconButton, Tooltip} from "@mui/material";
 import CheckIcon from "@mui/icons-material/Check";
 import EditIcon from "@mui/icons-material/Edit";
 import LaunchIcon from "@mui/icons-material/Launch";
+import ZoomInIcon from "@mui/icons-material/ZoomIn";
 import React from "react";
 
 export const LinearClickMenu = ({node, isVisible, isEditing, onToggleEdit, position}: {
@@ -75,6 +76,20 @@ export const LinearClickMenu = ({node, isVisible, isEditing, onToggleEdit, posit
 
     return (
         <div style={menuStyle}>
+            <Tooltip title="Show subtree" placement="right">
+                <IconButton
+                    size="small"
+                    onClick={() => {
+                        jumpToNode(node.id)
+                    }}
+                    sx={{
+                        color: theme.palette.primary.main,
+                        '&:hover': {backgroundColor: theme.palette.action.hover}
+                    }}
+                >
+                    <ZoomInIcon fontSize="small"/>
+                </IconButton>
+            </Tooltip>
             <Tooltip title="Go to node in tree view" placement="right">
                 <IconButton
                     size="small"
