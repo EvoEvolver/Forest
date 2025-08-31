@@ -41,7 +41,8 @@ import {NodeDiffExtension} from "./Extensions/node-diff";
 import HardBreak from '@tiptap/extension-hard-break'
 import Italic from '@tiptap/extension-italic'
 import { Placeholder } from '@tiptap/extensions'
-
+import Subscript from '@tiptap/extension-subscript'
+import Superscript from '@tiptap/extension-superscript'
 
 interface TiptapEditorProps {
     node: NodeVM,
@@ -78,6 +79,8 @@ export function makeExtensions(yXML, provider) {
         NodeDiffExtension,
         RevisionExtension,
         Bold.configure({}),
+        Subscript,
+        Superscript,
         Italic.configure({}),
         TableKit.configure({
             table: {resizable: false},
