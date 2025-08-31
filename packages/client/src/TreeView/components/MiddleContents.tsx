@@ -165,7 +165,7 @@ export const MiddleContents = ({node}: MiddleContentsProps) => {
     >
         <div
             onClick={handleClick}
-            id={`node-${node.id}`}
+            id={node.id}
         >
             <thisNodeContext.Provider value={node}>
                 <NodeTitle

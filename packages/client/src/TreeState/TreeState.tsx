@@ -250,7 +250,7 @@ export const clearAllMarkedNodesAtom = atom(null, (get, set) => {
 })
 
 export const scrollToNodeAtom = atom(null, (get, set, nodeId: string) => {
-    const nodeElement = document.querySelector(`#node-${nodeId}`);
+    const nodeElement = document.querySelector(`#${nodeId}`);
     if (nodeElement) {
         // Find the scrollable ancestor
         const scrollableContainer = findScrollableParent(nodeElement);

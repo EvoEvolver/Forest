@@ -75,18 +75,6 @@ export const LinearClickMenu = ({node, isVisible, isEditing, onToggleEdit, posit
 
     return (
         <div style={menuStyle}>
-            <Tooltip title={isEditing ? "Save changes" : "Edit node content"} placement="right">
-                <IconButton
-                    size="small"
-                    onClick={onToggleEdit}
-                    sx={{
-                        color: theme.palette.primary.main,
-                        '&:hover': {backgroundColor: theme.palette.action.hover}
-                    }}
-                >
-                    {isEditing ? <CheckIcon fontSize="small"/> : <EditIcon fontSize="small"/>}
-                </IconButton>
-            </Tooltip>
             <Tooltip title="Go to node in tree view" placement="right">
                 <IconButton
                     size="small"
@@ -97,6 +85,18 @@ export const LinearClickMenu = ({node, isVisible, isEditing, onToggleEdit, posit
                     }}
                 >
                     <LaunchIcon fontSize="small"/>
+                </IconButton>
+            </Tooltip>
+            <Tooltip title={isEditing ? "Save changes" : "Edit node content"} placement="right">
+                <IconButton
+                    size="small"
+                    onClick={onToggleEdit}
+                    sx={{
+                        color: theme.palette.primary.main,
+                        '&:hover': {backgroundColor: theme.palette.action.hover}
+                    }}
+                >
+                    {isEditing ? <CheckIcon fontSize="small"/> : <EditIcon fontSize="small"/>}
                 </IconButton>
             </Tooltip>
         </div>

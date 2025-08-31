@@ -1,6 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {atom, useAtomValue, useSetAtom} from "jotai";
-import {jumpToNodeAtom, scrollToNodeAtom, treeAtom} from "../TreeState/TreeState";
+import {useAtomValue, useSetAtom} from "jotai";
+import {jumpToNodeAtom, scrollToNodeAtom, selectedNodeAtom} from "../TreeState/TreeState";
 import {Box, IconButton, Paper, Skeleton, Tooltip} from '@mui/material';
 import {NodeM} from '@forest/schema';
 import {EditorNodeTypeM} from '@forest/node-type-editor/src';
@@ -12,17 +12,11 @@ import {extractExportContent} from '@forest/node-type-editor/src/editor/Extensio
 import CheckIcon from '@mui/icons-material/Check';
 import TiptapEditor from '@forest/node-type-editor/src/editor';
 import {LinearClickMenu} from "./linearClickMenu";
+import {Breadcrumb} from "../TreeView/components/Breadcrumb";
 
 
-const linearNodeListAtom = atom((get) => {
-    const currTree = get(treeAtom)
-    if (!currTree)
-        return
-    get(currTree.viewCommitNumberAtom)
-    const treeM = currTree.treeM
-
-    const rootNode = treeM.getRoot()
-
+const getLinearNodeList = (rootNode: NodeM): Array<{ node: NodeM, level: number }> | undefined => {
+    const treeM = rootNode.treeM;
     // do a depth-first traversal to get all node in a linear list
     const traverse = (node: NodeM, level: number = 0): Array<{ node: NodeM, level: number }> => {
         // if node is not EditorNodeType or archived, return empty array
@@ -38,10 +32,10 @@ const linearNodeListAtom = atom((get) => {
     };
     const linearNodes = traverse(rootNode);
     return linearNodes;
-})
+}
 
 
-// Memoized buttons component to prevent re-renders when linearNodeListAtom updates
+// Memoized buttons component to prevent re-renders when node list updates
 const ButtonsSection = ({rootNode, nodes}: {
     rootNode: NodeM,
     nodes: { node: NodeM; level: number; }[]
@@ -85,20 +79,27 @@ const NodeRenderer = ({node, level, treeM}: { node: NodeM, level: number, treeM:
     const isTerminal = isTerminalNode(node, treeM);
 
     const handleContentClick = (e: React.MouseEvent) => {
+        // Check if user is making a text selection
+        const selection = window.getSelection();
+        if (selection && selection.toString().length > 0) {
+            // User has selected text, don't show menu
+            return;
+        }
+
         e.stopPropagation();
-        
+
         // Get click position relative to viewport
         const clickX = e.clientX;
         const clickY = e.clientY;
-        
-        setClickPosition({ x: clickX, y: clickY });
+
+        setClickPosition({x: clickX, y: clickY});
         setIsMenuVisible(!isMenuVisible);
     };
 
     // Function to refresh HTML content from the node
     const refreshHtmlContent = () => {
         const fullContent = EditorNodeTypeM.getEditorContent(node);
-        
+
         if (isTerminal) {
             // Terminal node: if has export, show only export; otherwise show everything
             if (hasExportContent(fullContent)) {
@@ -118,7 +119,7 @@ const NodeRenderer = ({node, level, treeM}: { node: NodeM, level: number, treeM:
         if (isEditing) {
             refreshHtmlContent();
         }
-        
+
         setIsEditing(!isEditing);
         setIsMenuVisible(false); // Hide menu when toggling edit
     };
@@ -207,7 +208,16 @@ const NodeRenderer = ({node, level, treeM}: { node: NodeM, level: number, treeM:
         };
 
         const titleProps = {
-            onClick: goToNodeInTreeView,
+            onClick: (e: React.MouseEvent<HTMLElement>) => {
+                e.stopPropagation();
+                
+                // Get click position relative to viewport
+                const clickX = e.clientX;
+                const clickY = e.clientY;
+                
+                setClickPosition({x: clickX, y: clickY});
+                setIsMenuVisible(!isMenuVisible);
+            },
             style: titleStyle,
             onMouseEnter: (e: React.MouseEvent<HTMLElement>) => {
                 e.currentTarget.style.textDecoration = 'underline';
@@ -228,28 +238,29 @@ const NodeRenderer = ({node, level, treeM}: { node: NodeM, level: number, treeM:
     const shouldRenderContent = isTerminal || (htmlContent && htmlContent.trim().length > 0);
 
     return (
-        <div 
-            ref={nodeRef} 
+        <div
+            ref={nodeRef}
             key={node.id}
             style={{position: 'relative'}}
+            id={node.id}
         >
             {renderTitle()}
             {shouldRenderContent && (
                 <>
                     {isVisible ? (
                         isEditing ? (
-                            <Box sx={{ 
-                                minHeight: '100px', 
-                                border: `1px solid ${theme.palette.divider}`, 
-                                borderRadius: 1, 
+                            <Box sx={{
+                                minHeight: '100px',
+                                border: `1px solid ${theme.palette.divider}`,
+                                borderRadius: 1,
                                 position: 'relative',
                                 backgroundColor: theme.palette.background.default
                             }}>
                                 {/* Check button to exit edit mode */}
-                                <Box sx={{ 
-                                    position: 'absolute', 
-                                    top: 8, 
-                                    right: 8, 
+                                <Box sx={{
+                                    position: 'absolute',
+                                    top: 8,
+                                    right: 8,
                                     zIndex: 10,
                                     backgroundColor: theme.palette.background.paper,
                                     borderRadius: '50%',
@@ -270,8 +281,8 @@ const NodeRenderer = ({node, level, treeM}: { node: NodeM, level: number, treeM:
                                         </IconButton>
                                     </Tooltip>
                                 </Box>
-                                <Box sx={{ p: 1 }}>
-                                    <TiptapEditor yXML={EditorNodeTypeM.getYxml(node)} node={null} />
+                                <Box sx={{p: 1}}>
+                                    <TiptapEditor yXML={EditorNodeTypeM.getYxml(node)} node={null}/>
                                 </Box>
                             </Box>
                         ) : (
@@ -280,13 +291,15 @@ const NodeRenderer = ({node, level, treeM}: { node: NodeM, level: number, treeM:
                                     onClick={handleContentClick}
                                     sx={{
                                         color: theme.palette.text.primary,
-                                        cursor: 'pointer',
+                                        userSelect: 'text',
+                                        cursor: 'text',
                                         '&:hover': {
                                             backgroundColor: theme.palette.action.hover + '20'
                                         },
                                         '& *': {
                                             color: `${theme.palette.text.primary} !important`,
-                                            backgroundColor: 'transparent !important'
+                                            backgroundColor: 'transparent !important',
+                                            userSelect: 'text'
                                         },
                                         '& p, & div, & span, & h1, & h2, & h3, & h4, & h5, & h6': {
                                             color: `${theme.palette.text.primary} !important`
@@ -314,8 +327,8 @@ const NodeRenderer = ({node, level, treeM}: { node: NodeM, level: number, treeM:
                     )}
                 </>
             )}
-            <LinearClickMenu 
-                node={node} 
+            <LinearClickMenu
+                node={node}
                 isVisible={isMenuVisible}
                 isEditing={isEditing}
                 onToggleEdit={handleToggleEdit}
@@ -326,10 +339,17 @@ const NodeRenderer = ({node, level, treeM}: { node: NodeM, level: number, treeM:
 }
 
 export default function LinearView() {
-    const nodes: { node: NodeM; level: number; }[] = useAtomValue(linearNodeListAtom);
     const theme = useTheme();
-    const currTree = useAtomValue(treeAtom);
-    const treeM = currTree?.treeM;
+    const selectedNode = useAtomValue(selectedNodeAtom);
+    const scrollToNode = useSetAtom(scrollToNodeAtom);
+
+    if (!selectedNode) return null;
+
+    // Subscribe to view commit number to trigger re-renders when tree changes
+    useAtomValue(selectedNode.treeVM.viewCommitNumberAtom);
+
+    const treeM = selectedNode.nodeM.treeM;
+    let nodes = getLinearNodeList(selectedNode.nodeM) || [];
 
 
     if (!nodes || nodes.length === 0) return null;
@@ -352,9 +372,17 @@ export default function LinearView() {
                     padding: '10px',
                     borderRadius: 5,
                     backgroundColor: theme.palette.background.paper,
-                    color: theme.palette.text.primary
+                    color: theme.palette.text.primary,
+                    '& h4, & h5, & h6': {
+                        fontSize: 'inherit',
+                        fontWeight: 'bold',
+                        margin: 0,
+                        padding: 0,
+                        lineHeight: 'inherit'
+                    }
                 }}
             >
+                <Breadcrumb/>
                 <ButtonsSection rootNode={nodes[0].node} nodes={nodes}/>
                 {treeM && nodes.map(({node, level}) => (
                     <NodeRenderer key={node.id} node={node} level={level} treeM={treeM}/>
