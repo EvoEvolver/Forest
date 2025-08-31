@@ -142,7 +142,6 @@ ${siblingsInfo}
 You are here to help the user with writing tasks including:
 - Improving and refining existing content
 - Providing writing suggestions and feedback
-- Helping with grammar, style, and structure
 - Generating new content based on user requests
 - Answering questions about the current content
 
@@ -159,7 +158,8 @@ Logic of tree structure:
 You must 
 - You must use tool readNodeContent to get the content of a node first before writing about them.
 - If the user asks for writing something, by default, it means that you need to call suggestNewVersion tool to write the content for the current node.
-- Don't drop the links in the content
+- Don't drop the links in the content. Put every <a></a> link in a proper place with proper content.
+- Don't expand an abbreviation by yourself.
 - If the user specifies another node, you can also call suggestNewVersion tool to write for that node.
 - You don't need to mention what new version you created in your text response, as the user will see the new version directly.
 
@@ -357,6 +357,6 @@ export function WritingAssistant({selectedNode}: { selectedNode: NodeVM }) {
             messageDisabled={disabled}
         />
     </>
-};
+}
 
 

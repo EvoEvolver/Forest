@@ -63,17 +63,25 @@ export function extractExportContentAndHash(content: string): [string, string] {
     const hash = exportDiv?.getAttribute('hash') || '';
     return [exportDiv ? exportDiv.innerHTML.trim() : "", hash]
 }
-
-export async function generateExportParagraph(allContent: string, currentContent: string, authToken: string, userPrompt?: string): Promise<string> {
+export async function generateExportParagraphByNode(nodeM: NodeM, authToken: string, userPrompt?: string): Promise<string> {
+    const allContent = getEditorContentExceptExports(nodeM);
+    const currentContent = EditorNodeTypeM.getEditorContent(nodeM);
+    const existingExportContent = extractExportContent(currentContent);
     const prompt = `
 You are a professional writer. Your task is to write well-written paragraph(s) based on the raw content provided.
+
+${nodeM.title() ? `
+<node_title>
+${nodeM.title()}
+</node_title>
+` : ''}
 
 <raw_content>
 ${allContent}
 </raw_content>
 
 <current_paragraphs>
-${currentContent}
+${existingExportContent}
 </current_paragraphs>
 ${userPrompt ? `
 <user_instructions>
@@ -145,7 +153,7 @@ export async function handleUpdateExport(
         // Extract current export div content
         const existingExportContent = extractExportContent(currentContent);
 
-        const summary = await generateExportParagraph(allContent, existingExportContent, authToken, options.userPrompt);
+        const summary = await generateExportParagraphByNode(node.nodeM, authToken, options.userPrompt);
 
         // If there's existing content, show confirmation dialog
         if (existingExportContent && existingExportContent.length > 0) {

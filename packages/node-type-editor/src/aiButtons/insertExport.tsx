@@ -10,7 +10,7 @@ import {EditorNodeTypeM} from "..";
 import {stageThisVersion} from "@forest/schema/src/stageService";
 import {useAtomValue} from "jotai";
 import {authTokenAtom} from "@forest/user-system/src/authStates";
-import {getEditorContentExceptExports, generateExportParagraph, updateExportContent} from "../editor/Extensions/exportHelpers";
+import {getEditorContentExceptExports, generateExportParagraphByNode, updateExportContent} from "../editor/Extensions/exportHelpers";
 import {ModifyConfirmation} from "./ModifyConfirmation";
 
 export const InsertExportButton: React.FC<{ node: NodeVM }> = ({node}) => {
@@ -35,13 +35,13 @@ export const InsertExportButton: React.FC<{ node: NodeVM }> = ({node}) => {
             
             if (exportMatch) {
                 // Export already exists, just generate and show confirmation
-                const summary = await generateExportParagraph(allContent, existingExportContent, authToken);
+                const summary = await generateExportParagraphByNode(node.nodeM, authToken);
                 setCurrentExportContent(existingExportContent);
                 setSummaryContent(summary);
                 setDialogOpen(true);
             } else {
                 // No export exists, create one and generate content
-                const summary = await generateExportParagraph(allContent, "", authToken);
+                const summary = await generateExportParagraphByNode(node.nodeM, authToken);
                 const newContent = currentContent + '<div class="export"> </div>';
                 EditorNodeTypeM.setEditorContent(node.nodeM, newContent);
                 
