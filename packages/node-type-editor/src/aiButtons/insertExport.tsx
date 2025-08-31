@@ -10,7 +10,7 @@ import {EditorNodeTypeM} from "..";
 import {stageThisVersion} from "@forest/schema/src/stageService";
 import {useAtomValue} from "jotai";
 import {authTokenAtom} from "@forest/user-system/src/authStates";
-import {getEditorContentExceptExports, generateExportSummary, updateExportContent} from "../editor/Extensions/exportHelpers";
+import {getEditorContentExceptExports, generateExportParagraph, updateExportContent} from "../editor/Extensions/exportHelpers";
 import {ModifyConfirmation} from "./ModifyConfirmation";
 
 export const InsertExportButton: React.FC<{ node: NodeVM }> = ({node}) => {
@@ -35,18 +35,18 @@ export const InsertExportButton: React.FC<{ node: NodeVM }> = ({node}) => {
             
             if (exportMatch) {
                 // Export already exists, just generate and show confirmation
-                const summary = await generateExportSummary(allContent, existingExportContent, authToken);
+                const summary = await generateExportParagraph(allContent, existingExportContent, authToken);
                 setCurrentExportContent(existingExportContent);
                 setSummaryContent(summary);
                 setDialogOpen(true);
             } else {
                 // No export exists, create one and generate content
-                const summary = await generateExportSummary(allContent, "", authToken);
+                const summary = await generateExportParagraph(allContent, "", authToken);
                 const newContent = currentContent + '<div class="export"> </div>';
                 EditorNodeTypeM.setEditorContent(node.nodeM, newContent);
                 
                 // Now update the empty export with generated content
-                await updateExportContent(node, summary);
+                await updateExportContent(node, summary, allContent);
             }
         } catch (e) {
             alert(e);
@@ -63,7 +63,8 @@ export const InsertExportButton: React.FC<{ node: NodeVM }> = ({node}) => {
 
     const handleAccept = async (modifiedContent: string) => {
         try {
-            await updateExportContent(node, modifiedContent);
+            const allContent = getEditorContentExceptExports(node.nodeM);
+            await updateExportContent(node, modifiedContent, allContent);
         } catch (e) {
             alert(e);
         }

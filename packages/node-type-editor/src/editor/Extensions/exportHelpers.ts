@@ -64,7 +64,7 @@ export function extractExportContentAndHash(content: string): [string, string] {
     return [exportDiv ? exportDiv.innerHTML.trim() : "", hash]
 }
 
-export async function generateExportSummary(allContent: string, currentContent: string, authToken: string, userPrompt?: string): Promise<string> {
+export async function generateExportParagraph(allContent: string, currentContent: string, authToken: string, userPrompt?: string): Promise<string> {
     const prompt = `
 You are a professional writer. Your task is to write well-written paragraph(s) based on the raw content provided.
 
@@ -80,7 +80,13 @@ ${userPrompt ? `
 ${userPrompt}
 </user_instructions>
 ` : ''}
-Please write a paragraph based on the raw content. You must:
+
+Writing guidelines:
+- You must write a paragraph based on the raw content
+- You should not expand an abbreviation unless it is expanded in the raw content.
+- You should keep the <a></a> links in the raw content and put them in a proper place.
+
+You must:
 - If the current paragraph is not empty, don't make unnecessary changes. You are encouraged to keep the original contents as much as possible.
 - If there is a mismatch between the current paragraphs and the raw content, make paragraphs align with the raw content.
 - You should not drop any key information in the raw content.
@@ -139,7 +145,7 @@ export async function handleUpdateExport(
         // Extract current export div content
         const existingExportContent = extractExportContent(currentContent);
 
-        const summary = await generateExportSummary(allContent, existingExportContent, authToken, options.userPrompt);
+        const summary = await generateExportParagraph(allContent, existingExportContent, authToken, options.userPrompt);
 
         // If there's existing content, show confirmation dialog
         if (existingExportContent && existingExportContent.length > 0) {
