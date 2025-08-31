@@ -115,19 +115,21 @@ async function getBottomUpRevisedContent(node: NodeM, authToken): Promise<string
     const children = treeM.getChildren(node).filter((n) => n.nodeTypeName() === "EditorNodeType" && n.data()["archived"] !== true);
     const childrenContent = children.map(child => "# " + child.title() + "\n" + EditorNodeTypeM.getEditorContent(child)).join("\n");
     const originalContent = removeExportContent(EditorNodeTypeM.getEditorContent(node));
-    const prompt = `You are a professional editor. The given original text is a summary of some children contents. 
-Your task is to revise the original context to make it serve as a better summary of the children contents.
+    const prompt = `You are a professional editor. The given <original_content> is a summary of some children contents. 
+Your task is to revise the <original_content> to make it serve as a better summary of the children contents.
 <original_content>
 ${originalContent}
 </original_content>
 <children_contents>
 ${childrenContent}
 </children_contents>
-Please provide an updated version of the original text in key points. You should not make unnecessary changes to the original text.
+Please provide an updated version of the <original_content> in key points if <original_content> is not empty. You should not make unnecessary changes to the <original_content>.
 <output_format>
 You should only return the HTML content of the revised text without any additional text or formatting.
 You are required to make a list of key points by <ul></ul>
-You should make no more than 5 key points. Each key point should be less than 20 words.
+You are encouraged to use <strong></strong> to highlight important information.
+You can make sub-lists using <ul> within a <li>.
+You should make no more than 5 key points. Each key point should be less than 30 words.
 If there are any annotations in the original text, you should keep them as they are.
 </output_format>
 `;
