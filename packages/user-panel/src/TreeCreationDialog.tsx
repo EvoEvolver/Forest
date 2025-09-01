@@ -57,7 +57,8 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const SUPPORTED_FILE_TYPES = ['pdf', 'md', 'doc', 'docx', 'txt'];
-const DOCUMENT_PROCESSING_URL = 'http://localhost:8081';
+const WORKER_URL = import.meta.env.VITE_WORKER_URL;
+const DOCUMENT_PROCESSING_URL = WORKER_URL
 
 type UploadStatus = 'idle' | 'uploading' | 'processing' | 'success' | 'error';
 
