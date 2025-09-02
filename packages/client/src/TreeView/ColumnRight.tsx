@@ -90,12 +90,12 @@ export function ColumnRight() {
 
         {activeTab === 'tools' && !node.nodeTypeVM.oneTool && (
             <thisNodeContext.Provider value={node}>
-                <Box>
+                <Box sx={{ height: '50%' }}>
                     <NodeContentFrame>
                         {node.nodeTypeVM.renderTool1(node)}
                     </NodeContentFrame>
                 </Box>
-                <Box>
+                <Box sx={{ height: '50%' }}>
                     <NodeContentFrame>
                         {node.nodeTypeVM.renderTool2(node)}
                     </NodeContentFrame>
