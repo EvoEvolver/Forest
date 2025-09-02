@@ -251,7 +251,7 @@ const NodeRenderer = ({node, level, treeM}: { node: NodeM, level: number, treeM:
             ref={nodeRef}
             key={node.id}
             style={{position: 'relative'}}
-            id={node.id}
+            id={`node-${node.id}`}
         >
             {renderTitle()}
             {shouldRenderContent && (
