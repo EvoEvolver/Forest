@@ -12,6 +12,7 @@ export const NodeTitle = ({node}: { node: NodeVM }) => {
     const title = useAtomValue(node.title);
 
     const [editedTitle, setEditedTitle] = useState("");
+    const [hasBeenEdited, setHasBeenEdited] = useState(false);
     useEffect(() => {
         if (titleAtom) {
             if (title) {
@@ -28,8 +29,10 @@ export const NodeTitle = ({node}: { node: NodeVM }) => {
         }, [title]);
     }
 
-    const handleDoubleClick = () => {
-        setIsEditing(true);
+    const handleClick = () => {
+        if (editable) {
+            setIsEditing(true);
+        }
     };
 
     const handleBlur = () => {
@@ -38,6 +41,7 @@ export const NodeTitle = ({node}: { node: NodeVM }) => {
 
     const handleChange = (event) => {
         setEditedTitle(event.target.value);
+        setHasBeenEdited(true);
     };
 
     const handleKeyPress = (event) => {
@@ -50,7 +54,7 @@ export const NodeTitle = ({node}: { node: NodeVM }) => {
         if (!titleAtom) return
         if (isEditing) return;
         if (editedTitle === title) return;
-        if (!editedTitle) return;
+        if (!hasBeenEdited) return;
         node.nodeM.ymap.set("title", editedTitle);
     }, [isEditing]);
 
@@ -78,8 +82,7 @@ export const NodeTitle = ({node}: { node: NodeVM }) => {
             ) : (
                 <Typography
                     variant="h5"
-                    onDoubleClick={editable ? handleDoubleClick : () => {
-                    }}
+                    onClick={handleClick}
                     style={{paddingBottom: "5px", cursor: editable ? "pointer" : "default"}}
                 >
                     {title
