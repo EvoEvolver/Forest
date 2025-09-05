@@ -2,6 +2,7 @@ import React, {useEffect, useRef} from 'react';
 import {Box, Fade, MenuItem, MenuList, Paper, Typography} from '@mui/material';
 import LinkIcon from '@mui/icons-material/Link';
 import TitleIcon from '@mui/icons-material/Title';
+import CodeIcon from '@mui/icons-material/Code';
 
 export interface SuggestionOption {
     id: string;
@@ -152,15 +153,21 @@ export const SuggestionMenu: React.FC<SuggestionMenuProps> = ({
 export const createPasteSuggestionOptions = (url: string): SuggestionOption[] => [
     {
         id: 'paste-link',
-        label: 'Paste as link',
-        description: 'Insert as a clickable link',
+        label: 'Link address',
+        description: 'Display full link address in the document',
         icon: <LinkIcon fontSize="small"/>
     },
     {
         id: 'paste-title',
-        label: 'Paste with title',
+        label: 'Title',
         description: 'Fetch website title and insert as a link',
         icon: <TitleIcon fontSize="small"/>
+    },
+    {
+        id: 'paste-simple-title',
+        label: 'Simple mark',
+        description: 'Display a short mark `link`',
+        icon: <CodeIcon fontSize="small"/>
     },
     // {
     //     id: 'paste-bookmark',

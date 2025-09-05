@@ -339,6 +339,11 @@ export const UniversalPasteHandler = Extension.create<UniversalPasteHandlerOptio
                         }
                     }, 0);
                     
+                } else if (option.id === 'paste-simple-title') {
+                    // Insert as plain HTML anchor tag
+                    const htmlContent = `<a href="${pendingUrl}">link</a>`;
+                    this.editor.chain().focus().insertContent(htmlContent).run();
+                    
                 } else if (option.id === 'paste-bookmark') {
                     // Get the editor state and view for direct transaction handling
                     const view = this.editor.view;
@@ -435,7 +440,7 @@ export const UniversalPasteHandler = Extension.create<UniversalPasteHandlerOptio
             ArrowDown: () => {
                 if (!this.storage.showBookmarkMenu) return false;
                 
-                this.storage.selectedIndex = (this.storage.selectedIndex + 1) % 3; // Cycle through 0, 1, 2
+                this.storage.selectedIndex = (this.storage.selectedIndex + 1) % 4; // Cycle through 0, 1, 2, 3
                 this.editor.commands.updateBookmarkSuggestionMenu();
                 return true;
             },
@@ -443,7 +448,7 @@ export const UniversalPasteHandler = Extension.create<UniversalPasteHandlerOptio
             ArrowUp: () => {
                 if (!this.storage.showBookmarkMenu) return false;
                 
-                this.storage.selectedIndex = (this.storage.selectedIndex - 1 + 3) % 3; // Cycle through 2, 1, 0
+                this.storage.selectedIndex = (this.storage.selectedIndex - 1 + 4) % 4; // Cycle through 3, 2, 1, 0
                 this.editor.commands.updateBookmarkSuggestionMenu();
                 return true;
             },
