@@ -25,43 +25,47 @@ export const treeAtom = atom(
 
 
 export const deleteNodeAtom = atom(null, (get, set, props: { nodeId: string }) => {
-    const currTree = get(treeAtom)
-    if (!currTree)
+    const treeVM = get(treeAtom)
+    if (!treeVM)
         return
-    const nodeDict = currTree.nodeDict
-    const nodeToRemoveAtom = nodeDict[props.nodeId]
-    const nodeToRemove = get(nodeToRemoveAtom)
-    if (get(nodeToRemove.children).length > 0) {
+    const treeM: TreeM = treeVM.treeM
+    const nodeToRemove = treeM.getNode(props.nodeId)
+    if (nodeToRemove.children().toJSON().length > 0) {
         return
     }
-    const parentId = nodeToRemove.parent
-    const parentNodeAtom = nodeDict[parentId]
-    const parentNode = get(parentNodeAtom)
-    const yArrayChildren = parentNode.nodeM.ymap.get("children")
+    const parentId = nodeToRemove.parent()
+    const parentNode = treeM.getParent(nodeToRemove)
+    const yArrayChildren = parentNode.ymap.get("children")
     const Idx = yArrayChildren.toJSON().indexOf(props.nodeId)
     if (Idx === -1) {
         console.warn(`Node with id ${props.nodeId} not found in parent with id ${parentId}`)
         return
     }
-    // remove the node from the parent's children
-    yArrayChildren.delete(Idx, 1)
-    // delete the node from the nodeDict
-    // @ts-ignore
-    set(nodeToRemoveAtom, RESET)
-    currTree.deleteNode(props.nodeId)
-    currTree.treeM.nodeDict.delete(props.nodeId)
 
+    // Change selectedNodeId first if the node to delete is currently selected
     if (get(selectedNodeIdAtom) === props.nodeId) {
-        // if the deleted node was selected, set the selectedNodeId to the parent
-        const newChildrenList = yArrayChildren.toJSON()
-        if (newChildrenList.length > 0) {
-            // if there are still children, select the first one
-            set(selectedNodeIdAtom, newChildrenList[0])
+        const currentChildrenList = yArrayChildren.toJSON()
+        if (currentChildrenList.length > 1) {
+            // if there are other children, select the first one that's not being deleted
+            const nextChild = currentChildrenList.find(childId => childId !== props.nodeId)
+            if (nextChild) {
+                set(selectedNodeIdAtom, nextChild)
+            } else {
+                set(selectedNodeIdAtom, parentId)
+            }
         } else {
-            // if there are no children, select the parent
+            // if there are no other children, select the parent
             set(selectedNodeIdAtom, parentId)
         }
     }
+
+    // remove the node from the parent's children
+    set(treeVM.nodeDict[props.nodeId], RESET) // reset the atom for the node being deleted
+    treeVM.deleteNode(props.nodeId)
+    treeM.ydoc.transact(() => {
+        yArrayChildren.delete(Idx, 1)
+        treeM.nodeDict.delete(props.nodeId)
+    })
 
     set(updateChildrenCountAtom, {});
 })

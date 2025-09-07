@@ -49,6 +49,10 @@ export class TreeVM {
             Promise.all(promises).then(() => {
                 this.commitViewToRender()
                 promises = []; // Reset the promises array
+            }).catch((error) => {
+                console.error('Error in node operation promises:', error);
+                promises = []; // Reset the promises array even on error
+                this.commitViewToRender(); // Still trigger re-render to maintain consistency
             });
         }
         nodeDictyMap.observe(this.nodeMapObserver);
@@ -216,16 +220,21 @@ function getYdataAtom(node: NodeVM) {
 
 function getYjsJsonAtom(yjsMapNode: YMap<any>, key: string): PrimitiveAtom<any> {
     const yjsValue = yjsMapNode.get(key)
-    // check if yjsValue has a toJSON method, if not, return a simple atom
     let yjsAtom: PrimitiveAtom<any>;
     if (typeof yjsValue.toJSON === 'function') {
         yjsAtom = atom(yjsValue.toJSON())
     } else {
-        console.warn(`Yjs value for key "${key}" does not have a toJSON method, using a simple atom instead.`);
+        console.warn(`Yjs value for key "${key}" does not have a toJSON method. There might be a bug.`);
     }
     yjsAtom.onMount = (set) => {
         const observeFunc = (ymapEvent) => {
-            set(yjsValue.toJSON())
+            try{
+                set(yjsValue.toJSON())
+            } catch (e) {
+                for (let err of e.errors){
+                    console.error(err)
+                }
+            }
         }
         yjsValue.observe(observeFunc)
         set(yjsValue.toJSON())
@@ -262,7 +271,10 @@ async function nodeMToNodeVMAtom(nodeM: NodeM, treeVM: TreeVM): Promise<Primitiv
         })
         return () => {
             nodeM.ymap.unobserve(observeFunc)
-            nodeM.ymap.get("ydata").unobserve(observeFunc)
+            const ydata = nodeM.ymap.get("ydata")
+            if(ydata){
+                ydata.unobserve(observeFunc)
+            }
         }
     }
     return nodeAtom
