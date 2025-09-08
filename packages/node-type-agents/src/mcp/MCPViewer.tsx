@@ -63,9 +63,9 @@ const MCPViewer: React.FC<MCPViewerProps> = ({
             servers: {
                 example: {
                     type: 'http',
-                    url: 'https://api.github.com/mcp',
+                    url: 'https://api.githubcopilot.com/mcp/',
                     headers: {
-                        Authorization: 'Bearer YOUR_TOKEN_HERE'
+                        Authorization: 'Bearer YOUR_TOKEN'
                     }
                 }
             }
