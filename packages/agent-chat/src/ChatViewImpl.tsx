@@ -46,6 +46,13 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewI
         }
     }, []);
 
+    // Auto-scroll to bottom when new messages arrive
+    useEffect(() => {
+        setTimeout(() => {
+            scrollToBottom();
+        }, 10);
+    }, [messages]);
+
     const handleSend = () => {
         if (message.trim()) {
             sendMessage(message);
