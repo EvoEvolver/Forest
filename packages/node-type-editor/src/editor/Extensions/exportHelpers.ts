@@ -64,7 +64,7 @@ export function extractExportContentAndHash(content: string): [string, string] {
     return [exportDiv ? exportDiv.innerHTML.trim() : "", hash]
 }
 export async function generateExportParagraphByNode(nodeM: NodeM, authToken: string, userPrompt?: string): Promise<string> {
-    const allContent = getEditorContentExceptExports(nodeM);
+    const contentExceptExports = getEditorContentExceptExports(nodeM);
     const currentContent = EditorNodeTypeM.getEditorContent(nodeM);
     const existingExportContent = extractExportContent(currentContent);
     const prompt = `
@@ -77,7 +77,7 @@ ${nodeM.title()}
 ` : ''}
 
 <raw_content>
-${allContent}
+${contentExceptExports}
 </raw_content>
 
 <current_paragraphs>
@@ -115,6 +115,49 @@ You should keep the links in the original content and put them in a proper place
     return await fetchChatResponse([message.toJson() as any], "gpt-4.1", authToken);
 }
 
+export async function generateKeyPointsByNode(nodeM: NodeM, authToken: string): Promise<string> {
+    const contentExceptExports = getEditorContentExceptExports(nodeM);
+    const currentContent = EditorNodeTypeM.getEditorContent(nodeM);
+    const existingExportContent = extractExportContent(currentContent);
+    
+    const prompt = `
+You are a professional summarizer. Your task is to create concise outlines from the provided content.
+
+${nodeM.title() ? `
+<node_title>
+${nodeM.title()}
+</node_title>
+` : ''}
+
+<raw_outlines>
+${contentExceptExports}
+</raw_outlines>
+
+<current_export_content>
+${existingExportContent}
+</current_export_content>
+
+Your task:
+- Update the raw outlines to make them serve as a better summary of the content.
+- Respect the original outlines as much as possible. You should not make unnecessary changes to the original outlines.
+- If the outlines are empty, make bullet points based on the content.
+
+<output_format>
+You should return HTML content with bullet points using <ul> and <li> tags.
+Keep any <a></a> links from the original content in appropriate places.
+Do not include any additional text or formatting outside the bullet list.
+</output_format>
+`;
+
+    const message = new NormalMessage({
+        content: prompt,
+        author: "user",
+        role: "user",
+    });
+
+    return await fetchChatResponse([message.toJson() as any], "gpt-4.1", authToken);
+}
+
 export async function updateExportContent(node: NodeVM, summary: string, sourceContent: string): Promise<void> {
     await stageThisVersion(node.nodeM, "Before export update");
 
@@ -132,6 +175,32 @@ export async function updateExportContent(node: NodeVM, summary: string, sourceC
 
         EditorNodeTypeM.setEditorContent(node.nodeM, wrapper.innerHTML);
     }
+}
+
+export async function replaceNonExportContent(node: NodeVM, newContent: string): Promise<void> {
+    await stageThisVersion(node.nodeM, "Before points replacement");
+
+    const currentContent = EditorNodeTypeM.getEditorContent(node.nodeM);
+    const document = createDOMFromHTML(currentContent);
+    const wrapper = document.body.firstElementChild as HTMLElement;
+
+    // Find and preserve all export divs
+    const exportDivs = Array.from(wrapper.querySelectorAll('div.export'));
+    const exportElements = exportDivs.map(div => div.cloneNode(true));
+
+    // Clear all content
+    wrapper.innerHTML = '';
+
+    // Add the new content
+    wrapper.innerHTML = newContent;
+
+
+    // Re-append all export divs at the end
+    exportElements.forEach(exportElement => {
+        wrapper.appendChild(exportElement);
+    });
+
+    EditorNodeTypeM.setEditorContent(node.nodeM, wrapper.innerHTML);
 }
 
 export interface UpdateExportOptions {
@@ -166,6 +235,34 @@ export async function handleUpdateExport(
         } else {
             // No existing content, update directly
             await updateExportContent(node, summary, allContent);
+        }
+    } catch (e) {
+        if (options.onError) {
+            options.onError(e);
+        } else {
+            throw e;
+        }
+    }
+}
+
+export async function handleUpdatePoints(
+    node: NodeVM,
+    authToken: string,
+    options: UpdateExportOptions = {}
+): Promise<void> {
+    try {
+        // Get all content from the editor except export divs
+        const contentExceptExports = getEditorContentExceptExports(node.nodeM);
+
+        const keyPoints = await generateKeyPointsByNode(node.nodeM, authToken);
+
+        // Always show confirmation dialog for replacing content
+        if (options.onShowConfirmation) {
+            // Show the current non-export content vs the generated key points
+            options.onShowConfirmation(contentExceptExports, keyPoints);
+        } else {
+            // Fallback: replace the non-export content directly
+            await replaceNonExportContent(node, keyPoints);
         }
     } catch (e) {
         if (options.onError) {

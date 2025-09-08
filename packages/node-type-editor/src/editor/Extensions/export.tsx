@@ -16,15 +16,15 @@ import Typography from "@mui/material/Typography";
 import DeleteIcon from '@mui/icons-material/Delete';
 import DescriptionIcon from '@mui/icons-material/Description';
 import {ModifyConfirmation} from "../../aiButtons/ModifyConfirmation";
-import EditIcon from '@mui/icons-material/Edit';
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import TextField from "@mui/material/TextField";
 import SyncIcon from '@mui/icons-material/Sync';
-import {handleUpdateExport, updateExportContent} from './exportHelpers';
+import {handleUpdateExport, handleUpdatePoints, replaceNonExportContent, updateExportContent} from './exportHelpers';
 import {EditorNodeTypeM} from "../..";
+
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         export: {
@@ -42,11 +42,13 @@ const ExportNodeView = ({deleteNode}: any) => {
     const [userPrompt, setUserPrompt] = useState('');
     const [currentExportContent, setCurrentExportContent] = useState<string | null>(null);
     const [summaryContent, setSummaryContent] = useState<string | null>(null);
+    const [isPointsMode, setIsPointsMode] = useState(false);
     const authToken = useAtomValue(authTokenAtom);
 
     const handleUpdateExportClick = async (prompt?: string) => {
         setLoading(true);
         try {
+            setIsPointsMode(false);
             await handleUpdateExport(node, authToken, {
                 onShowConfirmation: (currentContent, summaryContent) => {
                     setCurrentExportContent(currentContent);
@@ -57,6 +59,25 @@ const ExportNodeView = ({deleteNode}: any) => {
                     alert(e);
                 },
                 userPrompt: prompt
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleUpdatePointsClick = async () => {
+        setLoading(true);
+        try {
+            setIsPointsMode(true);
+            await handleUpdatePoints(node, authToken, {
+                onShowConfirmation: (currentContent, summaryContent) => {
+                    setCurrentExportContent(currentContent);
+                    setSummaryContent(summaryContent);
+                    setDialogOpen(true);
+                },
+                onError: (e) => {
+                    alert(e);
+                }
             });
         } finally {
             setLoading(false);
@@ -93,9 +114,15 @@ const ExportNodeView = ({deleteNode}: any) => {
 
     const handleAccept = async (modifiedContent: string) => {
         try {
-            const allContent = node.nodeM ? 
-                EditorNodeTypeM.getEditorContent(node.nodeM).replace(/<div[^>]*class="export"[^>]*>[\s\S]*?<\/div>/gi, '').trim() : '';
-            await updateExportContent(node, modifiedContent, allContent);
+            if (isPointsMode) {
+                // Replace the non-export content with the key points
+                await replaceNonExportContent(node, modifiedContent);
+            } else {
+                // Update the export content
+                const allContent = node.nodeM ?
+                    EditorNodeTypeM.getEditorContent(node.nodeM).replace(/<div[^>]*class="export"[^>]*>[\s\S]*?<\/div>/gi, '').trim() : '';
+                await updateExportContent(node, modifiedContent, allContent);
+            }
         } catch (e) {
             alert(e);
         }
@@ -149,13 +176,13 @@ const ExportNodeView = ({deleteNode}: any) => {
                                 padding: "4px 8px"
                             }}
                         >
-                            Update
+                            Update Export
                         </Button>
                         <Button
                             size="small"
                             variant="outlined"
-                            startIcon={loading ? <CircularProgress size={16}/> : <EditIcon/>}
-                            onClick={handlePromptDialogOpen}
+                            startIcon={loading ? <CircularProgress size={16}/> : <SyncIcon/>}
+                            onClick={handleUpdatePointsClick}
                             disabled={loading}
                             sx={{
                                 textTransform: "none",
@@ -164,7 +191,7 @@ const ExportNodeView = ({deleteNode}: any) => {
                                 padding: "4px 8px"
                             }}
                         >
-                            Write
+                            Update Outline
                         </Button>
                         <IconButton
                             size="small"
@@ -212,14 +239,14 @@ const ExportNodeView = ({deleteNode}: any) => {
                 open={dialogOpen}
                 onClose={handleCloseDialog}
                 onAccept={handleAccept}
-                dialogTitle="Review Export Update"
+                dialogTitle={isPointsMode ? "Review Content Replacement" : "Review Export Update"}
                 comparisonContent={{
                     original: {
-                        title: "Current Export Content",
+                        title: isPointsMode ? "Current Content" : "Current Export Content",
                         content: currentExportContent ?? ""
                     },
                     modified: {
-                        title: "Generated Summary",
+                        title: isPointsMode ? "Generated Key Points" : "Generated Summary",
                         content: summaryContent ?? ""
                     }
                 }}
