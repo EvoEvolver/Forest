@@ -21,9 +21,6 @@ export function makeHtmlDiff(oldHTML: string, newHTML: string): string {
     const diffed = diffElement(outDoc, oldRoot, newRoot);
     while (diffed.firstChild) resultFrag.appendChild(diffed.firstChild);
     outContainer.appendChild(resultFrag);
-    console.log("Original old:", oldHTML);
-    console.log("Original new:", newHTML);
-    console.log("Diff result:", outContainer.innerHTML);
     return outContainer.innerHTML;
 }
 
@@ -303,8 +300,4 @@ function wrapDeleted(doc: Document, node: Node): Node {
         del.appendChild(node.cloneNode(true));
         return del;
     }
-}
-
-export function renderDiffInto(oldHTML: string, newHTML: string, target: Element) {
-    target.innerHTML = makeHtmlDiff(oldHTML, newHTML);
 }

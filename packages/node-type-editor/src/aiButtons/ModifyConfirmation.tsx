@@ -1,5 +1,5 @@
 import * as React from "react";
-import {useEffect, useState} from "react";
+import {useEffect, useState, useMemo} from "react";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -30,25 +30,15 @@ interface ModifyConfirmationProps {
     comparisonContent: ComparisonContent;
 }
 
-
-const getDiffHtml = (comparisonContent: ComparisonContent | null, currentContent: string) => {
-    if (!comparisonContent) return '';
-    const modifiedContent = currentContent || comparisonContent.modified.content;
-    return makeHtmlDiff(comparisonContent.original.content, modifiedContent);
+interface ConditionalEditorProps {
+    comparisonContent: ComparisonContent;
+    onContentChange: (content: string) => void;
+    onGetContent: (getContent: () => string) => void;
 }
 
-export const ModifyConfirmation: React.FC<ModifyConfirmationProps> = ({
-                                                                          open,
-                                                                          onClose,
-                                                                          onAccept,
-                                                                          dialogTitle,
-                                                                          comparisonContent
-                                                                      }) => {
-    const [showEdit, setShowEdit] = useState(false);
-    const [currentContent, setCurrentContent] = useState('');
-
+const ConditionalEditor: React.FC<ConditionalEditorProps> = ({ comparisonContent, onContentChange, onGetContent }) => {
     const editor = useEditor({
-        extensions: makeExtensions(null, null),
+        extensions: makeExtensions(null, null) as any,
         editable: true,
         enableContentCheck: true,
         onContentError: ({disableCollaboration}) => {
@@ -56,19 +46,20 @@ export const ModifyConfirmation: React.FC<ModifyConfirmationProps> = ({
             disableCollaboration();
         },
         onUpdate: ({editor}) => {
-            setCurrentContent(editor.getHTML());
+            onContentChange(editor.getHTML());
         },
     });
 
+    console.log("editor is made", editor);
 
     useEffect(() => {
-        if (editor && comparisonContent && open) {
+        if (editor && comparisonContent) {
             const editorContent = editor.getHTML();
             if (editorContent !== comparisonContent.modified.content) {
                 try {
                     console.log('Setting editor content to modified content.', comparisonContent.modified.content);
                     editor.commands.setContent(comparisonContent.modified.content.trim());
-                    setCurrentContent(comparisonContent.modified.content.trim());
+                    onContentChange(comparisonContent.modified.content.trim());
                 } catch (error) {
                     console.warn('Failed to set editor content, setting as escaped HTML:', error);
                     const escapedContent = comparisonContent.modified.content
@@ -79,11 +70,38 @@ export const ModifyConfirmation: React.FC<ModifyConfirmationProps> = ({
                         .replace(/'/g, '&#39;');
                     const fallbackContent = `<p>${escapedContent}</p>`;
                     editor.commands.setContent(fallbackContent);
-                    setCurrentContent(fallbackContent);
+                    onContentChange(fallbackContent);
                 }
             }
         }
-    }, [editor, comparisonContent, open]);
+    }, [editor, comparisonContent, onContentChange]);
+
+    useEffect(() => {
+        if (editor) {
+            onGetContent(() => editor.getHTML());
+        }
+    }, [editor, onGetContent]);
+
+    return <EditorContent editor={editor} />;
+};
+
+export const ModifyConfirmation: React.FC<ModifyConfirmationProps> = ({
+                                                                          open,
+                                                                          onClose,
+                                                                          onAccept,
+                                                                          dialogTitle,
+                                                                          comparisonContent
+                                                                      }) => {
+    const [showEdit, setShowEdit] = useState(false);
+    const [currentContent, setCurrentContent] = useState('');
+    const [getEditorContent, setGetEditorContent] = useState<(() => string) | null>(null);
+
+    const diffHtml = useMemo(() => {
+        if (!open || !comparisonContent) return '';
+        const modifiedContent = currentContent || comparisonContent.modified.content;
+        return makeHtmlDiff(comparisonContent.original.content, modifiedContent);
+    }, [open, comparisonContent?.original.content, comparisonContent?.modified.content, currentContent]);
+
 
     return (
         <>
@@ -125,10 +143,14 @@ export const ModifyConfirmation: React.FC<ModifyConfirmationProps> = ({
                     }}>
                         <h3>Changes Preview</h3>
                         {showEdit ? (
-                            <EditorContent editor={editor} key={editor?.storage?.html || 'editor'}/>
+                            open && <ConditionalEditor 
+                                comparisonContent={comparisonContent}
+                                onContentChange={setCurrentContent}
+                                onGetContent={setGetEditorContent}
+                            />
                         ) : (
                             <span
-                                dangerouslySetInnerHTML={{__html: getDiffHtml(comparisonContent, currentContent)}}
+                                dangerouslySetInnerHTML={{__html: diffHtml}}
                                 style={{
                                     lineHeight: 1.6
                                 }}
@@ -140,8 +162,8 @@ export const ModifyConfirmation: React.FC<ModifyConfirmationProps> = ({
                     <Button onClick={onClose}>Cancel</Button>
                     <Button
                         onClick={() => {
-                            if (editor) {
-                                const html = editor.getHTML();
+                            if (getEditorContent) {
+                                const html = getEditorContent();
                                 onAccept(html);
                             } else {
                                 onAccept(comparisonContent.modified.content);
