@@ -6,7 +6,6 @@ import {useSetAtom} from 'jotai';
 import {UserAvatar} from './UserAvatar';
 import {UserDisplayName} from './UserDisplayName';
 import DashboardCard from './DashboardCard';
-import {AuthGuard} from './AuthGuard';
 import {TabId} from './TopBar';
 import {authTokenAtom, userPanelModalOpenAtom, userPermissionsAtom} from '@forest/user-system/src/authStates';
 import {setupSupabaseClient} from '@forest/user-system/src/supabase';
@@ -61,84 +60,82 @@ export const UserProfileColumn: React.FC<UserProfileProps> = ({
     };
 
     return (
-        <AuthGuard>
-            <Box sx={{display: 'flex', flexDirection: 'column', height: '100%'}}>
-                {/* Vertical Tab Navigation */}
-                <Box sx={{flexShrink: 0, mb: 2}}>
-                    {tabs.map((tabItem) => (
+        <Box sx={{display: 'flex', flexDirection: 'column', height: '100%'}}>
+            {/* Vertical Tab Navigation */}
+            <Box sx={{flexShrink: 0, mb: 2}}>
+                {tabs.map((tabItem) => (
+                    <Button
+                        key={tabItem.id}
+                        onClick={() => setTab(tabItem.id)}
+                        fullWidth
+                        sx={{
+                            justifyContent: 'flex-start',
+                            textTransform: 'none',
+                            py: 1.5,
+                            px: 2,
+                            mb: 0.5,
+                            fontWeight: 500,
+                            fontSize: '1rem',
+                            transition: 'all 0.2s ease',
+                            backgroundColor: tab === tabItem.id ? 'rgba(0, 0, 0, 0.08)' : 'transparent',
+                            color: tab === tabItem.id ? 'primary.main' : 'text.primary',
+                            borderRadius: 1,
+                            '&:hover': {
+                                backgroundColor: tab === tabItem.id ? 'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.04)',
+                            }
+                        }}
+                    >
+                        {tabItem.label}
+                    </Button>
+                ))}
+            </Box>
+
+            {/* User Profile - moved to bottom */}
+            <Box sx={{mt: 'auto'}}>
+                <DashboardCard title="" sx={{backgroundColor: 'transparent'}}>
+                    <Box sx={{py: 1}}>
+                        {/* Photo and Name in same line */}
+
+                        <UserAvatar
+                            user={user}
+                            avatarUrl={avatarUrl}
+                            setAvatarUrl={setAvatarUrl}
+                            setUser={setUser}
+                        />
+                        <Box sx={{flex: 1}}>
+                            <UserDisplayName
+                                userName={user?.name}
+                                onEditClick={onEditClick}
+                            />
+                        </Box>
+
+                        {/* Email below */}
+                        <Typography variant="body2" color="text.secondary" sx={{
+                            fontSize: {xs: '0.65rem', md: '0.75rem'},
+                            wordBreak: 'break-word',
+                        }}>
+                            {user?.email}
+                        </Typography>
+
+                        {/* Sign out button */}
                         <Button
-                            key={tabItem.id}
-                            onClick={() => setTab(tabItem.id)}
-                            fullWidth
+                            onClick={handleLogout}
+                            startIcon={<LogoutIcon/>}
+                            size="small"
                             sx={{
-                                justifyContent: 'flex-start',
+                                mt: 2,
                                 textTransform: 'none',
-                                py: 1.5,
-                                px: 2,
-                                mb: 0.5,
-                                fontWeight: 500,
-                                fontSize: '1rem',
-                                transition: 'all 0.2s ease',
-                                backgroundColor: tab === tabItem.id ? 'rgba(0, 0, 0, 0.08)' : 'transparent',
-                                color: tab === tabItem.id ? 'primary.main' : 'text.primary',
-                                borderRadius: 1,
+                                color: 'text.secondary',
                                 '&:hover': {
-                                    backgroundColor: tab === tabItem.id ? 'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.04)',
+                                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
                                 }
                             }}
                         >
-                            {tabItem.label}
+                            Sign out
                         </Button>
-                    ))}
-                </Box>
-
-                {/* User Profile - moved to bottom */}
-                <Box sx={{mt: 'auto'}}>
-                    <DashboardCard title="" sx={{backgroundColor: 'transparent'}}>
-                        <Box sx={{py: 1}}>
-                            {/* Photo and Name in same line */}
-
-                            <UserAvatar
-                                user={user}
-                                avatarUrl={avatarUrl}
-                                setAvatarUrl={setAvatarUrl}
-                                setUser={setUser}
-                            />
-                            <Box sx={{flex: 1}}>
-                                <UserDisplayName
-                                    userName={user?.name}
-                                    onEditClick={onEditClick}
-                                />
-                            </Box>
-
-                            {/* Email below */}
-                            <Typography variant="body2" color="text.secondary" sx={{
-                                fontSize: {xs: '0.65rem', md: '0.75rem'},
-                                wordBreak: 'break-word',
-                            }}>
-                                {user?.email}
-                            </Typography>
-
-                            {/* Sign out button */}
-                            <Button
-                                onClick={handleLogout}
-                                startIcon={<LogoutIcon/>}
-                                size="small"
-                                sx={{
-                                    mt: 2,
-                                    textTransform: 'none',
-                                    color: 'text.secondary',
-                                    '&:hover': {
-                                        backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                                    }
-                                }}
-                            >
-                                Sign out
-                            </Button>
-                        </Box>
-                    </DashboardCard>
-                </Box>
+                    </Box>
+                </DashboardCard>
             </Box>
-        </AuthGuard>
+        </Box>
     );
 };

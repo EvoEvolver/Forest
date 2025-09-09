@@ -1,15 +1,18 @@
 import React, {useEffect, useState} from 'react';
-import {Box, Grid} from '@mui/material';
-import {userAtom} from "@forest/user-system/src/authStates";
-import {useAtom} from "jotai/index";
+import {Box, Grid, Typography, Paper} from '@mui/material';
+import {userAtom, isAuthenticatedAtom} from "@forest/user-system/src/authStates";
+import {useAtom, useAtomValue} from "jotai/index";
 import {setupSupabaseClient} from '@forest/user-system/src/supabase';
 import {TabId} from "./TopBar";
 import {EditDisplayNameDialog} from './EditDisplayNameDialog';
 import {UserProfileColumn} from "./UserProfileColumn";
 import {MainContentSection} from "./MainContentSecion";
+import AuthButton from '@forest/user-system/src/AuthButton';
+import ParkIcon from '@mui/icons-material/Park';
 
 export const UserPanel = ({}) => {
     const [user, setUser] = useAtom(userAtom);
+    const isAuthenticated = useAtomValue(isAuthenticatedAtom);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [newDisplayName, setNewDisplayName] = useState('');
     const [isUpdating, setIsUpdating] = useState(false);
@@ -99,6 +102,49 @@ export const UserPanel = ({}) => {
             setUpdateSuccess(false);
         }
     };
+
+
+    // If user is not authenticated, show login interface
+    if (!isAuthenticated) {
+        return (
+            <Box
+                sx={{
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 3
+                }}
+            >
+                <Paper
+                    elevation={3}
+                    sx={{
+                        padding: 6,
+                        textAlign: 'center',
+                        maxWidth: 400,
+                        width: '100%'
+                    }}
+                >
+                    <ParkIcon 
+                        sx={{ 
+                            fontSize: 64, 
+                            color: 'primary.main', 
+                            marginBottom: 2 
+                        }} 
+                    />
+                    <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
+                        Forest
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary" sx={{ marginBottom: 3 }}>
+                        Please sign in to access your user panel and manage your trees.
+                    </Typography>
+                    <Box sx={{ transform: 'scale(1.2)' }}>
+                        <AuthButton />
+                    </Box>
+                </Paper>
+            </Box>
+        );
+    }
 
     return (
         <Box
