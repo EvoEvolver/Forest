@@ -158,10 +158,9 @@ Do not include any additional text or formatting outside the bullet list.
     return await fetchChatResponse([message.toJson() as any], "gpt-4.1", authToken);
 }
 
-export async function updateExportContent(node: NodeVM, summary: string, sourceContent: string): Promise<void> {
-    await stageThisVersion(node.nodeM, "Before export update");
-
-    const currentContent = EditorNodeTypeM.getEditorContent(node.nodeM);
+export async function updateExportContent(nodeM: NodeM, summary: string, sourceContent: string): Promise<void> {
+    await stageThisVersion(nodeM, "Before export update");
+    const currentContent = EditorNodeTypeM.getEditorContent(nodeM);
     const contentHash = await generateContentHash(sourceContent);
 
     const document = createDOMFromHTML(currentContent);
@@ -173,14 +172,14 @@ export async function updateExportContent(node: NodeVM, summary: string, sourceC
         exportDiv.setAttribute('hash', contentHash);
         exportDiv.innerHTML = summary;
 
-        EditorNodeTypeM.setEditorContent(node.nodeM, wrapper.innerHTML);
+        EditorNodeTypeM.setEditorContent(nodeM, wrapper.innerHTML);
     }
 }
 
-export async function replaceNonExportContent(node: NodeVM, newContent: string): Promise<void> {
-    await stageThisVersion(node.nodeM, "Before points replacement");
+export async function replaceNonExportContent(nodeM: NodeM, newContent: string): Promise<void> {
+    await stageThisVersion(nodeM, "Before points replacement");
 
-    const currentContent = EditorNodeTypeM.getEditorContent(node.nodeM);
+    const currentContent = EditorNodeTypeM.getEditorContent(nodeM);
     const document = createDOMFromHTML(currentContent);
     const wrapper = document.body.firstElementChild as HTMLElement;
 
@@ -200,7 +199,7 @@ export async function replaceNonExportContent(node: NodeVM, newContent: string):
         wrapper.appendChild(exportElement);
     });
 
-    EditorNodeTypeM.setEditorContent(node.nodeM, wrapper.innerHTML);
+    EditorNodeTypeM.setEditorContent(nodeM, wrapper.innerHTML);
 }
 
 export interface UpdateExportOptions {
@@ -210,19 +209,19 @@ export interface UpdateExportOptions {
 }
 
 export async function handleUpdateExport(
-    node: NodeVM,
+    nodeM: NodeM,
     authToken: string,
     options: UpdateExportOptions = {}
 ): Promise<void> {
     try {
         // Get all content from the editor except export divs
-        const allContent = getEditorContentExceptExports(node.nodeM);
-        const currentContent = EditorNodeTypeM.getEditorContent(node.nodeM);
+        const allContent = getEditorContentExceptExports(nodeM);
+        const currentContent = EditorNodeTypeM.getEditorContent(nodeM);
 
         // Extract current export div content
         const existingExportContent = extractExportContent(currentContent);
 
-        const summary = await generateExportParagraphByNode(node.nodeM, authToken, options.userPrompt);
+        const summary = await generateExportParagraphByNode(nodeM, authToken, options.userPrompt);
 
         // If there's existing content, show confirmation dialog
         if (existingExportContent && existingExportContent.length > 0) {
@@ -230,11 +229,11 @@ export async function handleUpdateExport(
                 options.onShowConfirmation(existingExportContent, summary);
             } else {
                 // Fallback: update directly if no confirmation handler provided
-                await updateExportContent(node, summary, allContent);
+                await updateExportContent(nodeM, summary, allContent);
             }
         } else {
             // No existing content, update directly
-            await updateExportContent(node, summary, allContent);
+            await updateExportContent(nodeM, summary, allContent);
         }
     } catch (e) {
         if (options.onError) {
@@ -246,15 +245,15 @@ export async function handleUpdateExport(
 }
 
 export async function handleUpdatePoints(
-    node: NodeVM,
+    nodeM: NodeM,
     authToken: string,
     options: UpdateExportOptions = {}
 ): Promise<void> {
     try {
         // Get all content from the editor except export divs
-        const contentExceptExports = getEditorContentExceptExports(node.nodeM);
+        const contentExceptExports = getEditorContentExceptExports(nodeM);
 
-        const keyPoints = await generateKeyPointsByNode(node.nodeM, authToken);
+        const keyPoints = await generateKeyPointsByNode(nodeM, authToken);
 
         // Always show confirmation dialog for replacing content
         if (options.onShowConfirmation) {
@@ -262,7 +261,7 @@ export async function handleUpdatePoints(
             options.onShowConfirmation(contentExceptExports, keyPoints);
         } else {
             // Fallback: replace the non-export content directly
-            await replaceNonExportContent(node, keyPoints);
+            await replaceNonExportContent(nodeM, keyPoints);
         }
     } catch (e) {
         if (options.onError) {

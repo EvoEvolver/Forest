@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useState} from 'react'
+import React, {useContext, useEffect, useState, createContext} from 'react'
 import './style.css';
 import {useAtomValue} from "jotai";
 import {YjsProviderAtom} from "@forest/client/src/TreeState/YjsConnection";
@@ -27,7 +27,7 @@ import {LinkExtension} from "./Extensions/link";
 import {ImageUploadExtension, uploadImage} from "./Extensions/image-upload";
 import {UniversalPasteHandler} from "./Extensions/universal-paste-handler";
 import {BookmarkNode} from "./Extensions/bookmark-node";
-import {NodeVM} from "@forest/schema";
+import {NodeM, NodeVM} from "@forest/schema";
 import {contentEditableContext} from "@forest/schema/src/viewContext";
 import {Editor} from "@tiptap/core";
 import {SlashCommandExtension} from "./Extensions/slash-command";
@@ -45,23 +45,29 @@ import Subscript from '@tiptap/extension-subscript'
 import Superscript from '@tiptap/extension-superscript'
 
 interface TiptapEditorProps {
-    node: NodeVM,
+    nodeM: NodeM,
     yXML: XmlFragment
 }
 
 const TiptapEditor = (props: TiptapEditorProps) => {
-    const node = props.node
     const provider = useAtomValue(YjsProviderAtom)
     const yXML = props.yXML
-    return <>
-        <EditorImpl yXML={yXML} provider={provider} dataLabel="ydatapaperEditor" node={node}/>
-    </>
-
+    return (
+        <EditorContext.Provider value={{ nodeM: props.nodeM }}>
+            <EditorImpl yXML={yXML} provider={provider}/>
+        </EditorContext.Provider>
+    )
 };
+
+interface EditorContext {
+    nodeM: NodeM
+}
+
+export const EditorContext = createContext<EditorContext | null>(null);
 
 export default TiptapEditor;
 
-export function makeExtensions(yXML, provider) {
+export function makeExtensions(yXML, provider): any[] {
     return [
         Document,
         Paragraph,
@@ -139,7 +145,7 @@ declare module '@tiptap/core' {
     }
 }
 
-const EditorImpl = ({yXML, provider, dataLabel, node}) => {
+const EditorImpl = ({yXML, provider}) => {
     const [hoverElements, setHoverElements] = useState([]);
     const [hasChangesInSelection, setHasChangesInSelection] = useState(false);
     const contentEditable = useContext(contentEditableContext);

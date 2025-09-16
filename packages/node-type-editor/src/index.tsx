@@ -80,7 +80,7 @@ export class EditorNodeTypeVM extends NodeTypeVM {
     static render(node: NodeVM): React.ReactNode {
         const yXML = EditorNodeTypeM.getYxml(node.nodeM)
         return <>
-            <TiptapEditor yXML={yXML} node={node}/>
+            <TiptapEditor yXML={yXML} nodeM={node.nodeM}/>
         </>
     }
 

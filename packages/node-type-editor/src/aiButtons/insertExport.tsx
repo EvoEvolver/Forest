@@ -46,7 +46,7 @@ export const InsertExportButton: React.FC<{ node: NodeVM }> = ({node}) => {
                 EditorNodeTypeM.setEditorContent(node.nodeM, newContent);
                 
                 // Now update the empty export with generated content
-                await updateExportContent(node, summary, allContent);
+                await updateExportContent(node.nodeM, summary, allContent);
             }
         } catch (e) {
             alert(e);
@@ -64,7 +64,7 @@ export const InsertExportButton: React.FC<{ node: NodeVM }> = ({node}) => {
     const handleAccept = async (modifiedContent: string) => {
         try {
             const allContent = getEditorContentExceptExports(node.nodeM);
-            await updateExportContent(node, modifiedContent, allContent);
+            await updateExportContent(node.nodeM, modifiedContent, allContent);
         } catch (e) {
             alert(e);
         }

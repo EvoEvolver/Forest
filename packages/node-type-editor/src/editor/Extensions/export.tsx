@@ -2,8 +2,7 @@ import {mergeAttributes, Node} from '@tiptap/core'
 import {NodeViewContent, NodeViewWrapper, ReactNodeViewRenderer} from '@tiptap/react'
 import React, {useContext, useState} from 'react'
 import {useTheme} from '@mui/material/styles'
-import {thisNodeContext} from "@forest/client";
-import {NodeVM} from "@forest/schema";
+import {NodeM} from "@forest/schema";
 import {useAtomValue} from "jotai";
 import {authTokenAtom} from "@forest/user-system/src/authStates";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -24,6 +23,7 @@ import TextField from "@mui/material/TextField";
 import SyncIcon from '@mui/icons-material/Sync';
 import {handleUpdateExport, handleUpdatePoints, replaceNonExportContent, updateExportContent} from './exportHelpers';
 import {EditorNodeTypeM} from "../..";
+import {EditorContext} from "../index";
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
@@ -34,7 +34,8 @@ declare module '@tiptap/core' {
 }
 
 const ExportNodeView = ({deleteNode}: any) => {
-    const node: NodeVM = useContext(thisNodeContext)
+    const editorContext = useContext(EditorContext)
+    const node: NodeM = editorContext.nodeM
     const theme = useTheme();
     const [loading, setLoading] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -65,7 +66,7 @@ const ExportNodeView = ({deleteNode}: any) => {
         }
     };
 
-    const handleUpdatePointsClick = async () => {
+    const handleUpdateOutlineClick = async () => {
         setLoading(true);
         try {
             setIsPointsMode(true);
@@ -119,8 +120,8 @@ const ExportNodeView = ({deleteNode}: any) => {
                 await replaceNonExportContent(node, modifiedContent);
             } else {
                 // Update the export content
-                const allContent = node.nodeM ?
-                    EditorNodeTypeM.getEditorContent(node.nodeM).replace(/<div[^>]*class="export"[^>]*>[\s\S]*?<\/div>/gi, '').trim() : '';
+                const allContent = node ?
+                    EditorNodeTypeM.getEditorContent(node).replace(/<div[^>]*class="export"[^>]*>[\s\S]*?<\/div>/gi, '').trim() : '';
                 await updateExportContent(node, modifiedContent, allContent);
             }
         } catch (e) {
@@ -176,13 +177,13 @@ const ExportNodeView = ({deleteNode}: any) => {
                                 padding: "4px 8px"
                             }}
                         >
-                            Generate Export
+                            Generate Paragraph
                         </Button>
                         <Button
                             size="small"
                             variant="outlined"
                             startIcon={loading ? <CircularProgress size={16}/> : <SyncIcon/>}
-                            onClick={handleUpdatePointsClick}
+                            onClick={handleUpdateOutlineClick}
                             disabled={loading}
                             sx={{
                                 textTransform: "none",
