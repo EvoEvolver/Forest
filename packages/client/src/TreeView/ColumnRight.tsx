@@ -35,7 +35,7 @@ export function ColumnRight() {
         zIndex: 1,
         gap: 2,
     }}>
-        <Paper elevation={1} sx={{
+        {!userStudy &&<Paper elevation={1} sx={{
             p: 1,
             borderRadius: 2,
             display: 'flex',
@@ -82,12 +82,12 @@ export function ColumnRight() {
                     <DescriptionIcon fontSize="small"/>
                     Issues
                 </ToggleButton>
-                {!userStudy && <ToggleButton value="assistant" aria-label="assistant">
+                <ToggleButton value="assistant" aria-label="assistant">
                     <SmartToyIcon fontSize="small"/>
                     AI
-                </ToggleButton>}
+                </ToggleButton>
             </ToggleButtonGroup>
-        </Paper>
+        </Paper>}
 
         {activeTab === 'tools' && !node.nodeTypeVM.oneTool && (
             <thisNodeContext.Provider value={node}>

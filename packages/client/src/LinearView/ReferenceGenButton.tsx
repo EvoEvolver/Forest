@@ -11,7 +11,7 @@ import {
     Snackbar,
     Typography
 } from '@mui/material';
-import { Edit } from '@mui/icons-material';
+import {Edit} from '@mui/icons-material';
 import {NodeM} from "@forest/schema";
 import {EditorNodeTypeM} from '@forest/node-type-editor/src';
 import {extractExportContent} from '@forest/node-type-editor/src/editor/Extensions/exportHelpers';
@@ -23,7 +23,6 @@ interface ReferenceGenButtonProps {
     rootNode: NodeM;
     nodes: { node: NodeM; level: number; }[];
 }
-
 
 
 // Helper function to check if content has export divs
@@ -41,7 +40,7 @@ export default function ReferenceGenButton({rootNode, nodes}: ReferenceGenButton
     const [open, setOpen] = useState(false);
     const [citations, setCitations] = useState<CitationResult[]>([]);
     const [loading, setLoading] = useState(false);
-    const [progress, setProgress] = useState({ current: 0, total: 0, errorCount: 0, phase: '' });
+    const [progress, setProgress] = useState({current: 0, total: 0, errorCount: 0, phase: ''});
     const [fixPanelOpen, setFixPanelOpen] = useState(false);
     const [citationToFix, setCitationToFix] = useState<CitationResult | null>(null);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -50,7 +49,7 @@ export default function ReferenceGenButton({rootNode, nodes}: ReferenceGenButton
         onProgress?: (current: number, total: number, errorCount: number) => void
     ) => {
         if (!nodes) return '';
-        
+
         const treeM = rootNode.treeM;
         if (!treeM) return '';
 
@@ -67,7 +66,7 @@ export default function ReferenceGenButton({rootNode, nodes}: ReferenceGenButton
             }
 
             const {node} = nodes[i];
-            
+
             try {
                 const fullContent = EditorNodeTypeM.getEditorContent(node);
                 const isTerminal = isTerminalNode(node, treeM);
@@ -106,11 +105,11 @@ export default function ReferenceGenButton({rootNode, nodes}: ReferenceGenButton
         setOpen(true);
         setLoading(true);
         setCitations([]);
-        setProgress({ current: 0, total: 0, errorCount: 0, phase: '' });
+        setProgress({current: 0, total: 0, errorCount: 0, phase: ''});
 
         try {
             if (!nodes) return;
-            
+
             const treeM = rootNode.treeM;
             if (!treeM) return;
 
@@ -155,7 +154,7 @@ export default function ReferenceGenButton({rootNode, nodes}: ReferenceGenButton
                 }
 
                 processedNodes++;
-                setProgress({ current: processedNodes, total: nodes.length, errorCount, phase: 'citations' });
+                setProgress({current: processedNodes, total: nodes.length, errorCount, phase: 'citations'});
             }
 
             // Deduplicate citations based on URL identity (same as ReferenceIndexButton)
@@ -191,7 +190,7 @@ export default function ReferenceGenButton({rootNode, nodes}: ReferenceGenButton
 
             // Copy to clipboard
             await navigator.clipboard.writeText(citationsText);
-            
+
             // Show success snackbar
             setSnackbarOpen(true);
         } catch (error) {
@@ -205,8 +204,8 @@ export default function ReferenceGenButton({rootNode, nodes}: ReferenceGenButton
     };
 
     const handleCitationFixed = (fixedCitation: CitationResult) => {
-        setCitations(prevCitations => 
-            prevCitations.map(citation => 
+        setCitations(prevCitations =>
+            prevCitations.map(citation =>
                 citation === citationToFix ? fixedCitation : citation
             )
         );
@@ -236,9 +235,9 @@ export default function ReferenceGenButton({rootNode, nodes}: ReferenceGenButton
                         <Box display="flex" flexDirection="column" alignItems="center" p={3}>
                             <CircularProgress/>
                             <Typography variant="body2" sx={{mt: 2}}>
-                                {progress.phase === 'nodes' ? 'Processing nodes...' : 
-                                 progress.phase === 'citations' ? 'Generating citations...' : 
-                                 'Generating citations...'}
+                                {progress.phase === 'nodes' ? 'Processing nodes...' :
+                                    progress.phase === 'citations' ? 'Generating citations...' :
+                                        'Generating citations...'}
                             </Typography>
                             {progress.total > 0 && (
                                 <Typography variant="body2" sx={{mt: 1}} color="text.secondary">
@@ -253,16 +252,16 @@ export default function ReferenceGenButton({rootNode, nodes}: ReferenceGenButton
                         <Box>
                             {citations.map((item, index) => (
                                 <Box key={index} sx={{
-                                    mb: 3, 
-                                    p: 2, 
+                                    mb: 3,
+                                    p: 2,
                                     borderRadius: 1,
                                     bgcolor: 'background.default',
                                     border: item.hasError ? '1px solid' : 'none',
                                     borderColor: item.hasError ? 'error.main' : 'transparent'
                                 }}>
                                     {item.hasError && (
-                                        <Typography variant="body2" sx={{ 
-                                            color: 'error.main', 
+                                        <Typography variant="body2" sx={{
+                                            color: 'error.main',
                                             fontWeight: 'bold',
                                             display: 'flex',
                                             alignItems: 'center',
@@ -271,19 +270,24 @@ export default function ReferenceGenButton({rootNode, nodes}: ReferenceGenButton
                                             ⚠️ Citation Error
                                         </Typography>
                                     )}
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
-                                        <Typography variant="body2" sx={{ flex: 1 }}
+                                    <Box sx={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'flex-start',
+                                        gap: 1
+                                    }}>
+                                        <Typography variant="body2" sx={{flex: 1}}
                                                     dangerouslySetInnerHTML={{__html: "<span>" + item.title + ": </span>" + item.citation}}/>
-                                        <IconButton 
-                                            size="small" 
+                                        <IconButton
+                                            size="small"
                                             color={item.hasError ? "error" : "primary"}
-                                            sx={{ flexShrink: 0, mt: -0.5 }}
+                                            sx={{flexShrink: 0, mt: -0.5}}
                                             onClick={() => {
                                                 setCitationToFix(item);
                                                 setFixPanelOpen(true);
                                             }}
                                         >
-                                            <Edit />
+                                            <Edit/>
                                         </IconButton>
                                     </Box>
                                 </Box>
