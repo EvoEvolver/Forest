@@ -10,6 +10,7 @@ import BuildIcon from '@mui/icons-material/Build';
 import DescriptionIcon from '@mui/icons-material/Description';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import {CursorChat} from "@forest/agent-chat/src/CursorChat";
+import {userStudy} from "../appState";
 
 type TabType = 'tools' | 'issues' | 'assistant';
 
@@ -81,10 +82,10 @@ export function ColumnRight() {
                     <DescriptionIcon fontSize="small"/>
                     Issues
                 </ToggleButton>
-                <ToggleButton value="assistant" aria-label="assistant">
+                {!userStudy && <ToggleButton value="assistant" aria-label="assistant">
                     <SmartToyIcon fontSize="small"/>
                     AI
-                </ToggleButton>
+                </ToggleButton>}
             </ToggleButtonGroup>
         </Paper>
 

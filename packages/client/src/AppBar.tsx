@@ -12,6 +12,7 @@ import {supabaseClientAtom} from "@forest/user-system/src/authStates";
 import SettingsIcon from "@mui/icons-material/Settings";
 import SettingsDialog from "./SettingsDialog";
 import EditDocumentIcon from '@mui/icons-material/EditDocument';
+import {userStudy} from "./appState";
 // Left side component - navigation buttons
 export const AppBarLeft = ({setCurrentPage, currentPage}) => {
     const theme = useTheme();
@@ -67,16 +68,16 @@ export const AppBarLeft = ({setCurrentPage, currentPage}) => {
             >
                 <ToggleButton value="tree" aria-label="tree view">
                     <EditDocumentIcon fontSize="small"/>
-                    {!isNarrow && "Tree"}
+                    {!isNarrow && "Editor"}
                 </ToggleButton>
                 <ToggleButton value="linear" aria-label="linear view">
                     <ArticleIcon fontSize="small"/>
-                    {!isNarrow && "Linear"}
+                    {!isNarrow && "Preview"}
                 </ToggleButton>
-                <ToggleButton value="flow" aria-label="flow view">
+                {!userStudy && <ToggleButton value="flow" aria-label="flow view">
                     <AccountTreeIcon fontSize="small"/>
                     {!isNarrow && "Flow"}
-                </ToggleButton>
+                </ToggleButton>}
             </ToggleButtonGroup>
         </Paper>
     );

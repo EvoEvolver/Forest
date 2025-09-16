@@ -83,7 +83,7 @@ export const BottomUpButton: React.FC<{ node: NodeVM }> = ({node}) => {
                     <SummarizeIcon color="primary"/>
                     <div>
                         <Typography variant="body1" component="div">
-                            Summerize from children
+                            Generate outlines from children
                         </Typography>
                     </div>
                     {loading && <CircularProgress size={20}/>}

@@ -159,7 +159,7 @@ const ExportNodeView = ({deleteNode}: any) => {
                     <Box sx={{display: "flex", alignItems: "center", gap: 1}}>
                         <DescriptionIcon color="primary" fontSize="small"/>
                         <Typography variant="body2" fontWeight="medium" color="text.secondary">
-                            Export to linear
+                            Export to final document
                         </Typography>
                     </Box>
                     <Box sx={{display: "flex", alignItems: "center", gap: 0.5}}>
@@ -176,7 +176,7 @@ const ExportNodeView = ({deleteNode}: any) => {
                                 padding: "4px 8px"
                             }}
                         >
-                            Update Export
+                            Generate Export
                         </Button>
                         <Button
                             size="small"
@@ -191,7 +191,7 @@ const ExportNodeView = ({deleteNode}: any) => {
                                 padding: "4px 8px"
                             }}
                         >
-                            Update Outline
+                            Generate Outline
                         </Button>
                         <IconButton
                             size="small"

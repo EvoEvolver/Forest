@@ -92,7 +92,7 @@ export const InsertExportButton: React.FC<{ node: NodeVM }> = ({node}) => {
                     {loading ? <CircularProgress size={24} color="primary"/> : <AddIcon color="primary"/>}
                     <div>
                         <Typography variant="body1" component="div">
-                            {loading ? 'Generating export...' : 'Write and export'}
+                            {loading ? 'Generating export...' : 'Generate paragraph'}
                         </Typography>
                     </div>
                 </CardContent>

@@ -17,3 +17,4 @@ isMobileModeAtom.onMount = (set) => {
 }
 
 export const treeId = typeof window !== undefined ? new URLSearchParams(window.location.search).get("id") : undefined
+export const userStudy = typeof window !== undefined ? new URLSearchParams(window.location.search).get("userStudy") : undefined
