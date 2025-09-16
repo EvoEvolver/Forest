@@ -4,16 +4,18 @@ import {jumpToNodeAtom, scrollToNodeAtom, selectedNodeAtom} from "../TreeState/T
 import {Box, Button, IconButton, Paper, Skeleton, Tooltip} from '@mui/material';
 import {NodeM} from '@forest/schema';
 import {EditorNodeTypeM} from '@forest/node-type-editor/src';
-import {currentPageAtom} from "../appState";
+import {currentPageAtom, userStudy} from "../appState";
 import {useTheme} from '@mui/system';
 import ReferenceGenButton from './ReferenceGenButton';
 import ReferenceIndexButton from './ReferenceIndexButton';
+import WordCountButton from './WordCountButton';
 import {extractExportContent} from '@forest/node-type-editor/src/editor/Extensions/exportHelpers';
 import CheckIcon from '@mui/icons-material/Check';
 import TiptapEditor from '@forest/node-type-editor/src/editor';
 import {LinearClickMenu} from "./linearClickMenu";
 import {Breadcrumb} from "../TreeView/components/Breadcrumb";
 import {handlePrint} from "./handlePrint";
+import { thisNodeContext } from '../TreeView/NodeContext';
 
 
 const getLinearNodeList = (rootNode: NodeM): Array<{ node: NodeM, level: number }> | undefined => {
@@ -45,14 +47,15 @@ const ButtonsSection = ({rootNode, nodes}: {
 }) => {
     return (
         <Box sx={{display: 'flex', gap: 1, mb: 2}} data-testid="buttons-section">
-            <ReferenceGenButton rootNode={rootNode} nodes={nodes}/>
-            <ReferenceIndexButton nodes={nodes}/>
+            {!userStudy && <><ReferenceGenButton rootNode={rootNode} nodes={nodes}/>
+            <ReferenceIndexButton nodes={nodes}/> </>}
                 <Button
                     onClick={() => handlePrint(nodes, rootNode.title() || 'Document')}
                     size="small"
                     variant="outlined"
                     sx={{mb: 2}}
                 >Export & Print</Button>
+                <WordCountButton nodes={nodes} />
         </Box>
     );
 }
@@ -80,10 +83,6 @@ const NodeRenderer = ({node, level, treeM}: { node: NodeM, level: number, treeM:
     const [clickPosition, setClickPosition] = useState<{ x: number, y: number } | null>(null);
     const nodeRef = useRef<HTMLDivElement>(null);
     const theme = useTheme();
-
-    const setCurrentPage = useSetAtom(currentPageAtom);
-    const jumpToNode = useSetAtom(jumpToNodeAtom);
-    const scrollToNode = useSetAtom(scrollToNodeAtom);
 
     const isTerminal = isTerminalNode(node, treeM);
 
@@ -131,16 +130,6 @@ const NodeRenderer = ({node, level, treeM}: { node: NodeM, level: number, treeM:
 
         setIsEditing(!isEditing);
         setIsMenuVisible(false); // Hide menu when toggling edit
-    };
-
-    const goToNodeInTreeView = () => {
-        setCurrentPage("tree");
-        setTimeout(() => {
-            jumpToNode(node.id);
-            setTimeout(() => {
-                scrollToNode(node.id);
-            }, 100);
-        }, 300);
     };
 
     // Intersection Observer for lazy loading
@@ -290,9 +279,11 @@ const NodeRenderer = ({node, level, treeM}: { node: NodeM, level: number, treeM:
                                         </IconButton>
                                     </Tooltip>
                                 </Box>
-                                <Box sx={{p: 1}}>
-                                    <TiptapEditor yXML={EditorNodeTypeM.getYxml(node)} node={null}/>
-                                </Box>
+                                <thisNodeContext.Provider value={node}>
+                                    <Box sx={{p: 1}}>
+                                        <TiptapEditor yXML={EditorNodeTypeM.getYxml(node)} nodeM={node}/>
+                                    </Box>
+                                </thisNodeContext.Provider>
                             </Box>
                         ) : (
                             htmlContent && htmlContent.trim() ? (
@@ -354,7 +345,6 @@ const NodeRenderer = ({node, level, treeM}: { node: NodeM, level: number, treeM:
 export default function LinearView() {
     const theme = useTheme();
     const selectedNode = useAtomValue(selectedNodeAtom);
-    const scrollToNode = useSetAtom(scrollToNodeAtom);
 
     if (!selectedNode) return null;
 
@@ -363,7 +353,6 @@ export default function LinearView() {
 
     const treeM = selectedNode.nodeM.treeM;
     let nodes = getLinearNodeList(selectedNode.nodeM) || [];
-
 
     if (!nodes || nodes.length === 0) return null;
 
