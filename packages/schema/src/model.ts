@@ -220,6 +220,10 @@ export class NodeM {
         return this.ymap.get("title");
     }
 
+    setTitle(newTitle: string) {
+        this.ymap.set("title", newTitle);
+    }
+
     parent(): string {
         return this.ymap.get("parent");
     }

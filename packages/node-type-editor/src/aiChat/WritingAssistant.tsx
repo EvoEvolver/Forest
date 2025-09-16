@@ -11,7 +11,7 @@ import {ChatViewImpl} from "@forest/agent-chat/src/ChatViewImpl";
 import {useAtomValue} from "jotai";
 import {markedNodesAtom} from "@forest/client/src/TreeState/TreeState";
 import {EditorNodeTypeM} from "..";
-import {WritingMessage} from "./WritingMessage";
+import {WritingMessage, TitleMessage, NewNodeMessage} from "./WritingMessage";
 import {generateText, stepCountIs} from "ai";
 import {z} from "zod";
 import {sanitizeHtmlForEditor} from "./helper";
@@ -156,12 +156,15 @@ Logic of tree structure:
 - The <div> with class "export" is a special container that contains the content generated from other content in that node. It should be considered as a part of the node.
 
 You must 
-- You must use tool readNodeContent to get the content of a node first before writing about them.
-- If the user asks for writing something, by default, it means that you need to call suggestNewVersion tool to write the content for the current node.
+- You must use tool loadNodeContent to get the content of a node first before writing about them.
+- If the user asks for writing something, by default, it means that you need to call suggestModify tool to write the content for the current node.
 - Don't drop the links in the content. Put every <a></a> link in a proper place with proper content.
 - Don't expand an abbreviation by yourself.
-- If the user specifies another node, you can also call suggestNewVersion tool to write for that node.
+- If the user specifies another node, you can also call suggestModify tool to write for that node.
 - You don't need to mention what new version you created in your text response, as the user will see the new version directly.
+
+Keep in mind:
+- Always use tools to suggest changes. Never just write your suggestions in the text response.
 
 Available node IDs you can create new versions for:
 ${availableNodeIds}
@@ -172,7 +175,7 @@ Respond naturally and conversationally. You can include regular text explanation
 `);
 };
 
-const createSuggestNewVersionTool = (nodeM: NodeM, markedNodes, setMessages) => {
+const createSuggestModifyTool = (nodeM: NodeM, markedNodes, setMessages) => {
     const contextualContent = getContextualContent(nodeM, markedNodes);
     const availableNodeIds = getAvailableNodeIds(contextualContent, nodeM.id);
 
@@ -208,7 +211,7 @@ const createSuggestNewVersionTool = (nodeM: NodeM, markedNodes, setMessages) => 
     } as const;
 };
 
-const createreadNodeContentTool = (nodeM: NodeM, markedNodes, setMessages) => {
+const createLoadNodeContentTool = (nodeM: NodeM, markedNodes, setMessages) => {
     const contextualContent = getContextualContent(nodeM, markedNodes);
     const availableNodeIds = getAvailableNodeIds(contextualContent, nodeM.id);
 
@@ -240,6 +243,85 @@ const createreadNodeContentTool = (nodeM: NodeM, markedNodes, setMessages) => {
                 content,
                 success: true
             };
+        },
+    } as const;
+};
+
+const createSuggestNewTitleTool = (nodeM: NodeM, markedNodes, setMessages) => {
+    const contextualContent = getContextualContent(nodeM, markedNodes);
+    const availableNodeIds = getAvailableNodeIds(contextualContent, nodeM.id);
+
+    return {
+        description: 'Suggest a new title for a specific node',
+        inputSchema: z.object({
+            nodeId: z.string().describe('The ID of the node to suggest a new title for'),
+            newTitle: z.string().describe('The new title for the node')
+        }),
+        execute: async ({nodeId, newTitle}: { nodeId: string; newTitle: string }) => {
+            if (!availableNodeIds.includes(nodeId)) {
+                throw new Error(`Node ID ${nodeId} is not available. Available IDs: ${availableNodeIds.join(', ')}`);
+            }
+
+            const nodeToUpdate: NodeM = nodeM.treeM.getNode(nodeId);
+            if (!nodeToUpdate || nodeToUpdate.nodeTypeName() !== "EditorNodeType") {
+                throw new Error(`Node ${nodeId} not found or is not an editor node`);
+            }
+
+            const titleMsg = new TitleMessage({
+                content: `Suggesting new title: "${newTitle}"`,
+                role: "assistant",
+                author: "Writing Assistant",
+                nodeId: nodeId,
+                newTitle: newTitle,
+                treeM: nodeM.treeM
+            });
+
+            setMessages(prevMessages => [...prevMessages, titleMsg]);
+
+            return {success: true};
+        },
+    } as const;
+};
+
+const createSuggestNewNodeTool = (nodeM: NodeM, markedNodes, setMessages) => {
+    const contextualContent = getContextualContent(nodeM, markedNodes);
+    const availableNodeIds = getAvailableNodeIds(contextualContent, nodeM.id);
+
+    return {
+        description: 'Suggest creating a new node with specified parent, title and content. The node will be added at the end of the parent\'s children.',
+        inputSchema: z.object({
+            parentId: z.string().describe('The ID of the parent node where the new node should be created'),
+            title: z.string().describe('The title for the new node'),
+            contentHTML: z.string().describe('The HTML content for the new node')
+        }),
+        execute: async ({parentId, title, contentHTML}: {
+            parentId: string;
+            title: string;
+            contentHTML: string;
+        }) => {
+            if (!availableNodeIds.includes(parentId)) {
+                throw new Error(`Parent node ID ${parentId} is not available. Available IDs: ${availableNodeIds.join(', ')}`);
+            }
+
+            const parentNode: NodeM = nodeM.treeM.getNode(parentId);
+            if (!parentNode || parentNode.nodeTypeName() !== "EditorNodeType") {
+                throw new Error(`Parent node ${parentId} not found or is not an editor node`);
+            }
+
+            const wrappedContent = sanitizeHtmlForEditor(contentHTML);
+            const newNodeMsg = new NewNodeMessage({
+                content: `Suggesting new node: "${title}"`,
+                role: "assistant",
+                author: "Writing Assistant",
+                parentId: parentId,
+                newNodeTitle: title,
+                newContent: wrappedContent,
+                treeM: nodeM.treeM
+            });
+
+            setMessages(prevMessages => [...prevMessages, newNodeMsg]);
+
+            return {success: true};
         },
     } as const;
 };
@@ -284,8 +366,10 @@ export function WritingAssistant({selectedNode}: { selectedNode: NodeVM }) {
                 model: openaiModel('gpt-4.1'),
                 messages: messagesWithSystem,
                 tools: {
-                    suggestNewVersion: createSuggestNewVersionTool(nodeM, markedNodes, setMessages),
-                    readNodeContent: createreadNodeContentTool(nodeM, markedNodes, setMessages)
+                    suggestModify: createSuggestModifyTool(nodeM, markedNodes, setMessages),
+                    loadNodeContent: createLoadNodeContentTool(nodeM, markedNodes, setMessages),
+                    suggestNewTitle: createSuggestNewTitleTool(nodeM, markedNodes, setMessages),
+                    suggestNewNode: createSuggestNewNodeTool(nodeM, markedNodes, setMessages)
                 },
                 stopWhen: stepCountIs(10)
             });

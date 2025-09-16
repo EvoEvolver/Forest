@@ -55,7 +55,7 @@ export const NodeTitle = ({node}: { node: NodeVM }) => {
         if (isEditing) return;
         if (editedTitle === title) return;
         if (!hasBeenEdited) return;
-        node.nodeM.ymap.set("title", editedTitle);
+        node.nodeM.setTitle(editedTitle);
     }, [isEditing]);
 
     return (
