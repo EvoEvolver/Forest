@@ -1,5 +1,5 @@
 import React from "react";
-import {useEffect, useMemo} from "react";
+import {useEffect, useRef, useCallback} from "react";
 import {NodeM} from "@forest/schema";
 import {ChatViewImpl} from "@forest/agent-chat/src/ChatViewImpl";
 import {EditorNodeTypeM} from "..";
@@ -71,6 +71,12 @@ You are here to help the user with writing tasks including:
 - Generating new content based on user requests
 - Answering questions about the current content
 
+Terminology:
+- <div class="export">...</div> means the content that directly are shown in the final document, while other contents are notes for the author only.
+
+Task instructions:
+- When the user asks for adding paragraphs or adding exports, you should append a <div class="export">...</div> block at the end of the content and generate the paragraphs inside it. The paragraph should be ready for being shown in the final document.
+
 You must:
 - If the user asks for writing something, by default, it means that you need to call suggestModify tool to write the content for the specified node.
 - Don't drop the links in the content. Put every <a></a> link in a proper place with proper content.
@@ -87,19 +93,32 @@ Respond naturally and conversationally. You can include regular text explanation
 `);
 };
 
-const contextWindowList = 12;
-
-
 export function WritingAssistant2({contextNodes}: WritingAssistant2Props) {
-    // Memoize the expensive context string building
-    const contextString = useMemo(() => {
-        return buildContextString(contextNodes);
+    const contextStringRef = useRef<string | null>(null);
+    const lastContextNodesRef = useRef<ContextNode[]>([]);
+
+    // Lazy context string getter
+    const getContextString = useCallback(() => {
+        // Check if context nodes have changed
+        const nodesChanged = contextNodes !== lastContextNodesRef.current ||
+            contextNodes.length !== lastContextNodesRef.current.length ||
+            contextNodes.some((node, i) => node !== lastContextNodesRef.current[i]);
+
+        if (nodesChanged || contextStringRef.current === null) {
+            contextStringRef.current = buildContextString(contextNodes);
+            lastContextNodesRef.current = contextNodes;
+        }
+
+        return contextStringRef.current;
     }, [contextNodes]);
 
     const availableNodeIds = contextNodes.map(cn => cn.node.id);
     const treeM = contextNodes.length > 0 ? contextNodes[0].node.treeM : null;
 
-    const systemMessage = getSystemMessage(contextString, contextNodes).content;
+    // Only build system message when needed (lazy evaluation)
+    const getSystemMessageContent = useCallback(() => {
+        return getSystemMessage(getContextString(), contextNodes).content;
+    }, [getContextString, contextNodes]);
 
     const {
         messages,
@@ -109,7 +128,7 @@ export function WritingAssistant2({contextNodes}: WritingAssistant2Props) {
         sendMessage,
         resetMessages
     } = useWritingAssistant({
-        systemMessage,
+        systemMessage: getSystemMessageContent(),
         availableNodeIds,
         createTools: treeM ? (setMessagesParam) => ({
             suggestModify: createSuggestModifyTool(availableNodeIds, treeM, setMessagesParam)

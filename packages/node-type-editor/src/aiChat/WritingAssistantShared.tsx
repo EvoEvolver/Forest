@@ -38,7 +38,7 @@ export interface WritingAssistantConfig {
     showFloatingDialog?: boolean;
 }
 
-const contextWindowList = 12;
+const contextWindowList = 15;
 
 export const createSuggestModifyTool = (availableNodeIds: string[], treeM: any, setMessages: React.Dispatch<React.SetStateAction<BaseMessage[]>>) => {
     return {
@@ -251,7 +251,7 @@ export const WritingAssistantHeader: React.FC<WritingAssistantHeaderProps> = ({
                 </div>
             </div>
 
-            <Dialog
+            {isFloatingDialog&&<Dialog
                 open={isFloatingDialog}
                 onClose={() => setIsFloatingDialog(false)}
                 maxWidth={false}
@@ -310,7 +310,7 @@ export const WritingAssistantHeader: React.FC<WritingAssistantHeaderProps> = ({
                         />
                     </div>
                 </DialogContent>
-            </Dialog>
+            </Dialog>}
         </>
     );
 };
