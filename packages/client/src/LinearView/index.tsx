@@ -16,7 +16,10 @@ import {LinearClickMenu} from "./linearClickMenu";
 import {Breadcrumb} from "../TreeView/components/Breadcrumb";
 import {handlePrint} from "./handlePrint";
 import {thisNodeContext} from '../TreeView/NodeContext';
-
+import {ColumnLeft} from "../TreeView/ColumnLeft";
+import {isMobileModeAtom} from "../appState";
+import {DragProvider} from "../TreeView/DragContext";
+import {WritingAssistant2} from "@forest/node-type-editor/src/aiChat/WritingAssistant2";
 
 const getLinearNodeList = (rootNode: NodeM): Array<{ node: NodeM, level: number }> | undefined => {
     const treeM = rootNode.treeM;
@@ -33,10 +36,7 @@ const getLinearNodeList = (rootNode: NodeM): Array<{ node: NodeM, level: number 
         // Always include the current node in the list
         return [{node, level}, ...children.flatMap(child => traverse(child, level + 1))]
     };
-    let rootForTraverse = treeM.getParent(rootNode);
-    if (!rootForTraverse) {
-        rootForTraverse = rootNode;
-    }
+    let rootForTraverse = rootNode
     const linearNodes = traverse(rootForTraverse);
     return linearNodes;
 }
@@ -347,7 +347,7 @@ const NodeRenderer = ({node, level, treeM}: { node: NodeM, level: number, treeM:
 export default function LinearView() {
     const theme = useTheme();
     const selectedNode = useAtomValue(selectedNodeAtom);
-
+    const mobileMode = useAtomValue(isMobileModeAtom);
     if (!selectedNode) return null;
 
     // Subscribe to view commit number to trigger re-renders when tree changes
@@ -366,6 +366,21 @@ export default function LinearView() {
             overflow: 'auto',
             backgroundColor: theme.palette.background.default,
         }}>
+            {/* Fixed left column */}
+            {!mobileMode && (
+                <div style={{
+                    position: 'fixed',
+                    left: 10,
+                    top: 70,
+                    bottom: 10,
+                    width: "23vw",
+                    zIndex: 100
+                }}>
+                    <DragProvider>
+                    <ColumnLeft/>
+                    </DragProvider>
+                </div>
+            )}
             <Paper
                 elevation={1}
                 data-testid="linear-view-paper"
@@ -392,6 +407,20 @@ export default function LinearView() {
                     <NodeRenderer key={node.id} node={node} level={level} treeM={treeM}/>
                 ))}
             </Paper>
+            {/* Fixed right column */}
+            {!mobileMode && (
+                <Paper style={{
+                    position: 'fixed',
+                    right: 20,
+                    top: 70,
+                    bottom: 10,
+                    width: "23vw",
+                    zIndex: 100
+                }}
+                sx={{borderRadius: 5,padding: '8px'}}>
+                    <WritingAssistant2 contextNodes={nodes}/>
+                </Paper>
+            )}
         </div>
     </>
 }

@@ -17,13 +17,15 @@ interface ChatViewImplProps {
     messages: BaseMessage[];
     messageDisabled: boolean;
     loading?: boolean;
+    suggestedMessages?: string[];
 }
 
 
-export function ChatViewImpl({sendMessage, messages, messageDisabled, loading = false}: ChatViewImplProps) {
+export function ChatViewImpl({sendMessage, messages, messageDisabled, loading = false, suggestedMessages = []}: ChatViewImplProps) {
     const [message, setMessage] = useState("");
     const [showNewMessageReminder, setShowNewMessageReminder] = useState(false);
     const [lastMessageCount, setLastMessageCount] = useState(messages.length);
+    const [isInputFocused, setIsInputFocused] = useState(false);
     const endRef = useRef(null);
     const scrollContainerRef = useRef(null);
     const scrollToBottom = () => {
@@ -89,6 +91,11 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled, loading = 
             setMessage("");
             setTimeout(() => {scrollToBottom()}, 10);
         }
+    };
+
+    const handleSuggestedMessageClick = (suggestedMessage: string) => {
+        setMessage(suggestedMessage);
+        setIsInputFocused(true);
     };
 
     return (
@@ -174,6 +181,48 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled, loading = 
                     </Box>
                 </Fade>
             </CardContent>
+
+            {/* Suggested Messages */}
+            {isInputFocused && message.trim() === "" && suggestedMessages.length > 0 && (
+                <Fade in={true}>
+                    <Box
+                        sx={{
+                            position: "relative",
+                            mb: 1,
+                            px: 1,
+                        }}
+                    >
+                        <Stack
+                            direction="row"
+                            spacing={1}
+                            sx={{
+                                flexWrap: "wrap",
+                                gap: 0.5,
+                                "& > *": {
+                                    marginTop: "4px !important"
+                                }
+                            }}
+                        >
+                            {suggestedMessages.map((suggestion, idx) => (
+                                <Chip
+                                    key={idx}
+                                    label={suggestion}
+                                    variant="outlined"
+                                    size="small"
+                                    onClick={() => handleSuggestedMessageClick(suggestion)}
+                                    sx={{
+                                        cursor: "pointer",
+                                        "&:hover": {
+                                            backgroundColor: "action.hover"
+                                        }
+                                    }}
+                                />
+                            ))}
+                        </Stack>
+                    </Box>
+                </Fade>
+            )}
+
             <Box display="flex" gap={1} mt={1}>
                 <TextField
                     fullWidth
@@ -182,6 +231,8 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled, loading = 
                     placeholder="Type a message..."
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
+                    onFocus={() => setIsInputFocused(true)}
+                    onBlur={() => setIsInputFocused(false)}
                     onKeyDown={(e) => {
                         if (e.key === "Enter") {
                             if (e.shiftKey) {

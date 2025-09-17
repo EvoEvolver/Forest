@@ -76,7 +76,7 @@ export const LinearClickMenu = ({node, isVisible, isEditing, onToggleEdit, posit
 
     return (
         <div style={menuStyle}>
-            <Tooltip title="Show subtree" placement="right">
+            <Tooltip title="Focus on section" placement="right">
                 <IconButton
                     size="small"
                     onClick={() => {
@@ -90,7 +90,7 @@ export const LinearClickMenu = ({node, isVisible, isEditing, onToggleEdit, posit
                     <ZoomInIcon fontSize="small"/>
                 </IconButton>
             </Tooltip>
-            <Tooltip title="Go to node in tree view" placement="right">
+            <Tooltip title="Go to node in editor view" placement="right">
                 <IconButton
                     size="small"
                     onClick={goToNodeInTreeView}

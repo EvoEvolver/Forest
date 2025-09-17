@@ -35,7 +35,7 @@ declare module '@tiptap/core' {
 
 const ExportNodeView = ({deleteNode}: any) => {
     const editorContext = useContext(EditorContext)
-    const node: NodeM = editorContext.nodeM
+    const node: NodeM | undefined = editorContext?.nodeM
     const theme = useTheme();
     const [loading, setLoading] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -169,7 +169,7 @@ const ExportNodeView = ({deleteNode}: any) => {
                             variant="outlined"
                             startIcon={loading ? <CircularProgress size={16}/> : <SyncIcon/>}
                             onClick={() => handleUpdateExportClick()}
-                            disabled={loading}
+                            disabled={loading || !editorContext}
                             sx={{
                                 textTransform: "none",
                                 fontSize: "0.75rem",
@@ -184,7 +184,7 @@ const ExportNodeView = ({deleteNode}: any) => {
                             variant="outlined"
                             startIcon={loading ? <CircularProgress size={16}/> : <SyncIcon/>}
                             onClick={handleUpdateOutlineClick}
-                            disabled={loading}
+                            disabled={loading || !editorContext}
                             sx={{
                                 textTransform: "none",
                                 fontSize: "0.75rem",

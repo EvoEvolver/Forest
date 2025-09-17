@@ -93,7 +93,7 @@ function EditorTools({node}: { node: NodeVM }) {
     const children = useAtomValue(node.children)
     return <>
         <Box sx={{height: "80%"}}>
-            <WritingAssistant selectedNode={node}/>
+            {false && <WritingAssistant selectedNode={node}/>}
         </Box>
         <Box>
             {<InsertExportButton node={node}/>}

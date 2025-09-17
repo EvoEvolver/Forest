@@ -1,26 +1,12 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect} from "react";
 import {NodeM, NodeVM} from "@forest/schema";
-import {
-    BaseMessage,
-    InfoMessage,
-    MarkdownMessage,
-    NormalMessage,
-    SystemMessage
-} from "@forest/agent-chat/src/MessageTypes";
-import {ChatViewImpl} from "@forest/agent-chat/src/ChatViewImpl";
 import {useAtomValue} from "jotai";
 import {markedNodesAtom} from "@forest/client/src/TreeState/TreeState";
 import {EditorNodeTypeM} from "..";
-import {WritingMessage, TitleMessage, NewNodeMessage} from "./WritingMessage";
-import {generateText, stepCountIs} from "ai";
-import {z} from "zod";
-import {sanitizeHtmlForEditor} from "./helper";
-import {getOpenAIInstance} from "@forest/agent-chat/src/llm";
-import {OpenAIResponsesProviderOptions} from "@ai-sdk/openai";
-import Button from "@mui/material/Button";
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
-import {Typography} from "@mui/material";
-import {useTheme} from "@mui/material/styles";
+import {ChatViewImpl} from "@forest/agent-chat/src/ChatViewImpl";
+import {useWritingAssistant, createSuggestModifyTool, WritingAssistantHeader} from "./WritingAssistantShared";
+import {createLoadNodeContentTool, createSuggestNewTitleTool, createSuggestNewNodeTool} from "./WritingAssistantTools";
+import {SystemMessage} from "@forest/agent-chat/src/MessageTypes";
 
 interface ContextualContent {
     originalContent: string;
@@ -32,12 +18,6 @@ interface ContextualContent {
     markedNodesList: NodeM[];
     childrenList: NodeM[];
     siblingsList: NodeM[];
-}
-
-interface AIResponse {
-    text: string;
-    toolResults: any[];
-    steps: any[];
 }
 
 
@@ -155,10 +135,13 @@ Terminology:
 - A "level" refers to all the siblings of the node and the node itself.
 
 Logic of tree structure:
-- The parent node should be a summary of its children nodes by default.
+- The parent node should be a summary of all its children nodes by default.
 - The children nodes should be more detailed and specific than the parent node.
 - Bullet points are preferred for any nodes unless the user specifies otherwise.
 - The <div> with class "export" is a special container that contains the content generated from other content in that node. It should be considered as a part of the node.
+
+Task instructions:
+- "Matching children": you should check whether the current children nodes reflects the content in the current node. If not, you should suggest modifying the children nodes to match the content in the current node.
 
 You must 
 - You must use tool loadNodeContent to get the content of a node first before writing about them.
@@ -180,307 +163,46 @@ Respond naturally and conversationally. You can include regular text explanation
 `);
 };
 
-const createSuggestModifyTool = (nodeM: NodeM, markedNodes, setMessages) => {
-    const contextualContent = getContextualContent(nodeM, markedNodes);
-    const availableNodeIds = getAvailableNodeIds(contextualContent, nodeM.id);
-
-    return {
-        description: 'Suggest a new version of content for a specific node to the user and the user will receive a prompt to accept or modify it before applying.',
-        inputSchema: z.object({
-            nodeId: z.string().describe('The ID of the node to create new content for'),
-            newContentHTML: z.string().describe('The new HTML content for the node'),
-            explanation: z.string().optional().describe('Optional explanation of the changes made')
-        }),
-        execute: async ({nodeId, newContentHTML, explanation}: {
-            nodeId: string;
-            newContentHTML: string;
-            explanation?: string
-        }) => {
-            if (!availableNodeIds.includes(nodeId)) {
-                throw new Error(`Node ID ${nodeId} is not available. Available IDs: ${availableNodeIds.join(', ')}`);
-            }
-            const wrappedContent = sanitizeHtmlForEditor(newContentHTML)
-            const writingMsg = new WritingMessage({
-                content: explanation || "",
-                role: "assistant",
-                author: "Writing Assistant",
-                nodeId: nodeId,
-                newContent: wrappedContent,
-                treeM: nodeM.treeM
-            });
-
-            setMessages(prevMessages => [...prevMessages, writingMsg]);
-
-            return {success: true};
-        },
-    } as const;
-};
-
-const createLoadNodeContentTool = (nodeM: NodeM, markedNodes, setMessages) => {
-    const contextualContent = getContextualContent(nodeM, markedNodes);
-    const availableNodeIds = getAvailableNodeIds(contextualContent, nodeM.id);
-
-    return {
-        description: 'Get the current content of a specific node to examine it',
-        inputSchema: z.object({
-            nodeId: z.string().describe('The ID of the node to show content for')
-        }),
-        execute: async ({nodeId}: { nodeId: string }) => {
-            if (!availableNodeIds.includes(nodeId)) {
-                throw new Error(`Node ID ${nodeId} is not available. Available IDs: ${availableNodeIds.join(', ')}`);
-            }
-
-            const nodeToRead: NodeM = nodeM.treeM.getNode(nodeId);
-            if (!nodeToRead || nodeToRead.nodeTypeName() !== "EditorNodeType") {
-                throw new Error(`Node ${nodeId} not found or is not an editor node`);
-            }
-
-            const content = EditorNodeTypeM.getEditorContent(nodeToRead);
-            const title = nodeToRead.title();
-
-            const writingMsg = new InfoMessage("Reading " + title);
-
-            setMessages(prevMessages => [...prevMessages, writingMsg]);
-
-            return {
-                nodeId,
-                title,
-                content,
-                success: true
-            };
-        },
-    } as const;
-};
-
-const createSuggestNewTitleTool = (nodeM: NodeM, markedNodes, setMessages) => {
-    const contextualContent = getContextualContent(nodeM, markedNodes);
-    const availableNodeIds = getAvailableNodeIds(contextualContent, nodeM.id);
-
-    return {
-        description: 'Suggest a new title for a specific node',
-        inputSchema: z.object({
-            nodeId: z.string().describe('The ID of the node to suggest a new title for'),
-            newTitle: z.string().describe('The new title for the node')
-        }),
-        execute: async ({nodeId, newTitle}: { nodeId: string; newTitle: string }) => {
-            if (!availableNodeIds.includes(nodeId)) {
-                throw new Error(`Node ID ${nodeId} is not available. Available IDs: ${availableNodeIds.join(', ')}`);
-            }
-
-            const nodeToUpdate: NodeM = nodeM.treeM.getNode(nodeId);
-            if (!nodeToUpdate || nodeToUpdate.nodeTypeName() !== "EditorNodeType") {
-                throw new Error(`Node ${nodeId} not found or is not an editor node`);
-            }
-
-            const titleMsg = new TitleMessage({
-                content: `Suggesting new title: "${newTitle}"`,
-                role: "assistant",
-                author: "Writing Assistant",
-                nodeId: nodeId,
-                newTitle: newTitle,
-                treeM: nodeM.treeM
-            });
-
-            setMessages(prevMessages => [...prevMessages, titleMsg]);
-
-            return {success: true};
-        },
-    } as const;
-};
-
-const createSuggestNewNodeTool = (nodeM: NodeM, markedNodes, setMessages) => {
-    const contextualContent = getContextualContent(nodeM, markedNodes);
-    const availableNodeIds = getAvailableNodeIds(contextualContent, nodeM.id);
-
-    return {
-        description: 'Suggest creating a new node with specified parent, title and content. The node will be added at the end of the parent\'s children.',
-        inputSchema: z.object({
-            parentId: z.string().describe('The ID of the parent node where the new node should be created'),
-            title: z.string().describe('The title for the new node'),
-            contentHTML: z.string().describe('The HTML content for the new node')
-        }),
-        execute: async ({parentId, title, contentHTML}: {
-            parentId: string;
-            title: string;
-            contentHTML: string;
-        }) => {
-            if (!availableNodeIds.includes(parentId)) {
-                throw new Error(`Parent node ID ${parentId} is not available. Available IDs: ${availableNodeIds.join(', ')}`);
-            }
-
-            const parentNode: NodeM = nodeM.treeM.getNode(parentId);
-            if (!parentNode || parentNode.nodeTypeName() !== "EditorNodeType") {
-                throw new Error(`Parent node ${parentId} not found or is not an editor node`);
-            }
-
-            const wrappedContent = sanitizeHtmlForEditor(contentHTML);
-            const newNodeMsg = new NewNodeMessage({
-                content: `Suggesting new node: "${title}"`,
-                role: "assistant",
-                author: "Writing Assistant",
-                parentId: parentId,
-                newNodeTitle: title,
-                newContent: wrappedContent,
-                treeM: nodeM.treeM
-            });
-
-            setMessages(prevMessages => [...prevMessages, newNodeMsg]);
-
-            return {success: true};
-        },
-    } as const;
-};
-
-const contextWindowList=12
-
 export function WritingAssistant({selectedNode}: { selectedNode: NodeVM }) {
-    const [messages, setMessages] = useState<BaseMessage[]>([]);
-    const [disabled, setDisabled] = useState(false);
-    const [loading, setLoading] = useState(false);
     const node = selectedNode;
     const markedNodes = useAtomValue(markedNodesAtom);
-    const theme = useTheme()
+
+    const contextualContent = getContextualContent(node.nodeM, markedNodes);
+    const availableNodeIds = getAvailableNodeIds(contextualContent, node.nodeM.id);
+
+    const systemMessage = getSystemMessage(node.nodeM, markedNodes).content;
+
+    const {
+        messages,
+        setMessages,
+        disabled,
+        loading,
+        sendMessage,
+        resetMessages
+    } = useWritingAssistant({
+        systemMessage,
+        availableNodeIds,
+        createTools: (setMessagesParam) => ({
+            suggestModify: createSuggestModifyTool(availableNodeIds, node.nodeM.treeM, setMessagesParam),
+            loadNodeContent: createLoadNodeContentTool(availableNodeIds, node.nodeM.treeM, setMessagesParam),
+            suggestNewTitle: createSuggestNewTitleTool(availableNodeIds, node.nodeM.treeM, setMessagesParam),
+            suggestNewNode: createSuggestNewNodeTool(availableNodeIds, node.nodeM.treeM, setMessagesParam)
+        })
+    });
+
     useEffect(() => {
-        //setMessages([]);
+        // Reset messages when selected node changes
+        // setMessages([]);
     }, [selectedNode.nodeM.id]);
 
-    const formatMessagesForAI = (userMessage: string, systemMessage: SystemMessage) => {
-        const recentMessages = messages.slice(-contextWindowList);
-        const aiMessages = recentMessages.map(m => ({
-            role: m.role === 'user' ? 'user' as const : 'assistant' as const,
-            content: m.content
-        }));
-
-        aiMessages.push({
-            role: 'user' as const,
-            content: userMessage
-        });
-
-        return [
-            {
-                role: 'system' as const,
-                content: systemMessage.content
-            },
-            ...aiMessages
-        ];
-    };
-
-    const getNextStep = async (userMessage: string): Promise<AIResponse | undefined> => {
-        const nodeM = node.nodeM;
-        const systemMessage = getSystemMessage(nodeM, markedNodes);
-        const messagesWithSystem = formatMessagesForAI(userMessage, systemMessage);
-        const openaiModel = getOpenAIInstance()
-        try {
-            const result = await generateText({
-                model: openaiModel('gpt-5'),
-                providerOptions: {
-                    openai: {
-                        reasoningEffort: "minimal"
-                    } satisfies OpenAIResponsesProviderOptions,
-                },
-                messages: messagesWithSystem,
-                tools: {
-                    suggestModify: createSuggestModifyTool(nodeM, markedNodes, setMessages),
-                    loadNodeContent: createLoadNodeContentTool(nodeM, markedNodes, setMessages),
-                    suggestNewTitle: createSuggestNewTitleTool(nodeM, markedNodes, setMessages),
-                    suggestNewNode: createSuggestNewNodeTool(nodeM, markedNodes, setMessages)
-                },
-                stopWhen: stepCountIs(10)
-            });
-
-            return {
-                text: result.text,
-                toolResults: result.steps.flatMap(step => step.toolResults || []),
-                steps: result.steps
-            };
-        } catch (error) {
-            console.error('Error in AI generation:', error);
-            throw error;
-        }
-    };
-
-    const handleSuccessfulResponse = (response: AIResponse) => {
-        if (response.text && response.text.trim()) {
-            const textMsg = new MarkdownMessage({
-                content: response.text.trim(),
-                role: "assistant",
-                author: "Writing Assistant"
-            });
-            setMessages(prevMessages => [...prevMessages, textMsg]);
-        }
-        setDisabled(false);
-        setLoading(false);
-    };
-
-    const handleError = (error: any, messagesWithUserInput: BaseMessage[]) => {
-        console.error('Error from writing agent:', error);
-        const result = `Error: ${error.message}`;
-
-
-        const assistantMsg = new MarkdownMessage({
-            content: result,
-            role: "assistant",
-            author: "Writing Assistant"
-        });
-
-        const messagesWithAssistant = [...messagesWithUserInput, assistantMsg];
-        setMessages(() => messagesWithAssistant);
-        setDisabled(false);
-        setLoading(false);
-    };
-
-    const sendMessage = async (content: string) => {
-        const userMsg = new NormalMessage({
-            content: content,
-            author: "user",
-            role: "user"
-        });
-        const messagesWithUserInput = [...messages, userMsg];
-        setMessages(() => messagesWithUserInput);
-        setDisabled(true);
-        setLoading(true);
-
-        try {
-            const response = await getNextStep(content);
-            if (!response) {
-                throw new Error("No response received");
-            }
-            handleSuccessfulResponse(response);
-        } catch (error) {
-            handleError(error, messagesWithUserInput);
-        }
-    };
-
-    const resetMessages = () => {
-        setMessages([]);
-    };
-
     return <div style={{height: '100%', margin: "0"}}>
-        <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '12px',
-            padding: '8px 0'
-        }}>
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                fontSize: '16px',
-                fontWeight: 500
-            }}>
-                <AutoAwesomeIcon sx={{ color: theme.palette.primary.main }} />
-                <Typography sx={{ color: theme.palette.text.primary }}>Writing Assistant</Typography>
-            </div>
-            <Button
-                onClick={resetMessages}
-                variant="outlined"
-                size="small"
-            >
-                Reset Messages
-            </Button>
-        </div>
+        <WritingAssistantHeader
+            onReset={resetMessages}
+            sendMessage={sendMessage}
+            messages={messages}
+            messageDisabled={disabled}
+            loading={loading}
+        />
         <div style={{width: '100%', height: '95%'}}>
             <ChatViewImpl
                 sendMessage={sendMessage}
