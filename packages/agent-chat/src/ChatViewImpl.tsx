@@ -1,6 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react'
-import {Box, Button, CardContent, Stack, TextField, Typography,} from "@mui/material";
+import {Box, Button, CardContent, Stack, TextField, Typography, Fade, Chip, CircularProgress} from "@mui/material";
 import SendIcon from '@mui/icons-material/Send';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import {BaseMessage} from "./MessageTypes";
 
 // Types for Messages
@@ -15,11 +16,14 @@ interface ChatViewImplProps {
     sendMessage: (content: string) => Promise<void>;
     messages: BaseMessage[];
     messageDisabled: boolean;
+    loading?: boolean;
 }
 
 
-export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewImplProps) {
+export function ChatViewImpl({sendMessage, messages, messageDisabled, loading = false}: ChatViewImplProps) {
     const [message, setMessage] = useState("");
+    const [showNewMessageReminder, setShowNewMessageReminder] = useState(false);
+    const [lastMessageCount, setLastMessageCount] = useState(messages.length);
     const endRef = useRef(null);
     const scrollContainerRef = useRef(null);
     const scrollToBottom = () => {
@@ -46,12 +50,38 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewI
         }
     }, []);
 
-    // Auto-scroll to bottom when new messages arrive
+    // Show floating reminder when new messages arrive
     useEffect(() => {
-        setTimeout(() => {
-            scrollToBottom();
-        }, 10);
-    }, [messages]);
+        if (messages.length > lastMessageCount) {
+            // New messages detected
+            const container = scrollContainerRef.current;
+            if (container) {
+                const isScrolledToBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 50;
+
+                // Only show reminder if user is not already at the bottom
+                if (!isScrolledToBottom) {
+                    setShowNewMessageReminder(true);
+                }
+            }
+            setLastMessageCount(messages.length);
+        }
+    }, [messages, lastMessageCount]);
+
+    // Handle scroll events to hide reminder when user scrolls near bottom
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+
+        const handleScroll = () => {
+            const isScrolledToBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 50;
+            if (isScrolledToBottom && showNewMessageReminder) {
+                setShowNewMessageReminder(false);
+            }
+        };
+
+        container.addEventListener('scroll', handleScroll);
+        return () => container.removeEventListener('scroll', handleScroll);
+    }, [showNewMessageReminder]);
 
     const handleSend = () => {
         if (message.trim()) {
@@ -76,19 +106,7 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewI
                 transition: 'all 0.2s ease-in-out',
             }}
         >
-            {/* Settings Icon */}
-            <Box
-                sx={{
-                    position: "absolute",
-                    top: 8,
-                    right: 8,
-                    cursor: "pointer",
-                }}
-            >
-            </Box>
-
-
-            <CardContent ref={scrollContainerRef} sx={{flex: 1, overflowY: "auto", pb: 1}}>
+            <CardContent ref={scrollContainerRef} sx={{flex: 1, overflowY: "auto", pb: 1, position: "relative"}}>
                 <Stack spacing={1}>
                     {messages.map((msg, idx) => (
                         <Box
@@ -108,8 +126,53 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled}: ChatViewI
                             </Box>
                         </Box>
                     ))}
+                    {loading && (
+                        <Box display="flex" justifyContent="center" py={2}>
+                            <CircularProgress size={24} />
+                        </Box>
+                    )}
                     <div ref={endRef}/>
                 </Stack>
+
+                {/* Floating New Message Reminder */}
+                <Fade in={showNewMessageReminder}>
+                    <Box
+                        sx={{
+                            position: "absolute",
+                            bottom: 16,
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            zIndex: 1000,
+                        }}
+                    >
+                        <Chip
+                            icon={<KeyboardArrowDownIcon />}
+                            label="New message"
+                            color="primary"
+                            variant="filled"
+                            onClick={() => {
+                                scrollToBottom();
+                                setShowNewMessageReminder(false);
+                            }}
+                            sx={{
+                                cursor: "pointer",
+                                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                                animation: "pulse 2s infinite",
+                                "@keyframes pulse": {
+                                    "0%": {
+                                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
+                                    },
+                                    "50%": {
+                                        boxShadow: "0 6px 16px rgba(0,0,0,0.25)"
+                                    },
+                                    "100%": {
+                                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
+                                    }
+                                }
+                            }}
+                        />
+                    </Box>
+                </Fade>
             </CardContent>
             <Box display="flex" gap={1} mt={1}>
                 <TextField

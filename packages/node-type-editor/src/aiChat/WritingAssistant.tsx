@@ -16,6 +16,11 @@ import {generateText, stepCountIs} from "ai";
 import {z} from "zod";
 import {sanitizeHtmlForEditor} from "./helper";
 import {getOpenAIInstance} from "@forest/agent-chat/src/llm";
+import {OpenAIResponsesProviderOptions} from "@ai-sdk/openai";
+import Button from "@mui/material/Button";
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import {Typography} from "@mui/material";
+import {useTheme} from "@mui/material/styles";
 
 interface ContextualContent {
     originalContent: string;
@@ -326,18 +331,22 @@ const createSuggestNewNodeTool = (nodeM: NodeM, markedNodes, setMessages) => {
     } as const;
 };
 
+const contextWindowList=12
+
 export function WritingAssistant({selectedNode}: { selectedNode: NodeVM }) {
     const [messages, setMessages] = useState<BaseMessage[]>([]);
     const [disabled, setDisabled] = useState(false);
+    const [loading, setLoading] = useState(false);
     const node = selectedNode;
     const markedNodes = useAtomValue(markedNodesAtom);
-
+    const theme = useTheme()
     useEffect(() => {
-        setMessages([]);
+        //setMessages([]);
     }, [selectedNode.nodeM.id]);
 
     const formatMessagesForAI = (userMessage: string, systemMessage: SystemMessage) => {
-        const aiMessages = messages.map(m => ({
+        const recentMessages = messages.slice(-contextWindowList);
+        const aiMessages = recentMessages.map(m => ({
             role: m.role === 'user' ? 'user' as const : 'assistant' as const,
             content: m.content
         }));
@@ -363,7 +372,12 @@ export function WritingAssistant({selectedNode}: { selectedNode: NodeVM }) {
         const openaiModel = getOpenAIInstance()
         try {
             const result = await generateText({
-                model: openaiModel('gpt-4.1'),
+                model: openaiModel('gpt-5'),
+                providerOptions: {
+                    openai: {
+                        reasoningEffort: "minimal"
+                    } satisfies OpenAIResponsesProviderOptions,
+                },
                 messages: messagesWithSystem,
                 tools: {
                     suggestModify: createSuggestModifyTool(nodeM, markedNodes, setMessages),
@@ -395,6 +409,7 @@ export function WritingAssistant({selectedNode}: { selectedNode: NodeVM }) {
             setMessages(prevMessages => [...prevMessages, textMsg]);
         }
         setDisabled(false);
+        setLoading(false);
     };
 
     const handleError = (error: any, messagesWithUserInput: BaseMessage[]) => {
@@ -411,6 +426,7 @@ export function WritingAssistant({selectedNode}: { selectedNode: NodeVM }) {
         const messagesWithAssistant = [...messagesWithUserInput, assistantMsg];
         setMessages(() => messagesWithAssistant);
         setDisabled(false);
+        setLoading(false);
     };
 
     const sendMessage = async (content: string) => {
@@ -422,6 +438,7 @@ export function WritingAssistant({selectedNode}: { selectedNode: NodeVM }) {
         const messagesWithUserInput = [...messages, userMsg];
         setMessages(() => messagesWithUserInput);
         setDisabled(true);
+        setLoading(true);
 
         try {
             const response = await getNextStep(content);
@@ -434,13 +451,45 @@ export function WritingAssistant({selectedNode}: { selectedNode: NodeVM }) {
         }
     };
 
-    return <>
-        <ChatViewImpl
-            sendMessage={sendMessage}
-            messages={messages}
-            messageDisabled={disabled}
-        />
-    </>
+    const resetMessages = () => {
+        setMessages([]);
+    };
+
+    return <div style={{height: '100%', margin: "0"}}>
+        <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '12px',
+            padding: '8px 0'
+        }}>
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '16px',
+                fontWeight: 500
+            }}>
+                <AutoAwesomeIcon sx={{ color: theme.palette.primary.main }} />
+                <Typography sx={{ color: theme.palette.text.primary }}>Writing Assistant</Typography>
+            </div>
+            <Button
+                onClick={resetMessages}
+                variant="outlined"
+                size="small"
+            >
+                Reset Messages
+            </Button>
+        </div>
+        <div style={{width: '100%', height: '95%'}}>
+            <ChatViewImpl
+                sendMessage={sendMessage}
+                messages={messages}
+                messageDisabled={disabled}
+                loading={loading}
+            />
+        </div>
+    </div>
 }
 
 

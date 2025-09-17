@@ -14,6 +14,7 @@ import Typography from "@mui/material/Typography";
 import AutoAwesomeMotionIcon from '@mui/icons-material/AutoAwesomeMotion';
 import {SelectionConfirmation} from "./SelectionConfirmation";
 import pRetry from 'p-retry';
+import AdsClickIcon from "@mui/icons-material/AdsClick";
 
 export const TopDownDecomposeButton: React.FC<{ node: NodeVM }> = ({node}) => {
         const [loading, setLoading] = React.useState(false);
@@ -84,10 +85,10 @@ export const TopDownDecomposeButton: React.FC<{ node: NodeVM }> = ({node}) => {
                     onClick={handleClick}
                 >
                     <CardContent sx={{display: 'flex', alignItems: 'center', gap: 2}}>
-                        <AutoAwesomeMotionIcon color="primary"/>
+                        <AdsClickIcon color="primary"/>
                         <div>
                             <Typography variant="body1" component="div">
-                                Split into sections
+                                Split into subsections
                             </Typography>
                         </div>
                         {loading && <CircularProgress size={20}/>}

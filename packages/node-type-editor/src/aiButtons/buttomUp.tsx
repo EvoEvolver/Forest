@@ -10,10 +10,10 @@ import {fetchChatResponse} from "@forest/agent-chat/src/llm";
 import {Card} from "@mui/material";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
-import SummarizeIcon from '@mui/icons-material/Summarize';
 import {ModifyConfirmation} from "./ModifyConfirmation";
 import pRetry from 'p-retry';
 import {extractExportContent, removeExportContent} from "../editor/Extensions/exportHelpers";
+import AdsClickIcon from "@mui/icons-material/AdsClick";
 
 
 export const BottomUpButton: React.FC<{ node: NodeVM }> = ({node}) => {
@@ -80,7 +80,7 @@ export const BottomUpButton: React.FC<{ node: NodeVM }> = ({node}) => {
                 onClick={handleClick}
             >
                 <CardContent sx={{display: 'flex', alignItems: 'center', gap: 2}}>
-                    <SummarizeIcon color="primary"/>
+                    <AdsClickIcon color="primary"/>
                     <div>
                         <Typography variant="body1" component="div">
                             Generate outlines from children

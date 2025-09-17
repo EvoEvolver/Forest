@@ -3,14 +3,18 @@ import {useState} from "react";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
-import AddIcon from '@mui/icons-material/Add';
+import AdsClickIcon from '@mui/icons-material/AdsClick';
 import CircularProgress from "@mui/material/CircularProgress";
 import {NodeVM} from "@forest/schema";
 import {EditorNodeTypeM} from "..";
 import {stageThisVersion} from "@forest/schema/src/stageService";
 import {useAtomValue} from "jotai";
 import {authTokenAtom} from "@forest/user-system/src/authStates";
-import {getEditorContentExceptExports, generateExportParagraphByNode, updateExportContent} from "../editor/Extensions/exportHelpers";
+import {
+    generateExportParagraphByNode,
+    getEditorContentExceptExports,
+    updateExportContent
+} from "../editor/Extensions/exportHelpers";
 import {ModifyConfirmation} from "./ModifyConfirmation";
 
 export const InsertExportButton: React.FC<{ node: NodeVM }> = ({node}) => {
@@ -24,15 +28,15 @@ export const InsertExportButton: React.FC<{ node: NodeVM }> = ({node}) => {
         setLoading(true);
         try {
             await stageThisVersion(node.nodeM, "Before inserting export");
-            
+
             // Get all content from the editor except export divs
             const allContent = getEditorContentExceptExports(node.nodeM);
             const currentContent = EditorNodeTypeM.getEditorContent(node.nodeM);
-            
+
             // Check if export div already exists
             const exportMatch = currentContent.match(/<div[^>]*class="export"[^>]*>([\s\S]*?)<\/div>/i);
             const existingExportContent = exportMatch ? exportMatch[1].trim() : "";
-            
+
             if (exportMatch) {
                 // Export already exists, just generate and show confirmation
                 const summary = await generateExportParagraphByNode(node.nodeM, authToken);
@@ -44,7 +48,7 @@ export const InsertExportButton: React.FC<{ node: NodeVM }> = ({node}) => {
                 const summary = await generateExportParagraphByNode(node.nodeM, authToken);
                 const newContent = currentContent + '<div class="export"> </div>';
                 EditorNodeTypeM.setEditorContent(node.nodeM, newContent);
-                
+
                 // Now update the empty export with generated content
                 await updateExportContent(node.nodeM, summary, allContent);
             }
@@ -54,7 +58,7 @@ export const InsertExportButton: React.FC<{ node: NodeVM }> = ({node}) => {
             setLoading(false);
         }
     };
-    
+
     const handleCloseDialog = () => {
         setDialogOpen(false);
         setCurrentExportContent(null);
@@ -89,7 +93,7 @@ export const InsertExportButton: React.FC<{ node: NodeVM }> = ({node}) => {
                 onClick={loading ? undefined : handleClick}
             >
                 <CardContent sx={{display: 'flex', alignItems: 'center', gap: 2}}>
-                    {loading ? <CircularProgress size={24} color="primary"/> : <AddIcon color="primary"/>}
+                    {loading ? <CircularProgress size={24} color="primary"/> : <AdsClickIcon color="primary"/>}
                     <div>
                         <Typography variant="body1" component="div">
                             {loading ? 'Generating export...' : 'Generate paragraph'}
