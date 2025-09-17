@@ -6,6 +6,7 @@ import {EditorNodeTypeM} from "..";
 import {extractExportContent} from "../editor/Extensions/exportHelpers";
 import {useWritingAssistant, createSuggestModifyTool, WritingAssistantHeader} from "./WritingAssistantShared";
 import {SystemMessage} from "@forest/agent-chat/src/MessageTypes";
+import {createSuggestNewTitleTool} from "./WritingAssistantTools";
 
 interface ContextNode {
     node: NodeM;
@@ -75,6 +76,7 @@ Terminology:
 Task instructions:
 - When the user asks for adding paragraphs or adding exports, you should append a <div class="export">...</div> block at the end of the content and generate the paragraphs inside it. The paragraph should be ready for being shown in the final document.
 - If the user asks for modifying the content and there are more than 10 nodes could be modified, you should ask the user where to modify first.
+- If you don't have enough tool to complete the task, you should inform the user about it.
 
 You must:
 - If the user asks for writing something, by default, it means that you need to call suggestModify tool.
@@ -128,7 +130,8 @@ export function WritingAssistant2({contextNodes}: WritingAssistant2Props) {
         systemMessage: getSystemMessageContent(),
         availableNodeIds,
         createTools: treeM ? (setMessagesParam) => ({
-            suggestModify: createSuggestModifyTool(availableNodeIds, treeM, setMessagesParam)
+            suggestModify: createSuggestModifyTool(availableNodeIds, treeM, setMessagesParam),
+            suggestNewTitle: createSuggestNewTitleTool(availableNodeIds, treeM, setMessagesParam),
         }) : undefined
     });
 
