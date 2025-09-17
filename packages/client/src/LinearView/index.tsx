@@ -1,10 +1,10 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {useAtomValue} from "jotai";
+import {atom, useAtomValue, useSetAtom} from "jotai";
 import {selectedNodeAtom} from "../TreeState/TreeState";
 import {Box, Button, IconButton, Paper, Skeleton, Tooltip} from '@mui/material';
 import {NodeM} from '@forest/schema';
 import {EditorNodeTypeM} from '@forest/node-type-editor/src';
-import {userStudy} from "../appState";
+import {isMobileModeAtom, userStudy} from "../appState";
 import {useTheme} from '@mui/system';
 import ReferenceGenButton from './ReferenceGenButton';
 import ReferenceIndexButton from './ReferenceIndexButton';
@@ -15,11 +15,12 @@ import TiptapEditor from '@forest/node-type-editor/src/editor';
 import {LinearClickMenu} from "./linearClickMenu";
 import {Breadcrumb} from "../TreeView/components/Breadcrumb";
 import {handlePrint} from "./handlePrint";
-import {thisNodeContext} from '../TreeView/NodeContext';
 import {ColumnLeft} from "../TreeView/ColumnLeft";
-import {isMobileModeAtom} from "../appState";
 import {DragProvider} from "../TreeView/DragContext";
 import {WritingAssistant2} from "@forest/node-type-editor/src/aiChat/WritingAssistant2";
+
+// Atom to hold a function that triggers updating NodeRenderer contents
+export const linearModeNodeRendererUpdateTriggerAtom = atom<(() => void) | null>(null);
 
 const getLinearNodeList = (rootNode: NodeM): Array<{ node: NodeM, level: number }> | undefined => {
     const treeM = rootNode.treeM;
@@ -281,11 +282,9 @@ const NodeRenderer = ({node, level, treeM}: { node: NodeM, level: number, treeM:
                                         </IconButton>
                                     </Tooltip>
                                 </Box>
-                                <thisNodeContext.Provider value={node}>
-                                    <Box sx={{p: 1}}>
-                                        <TiptapEditor yXML={EditorNodeTypeM.getYxml(node)} nodeM={node}/>
-                                    </Box>
-                                </thisNodeContext.Provider>
+                                <Box sx={{p: 1}}>
+                                    <TiptapEditor yXML={EditorNodeTypeM.getYxml(node)} nodeM={node}/>
+                                </Box>
                             </Box>
                         ) : (
                             htmlContent && htmlContent.trim() ? (
@@ -348,13 +347,28 @@ export default function LinearView() {
     const theme = useTheme();
     const selectedNode = useAtomValue(selectedNodeAtom);
     const mobileMode = useAtomValue(isMobileModeAtom);
+    const [forcedUpdateNumber, setForcedUpdateNumber] = useState<number>(0);
     if (!selectedNode) return null;
+    const nodes = getLinearNodeList(selectedNode.nodeM) || [];
+
+    const setRendererUpdateTrigger = useSetAtom(linearModeNodeRendererUpdateTriggerAtom)
+
+    useEffect(() => {
+        // Provide a function to trigger re-rendering of NodeRenderer components
+        setRendererUpdateTrigger(() => () => {
+            setForcedUpdateNumber((n: number) => n + 1);
+        });
+        return () => {
+            // Clear the trigger on unmount
+            setRendererUpdateTrigger(null);
+        };
+    }, [setForcedUpdateNumber, setRendererUpdateTrigger]);
 
     // Subscribe to view commit number to trigger re-renders when tree changes
     useAtomValue(selectedNode.treeVM.viewCommitNumberAtom);
 
     const treeM = selectedNode.nodeM.treeM;
-    let nodes = getLinearNodeList(selectedNode.nodeM) || [];
+
 
     if (!nodes || nodes.length === 0) return null;
 
@@ -377,7 +391,7 @@ export default function LinearView() {
                     zIndex: 100
                 }}>
                     <DragProvider>
-                    <ColumnLeft/>
+                        <ColumnLeft/>
                     </DragProvider>
                 </div>
             )}
@@ -404,7 +418,7 @@ export default function LinearView() {
                 <Breadcrumb/>
                 <ButtonsSection rootNode={nodes[0].node} nodes={nodes}/>
                 {treeM && nodes.map(({node, level}) => (
-                    <NodeRenderer key={node.id} node={node} level={level} treeM={treeM}/>
+                    <NodeRenderer key={`${node.id}-${forcedUpdateNumber}`} node={node} level={level} treeM={treeM}/>
                 ))}
             </Paper>
             {/* Fixed right column */}
@@ -417,7 +431,7 @@ export default function LinearView() {
                     width: "23vw",
                     zIndex: 100
                 }}
-                sx={{borderRadius: 5,padding: '8px'}}>
+                       sx={{borderRadius: 5, padding: '8px'}}>
                     <WritingAssistant2 contextNodes={nodes}/>
                 </Paper>
             )}

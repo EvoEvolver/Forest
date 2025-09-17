@@ -9,6 +9,9 @@ import {FormControlLabel, Switch} from "@mui/material";
 import {EditorContent, useEditor} from '@tiptap/react';
 import {makeExtensions} from "../editor";
 import {makeHtmlDiff} from "./helper";
+import {useSetAtom} from "jotai/index";
+import {linearModeNodeRendererUpdateTriggerAtom} from "@forest/client/src/LinearView";
+import {useAtomValue} from "jotai";
 
 
 interface ComparisonContent {
@@ -46,6 +49,7 @@ const ModifyConfirmationContent: React.FC<ModifyConfirmationContentProps> = ({
 }) => {
     const [showEdit, setShowEdit] = useState(false);
     const [currentContent, setCurrentContent] = useState('');
+    const linearModeNodeRendererUpdateTrigger = useAtomValue(linearModeNodeRendererUpdateTriggerAtom)
 
     const editor = useEditor({
         extensions: makeExtensions(null, null) as any,
@@ -141,6 +145,9 @@ const ModifyConfirmationContent: React.FC<ModifyConfirmationContentProps> = ({
                         if (editor) {
                             const html = editor.getHTML();
                             onAccept(html);
+                            if(linearModeNodeRendererUpdateTrigger) {
+                                linearModeNodeRendererUpdateTrigger()
+                            }
                         } else {
                             onAccept(comparisonContent.modified.content);
                         }
