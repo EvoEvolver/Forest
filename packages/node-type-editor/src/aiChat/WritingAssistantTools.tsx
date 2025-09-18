@@ -6,16 +6,13 @@ import {EditorNodeTypeM} from "..";
 import {TitleMessage, NewNodeMessage} from "./WritingMessage";
 import {sanitizeHtmlForEditor} from "./helper";
 
-export const createLoadNodeContentTool = (availableNodeIds: string[], treeM: any, setMessages: React.Dispatch<React.SetStateAction<BaseMessage[]>>) => {
+export const createLoadNodeContentTool = (treeM: any, setMessages: React.Dispatch<React.SetStateAction<BaseMessage[]>>) => {
     return {
         description: 'Get the current content of a specific node to examine it',
         inputSchema: z.object({
             nodeId: z.string().describe('The ID of the node to show content for')
         }),
         execute: async ({nodeId}: { nodeId: string }) => {
-            if (!availableNodeIds.includes(nodeId)) {
-                throw new Error(`Node ID ${nodeId} is not available. Available IDs: ${availableNodeIds.join(', ')}`);
-            }
 
             const nodeToRead: NodeM = treeM.getNode(nodeId);
             if (!nodeToRead || nodeToRead.nodeTypeName() !== "EditorNodeType") {
@@ -23,9 +20,9 @@ export const createLoadNodeContentTool = (availableNodeIds: string[], treeM: any
             }
 
             const content = EditorNodeTypeM.getEditorContent(nodeToRead);
-            const title = nodeToRead.title();
+            const title = nodeToRead.title() || "Untitled";
 
-            const writingMsg = new InfoMessage("Reading " + title);
+            const writingMsg = new InfoMessage("Loading " + title);
 
             setMessages(prevMessages => [...prevMessages, writingMsg]);
 
@@ -39,7 +36,7 @@ export const createLoadNodeContentTool = (availableNodeIds: string[], treeM: any
     } as const;
 };
 
-export const createSuggestNewTitleTool = (availableNodeIds: string[], treeM: any, setMessages: React.Dispatch<React.SetStateAction<BaseMessage[]>>) => {
+export const createSuggestNewTitleTool = (treeM: any, setMessages: React.Dispatch<React.SetStateAction<BaseMessage[]>>) => {
     return {
         description: 'Suggest a new title for a specific node',
         inputSchema: z.object({
@@ -47,9 +44,6 @@ export const createSuggestNewTitleTool = (availableNodeIds: string[], treeM: any
             newTitle: z.string().describe('The new title for the node')
         }),
         execute: async ({nodeId, newTitle}: { nodeId: string; newTitle: string }) => {
-            if (!availableNodeIds.includes(nodeId)) {
-                throw new Error(`Node ID ${nodeId} is not available. Available IDs: ${availableNodeIds.join(', ')}`);
-            }
 
             const nodeToUpdate: NodeM = treeM.getNode(nodeId);
             if (!nodeToUpdate || nodeToUpdate.nodeTypeName() !== "EditorNodeType") {
@@ -72,7 +66,7 @@ export const createSuggestNewTitleTool = (availableNodeIds: string[], treeM: any
     } as const;
 };
 
-export const createSuggestNewNodeTool = (availableNodeIds: string[], treeM: any, setMessages: React.Dispatch<React.SetStateAction<BaseMessage[]>>) => {
+export const createSuggestNewNodeTool = (treeM: any, setMessages: React.Dispatch<React.SetStateAction<BaseMessage[]>>) => {
     return {
         description: 'Suggest creating a new node with specified parent, title and content. The node will be added at the end of the parent\'s children.',
         inputSchema: z.object({
@@ -85,9 +79,6 @@ export const createSuggestNewNodeTool = (availableNodeIds: string[], treeM: any,
             title: string;
             contentHTML: string;
         }) => {
-            if (!availableNodeIds.includes(parentId)) {
-                throw new Error(`Parent node ID ${parentId} is not available. Available IDs: ${availableNodeIds.join(', ')}`);
-            }
 
             const parentNode: NodeM = treeM.getNode(parentId);
             if (!parentNode || parentNode.nodeTypeName() !== "EditorNodeType") {
@@ -108,6 +99,38 @@ export const createSuggestNewNodeTool = (availableNodeIds: string[], treeM: any,
             setMessages(prevMessages => [...prevMessages, newNodeMsg]);
 
             return {success: true};
+        },
+    } as const;
+};
+
+export const createGetChildrenListTool = (treeM: any, setMessages: React.Dispatch<React.SetStateAction<BaseMessage[]>>) => {
+    return {
+        description: 'Get the list of children nodes (title and ID) for a specific node',
+        inputSchema: z.object({
+            nodeId: z.string().describe('The ID of the node to get children for')
+        }),
+        execute: async ({nodeId}: { nodeId: string }) => {
+
+            const node: NodeM = treeM.getNode(nodeId);
+            if (!node || node.nodeTypeName() !== "EditorNodeType") {
+                throw new Error(`Node ${nodeId} not found or is not an editor node`);
+            }
+
+            const children = treeM.getChildren(node).filter((n: NodeM) => n && n.nodeTypeName() === "EditorNodeType") as NodeM[];
+            const childrenList = children.map(child => ({
+                title: child.title(),
+                id: child.id
+            }));
+
+            const infoMsg = new InfoMessage(`Getting children list for "${node.title()}" (found ${children.length} children)`);
+            setMessages(prevMessages => [...prevMessages, infoMsg]);
+
+            return {
+                nodeId,
+                parentTitle: node.title(),
+                children: childrenList,
+                success: true
+            };
         },
     } as const;
 };

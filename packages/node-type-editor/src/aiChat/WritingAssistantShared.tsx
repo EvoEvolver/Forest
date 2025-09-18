@@ -1,5 +1,4 @@
-import React, {useState} from "react";
-import {NodeM} from "@forest/schema";
+import React, {useState, useMemo, useRef} from "react";
 import {
     BaseMessage,
     MarkdownMessage,
@@ -31,8 +30,7 @@ export interface AIResponse {
 }
 
 export interface WritingAssistantConfig {
-    systemMessage: string;
-    availableNodeIds: string[];
+    getSystemMessage: () => string;
     tools?: Record<string, any>;
     createTools?: (setMessages: React.Dispatch<React.SetStateAction<BaseMessage[]>>) => Record<string, any>;
     showFloatingDialog?: boolean;
@@ -40,7 +38,7 @@ export interface WritingAssistantConfig {
 
 const contextWindowList = 15;
 
-export const createSuggestModifyTool = (availableNodeIds: string[], treeM: any, setMessages: React.Dispatch<React.SetStateAction<BaseMessage[]>>) => {
+export const createSuggestModifyTool = (treeM: any, setMessages: React.Dispatch<React.SetStateAction<BaseMessage[]>>) => {
     return {
         description: 'Suggest a new version of content for a specific node to the user and the user will receive a prompt to accept or modify it before applying.',
         inputSchema: z.object({
@@ -53,9 +51,6 @@ export const createSuggestModifyTool = (availableNodeIds: string[], treeM: any, 
             newContentHTML: string;
             explanation?: string
         }) => {
-            if (!availableNodeIds.includes(nodeId)) {
-                throw new Error(`Node ID ${nodeId} is not available. Available IDs: ${availableNodeIds.join(', ')}`);
-            }
 
             const wrappedContent = sanitizeHtmlForEditor(newContentHTML);
             const writingMsg = new WritingMessage({
@@ -99,11 +94,20 @@ export const useWritingAssistant = (config: WritingAssistantConfig) => {
     const [messages, setMessages] = useState<BaseMessage[]>([]);
     const [disabled, setDisabled] = useState(false);
     const [loading, setLoading] = useState(false);
+    const abortControllerRef = useRef<AbortController | null>(null);
 
     const tools = config.createTools ? config.createTools(setMessages) : (config.tools || {});
 
+    // Cache the system message to avoid calling getSystemMessage on every step
+    const systemMessage = useMemo(() => {
+        return new SystemMessage(config.getSystemMessage());
+    }, [config.getSystemMessage]);
+
     const getNextStep = async (userMessage: string): Promise<AIResponse | undefined> => {
-        const systemMessage = new SystemMessage(config.systemMessage);
+        // Create a new abort controller for this request
+        const abortController = new AbortController();
+        abortControllerRef.current = abortController;
+
         const messagesWithSystem = formatMessagesForAI(messages, userMessage, systemMessage);
         const openaiModel = getOpenAIInstance();
 
@@ -117,15 +121,27 @@ export const useWritingAssistant = (config: WritingAssistantConfig) => {
                 },
                 messages: messagesWithSystem,
                 tools: tools,
-                stopWhen: stepCountIs(10)
+                stopWhen: stepCountIs(10),
+                abortSignal: abortController.signal
             });
+
+            // Clear the abort controller when request completes successfully
+            abortControllerRef.current = null;
 
             return {
                 text: result.text,
                 toolResults: result.steps.flatMap(step => step.toolResults || []),
                 steps: result.steps
             };
-        } catch (error) {
+        } catch (error: any) {
+            // Clear the abort controller on error
+            abortControllerRef.current = null;
+
+            // Don't log or propagate abort errors as they are intentional
+            if (error.name === 'AbortError' || error.message?.includes('aborted') || abortController.signal.aborted) {
+                return undefined; // Return undefined for cancelled requests instead of throwing
+            }
+
             console.error('Error in AI generation:', error);
             throw error;
         }
@@ -174,7 +190,10 @@ export const useWritingAssistant = (config: WritingAssistantConfig) => {
         try {
             const response = await getNextStep(content);
             if (!response) {
-                throw new Error("No response received");
+                // Request was cancelled/aborted - just reset state without error
+                setDisabled(false);
+                setLoading(false);
+                return;
             }
             handleSuccessfulResponse(response);
         } catch (error) {
@@ -183,7 +202,16 @@ export const useWritingAssistant = (config: WritingAssistantConfig) => {
     };
 
     const resetMessages = () => {
+        // Cancel any ongoing request
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+            abortControllerRef.current = null;
+        }
+
+        // Reset state
         setMessages([]);
+        setDisabled(false);
+        setLoading(false);
     };
 
     return {

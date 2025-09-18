@@ -9,7 +9,6 @@ import {FormControlLabel, Switch} from "@mui/material";
 import {EditorContent, useEditor} from '@tiptap/react';
 import {makeExtensions} from "../editor";
 import {makeHtmlDiff} from "./helper";
-import {useSetAtom} from "jotai/index";
 import {linearModeNodeRendererUpdateTriggerAtom} from "@forest/client/src/LinearView";
 import {useAtomValue} from "jotai";
 

@@ -174,7 +174,7 @@ function processAdjacentDelIns(doc: Document, nodes: Node[], ops: DiffOp[]): Nod
             const changedWords = wordOps.filter(wordOp => wordOp.type !== "equal").reduce((sum, wordOp) => sum + wordOp.tokens.length, 0);
             const changePercentage = totalWords > 0 ? changedWords / totalWords : 1;
             
-            if (changePercentage <= 0.2) {
+            if (changePercentage <= 0.5) {
                 // Use word-level diff
                 result.push(...processDiffOps(doc, wordOps));
             } else {

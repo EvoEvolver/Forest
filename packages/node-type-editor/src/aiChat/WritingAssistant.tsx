@@ -5,7 +5,7 @@ import {markedNodesAtom} from "@forest/client/src/TreeState/TreeState";
 import {EditorNodeTypeM} from "..";
 import {ChatViewImpl} from "@forest/agent-chat/src/ChatViewImpl";
 import {useWritingAssistant, createSuggestModifyTool, WritingAssistantHeader} from "./WritingAssistantShared";
-import {createLoadNodeContentTool, createSuggestNewTitleTool, createSuggestNewNodeTool} from "./WritingAssistantTools";
+import {createLoadNodeContentTool, createSuggestNewTitleTool, createSuggestNewNodeTool, createGetChildrenListTool} from "./WritingAssistantTools";
 import {SystemMessage} from "@forest/agent-chat/src/MessageTypes";
 
 interface ContextualContent {
@@ -167,11 +167,6 @@ export function WritingAssistant({selectedNode}: { selectedNode: NodeVM }) {
     const node = selectedNode;
     const markedNodes = useAtomValue(markedNodesAtom);
 
-    const contextualContent = getContextualContent(node.nodeM, markedNodes);
-    const availableNodeIds = getAvailableNodeIds(contextualContent, node.nodeM.id);
-
-    const systemMessage = getSystemMessage(node.nodeM, markedNodes).content;
-
     const {
         messages,
         setMessages,
@@ -180,13 +175,13 @@ export function WritingAssistant({selectedNode}: { selectedNode: NodeVM }) {
         sendMessage,
         resetMessages
     } = useWritingAssistant({
-        systemMessage,
-        availableNodeIds,
+        getSystemMessage: () => getSystemMessage(node.nodeM, markedNodes).content,
         createTools: (setMessagesParam) => ({
-            suggestModify: createSuggestModifyTool(availableNodeIds, node.nodeM.treeM, setMessagesParam),
-            loadNodeContent: createLoadNodeContentTool(availableNodeIds, node.nodeM.treeM, setMessagesParam),
-            suggestNewTitle: createSuggestNewTitleTool(availableNodeIds, node.nodeM.treeM, setMessagesParam),
-            suggestNewNode: createSuggestNewNodeTool(availableNodeIds, node.nodeM.treeM, setMessagesParam)
+            suggestModify: createSuggestModifyTool(node.nodeM.treeM, setMessagesParam),
+            loadNodeContent: createLoadNodeContentTool(node.nodeM.treeM, setMessagesParam),
+            suggestNewTitle: createSuggestNewTitleTool(node.nodeM.treeM, setMessagesParam),
+            suggestNewNode: createSuggestNewNodeTool(node.nodeM.treeM, setMessagesParam),
+            getChildrenList: createGetChildrenListTool(node.nodeM.treeM, setMessagesParam)
         })
     });
 

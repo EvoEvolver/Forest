@@ -111,12 +111,20 @@ export function WritingAssistant2({contextNodes}: WritingAssistant2Props) {
         return contextStringRef.current;
     }, [contextNodes]);
 
-    const availableNodeIds = contextNodes.map(cn => cn.node.id);
     const treeM = contextNodes.length > 0 ? contextNodes[0].node.treeM : null;
 
     // Only build system message when needed (lazy evaluation)
     const getSystemMessageContent = useCallback(() => {
-        return getSystemMessage(getContextString(), contextNodes).content;
+        const contextString = getContextString();
+        const availableNodeIds = contextNodes.map(cn => cn.node.id);
+        const systemMessageContent = getSystemMessage(contextString, contextNodes).content;
+
+        // Add available node IDs to the system message
+        const availableNodeIdsString = availableNodeIds.length > 0
+            ? `\n\nAvailable node IDs you can create new versions for:\n${availableNodeIds.map(id => `- ${id}`).join('\n')}\n\nYou can create new versions for any of these nodes. This allows you to suggest improvements to the content.`
+            : '';
+
+        return systemMessageContent + availableNodeIdsString;
     }, [getContextString, contextNodes]);
 
     const {
@@ -127,11 +135,10 @@ export function WritingAssistant2({contextNodes}: WritingAssistant2Props) {
         sendMessage,
         resetMessages
     } = useWritingAssistant({
-        systemMessage: getSystemMessageContent(),
-        availableNodeIds,
+        getSystemMessage: getSystemMessageContent,
         createTools: treeM ? (setMessagesParam) => ({
-            suggestModify: createSuggestModifyTool(availableNodeIds, treeM, setMessagesParam),
-            suggestNewTitle: createSuggestNewTitleTool(availableNodeIds, treeM, setMessagesParam),
+            suggestModify: createSuggestModifyTool(treeM, setMessagesParam),
+            suggestNewTitle: createSuggestNewTitleTool(treeM, setMessagesParam),
         }) : undefined
     });
 
