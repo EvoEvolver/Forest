@@ -21,20 +21,6 @@ interface ContextualContent {
 }
 
 
-const getAvailableNodeIds = (contextualContent: ContextualContent, currentNodeId: string): string[] => {
-    const {parent, markedNodesList, childrenList, siblingsList} = contextualContent;
-    const availableNodeIds = [currentNodeId];
-
-    if (parent && parent.nodeTypeName() === "EditorNodeType") {
-        availableNodeIds.push(parent.id);
-    }
-    availableNodeIds.push(...markedNodesList.map(n => n.id));
-    availableNodeIds.push(...childrenList.map(n => n.id));
-    availableNodeIds.push(...siblingsList.map(n => n.id));
-
-    return availableNodeIds;
-};
-
 const buildAvailableNodeIdsString = (contextualContent: ContextualContent, nodeM: NodeM): string => {
     const {parent, markedNodesList, childrenList, siblingsList} = contextualContent;
 
@@ -63,7 +49,7 @@ const getContextualContent = (nodeM: NodeM, markedNodes: Set<string>): Contextua
 
     const parent = treeM.getParent(nodeM);
     const parentContent = parent && parent.nodeTypeName() === "EditorNodeType"
-        ? `<parentContent id="${parent.id}">\n` + EditorNodeTypeM.getEditorContent(parent) + "\n</parentContent>"
+        ? `<parentContent title="${parent.title()}">\n` + EditorNodeTypeM.getEditorContent(parent) + "\n</parentContent>"
         : "";
 
     let markedNodeContent = ""
@@ -86,6 +72,9 @@ const getContextualContent = (nodeM: NodeM, markedNodes: Set<string>): Contextua
         if (siblingsList.length > 0) {
             siblingsInfo = "<siblingNodes>\n" + siblingsList.map(sibling => `Title: ${sibling.title()} (ID: ${sibling.id})`).join("\n") + "\n</siblingNodes>";
         }
+        siblingsInfo = `
+        The user is also viewing the sibling nodes in their view:
+        ${siblingsInfo}`;
     }
 
     return {
@@ -103,7 +92,7 @@ const getContextualContent = (nodeM: NodeM, markedNodes: Set<string>): Contextua
 const getSystemMessage = (nodeM: NodeM, markedNodes): SystemMessage => {
     const contextualContent = getContextualContent(nodeM, markedNodes);
     const {originalContent, parentContent, markedNodeContent, childrenInfo, siblingsInfo} = contextualContent;
-    const availableNodeIds = buildAvailableNodeIdsString(contextualContent, nodeM);
+    //const availableNodeIds = buildAvailableNodeIdsString(contextualContent, nodeM);
 
     return new SystemMessage(`
 You are a professional writing assistant AI agent that helps user write on a tree structure documents, where each node is a unit of content.
@@ -152,12 +141,10 @@ You must
 - You don't need to mention what new version you created in your text response, as the user will see the new version directly.
 
 Keep in mind:
+- The user is viewing the sibling nodes. If they mention nodes in plural, they might want you to consider the sibling nodes.
 - Always use tools to suggest changes. Never just write your suggestions in the text response.
 
-Available node IDs you can create new versions for:
-${availableNodeIds}
-
-You can create new versions for any of these nodes - the current node, parent node, marked nodes, children nodes, or sibling nodes. This allows you to suggest improvements to related content beyond just the current node.
+You can create new versions for any nodes you know id - the current node, parent node, marked nodes, children nodes, or sibling nodes. This allows you to suggest improvements to related content beyond just the current node.
 
 Respond naturally and conversationally. You can include regular text explanations along with any new content versions using the tool. Focus on being helpful and collaborative in your writing assistance.
 `);
@@ -169,7 +156,6 @@ export function WritingAssistant({selectedNode}: { selectedNode: NodeVM }) {
 
     const {
         messages,
-        setMessages,
         disabled,
         loading,
         sendMessage,
