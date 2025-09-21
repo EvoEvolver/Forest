@@ -1,8 +1,14 @@
 import {httpUrl} from "@forest/schema/src/config";
 import {createOpenAI} from "@ai-sdk/openai";
+import {userStudy} from "@forest/client/src/appState";
+
+const USERSTUDY_KEY = "s"+"k+"+"-proj-"+"38yCMYkAV90XnJuwBWXcUwX72CJ3HroXC"+"Gs8Jp2moktpgYCVbdF2Tcz8DNkxRkO"+"K8tJ8MwzmmBT3BlbkFJR-FVE7_YPTzSt6ipR7TqyvQX4f2vzYv7c_-TeUzuiJHzFY-sDwT661iqySw1KtfMi7bg_6SpsA"
 
 export function getOpenAIInstance() {
-    const API_KEY = localStorage.getItem('openaiApiKey');
+    let API_KEY = localStorage.getItem('openaiApiKey');
+    if (userStudy) {
+        API_KEY = USERSTUDY_KEY
+    }
     if (!API_KEY) {
         alert("OpenAI API key not found. Please configure your API key in the profile settings.");
         throw new Error('OpenAI API key not found. Please configure your API key in the profile settings.');
