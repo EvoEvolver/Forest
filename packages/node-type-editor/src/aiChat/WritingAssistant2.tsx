@@ -94,18 +94,16 @@ Respond naturally and conversationally. You can include regular text explanation
 
 export function WritingAssistant2({contextNodes}: WritingAssistant2Props) {
     const contextStringRef = useRef<string | null>(null);
-    const lastContextNodesRef = useRef<ContextNode[]>([]);
+    const lastContextNodesRef = useRef<string>('');
 
     // Lazy context string getter
     const getContextString = useCallback(() => {
-        // Check if context nodes have changed
-        const nodesChanged = contextNodes !== lastContextNodesRef.current ||
-            contextNodes.length !== lastContextNodesRef.current.length ||
-            contextNodes.some((node, i) => node !== lastContextNodesRef.current[i]);
+        // Create a stable key from context nodes to detect changes
+        const contextKey = contextNodes.map(cn => `${cn.node.id}-${cn.level}`).join('|');
 
-        if (nodesChanged || contextStringRef.current === null) {
+        if (contextKey !== lastContextNodesRef.current || contextStringRef.current === null) {
             contextStringRef.current = buildContextString(contextNodes);
-            lastContextNodesRef.current = contextNodes;
+            lastContextNodesRef.current = contextKey;
         }
 
         return contextStringRef.current;
@@ -129,7 +127,6 @@ export function WritingAssistant2({contextNodes}: WritingAssistant2Props) {
 
     const {
         messages,
-        setMessages,
         disabled,
         loading,
         sendMessage,
@@ -143,8 +140,9 @@ export function WritingAssistant2({contextNodes}: WritingAssistant2Props) {
     });
 
     useEffect(() => {
-        // Reset messages when context nodes change
-        // setMessages([]);
+        // Clear cached context string when context nodes change
+        contextStringRef.current = null;
+        lastContextNodesRef.current = '';
     }, [contextNodes]);
 
 
