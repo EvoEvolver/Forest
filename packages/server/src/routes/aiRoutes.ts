@@ -5,8 +5,8 @@ import {aiService} from '../services';
 export function createAIRouter(): Router {
     const router = Router();
 
-    // AI endpoint
-    router.post('/llm', authenticateToken, requireAIPermission, async (req: AuthenticatedRequest, res) => {
+    // AI endpoint authenticateToken, requireAIPermission,
+    router.post('/llm', async (req: AuthenticatedRequest, res) => {
         console.log(`🤖 AI request from authenticated user: ${req.user?.email}`);
 
         // Check if OpenAI service is available
