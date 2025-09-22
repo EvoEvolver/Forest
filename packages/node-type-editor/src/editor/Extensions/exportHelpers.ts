@@ -138,9 +138,10 @@ ${existingExportContent}
 </current_export_content>
 
 Your task:
-- Update the raw outlines to make them serve as a better summary of the content.
+- Update the raw outlines to make them serve as a better summary of the current_export_content.
 - Respect the original outlines as much as possible. You should not make unnecessary changes to the original outlines.
 - If the outlines are empty, make bullet points based on the content.
+- You should remove the points that are not appearing in the current_export_content.
 
 <output_format>
 You should return HTML content with bullet points using <ul> and <li> tags.
