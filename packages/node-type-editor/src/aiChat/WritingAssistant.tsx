@@ -45,7 +45,7 @@ const buildAvailableNodeIdsString = (contextualContent: ContextualContent, nodeM
 
 const getContextualContent = (nodeM: NodeM, markedNodes: Set<string>): ContextualContent => {
     const treeM = nodeM.treeM;
-    const originalContent = EditorNodeTypeM.getEditorContent(nodeM);
+    const originalContent = `<currentNode title="${nodeM.title()}" id="${nodeM.id}">\n${EditorNodeTypeM.getEditorContent(nodeM)}\n</currentNode>`;
 
     const parent = treeM.getParent(nodeM);
     const parentContent = parent && parent.nodeTypeName() === "EditorNodeType"
