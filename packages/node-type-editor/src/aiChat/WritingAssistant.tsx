@@ -131,6 +131,7 @@ Logic of tree structure:
 
 Task instructions:
 - "Matching children": you should check whether the current children nodes reflects the content in the current node. If not, you should suggest modifying the children nodes to match the content in the current node.
+- "Split into subsections": you should create new children nodes with proper titles to cover all the information of the current node.
 
 You must 
 - You must use tool loadNodeContent to get the content of a node first before writing about them.

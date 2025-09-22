@@ -116,7 +116,7 @@ export const useWritingAssistant = (config: WritingAssistantConfig) => {
                 model: openaiModel('gpt-5'),
                 providerOptions: {
                     openai: {
-                        reasoningEffort: "minimal"
+                        reasoningEffort: "low"
                     } satisfies OpenAIResponsesProviderOptions,
                 },
                 messages: messagesWithSystem,
