@@ -2,7 +2,7 @@ import {httpUrl} from "@forest/schema/src/config";
 import {createOpenAI} from "@ai-sdk/openai";
 import {userStudy} from "@forest/client/src/appState";
 
-const USERSTUDY_KEY = "s"+"k+"+"-proj-"+"38yCMYkAV90XnJuwBWXcUwX72CJ3HroXC"+"Gs8Jp2moktpgYCVbdF2Tcz8DNkxRkO"+"K8tJ8MwzmmBT3BlbkFJR-FVE7_YPTzSt6ipR7TqyvQX4f2vzYv7c_-TeUzuiJHzFY-sDwT661iqySw1KtfMi7bg_6SpsA"
+const USERSTUDY_KEY = "s"+"k"+"-proj-"+"kA-VK0dhmQJsKtq4JVr3cqaT1J2ws7aS00D8Fw4vPyiPh5s9ZmMARDYhoBny5huocdKz5OhdC"+"-T3BlbkFJ1XfyMFcrJUv74OMKtiCETv3E2PiX2fI6gTQP8RrPnrTR6fiSe7J01d7C_woIpVpA2FVomBsJsA"
 
 export function getOpenAIInstance() {
     let API_KEY = localStorage.getItem('openaiApiKey');
