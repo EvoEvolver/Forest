@@ -112,12 +112,12 @@ const NodeRenderer = ({node, level, treeM}: { node: NodeM, level: number, treeM:
         const fullContent = EditorNodeTypeM.getEditorContent(node);
 
         if (isTerminal) {
-            // Terminal node: only show export
+            // Terminal node: if has export, show only export; otherwise show everything
             if (hasExportContent(fullContent)) {
                 setHtmlContent(extractExportContent(fullContent));
-            } //else {
-              //  setHtmlContent(fullContent);
-              //}
+            } else {
+                setHtmlContent(fullContent);
+            }
         } else {
             // Non-terminal node: show only export content if it exists
             const exportContent = extractExportContent(fullContent);
