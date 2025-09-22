@@ -1,4 +1,4 @@
-import React, {useEffect} from "react";
+import React, {useEffect, useMemo, useCallback} from "react";
 import {NodeM, NodeVM} from "@forest/schema";
 import {useAtomValue} from "jotai";
 import {markedNodesAtom} from "@forest/client/src/TreeState/TreeState";
@@ -89,7 +89,7 @@ const getContextualContent = (nodeM: NodeM, markedNodes: Set<string>): Contextua
         siblingsList
     };
 };
-const getSystemMessage = (nodeM: NodeM, markedNodes): SystemMessage => {
+const getSystemMessage = (nodeM: NodeM, markedNodes: Set<string>): SystemMessage => {
     const contextualContent = getContextualContent(nodeM, markedNodes);
     const {originalContent, parentContent, markedNodeContent, childrenInfo, siblingsInfo} = contextualContent;
     //const availableNodeIds = buildAvailableNodeIdsString(contextualContent, nodeM);
@@ -154,6 +154,20 @@ export function WritingAssistant({selectedNode}: { selectedNode: NodeVM }) {
     const node = selectedNode;
     const markedNodes = useAtomValue(markedNodesAtom);
 
+    // Memoize system message to prevent recreation on every render
+    const systemMessageContent = useMemo(() => {
+        return getSystemMessage(node.nodeM, markedNodes).content;
+    }, [node.nodeM.id, markedNodes]);
+
+    // Memoize tools creation to prevent recreation
+    const createTools = useCallback((setMessagesParam) => ({
+        suggestModify: createSuggestModifyTool(node.nodeM.treeM, setMessagesParam),
+        loadNodeContent: createLoadNodeContentTool(node.nodeM.treeM, setMessagesParam),
+        suggestNewTitle: createSuggestNewTitleTool(node.nodeM.treeM, setMessagesParam),
+        suggestNewNode: createSuggestNewNodeTool(node.nodeM.treeM, setMessagesParam),
+        getChildrenList: createGetChildrenListTool(node.nodeM.treeM, setMessagesParam)
+    }), [node.nodeM.treeM]);
+
     const {
         messages,
         disabled,
@@ -161,14 +175,8 @@ export function WritingAssistant({selectedNode}: { selectedNode: NodeVM }) {
         sendMessage,
         resetMessages
     } = useWritingAssistant({
-        getSystemMessage: () => getSystemMessage(node.nodeM, markedNodes).content,
-        createTools: (setMessagesParam) => ({
-            suggestModify: createSuggestModifyTool(node.nodeM.treeM, setMessagesParam),
-            loadNodeContent: createLoadNodeContentTool(node.nodeM.treeM, setMessagesParam),
-            suggestNewTitle: createSuggestNewTitleTool(node.nodeM.treeM, setMessagesParam),
-            suggestNewNode: createSuggestNewNodeTool(node.nodeM.treeM, setMessagesParam),
-            getChildrenList: createGetChildrenListTool(node.nodeM.treeM, setMessagesParam)
-        })
+        getSystemMessage: () => systemMessageContent,
+        createTools
     });
 
     useEffect(() => {
