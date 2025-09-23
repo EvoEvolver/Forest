@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react'
+import React, {useEffect, useRef, useState, useCallback, useMemo, memo} from 'react'
 import {Box, Button, CardContent, Stack, TextField, Typography, Fade, Chip, CircularProgress} from "@mui/material";
 import SendIcon from '@mui/icons-material/Send';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -11,6 +11,26 @@ export interface Message {
     author: string;
 }
 
+// Memoized Message Component
+const MessageItem = memo(({ msg, idx }: { msg: BaseMessage; idx: number }) => (
+    <Box
+        key={idx}
+        display="flex"
+    >
+        <Box>
+            {msg.author && (
+                <Typography
+                    variant="caption"
+                    sx={{display: "block", marginBottom: 0.5}}
+                >
+                    {msg.author}
+                </Typography>
+            )}
+            {msg.render()}
+        </Box>
+    </Box>
+));
+
 // Props for ChatViewImpl component
 interface ChatViewImplProps {
     sendMessage: (content: string) => Promise<void>;
@@ -21,14 +41,14 @@ interface ChatViewImplProps {
 }
 
 
-export function ChatViewImpl({sendMessage, messages, messageDisabled, loading = false, suggestedMessages = []}: ChatViewImplProps) {
+const ChatViewImplComponent = function ChatViewImpl({sendMessage, messages, messageDisabled, loading = false, suggestedMessages = []}: ChatViewImplProps) {
     const [message, setMessage] = useState("");
     const [showNewMessageReminder, setShowNewMessageReminder] = useState(false);
     const [lastMessageCount, setLastMessageCount] = useState(messages.length);
     const [isInputFocused, setIsInputFocused] = useState(false);
     const endRef = useRef(null);
     const scrollContainerRef = useRef(null);
-    const scrollToBottom = () => {
+    const scrollToBottom = useCallback(() => {
         if (scrollContainerRef.current && endRef.current) {
             const container = scrollContainerRef.current;
             const lastMessage = endRef.current.previousElementSibling;
@@ -44,7 +64,7 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled, loading = 
                 });
             }
         }
-    }
+    }, []);
 
     useEffect(() => {
         return () => {
@@ -85,18 +105,48 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled, loading = 
         return () => container.removeEventListener('scroll', handleScroll);
     }, [showNewMessageReminder]);
 
-    const handleSend = () => {
+    const handleSend = useCallback(() => {
         if (message.trim()) {
             sendMessage(message);
             setMessage("");
             setTimeout(() => {scrollToBottom()}, 10);
         }
-    };
+    }, [message, sendMessage, scrollToBottom]);
 
-    const handleSuggestedMessageClick = (suggestedMessage: string) => {
+    const handleSuggestedMessageClick = useCallback((suggestedMessage: string) => {
         setMessage(suggestedMessage);
         setIsInputFocused(true);
-    };
+    }, []);
+
+    const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+        if (e.key === "Enter") {
+            if (e.shiftKey) {
+                return;
+            }
+            if (!messageDisabled) {
+                e.preventDefault();
+                handleSend();
+            }
+        }
+    }, [messageDisabled, handleSend]);
+
+    const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setMessage(e.target.value);
+    }, []);
+
+    const handleInputFocus = useCallback(() => {
+        setIsInputFocused(true);
+    }, []);
+
+    const handleInputBlur = useCallback(() => {
+        setIsInputFocused(false);
+    }, []);
+
+    const renderedMessages = useMemo(() =>
+        messages.map((msg, idx) => (
+            <MessageItem key={idx} msg={msg} idx={idx} />
+        )), [messages]
+    );
 
     return (
         <Box
@@ -115,24 +165,7 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled, loading = 
         >
             <CardContent ref={scrollContainerRef} sx={{flex: 1, overflowY: "auto", pb: 1, position: "relative"}}>
                 <Stack spacing={1}>
-                    {messages.map((msg, idx) => (
-                        <Box
-                            key={idx}
-                            display="flex"
-                        >
-                            <Box>
-                                {msg.author && (
-                                    <Typography
-                                        variant="caption"
-                                        sx={{display: "block", marginBottom: 0.5}}
-                                    >
-                                        {msg.author}
-                                    </Typography>
-                                )}
-                                {msg.render()}
-                            </Box>
-                        </Box>
-                    ))}
+                    {renderedMessages}
                     {loading && (
                         <Box display="flex" justifyContent="center" py={2}>
                             <CircularProgress size={24} />
@@ -230,20 +263,10 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled, loading = 
                     variant="outlined"
                     placeholder="Type a message..."
                     value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onFocus={() => setIsInputFocused(true)}
-                    onBlur={() => setIsInputFocused(false)}
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                            if (e.shiftKey) {
-                                return;
-                            }
-                            if (!messageDisabled) {
-                                e.preventDefault();
-                                handleSend();
-                            }
-                        }
-                    }}
+                    onChange={handleInputChange}
+                    onFocus={handleInputFocus}
+                    onBlur={handleInputBlur}
+                    onKeyDown={handleKeyDown}
                     autoComplete="off"
                     disabled={messageDisabled}
                     multiline
@@ -259,3 +282,5 @@ export function ChatViewImpl({sendMessage, messages, messageDisabled, loading = 
         </Box>
     );
 }
+
+export const ChatViewImpl = memo(ChatViewImplComponent);
