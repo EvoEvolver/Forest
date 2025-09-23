@@ -13,6 +13,7 @@ import Text from '@tiptap/extension-text'
 import BulletList from '@tiptap/extension-bullet-list'
 import OrderedList from '@tiptap/extension-ordered-list'
 import ListItem from '@tiptap/extension-list-item'
+import Heading from '@tiptap/extension-heading'
 import Image from '@tiptap/extension-image'
 import {CommentExtension} from './Extensions/comment'
 import {MathExtension} from '@aarkue/tiptap-math-extension'
@@ -75,6 +76,7 @@ export function makeExtensions(yXML, provider): any[] {
         BulletList,
         OrderedList,
         ListItem,
+        Heading,
         Image,
         HardBreak.configure({
             keepMarks: false,
