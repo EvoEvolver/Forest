@@ -150,8 +150,10 @@ interface TitleAndContent {
 async function getTopDownNewChildren(node: NodeM, authToken: string, customPrompt?: string): Promise<TitleAndContent[]> {
     const parentContent = getEditorContentExceptExports(node);
     const customInstructions = customPrompt ? `
-User instructions:
-${customPrompt}` : '';
+<user_instructions>:
+${customPrompt}
+</user_instructions>
+` : '';
 
     const prompt = `
 You are a professional editor. Your task is to break a long content into multiple children nodes.
