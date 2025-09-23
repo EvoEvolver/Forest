@@ -9,7 +9,7 @@ import {EditorNodeTypeM} from "..";
 import {stageThisVersion} from "@forest/schema/src/stageService";
 import {useAtomValue} from "jotai";
 import {authTokenAtom} from "@forest/user-system/src/authStates";
-import {NormalMessage} from "\@forest/agent-chat/src/MessageTypes";
+import {NormalMessage} from "@forest/agent-chat/src/MessageTypes";
 import {fetchChatResponse} from "@forest/agent-chat/src/llm";
 import {ModifyConfirmation} from "./ModifyConfirmation";
 
