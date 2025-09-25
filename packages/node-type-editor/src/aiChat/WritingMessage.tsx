@@ -5,6 +5,10 @@ import {EditorNodeTypeM} from "../index";
 import {Box} from "@mui/material";
 import {ModifyConfirmation} from "../aiButtons/ModifyConfirmation";
 import {NodeM, TreeM} from "@forest/schema";
+import {useAtomValue, useSetAtom} from "jotai";
+import {jumpToNodeAtom, scrollToNodeAtom} from "@forest/client/src/TreeState/TreeState";
+import {SearchResult} from "@forest/client/src/services/searchService";
+import {Chip, Tooltip} from "@mui/material";
 
 export interface WritingMessageProps extends BaseMessageProps {
     nodeId: string;
@@ -161,6 +165,12 @@ export interface NewNodeMessageProps extends BaseMessageProps {
     parentId: string;
     newNodeTitle: string;
     newContent: string;
+    treeM: TreeM;
+}
+
+export interface SearchResultMessageProps extends BaseMessageProps {
+    query: string;
+    results: SearchResult[];
     treeM: TreeM;
 }
 
@@ -387,6 +397,108 @@ const NewNodeMessageComponent: React.FC<NewNodeMessageProps> = ({
     );
 };
 
+function SearchResultItem({result, index}: { result: SearchResult, index: number }) {
+    const jumpToNode = useSetAtom(jumpToNodeAtom);
+    const scrollToNode = useSetAtom(scrollToNodeAtom);
+
+    const handleClick = () => {
+        jumpToNode(result.nodeId);
+        setTimeout(() => {
+            scrollToNode(result.nodeId);
+        }, 100);
+    };
+
+    return (
+        <Box
+            key={result.nodeId}
+            sx={{
+                padding: 1.5,
+                backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                borderRadius: 1,
+                border: '1px solid rgba(25, 118, 210, 0.12)',
+                cursor: 'pointer',
+                marginBottom: 1,
+                '&:hover': {
+                    backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                },
+                transition: 'all 0.2s ease-in-out'
+            }}
+            onClick={handleClick}
+        >
+            <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: 0.5 }}>
+                <Tooltip title="Click to navigate to this node">
+                    <Chip
+                        size="small"
+                        label={index + 1}
+                        color="primary"
+                        sx={{ marginRight: 1, minWidth: '24px' }}
+                    />
+                </Tooltip>
+                <Box sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                    {result.title || "Untitled"}
+                </Box>
+            </Box>
+            {result.snippet && (
+                <Box sx={{
+                    fontSize: '0.8rem',
+                    color: 'text.secondary',
+                    fontStyle: 'italic',
+                    paddingLeft: 4
+                }}>
+                    {result.snippet}
+                </Box>
+            )}
+        </Box>
+    );
+}
+
+const SearchResultMessageComponent: React.FC<SearchResultMessageProps> = ({
+    content, query, results, treeM
+}) => {
+    return (
+        <>
+            {content && (
+                <Box sx={{
+                    '& p': {
+                        margin: '8px 0',
+                        lineHeight: 1.5
+                    }
+                }}>
+                    <span dangerouslySetInnerHTML={{__html: content}}/>
+                </Box>
+            )}
+            {results && results.length > 0 ? (
+                <Box sx={{ marginTop: 2 }}>
+                    <Box sx={{
+                        marginBottom: 1,
+                        fontSize: '0.875rem',
+                        fontWeight: 600,
+                        color: 'rgba(25, 118, 210, 1)',
+                    }}>
+                        Found {results.length} result{results.length !== 1 ? 's' : ''} for "{query}"
+                    </Box>
+                    {results.map((result, index) => (
+                        <SearchResultItem key={result.nodeId} result={result} index={index} />
+                    ))}
+                </Box>
+            ) : (
+                <Box sx={{
+                    marginTop: 2,
+                    padding: 1.5,
+                    backgroundColor: 'rgba(158, 158, 158, 0.08)',
+                    borderRadius: 1,
+                    fontSize: '0.875rem',
+                    color: 'text.secondary'
+                }}>
+                    No results found for "{query}"
+                </Box>
+            )}
+        </>
+    );
+};
+
 export class WritingMessage extends BaseMessage {
     nodeId: string;
     newContent: string;
@@ -483,6 +595,38 @@ export class NewNodeMessage extends BaseMessage {
             parentId: this.parentId,
             newNodeTitle: this.newNodeTitle,
             newContent: this.newContent
+        };
+    }
+}
+
+export class SearchResultMessage extends BaseMessage {
+    query: string;
+    results: SearchResult[];
+    treeM: TreeM;
+
+    constructor({content, author, role, query, results, treeM}: SearchResultMessageProps) {
+        super({content, author, role});
+        this.query = query;
+        this.results = results;
+        this.treeM = treeM;
+    }
+
+    render(): React.ReactNode {
+        return (
+            <SearchResultMessageComponent
+                content={this.content}
+                query={this.query}
+                results={this.results}
+                treeM={this.treeM}
+            />
+        );
+    }
+
+    toJson(): object {
+        return {
+            ...super.toJson(),
+            query: this.query,
+            results: this.results
         };
     }
 }

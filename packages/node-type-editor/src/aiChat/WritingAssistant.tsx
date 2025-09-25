@@ -5,7 +5,13 @@ import {markedNodesAtom} from "@forest/client/src/TreeState/TreeState";
 import {EditorNodeTypeM} from "..";
 import {ChatViewImpl} from "@forest/agent-chat/src/ChatViewImpl";
 import {useWritingAssistant, createSuggestModifyTool, WritingAssistantHeader} from "./WritingAssistantShared";
-import {createLoadNodeContentTool, createSuggestNewTitleTool, createSuggestNewNodeTool, createGetChildrenListTool} from "./WritingAssistantTools";
+import {
+    createLoadNodeContentTool,
+    createSuggestNewTitleTool,
+    createSuggestNewNodeTool,
+    createGetChildrenListTool,
+    createSearchNodeTool
+} from "./WritingAssistantTools";
 import {SystemMessage} from "@forest/agent-chat/src/MessageTypes";
 
 interface ContextualContent {
@@ -166,6 +172,7 @@ export function WritingAssistant({selectedNode}: { selectedNode: NodeVM }) {
         loadNodeContent: createLoadNodeContentTool(node.nodeM.treeM, setMessagesParam),
         suggestNewTitle: createSuggestNewTitleTool(node.nodeM.treeM, setMessagesParam),
         suggestNewNode: createSuggestNewNodeTool(node.nodeM.treeM, setMessagesParam),
+        searchNode: createSearchNodeTool(node.nodeM.treeM, setMessagesParam),
         getChildrenList: createGetChildrenListTool(node.nodeM.treeM, setMessagesParam)
     }), [node.nodeM.treeM]);
 

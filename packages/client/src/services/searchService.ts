@@ -1,5 +1,5 @@
 import { TreeVM, NodeVM } from "@forest/schema/src/viewModel";
-import { NodeM } from "@forest/schema/src/model";
+import {NodeM, TreeM} from "@forest/schema/src/model";
 import { supportedNodeTypesM } from "@forest/node-types/src/model";
 
 export interface SearchResult {
@@ -13,7 +13,7 @@ export class SearchService {
     /**
      * Search through all nodes in the tree using their renderPrompt content
      */
-    static searchTree(tree: TreeVM, query: string): SearchResult[] {
+    static searchTree(tree: TreeM, query: string): SearchResult[] {
         if (!query.trim() || !tree) {
             return [];
         }
@@ -22,18 +22,17 @@ export class SearchService {
         const searchQuery = query.toLowerCase().trim();
         
         // Access the underlying TreeM to get node data directly
-        const treeM = tree.treeM;
-        const nodeDict = treeM.nodeDict;
+        const nodeDict = tree.nodeDict;
 
         const aliveNodes = []
-        const rootNode = treeM.getRoot()
+        const rootNode = tree.getRoot()
         // dfs search from the root
         const getSubTreeNodes = (nodeM: NodeM) => {
             if (nodeM.data()["archived"]=== true) {
                 return; // Skip archived nodes
             }
             aliveNodes.push(nodeM);
-            const children = treeM.getChildren(nodeM);
+            const children = tree.getChildren(nodeM);
             for (const child of children) {
                 getSubTreeNodes(child);
             }

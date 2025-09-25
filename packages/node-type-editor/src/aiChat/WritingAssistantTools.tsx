@@ -1,10 +1,11 @@
 import React from "react";
-import {NodeM} from "@forest/schema";
+import {NodeM, TreeM} from "@forest/schema";
 import {z} from "zod";
 import {BaseMessage, InfoMessage} from "@forest/agent-chat/src/MessageTypes";
 import {EditorNodeTypeM} from "..";
-import {TitleMessage, NewNodeMessage} from "./WritingMessage";
+import {TitleMessage, NewNodeMessage, SearchResultMessage} from "./WritingMessage";
 import {sanitizeHtmlForEditor} from "./helper";
+import {SearchResult, SearchService} from "@forest/client/src/services/searchService";
 
 export const createLoadNodeContentTool = (treeM: any, setMessages: React.Dispatch<React.SetStateAction<BaseMessage[]>>) => {
     return {
@@ -129,6 +130,40 @@ export const createGetChildrenListTool = (treeM: any, setMessages: React.Dispatc
                 nodeId,
                 parentTitle: node.title(),
                 children: childrenList,
+                success: true
+            };
+        },
+    } as const;
+};
+
+export const createSearchNodeTool = (treeM: TreeM, setMessages: React.Dispatch<React.SetStateAction<BaseMessage[]>>) => {
+    return {
+        description: 'Search in the tree to find nodes containing the query text',
+        inputSchema: z.object({
+            query: z.string().describe('The search query to look for in node titles and content')
+        }),
+        execute: async ({query}: { query: string }) => {
+            let results: SearchResult[] = [];
+            try{
+                results = SearchService.searchTree(treeM, query);
+            } catch (e) {
+                console.error(e);
+            }
+
+            const searchMsg = new SearchResultMessage({
+                content: `Search results for "${query}"`,
+                role: "assistant",
+                author: "Writing Assistant",
+                query: query,
+                results: results.slice(0, 10),
+                treeM: treeM
+            });
+
+            setMessages(prevMessages => [...prevMessages, searchMsg]);
+
+            return {
+                query,
+                results: results.slice(0, 10),
                 success: true
             };
         },

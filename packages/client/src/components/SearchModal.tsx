@@ -36,7 +36,7 @@ export default function SearchModal({ open, onClose }: SearchModalProps) {
         if (!tree || !query.trim()) {
             return [];
         }
-        return SearchService.searchTree(tree, query);
+        return SearchService.searchTree(tree.treeM, query);
     }, [tree, query]);
     
     // Reset when modal opens/closes and handle auto-focus
