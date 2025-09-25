@@ -1,6 +1,8 @@
-import { TreeVM, NodeVM } from "@forest/schema/src/viewModel";
 import {NodeM, TreeM} from "@forest/schema/src/model";
 import { supportedNodeTypesM } from "@forest/node-types/src/model";
+import {NormalMessage} from "@forest/agent-chat/src/MessageTypes";
+import {fetchChatResponse} from "@forest/agent-chat/src/llm";
+import pRetry from 'p-retry';
 
 export interface SearchResult {
     nodeId: string;
@@ -11,18 +13,25 @@ export interface SearchResult {
 
 export class SearchService {
     /**
-     * Search through all nodes in the tree using their renderPrompt content
+     * Search through all nodes in the tree using their renderPrompt content with regex support
      */
-    static searchTree(tree: TreeM, query: string): SearchResult[] {
+    static searchTreeByRegex(tree: TreeM, query: string): SearchResult[] {
         if (!query.trim() || !tree) {
             return [];
         }
 
         const results: SearchResult[] = [];
-        const searchQuery = query.toLowerCase().trim();
+
+        // Try to create a RegExp from the query, fallback to literal string search
+        let searchRegex: RegExp;
+        try {
+            searchRegex = new RegExp(query, 'i'); // case insensitive
+        } catch (error) {
+            // If regex is invalid, fall back to literal string search
+            searchRegex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+        }
         
         // Access the underlying TreeM to get node data directly
-        const nodeDict = tree.nodeDict;
 
         const aliveNodes = []
         const rootNode = tree.getRoot()
@@ -58,30 +67,43 @@ export class SearchService {
                     content = this.extractNodeContent(nodeM, nodeM.ymap.get("nodeTypeName"));
                 }
                 
-                // Check if query matches title or content
-                const titleMatch = title.toLowerCase().includes(searchQuery);
-                const contentMatch = content.toLowerCase().includes(searchQuery);
-                
+                // Check if regex matches title or content
+                const titleMatch = searchRegex.test(title);
+                const contentMatch = searchRegex.test(content);
+
                 if (titleMatch || contentMatch) {
                     // Calculate match score (title matches get higher score)
                     let matchScore = 0;
                     if (titleMatch) {
                         matchScore += 10;
-                        if (title.toLowerCase().startsWith(searchQuery)) {
-                            matchScore += 5; // Bonus for prefix match
+                        // For regex search, check if it matches from the beginning
+                        const prefixRegex = new RegExp(`^${query}`, 'i');
+                        try {
+                            if (prefixRegex.test(title)) {
+                                matchScore += 5; // Bonus for prefix match
+                            }
+                        } catch (error) {
+                            // If prefix regex fails, skip bonus
                         }
                     }
                     if (contentMatch) {
                         matchScore += 1;
-                        // Count occurrences in content
-                        const occurrences = (content.toLowerCase().match(new RegExp(searchQuery, 'g')) || []).length;
-                        matchScore += occurrences * 0.5;
+                        // Count occurrences in content using global regex
+                        try {
+                            const globalRegex = new RegExp(searchRegex.source, 'gi');
+                            const matches = content.match(globalRegex);
+                            const occurrences = matches ? matches.length : 0;
+                            matchScore += occurrences * 0.5;
+                        } catch (error) {
+                            // If global regex fails, give base score
+                            matchScore += 0.5;
+                        }
                     }
-                    
+
                     results.push({
                         nodeId: nodeM.id,
                         title: title || "Untitled",
-                        content: this.getContentPreview(content, searchQuery),
+                        content: this.getContentPreview(content, searchRegex),
                         matchScore
                     });
                 }
@@ -98,7 +120,14 @@ export class SearchService {
             return a.title.localeCompare(b.title);
         });
     }
-    
+
+    /**
+     * Search through all nodes in the tree using their renderPrompt content
+     */
+    static searchTree(tree: TreeM, query: string): SearchResult[] {
+        return this.searchTreeByRegex(tree, query);
+    }
+
     /**
      * Extract content from node based on its type when renderPrompt returns empty
      */
@@ -185,28 +214,29 @@ export class SearchService {
     /**
      * Get a preview of content with search terms highlighted context
      */
-    private static getContentPreview(content: string, query: string, maxLength: number = 150): string {
+    private static getContentPreview(content: string, searchRegex: RegExp, maxLength: number = 150): string {
         if (!content) return "";
-        
-        const lowerContent = content.toLowerCase();
-        const lowerQuery = query.toLowerCase();
-        const queryIndex = lowerContent.indexOf(lowerQuery);
-        
-        if (queryIndex === -1) {
+
+        // Find the first match using regex
+        const match = searchRegex.exec(content);
+
+        if (!match) {
             // No match found, return beginning of content
             return content.length > maxLength ? content.substring(0, maxLength) + "..." : content;
         }
-        
+
+        const matchIndex = match.index;
+
         // Try to center the preview around the match
-        const start = Math.max(0, queryIndex - Math.floor(maxLength / 2));
+        const start = Math.max(0, matchIndex - Math.floor(maxLength / 2));
         const end = Math.min(content.length, start + maxLength);
-        
+
         let preview = content.substring(start, end);
-        
+
         // Add ellipsis if truncated
         if (start > 0) preview = "..." + preview;
         if (end < content.length) preview = preview + "...";
-        
+
         return preview;
     }
 }

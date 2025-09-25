@@ -7,7 +7,7 @@ import {TitleMessage, NewNodeMessage, SearchResultMessage} from "./WritingMessag
 import {sanitizeHtmlForEditor} from "./helper";
 import {SearchResult, SearchService} from "@forest/client/src/services/searchService";
 
-export const createLoadNodeContentTool = (treeM: any, setMessages: React.Dispatch<React.SetStateAction<BaseMessage[]>>) => {
+export const createLoadNodeContentTool = (treeM: TreeM, setMessages: React.Dispatch<React.SetStateAction<BaseMessage[]>>) => {
     return {
         description: 'Get the current content of a specific node to examine it',
         inputSchema: z.object({
@@ -25,12 +25,15 @@ export const createLoadNodeContentTool = (treeM: any, setMessages: React.Dispatc
 
             const writingMsg = new InfoMessage("Loading " + title);
 
+            const num_children = treeM.getChildren(nodeToRead).length;
+
             setMessages(prevMessages => [...prevMessages, writingMsg]);
 
             return {
                 nodeId,
                 title,
                 content,
+                num_children,
                 success: true
             };
         },
