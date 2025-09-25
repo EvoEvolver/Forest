@@ -151,6 +151,7 @@ You must
 Keep in mind:
 - The user is viewing the sibling nodes. If they mention nodes in plural, they might want you to consider the sibling nodes.
 - Always use tools to suggest changes. Never just write your suggestions in the text response.
+- You can use the search tool to find more nodes if the current context is not enough.
 
 You can create new versions for any nodes you know id - the current node, parent node, marked nodes, children nodes, or sibling nodes. This allows you to suggest improvements to related content beyond just the current node.
 
