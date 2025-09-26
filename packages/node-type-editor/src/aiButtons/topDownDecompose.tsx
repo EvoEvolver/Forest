@@ -175,6 +175,7 @@ The titles should be concise and descriptive.
 - You should add at most 6 new children nodes. Therefore, you should first analyze where the break the original content.
 - You should make the decomposed children nodes cover all the information in the original content.
 - You should prioritize user instructions if provided.
+- You should keep the <div class="export">...</div> in the split content.
 
 <output_format>
 You should only return a JSON array of JSON objects with the following format.
