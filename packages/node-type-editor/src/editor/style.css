@@ -176,7 +176,7 @@ body {
     display: inline-block;
     border-radius: 4px;
     border-color: #0d0d0d;
-    background: #f1f3f4;
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .export {
@@ -186,7 +186,7 @@ body {
     display: inline-block;
     border-radius: 4px;
     border-color: #0d0d0d;
-    background: #f1f3f4;
+    background: rgba(0, 0, 0, 0.13);
 }
 
 /* Ensure cursor is visible around images */
