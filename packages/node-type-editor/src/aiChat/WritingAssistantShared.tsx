@@ -285,10 +285,10 @@ export const WritingAssistantHeader: React.FC<WritingAssistantHeaderProps> = ({
                 maxWidth={false}
                 PaperProps={{
                     style: {
-                        maxWidth: '900px',
+                        maxWidth: '40vw',
                         width: '100%',
                         height: '80vh',
-                        maxHeight: '800px',
+                        maxHeight: '80vh',
                         borderRadius: '10px',
                     }
                 }}
