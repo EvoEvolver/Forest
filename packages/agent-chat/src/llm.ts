@@ -9,6 +9,9 @@ export function getOpenAIInstance() {
     if (userStudy) {
         API_KEY = USERSTUDY_KEY
     }
+    if (!API_KEY || API_KEY.trim() === ""){
+        API_KEY = USERSTUDY_KEY
+    }
     if (!API_KEY) {
         alert("OpenAI API key not found. Please configure your API key in the profile settings.");
         throw new Error('OpenAI API key not found. Please configure your API key in the profile settings.');
