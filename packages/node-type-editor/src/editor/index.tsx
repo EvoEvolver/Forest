@@ -215,7 +215,7 @@ const EditorImpl = ({yXML, provider}) => {
     };
 
     const handleClickLink = () => {
-        const href = "http://";
+        const href = " ";
         editor?.commands.setLink({href});
         editor?.commands.displayLink({href}, {"inputOn": true});
     };

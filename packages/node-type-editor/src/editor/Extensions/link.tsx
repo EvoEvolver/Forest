@@ -71,6 +71,18 @@ export const LinkExtension = Mark.create<LinkOptions>({
 
     // 6. Define how the mark is rendered to HTML
     renderHTML({HTMLAttributes}) {
+        // Don't render the href attribute if it's empty or just whitespace
+        const href = HTMLAttributes.href;
+        if (!href || !href.trim()) {
+            // Remove href from attributes to avoid rendering an empty/whitespace href
+            const {href: _, ...attributesWithoutHref} = HTMLAttributes;
+            return [
+                "a",
+                mergeAttributes(this.options.HTMLAttributes, attributesWithoutHref),
+                0, // Render as anchor without href attribute but with same styling
+            ];
+        }
+
         // Render an anchor tag with merged attributes
         return [
             "a",
