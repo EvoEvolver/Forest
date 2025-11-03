@@ -152,6 +152,18 @@ const EditorImpl = ({yXML, provider}) => {
     const [hasChangesInSelection, setHasChangesInSelection] = useState(false);
     const contentEditable = useContext(contentEditableContext);
 
+    // Clean up hover elements when component unmounts
+    useEffect(() => {
+        return () => {
+            setHoverElements([]);
+        };
+    }, []);
+
+    // Clean up hover elements when yXML or provider changes (node switch)
+    useEffect(() => {
+        setHoverElements([]);
+    }, [yXML, provider]);
+
     const extensions = makeExtensions(yXML, provider);
     const editor = useEditor({
         extensions: extensions,
