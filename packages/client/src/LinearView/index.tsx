@@ -18,6 +18,7 @@ import {handlePrint} from "./handlePrint";
 import {ColumnLeft} from "../TreeView/ColumnLeft";
 import {DragProvider} from "../TreeView/DragContext";
 import {WritingAssistant2} from "@forest/node-type-editor/src/aiChat/WritingAssistant2";
+import "./preview.css"
 
 // Atom to hold a function that triggers updating NodeRenderer contents
 export const linearModeNodeRendererUpdateTriggerAtom = atom<(() => void) | null>(null);
