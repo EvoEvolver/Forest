@@ -4,6 +4,7 @@ import { defaultSelectionBuilder, yCursorPlugin } from 'y-prosemirror'
 
 type CollaborationCursorStorage = {
   users: { clientId: number, [key: string]: any }[],
+  _awarenessUpdateHandler?: () => void,
 }
 
 export interface CollaborationCursorOptions {
@@ -168,9 +169,15 @@ export const CollaborationCursor = Extension.create<CollaborationCursorOptions, 
 
           this.storage.users = awarenessStatesToArray(this.options.provider.awareness.states)
 
-          this.options.provider.awareness.on('update', () => {
+          // Create the update handler and store it for cleanup
+          const updateHandler = () => {
             this.storage.users = awarenessStatesToArray(this.options.provider.awareness.states)
-          })
+          }
+
+          this.options.provider.awareness.on('update', updateHandler)
+
+          // Store reference to the handler in storage for cleanup
+          this.storage._awarenessUpdateHandler = updateHandler
 
           return this.options.provider.awareness
         })(),
@@ -181,5 +188,13 @@ export const CollaborationCursor = Extension.create<CollaborationCursorOptions, 
         },
       ),
     ]
+  },
+
+  onDestroy() {
+    // Clean up the awareness listener to prevent memory leaks
+    if (this.options.provider && this.storage._awarenessUpdateHandler) {
+      this.options.provider.awareness.off('update', this.storage._awarenessUpdateHandler)
+      this.storage._awarenessUpdateHandler = undefined
+    }
   },
 })
