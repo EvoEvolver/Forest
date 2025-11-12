@@ -189,7 +189,7 @@ export const HoverSidePanel = (props: { node: NodeVM, isVisible: boolean, isDrag
                 </Tooltip>
 
                 {/* Toggle Marked */}
-                <Tooltip title={isMarked ? "Unmark Node" : "Select Node"} placement="left">
+                <Tooltip title={isMarked ? "Unmark Node" : "Mark Node"} placement="left">
                     <IconButton
                         size="small"
                         onClick={handleToggleMarked}

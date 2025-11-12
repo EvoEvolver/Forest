@@ -177,8 +177,8 @@ export const MiddleContents = ({node}: MiddleContentsProps) => {
         <NodeButtons node={node}/>
         <HoverSidePanel node={node} isVisible={isHovered} isDragging={isDragging}/>
         <SelectedDot node={node}/>
-        <DragButton node={node} isVisible={isHovered} handleDragStart={handleDragStart} isDragging={isDragging}
-                    handleDragEnd={handleDragEnd}/>
+        {/*<DragButton node={node} isVisible={isHovered} handleDragStart={handleDragStart} isDragging={isDragging}*/}
+        {/*            handleDragEnd={handleDragEnd}/>*/}
 
         {/* Hover Plus Buttons for Adding Siblings */}
         {parentNode && (

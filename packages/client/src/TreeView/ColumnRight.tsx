@@ -82,10 +82,10 @@ export function ColumnRight() {
                     <DescriptionIcon fontSize="small"/>
                     Issues
                 </ToggleButton>
-                <ToggleButton value="assistant" aria-label="assistant">
-                    <SmartToyIcon fontSize="small"/>
-                    AI
-                </ToggleButton>
+                {/*<ToggleButton value="assistant" aria-label="assistant">*/}
+                {/*    <SmartToyIcon fontSize="small"/>*/}
+                {/*    AI*/}
+                {/*</ToggleButton>*/}
             </ToggleButtonGroup>
         </Paper>}
 
@@ -115,10 +115,10 @@ export function ColumnRight() {
                 <IssueList simple={true} treeId={node.treeVM.treeM.id()} nodeId={node.id} treeM={node.treeVM.treeM}/>
             </Paper>
         )}
-        {activeTab === 'assistant' && (
-            <Paper elevation={1} sx={{flex: 1, overflow: 'hidden', borderRadius: '10px'}}>
-                <CursorChat selectedNode={node}></CursorChat>
-            </Paper>
-        )}
+        {/*{activeTab === 'assistant' && (*/}
+        {/*    <Paper elevation={1} sx={{flex: 1, overflow: 'hidden', borderRadius: '10px'}}>*/}
+        {/*        <CursorChat selectedNode={node}></CursorChat>*/}
+        {/*    </Paper>*/}
+        {/*)}*/}
     </Box>;
 }
