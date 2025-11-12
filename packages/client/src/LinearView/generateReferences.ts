@@ -82,10 +82,16 @@ export async function getCitationBibtex(url: string): Promise<string> {
             throw new Error('No citation data found');
         }
 
-        // Cache the BibTeX string (use processed URL for cache key)
-        setCachedResponse(processedUrl, data.bibtex);
+        const bibtex = data.bibtex;
 
-        return data.bibtex;
+        console.log("Fetched BibTeX:", bibtex);
+
+        // Only cache if BibTeX contains an author field
+        if (bibtex.includes('author=') || bibtex.includes('author =')) {
+            setCachedResponse(processedUrl, bibtex);
+        }
+
+        return bibtex;
     } catch (error) {
         console.error('Error getting BibTeX citation:', error);
         throw error;
