@@ -59,6 +59,52 @@ export async function getCitationBibtex(url: string): Promise<string> {
 
         // Convert arxiv.org/pdf links to arxiv.org/abs for better citation data
         let processedUrl = url;
+
+        // Check cache first for regular URLs (use processed URL for cache key)
+        const cachedResponse = getCachedResponse(processedUrl);
+        if (cachedResponse) {
+            return cachedResponse;
+        }
+
+        // Call the URL2BibTeX API
+        const apiUrl = `https://url2bibtex-production.up.railway.app/convert?url=${encodeURIComponent(processedUrl)}`;
+        const response = await fetch(apiUrl, {
+            method: 'GET'
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (!data || !data.success || !data.bibtex) {
+            throw new Error('No citation data found');
+        }
+
+        // Cache the BibTeX string (use processed URL for cache key)
+        setCachedResponse(processedUrl, data.bibtex);
+
+        return data.bibtex;
+    } catch (error) {
+        console.error('Error getting BibTeX citation:', error);
+        throw error;
+    }
+}
+
+export async function getCitationBibtexLegacy(url: string): Promise<string> {
+    try {
+        // Check if URL has bib parameter
+        const urlObj = new URL(url);
+        const bibParam = urlObj.searchParams.get('bib');
+
+        if (bibParam) {
+            // Return BibTeX from parameter
+            return decodeURIComponent(bibParam);
+        }
+
+        // Convert arxiv.org/pdf links to arxiv.org/abs for better citation data
+        let processedUrl = url;
         if (url.includes('arxiv.org/pdf/')) {
             processedUrl = url.replace('arxiv.org/pdf/', 'arxiv.org/abs/').replace('.pdf', '');
         }
