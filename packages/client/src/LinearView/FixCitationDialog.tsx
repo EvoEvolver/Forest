@@ -34,7 +34,8 @@ export default function FixCitationDialog({ open, onClose, citationToFix, onCita
         if (fixMethod === 'bibtex' && !bibTeX.trim()) return;
         if (fixMethod === 'url' && !newUrl.trim()) return;
 
-        const oldLink = citationToFix.originalLink;
+
+        const oldLink = citationToFix.originalLink.trim();
         if (!oldLink) return;
 
         let newLinkWithBib: string;
@@ -63,18 +64,17 @@ export default function FixCitationDialog({ open, onClose, citationToFix, onCita
                     let contentChanged = false;
 
                     for (const link of links) {
-                        const href = link.getAttribute('href');
-                        if (href && href === oldLink) {
+                        const href = link.getAttribute('href').trim();
+                        if (href && (href === oldLink)) {
                             link.setAttribute('href', newLinkWithBib);
                             contentChanged = true;
                         }
                     }
-
+                    console.log("oldLink", oldLink)
+                    console.log("newLinkWithBib", newLinkWithBib)
+                    console.log('contentChanged:', contentChanged);
                     if (contentChanged) {
                         const updatedContent = doc.body.innerHTML;
-                        console.log("oldLink", oldLink)
-                        console.log("newLinkWithBib", newLinkWithBib)
-                        console.log('Updated content:', updatedContent);
                         EditorNodeTypeM.setEditorContent(citationToFix.sourceNode, updatedContent);
                     }
                 } catch (error) {
