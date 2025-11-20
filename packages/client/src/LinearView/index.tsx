@@ -1,8 +1,8 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {atom, useAtomValue, useSetAtom} from "jotai";
-import {selectedNodeAtom} from "../TreeState/TreeState";
+import {selectedNodeAtom, treeAtom} from "../TreeState/TreeState";
 import {Box, Button, IconButton, Paper, Skeleton, Tooltip} from '@mui/material';
-import {NodeM} from '@forest/schema';
+import {NodeM, NodeVM, TreeVM} from '@forest/schema';
 import {EditorNodeTypeM} from '@forest/node-type-editor/src';
 import {isMobileModeAtom, userStudy} from "../appState";
 import {useTheme} from '@mui/system';
@@ -18,6 +18,7 @@ import {handlePrint} from "./handlePrint";
 import {ColumnLeft} from "../TreeView/ColumnLeft";
 import {DragProvider} from "../TreeView/DragContext";
 import {WritingAssistant2} from "@forest/node-type-editor/src/aiChat/WritingAssistant2";
+import {contentEditableContext} from "@forest/schema/src/viewContext";
 import "./preview.css"
 
 // Atom to hold a function that triggers updating NodeRenderer contents
@@ -27,16 +28,24 @@ const getLinearNodeList = (rootNode: NodeM): Array<{ node: NodeM, level: number 
     const treeM = rootNode.treeM;
     // do a depth-first traversal to get all node in a linear list
     const traverse = (node: NodeM, level: number = 0): Array<{ node: NodeM, level: number }> => {
-        // if node is not EditorNodeType or archived, return empty array
+        // if node is archived, return empty array
         if (node.data()["archived"] === true) {
             return [];
         }
-        if (node.nodeTypeName() !== "EditorNodeType") {
-            return [];
-        }
         const children = treeM.getChildren(node)
-        // Always include the current node in the list
-        return [{node, level}, ...children.flatMap(child => traverse(child, level + 1))]
+
+        // For EditorNodeType, include the node and all its children
+        if (node.nodeTypeName() === "EditorNodeType") {
+            return [{node, level}, ...children.flatMap(child => traverse(child, level + 1))]
+        }
+
+        // For other node types, only include if it has no children
+        if (children.length === 0) {
+            return [{node, level}];
+        }
+
+        // If it has children, skip this node but continue traversing children
+        return children.flatMap(child => traverse(child, level + 1));
     };
     let rootForTraverse = rootNode
     const linearNodes = traverse(rootForTraverse);
@@ -74,6 +83,55 @@ export const hasExportContent = (htmlContent: string): boolean => {
 const isTerminalNode = (node: NodeM, treeM: any): boolean => {
     const children = treeM.getChildren(node);
     return children.length === 0;
+};
+
+// Component for rendering non-EditorNodeType nodes
+const OtherNodeRenderer = ({node, level, tree}: { node: NodeM, level: number, tree: TreeVM }) => {
+    const theme = useTheme();
+    const title = node.title();
+    const nodeVM = useAtomValue(tree.nodeDict[node.id]);
+
+    if (!nodeVM) {
+        return null;
+    }
+
+    const renderTitle = () => {
+        const titleStyle = {
+            color: theme.palette.text.primary,
+            marginBottom: theme.spacing(1),
+        };
+
+        if (level <= 5) {
+            return React.createElement(`h${level + 1}` as keyof JSX.IntrinsicElements, {style: titleStyle}, title);
+        } else {
+            return <strong style={titleStyle}>{title}</strong>;
+        }
+    };
+
+    return (
+        <div
+            key={node.id}
+            style={{marginBottom: theme.spacing(2)}}
+            id={`node-${node.id}`}
+        >
+            {renderTitle()}
+            <Box sx={{
+                color: theme.palette.text.primary,
+                '& *': {
+                    color: `${theme.palette.text.primary} !important`,
+                },
+                '& img': {
+                    maxWidth: '100%',
+                    height: 'auto',
+                    display: 'block'
+                }
+            }}>
+                <contentEditableContext.Provider value={false}>
+                    {nodeVM.nodeTypeVM.render(nodeVM)}
+                </contentEditableContext.Provider>
+            </Box>
+        </div>
+    );
 };
 
 // Memoized node component with lazy HTML generation
@@ -351,6 +409,7 @@ export default function LinearView() {
     const [forcedUpdateNumber, setForcedUpdateNumber] = useState<number>(0);
     if (!selectedNode) return null;
     const nodes = getLinearNodeList(selectedNode.nodeM) || [];
+    const tree = useAtomValue(treeAtom)
 
     const setRendererUpdateTrigger = useSetAtom(linearModeNodeRendererUpdateTriggerAtom)
 
@@ -418,9 +477,14 @@ export default function LinearView() {
             >
                 <Breadcrumb/>
                 <ButtonsSection rootNode={nodes[0].node} nodes={nodes}/>
-                {treeM && nodes.map(({node, level}) => (
-                    <NodeRenderer key={`${node.id}-${forcedUpdateNumber}`} node={node} level={level} treeM={treeM}/>
-                ))}
+                {treeM && nodes.map(({node, level}) => {
+                    // Check node type and render accordingly
+                    if (node.nodeTypeName() === "EditorNodeType") {
+                        return <NodeRenderer key={`${node.id}-${forcedUpdateNumber}`} node={node} level={level} treeM={treeM}/>;
+                    } else {
+                        return <OtherNodeRenderer key={`${node.id}-${forcedUpdateNumber}`} node={node} level={level} tree={tree}/>;
+                    }
+                })}
             </Paper>
             {/* Fixed right column */}
             {!mobileMode && (

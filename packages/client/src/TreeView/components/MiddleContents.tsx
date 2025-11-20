@@ -16,6 +16,7 @@ import {calculateDropPosition, setupDragData, setupDragImage} from '../utils/Dra
 import {DragButton} from './DragButton';
 import {SelectedDot} from './SelectedDot';
 import {useTheme} from "@mui/system";
+import {Box} from '@mui/material';
 
 interface MiddleContentsProps {
     node: NodeVM;
@@ -171,7 +172,17 @@ export const MiddleContents = ({node}: MiddleContentsProps) => {
                 <NodeTitle
                     node={node}
                 />
-                {!isDragging && node.nodeTypeVM.render(node)}
+                {!isDragging && (
+                    <Box sx={{
+                        '& img': {
+                            maxWidth: '100%',
+                            height: 'auto',
+                            display: 'block'
+                        }
+                    }}>
+                        {node.nodeTypeVM.render(node)}
+                    </Box>
+                )}
             </thisNodeContext.Provider>
         </div>
         <NodeButtons node={node}/>
