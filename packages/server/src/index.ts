@@ -65,6 +65,11 @@ function main(): void {
     setupCORS(app);
     setupBodyParser(app);
 
+    server.setTimeout(10 * 1000, (socket) => {
+        console.log('request timeout, destroy socket');
+        socket.destroy();
+    });
+
     // Setup static files and frontend routing
     setupStaticFiles(app);
 
