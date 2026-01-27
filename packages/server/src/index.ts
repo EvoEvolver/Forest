@@ -63,10 +63,19 @@ function main(): void {
     // Setup middleware
     app.use(cookieParser());
     setupCORS(app);
-    setupBodyParser(app);
+    // Only parse bodies under '/api' to avoid delays on non-API routes
+    setupBodyParser(app, '/api');
 
     // Setup static files and frontend routing
     setupStaticFiles(app);
+
+    // Fast 404 for unknown non-API routes (after static/front-end routes)
+    app.use((req, res, next) => {
+        if (!req.path.startsWith('/api')) {
+            return res.status(404).send('Not Found');
+        }
+        next();
+    });
 
     // Setup API routes
     app.use('/api', createTreeRouter(treeService));
