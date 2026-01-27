@@ -115,6 +115,17 @@ function main(): void {
 
     // Setup WebSocket upgrade handling
     server.on('upgrade', (request, socket, head) => {
+        // Only allow WS upgrades on root path '/'
+        const pathname = (request.url || '').split('?')[0] || '/';
+        if (pathname !== '/') {
+            try {
+                socket.write('HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n');
+            } catch {
+                // ignore write errors
+            }
+            socket.destroy();
+            return;
+        }
         websocketHandler.handleUpgrade(request, socket, head);
     });
 
