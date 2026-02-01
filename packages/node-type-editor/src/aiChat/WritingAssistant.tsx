@@ -4,7 +4,7 @@ import {useAtomValue} from "jotai";
 import {markedNodesAtom} from "@forest/client/src/TreeState/TreeState";
 import {EditorNodeTypeM} from "..";
 import {ChatViewImpl} from "@forest/agent-chat/src/ChatViewImpl";
-import {useWritingAssistant, createSuggestModifyTool, WritingAssistantHeader} from "./WritingAssistantShared";
+import {useWritingAssistant, createSuggestModifyTool, WritingAssistantHeader, useApiKeyCheck, ApiKeyDialog} from "./WritingAssistantShared";
 import {
     createLoadNodeContentTool,
     createSuggestNewTitleTool,
@@ -191,6 +191,16 @@ export function WritingAssistant({selectedNode}: { selectedNode: NodeVM }) {
         createTools
     });
 
+    // Use shared API key check hook
+    const {
+        showApiKeyDialog,
+        apiKeyInput,
+        setApiKeyInput,
+        sendMessageWithApiKeyCheck,
+        handleApiKeySubmit,
+        handleApiKeyCancel
+    } = useApiKeyCheck(sendMessage);
+
     useEffect(() => {
         // Reset messages when selected node changes
         // setMessages([]);
@@ -199,19 +209,28 @@ export function WritingAssistant({selectedNode}: { selectedNode: NodeVM }) {
     return <div style={{height: '100%', margin: "0"}}>
         <WritingAssistantHeader
             onReset={resetMessages}
-            sendMessage={sendMessage}
+            sendMessage={sendMessageWithApiKeyCheck}
             messages={messages}
             messageDisabled={disabled}
             loading={loading}
         />
         <div style={{width: '100%', height: '95%'}}>
             <ChatViewImpl
-                sendMessage={sendMessage}
+                sendMessage={sendMessageWithApiKeyCheck}
                 messages={messages}
                 messageDisabled={disabled}
                 loading={loading}
             />
         </div>
+
+        {/* API Key Dialog */}
+        <ApiKeyDialog
+            show={showApiKeyDialog}
+            apiKeyInput={apiKeyInput}
+            setApiKeyInput={setApiKeyInput}
+            onSubmit={handleApiKeySubmit}
+            onCancel={handleApiKeyCancel}
+        />
     </div>
 }
 

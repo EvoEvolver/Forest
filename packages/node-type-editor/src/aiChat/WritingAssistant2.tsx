@@ -1,10 +1,10 @@
 import React from "react";
-import {useEffect, useRef, useCallback, useState} from "react";
+import {useEffect, useRef, useCallback} from "react";
 import {NodeM} from "@forest/schema";
 import {ChatViewImpl} from "@forest/agent-chat/src/ChatViewImpl";
 import {EditorNodeTypeM} from "..";
 import {extractExportContent} from "../editor/Extensions/exportHelpers";
-import {useWritingAssistant, createSuggestModifyTool, WritingAssistantHeader} from "./WritingAssistantShared";
+import {useWritingAssistant, createSuggestModifyTool, WritingAssistantHeader, useApiKeyCheck, ApiKeyDialog} from "./WritingAssistantShared";
 import {SystemMessage} from "@forest/agent-chat/src/MessageTypes";
 import {createSuggestNewTitleTool} from "./WritingAssistantTools";
 
@@ -95,9 +95,6 @@ Respond naturally and conversationally. You can include regular text explanation
 export function WritingAssistant2({contextNodes}: WritingAssistant2Props) {
     const contextStringRef = useRef<string | null>(null);
     const lastContextNodesRef = useRef<string>('');
-    const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
-    const [apiKeyInput, setApiKeyInput] = useState('');
-    const pendingMessageRef = useRef<string | null>(null);
 
     // Lazy context string getter
     const getContextString = useCallback(() => {
@@ -142,39 +139,15 @@ export function WritingAssistant2({contextNodes}: WritingAssistant2Props) {
         }) : undefined
     });
 
-    // Wrapper to check API key before sending message
-    const sendMessageWithApiKeyCheck = useCallback((message: string) => {
-        const apiKey = localStorage.getItem('openaiApiKey');
-        if (!apiKey) {
-            pendingMessageRef.current = message;
-            setShowApiKeyDialog(true);
-            return;
-        }
-        sendMessage(message);
-    }, [sendMessage]);
-
-    // Handle API key submission
-    const handleApiKeySubmit = useCallback(() => {
-        if (apiKeyInput.trim()) {
-            localStorage.setItem('openaiApiKey', apiKeyInput.trim());
-            setShowApiKeyDialog(false);
-
-            // Send pending message if there is one
-            if (pendingMessageRef.current) {
-                sendMessage(pendingMessageRef.current);
-                pendingMessageRef.current = null;
-            }
-
-            setApiKeyInput('');
-        }
-    }, [apiKeyInput, sendMessage]);
-
-    // Handle dialog cancel
-    const handleApiKeyCancel = useCallback(() => {
-        setShowApiKeyDialog(false);
-        setApiKeyInput('');
-        pendingMessageRef.current = null;
-    }, []);
+    // Use shared API key check hook
+    const {
+        showApiKeyDialog,
+        apiKeyInput,
+        setApiKeyInput,
+        sendMessageWithApiKeyCheck,
+        handleApiKeySubmit,
+        handleApiKeyCancel
+    } = useApiKeyCheck(sendMessage);
 
     useEffect(() => {
         // Clear cached context string when context nodes change
@@ -201,82 +174,12 @@ export function WritingAssistant2({contextNodes}: WritingAssistant2Props) {
         </div>
 
         {/* API Key Dialog */}
-        {showApiKeyDialog && (
-            <div style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 1000
-            }}>
-                <div style={{
-                    backgroundColor: 'white',
-                    padding: '24px',
-                    borderRadius: '8px',
-                    minWidth: '400px',
-                    maxWidth: '500px',
-                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-                }}>
-                    <h3 style={{marginTop: 0, marginBottom: '16px'}}>OpenAI API Key Required</h3>
-                    <p style={{marginBottom: '16px', color: '#666'}}>
-                        Please enter your OpenAI API key to use the writing assistant.
-                    </p>
-                    <input
-                        type="password"
-                        value={apiKeyInput}
-                        onChange={(e) => setApiKeyInput(e.target.value)}
-                        onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                                handleApiKeySubmit();
-                            }
-                        }}
-                        placeholder="sk-..."
-                        style={{
-                            width: '100%',
-                            padding: '8px 12px',
-                            border: '1px solid #ddd',
-                            borderRadius: '4px',
-                            fontSize: '14px',
-                            marginBottom: '16px',
-                            boxSizing: 'border-box'
-                        }}
-                        autoFocus
-                    />
-                    <div style={{display: 'flex', justifyContent: 'flex-end', gap: '8px'}}>
-                        <button
-                            onClick={handleApiKeyCancel}
-                            style={{
-                                padding: '8px 16px',
-                                border: '1px solid #ddd',
-                                borderRadius: '4px',
-                                backgroundColor: 'white',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={handleApiKeySubmit}
-                            disabled={!apiKeyInput.trim()}
-                            style={{
-                                padding: '8px 16px',
-                                border: 'none',
-                                borderRadius: '4px',
-                                backgroundColor: apiKeyInput.trim() ? '#007bff' : '#ccc',
-                                color: 'white',
-                                cursor: apiKeyInput.trim() ? 'pointer' : 'not-allowed'
-                            }}
-                        >
-                            Save
-                        </button>
-                    </div>
-                </div>
-            </div>
-        )}
+        <ApiKeyDialog
+            show={showApiKeyDialog}
+            apiKeyInput={apiKeyInput}
+            setApiKeyInput={setApiKeyInput}
+            onSubmit={handleApiKeySubmit}
+            onCancel={handleApiKeyCancel}
+        />
     </div>
 }

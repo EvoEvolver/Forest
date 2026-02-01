@@ -1,4 +1,4 @@
-import React, {useState, useMemo, useRef} from "react";
+import React, {useState, useMemo, useRef, useCallback} from "react";
 import {
     BaseMessage,
     MarkdownMessage,
@@ -222,6 +222,153 @@ export const useWritingAssistant = (config: WritingAssistantConfig) => {
         sendMessage,
         resetMessages
     };
+};
+
+// Hook for API key checking
+export const useApiKeyCheck = (sendMessage: (content: string) => Promise<void>) => {
+    const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
+    const [apiKeyInput, setApiKeyInput] = useState('');
+    const pendingMessageRef = useRef<string | null>(null);
+
+    // Wrapper to check API key before sending message
+    const sendMessageWithApiKeyCheck = useCallback((message: string) => {
+        const apiKey = localStorage.getItem('openaiApiKey');
+        if (!apiKey) {
+            pendingMessageRef.current = message;
+            setShowApiKeyDialog(true);
+            return;
+        }
+        sendMessage(message);
+    }, [sendMessage]);
+
+    // Handle API key submission
+    const handleApiKeySubmit = useCallback(() => {
+        if (apiKeyInput.trim()) {
+            localStorage.setItem('openaiApiKey', apiKeyInput.trim());
+            setShowApiKeyDialog(false);
+
+            // Send pending message if there is one
+            if (pendingMessageRef.current) {
+                sendMessage(pendingMessageRef.current);
+                pendingMessageRef.current = null;
+            }
+
+            setApiKeyInput('');
+        }
+    }, [apiKeyInput, sendMessage]);
+
+    // Handle dialog cancel
+    const handleApiKeyCancel = useCallback(() => {
+        setShowApiKeyDialog(false);
+        setApiKeyInput('');
+        pendingMessageRef.current = null;
+    }, []);
+
+    return {
+        showApiKeyDialog,
+        apiKeyInput,
+        setApiKeyInput,
+        sendMessageWithApiKeyCheck,
+        handleApiKeySubmit,
+        handleApiKeyCancel
+    };
+};
+
+// API Key Dialog Component
+export interface ApiKeyDialogProps {
+    show: boolean;
+    apiKeyInput: string;
+    setApiKeyInput: (value: string) => void;
+    onSubmit: () => void;
+    onCancel: () => void;
+}
+
+export const ApiKeyDialog: React.FC<ApiKeyDialogProps> = ({
+    show,
+    apiKeyInput,
+    setApiKeyInput,
+    onSubmit,
+    onCancel
+}) => {
+    if (!show) return null;
+
+    return (
+        <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+        }}>
+            <div style={{
+                backgroundColor: 'white',
+                padding: '24px',
+                borderRadius: '8px',
+                minWidth: '400px',
+                maxWidth: '500px',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+            }}>
+                <h3 style={{marginTop: 0, marginBottom: '16px'}}>OpenAI API Key Required</h3>
+                <p style={{marginBottom: '16px', color: '#666'}}>
+                    Please enter your OpenAI API key to use the writing assistant.
+                </p>
+                <input
+                    type="password"
+                    value={apiKeyInput}
+                    onChange={(e) => setApiKeyInput(e.target.value)}
+                    onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                            onSubmit();
+                        }
+                    }}
+                    placeholder="sk-..."
+                    style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        marginBottom: '16px',
+                        boxSizing: 'border-box'
+                    }}
+                    autoFocus
+                />
+                <div style={{display: 'flex', justifyContent: 'flex-end', gap: '8px'}}>
+                    <button
+                        onClick={onCancel}
+                        style={{
+                            padding: '8px 16px',
+                            border: '1px solid #ddd',
+                            borderRadius: '4px',
+                            backgroundColor: 'white',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={onSubmit}
+                        disabled={!apiKeyInput.trim()}
+                        style={{
+                            padding: '8px 16px',
+                            border: 'none',
+                            borderRadius: '4px',
+                            backgroundColor: apiKeyInput.trim() ? '#007bff' : '#ccc',
+                            color: 'white',
+                            cursor: apiKeyInput.trim() ? 'pointer' : 'not-allowed'
+                        }}
+                    >
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 export interface WritingAssistantHeaderProps {
