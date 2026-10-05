@@ -1,5 +1,5 @@
 import React, {lazy, Suspense, useEffect, useState} from 'react';
-import {Box, CssBaseline} from "@mui/material";
+import {Box, Button, CssBaseline, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle} from "@mui/material";
 import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import TreeView from "./TreeView/TreeView";
 import {setupYDocAtom, YjsProviderAtom} from "./TreeState/YjsConnection";
@@ -27,6 +27,7 @@ export default function App() {
     const [currentPage, setCurrentPage] = useAtom(currentPageAtom);
     const [userPanelModalOpen, setUserPanelModalOpen] = useAtom(userPanelModalOpenAtom);
     const [searchModalOpen, setSearchModalOpen] = useAtom(searchModalOpenAtom);
+    const [deprecationNoticeOpen, setDeprecationNoticeOpen] = useState(Boolean(treeId));
     const setupYDoc = useSetAtom(setupYDocAtom);
     const theme = useTheme();
 
@@ -138,6 +139,27 @@ export default function App() {
                 open={searchModalOpen}
                 onClose={() => setSearchModalOpen(false)}
             />
+
+            <Dialog
+                open={deprecationNoticeOpen}
+                onClose={() => setDeprecationNoticeOpen(false)}
+                aria-labelledby="deprecation-notice-title"
+                aria-describedby="deprecation-notice-description"
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle id="deprecation-notice-title">Service deprecation notice</DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="deprecation-notice-description">
+                        Forest will stop providing service on October 15, 2026.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDeprecationNoticeOpen(false)} autoFocus>
+                        Got it
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </>
     );
 }
