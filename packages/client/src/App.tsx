@@ -1,5 +1,5 @@
 import React, {lazy, Suspense, useEffect, useState} from 'react';
-import {Box, Button, CssBaseline, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle} from "@mui/material";
+import {Box, Button, CssBaseline, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Link} from "@mui/material";
 import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import TreeView from "./TreeView/TreeView";
 import {setupYDocAtom, YjsProviderAtom} from "./TreeState/YjsConnection";
@@ -152,6 +152,12 @@ export default function App() {
                 <DialogContent>
                     <DialogContentText id="deprecation-notice-description">
                         Forest will stop providing service on October 15, 2026.
+                        {' '}You can migrate to{' '}
+                        <Link href="https://github.com/EvoEvolver/LatexCoder" target="_blank" rel="noopener noreferrer">
+                            LatexCoder
+                        </Link>.
+                        {' '}If you need help migrating your documents, please contact{' '}
+                        <Link href="mailto:doomspec@outlook.com">doomspec@outlook.com</Link>.
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
