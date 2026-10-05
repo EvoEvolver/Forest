@@ -28,6 +28,7 @@ node_modules
 
 */README_*.md
 *-lock.yaml
+!/pnpm-lock.yaml
 test*.sh
 *.lock
 *.egg-info

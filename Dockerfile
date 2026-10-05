@@ -11,7 +11,7 @@ WORKDIR /app
 COPY . .
 
 # Install dependencies
-RUN pnpm install
+RUN pnpm install --frozen-lockfile
 
 # Create forest directory
 RUN mkdir -p forest
